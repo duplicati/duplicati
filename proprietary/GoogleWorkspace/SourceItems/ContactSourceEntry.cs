@@ -9,9 +9,26 @@ using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class ContactSourceEntry(string parentPath, Person person, bool userIsInactive, PeopleServiceService peopleService)
-    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, person.ResourceName.Split('/').Last())), null, null)
+/// <summary>
+/// A contact, listed as a folder of its vCard, its details and its photos
+/// </summary>
+/// <param name="provider">The provider</param>
+/// <param name="stateKey">The change tracking key of the user's contacts, so a failed photo download holds the stored token back, or <c>null</c> if changes are not tracked</param>
+/// <param name="parentPath">The path of the parent</param>
+/// <param name="person">The contact</param>
+/// <param name="userIsInactive">Whether the user is suspended or archived</param>
+/// <param name="peopleService">The People service of the user</param>
+internal class ContactSourceEntry(SourceProvider provider, string? stateKey, string parentPath, Person person, bool userIsInactive, PeopleServiceService peopleService)
+    : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, EntryName(person))), null, null)
 {
+    /// <summary>
+    /// The name of the entry of a contact: the last segment of its resource name
+    /// </summary>
+    /// <param name="person">The contact</param>
+    /// <returns>The entry name</returns>
+    internal static string EntryName(Person person)
+        => person.ResourceName.Split('/').Last();
+
     /// <summary>
     /// The log tag for this class.
     /// </summary>
@@ -42,7 +59,7 @@ internal class ContactSourceEntry(string parentPath, Person person, bool userIsI
                 // For now, let's just include all photos.
                 if (cancellationToken.IsCancellationRequested) yield break;
                 if (!string.IsNullOrWhiteSpace(photo.Url))
-                    yield return new ContactPhotoSourceEntry(this.Path, photo, index, peopleService);
+                    yield return new ContactPhotoSourceEntry(provider, stateKey, this.Path, photo, index, peopleService);
             }
         }
     }

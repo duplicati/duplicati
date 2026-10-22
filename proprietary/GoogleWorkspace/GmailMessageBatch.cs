@@ -58,7 +58,20 @@ internal static class GmailMessageBatch
     /// <param name="backOff">The policy that decides how long to pause before each retry.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The messages that could be fetched.</returns>
-    public static async Task<List<Message>> GetMetadataAsync(GmailService service, string userId, IReadOnlyCollection<string> messageIds, IBackOff backOff, CancellationToken cancellationToken)
+    public static Task<List<Message>> GetMetadataAsync(GmailService service, string userId, IReadOnlyCollection<string> messageIds, IBackOff backOff, CancellationToken cancellationToken)
+        => GetMetadataAsync(service, userId, messageIds, backOff, (_, _) => { }, cancellationToken);
+
+    /// <summary>
+    /// Fetches the metadata of the given messages, pausing by the given policy between retries.
+    /// </summary>
+    /// <param name="service">The Gmail service of the user.</param>
+    /// <param name="userId">The user whose messages are fetched.</param>
+    /// <param name="messageIds">The ids of the messages.</param>
+    /// <param name="backOff">The policy that decides how long to pause before each retry.</param>
+    /// <param name="onFetchFailed">Called for a message that could not be read for a reason other than being deleted, with its id and the error, after the warning is written.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The messages that could be fetched.</returns>
+    public static async Task<List<Message>> GetMetadataAsync(GmailService service, string userId, IReadOnlyCollection<string> messageIds, IBackOff backOff, Action<string, RequestError> onFetchFailed, CancellationToken cancellationToken)
     {
         var messages = new List<Message>(messageIds.Count);
         var pending = messageIds.ToList();
@@ -109,6 +122,7 @@ internal static class GmailMessageBatch
                 }
 
                 Log.WriteWarningMessage(LOGTAG, "GmailMessageFetchFailed", null, Strings.GmailMessageFetchFailed(id, userId, error.Code, error.Message ?? ""));
+                onFetchFailed(id, error);
             }
 
             if (pending.Count == 0)

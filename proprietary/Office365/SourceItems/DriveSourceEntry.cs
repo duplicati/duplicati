@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.SourceProvider.ChangeTracking;
 using Duplicati.Library.Logging;
 
 namespace Duplicati.Proprietary.Office365.SourceItems;
@@ -40,7 +41,7 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
 
         var stateKey = ChangeTrackingKeys.Drive(drive.Id);
         var storedValue = tracker.GetState(stateKey);
-        var storedMap = storedValue == null ? null : DriveFolderMap.Deserialize(storedValue);
+        var storedMap = storedValue == null ? null : FolderMap.Deserialize(storedValue);
         if (storedValue != null && storedMap == null)
         {
             Log.WriteWarningMessage(LOGTAG, "DriveStateUnreadable", null, "The stored delta state for drive {0} cannot be read, listing the drive in full", drive.Id);
@@ -88,7 +89,7 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
             // reported by the next delta; a change reported twice is harmless, a missed one is not
             var latestToken = await provider.OneDriveApi.GetDriveDeltaLatestTokenAsync(drive.Id, cancellationToken).ConfigureAwait(false);
             var root = await provider.OneDriveApi.GetDriveRootAsync(drive.Id, cancellationToken).ConfigureAwait(false);
-            var freshMap = new DriveFolderMap { Token = latestToken, RootId = root.Id };
+            var freshMap = new FolderMap { Token = latestToken, RootId = root.Id };
 
             // The folders below the top level are only found when the backup recurses into
             // them, after this listing has ended, so the map is serialized when the state is exported
@@ -123,7 +124,7 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
     /// <param name="map">The folder map to record folders in, or <c>null</c> if changes are not tracked</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The entries</returns>
-    private async IAsyncEnumerable<ISourceProviderEntry> EnumerateChildrenAsync(DriveFolderMap? map, [EnumeratorCancellation] CancellationToken cancellationToken)
+    private async IAsyncEnumerable<ISourceProviderEntry> EnumerateChildrenAsync(FolderMap? map, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         await foreach (var item in provider.OneDriveApi.ListDriveRootChildrenAsync(drive.Id, cancellationToken).ConfigureAwait(false))
         {
@@ -152,7 +153,7 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
     /// <param name="map">The stored folder map with its token, updated with the changes</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The plan, or <c>null</c> if the drive must be listed in full</returns>
-    private async Task<IncrementalPlan?> TryReadDeltaAsync(DriveFolderMap map, CancellationToken cancellationToken)
+    private async Task<IncrementalPlan?> TryReadDeltaAsync(FolderMap map, CancellationToken cancellationToken)
     {
         var tracker = provider.ChangeTracker;
         var stateKey = ChangeTrackingKeys.Drive(drive.Id);
@@ -209,10 +210,10 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
     /// <param name="newToken">The token the walk ended with</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The plan</returns>
-    private async Task<IncrementalPlan> ArrangeChangesAsync(Dictionary<string, GraphDriveItem> items, DriveFolderMap map, string newToken, CancellationToken cancellationToken)
+    private async Task<IncrementalPlan> ArrangeChangesAsync(Dictionary<string, GraphDriveItem> items, FolderMap map, string newToken, CancellationToken cancellationToken)
     {
         var tracker = provider.ChangeTracker;
-        var rootId = map.RootId ?? throw new UserInformationException($"The stored folder map for drive {drive.Id} has no root", "DriveFolderMapWithoutRoot");
+        var rootId = map.RootId ?? throw new UserInformationException($"The stored folder map for drive {drive.Id} has no root", "FolderMapWithoutRoot");
         var changes = new DriveChangeSet(map);
         var reported = items.Values.Where(x => x.Id != rootId).ToList();
 
@@ -221,8 +222,8 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
         // ids are unique, so any previous path with the id as a segment is below it
         foreach (var item in reported.Where(x => x.Deleted != null))
         {
-            tracker.MarkIdTouched(item.Id);
-            tracker.MarkIdSubtreeGone(item.Id);
+            tracker.MarkIdTouched(Path, item.Id);
+            tracker.MarkIdSubtreeExamined(Path, item.Id);
             map.Remove(item.Id);
         }
 
@@ -233,7 +234,7 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
         // while absent from the map, which must not leave its old path behind
         foreach (var item in reported.Where(x => x.Deleted == null && x.Folder != null))
         {
-            tracker.MarkIdTouched(item.Id);
+            tracker.MarkIdTouched(Path, item.Id);
             var parentId = item.ParentReference?.Id;
             if (parentId == null)
             {
@@ -244,7 +245,7 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
             if (!map.TryGetParent(item.Id, out var previousParent) || !string.Equals(previousParent, parentId, StringComparison.Ordinal))
             {
                 changes.MovedFolders.Add(item.Id);
-                tracker.MarkIdSubtreeGone(item.Id);
+                tracker.MarkIdSubtreeExamined(Path, item.Id);
             }
 
             map.SetParent(item.Id, parentId);
@@ -252,11 +253,11 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
 
         // A changed file is listed at its current path; if it was moved, its old path has its id as the last segment
         foreach (var item in reported.Where(x => x.Deleted == null && x.Folder == null))
-            tracker.MarkIdTouched(item.Id);
+            tracker.MarkIdTouched(Path, item.Id);
 
         var pruned = map.PruneUnreachable();
         if (pruned > 0)
-            Log.WriteVerboseMessage(LOGTAG, "DriveFolderMapPruned", "Dropped {0} folders below removed folders from the folder map of drive {1}", pruned, drive.Id);
+            Log.WriteVerboseMessage(LOGTAG, "FolderMapPruned", "Dropped {0} folders below removed folders from the folder map of drive {1}", pruned, drive.Id);
 
         // Arrange the changes as a tree: an item below a changed folder is listed by that folder,
         // an item below a moved folder is listed by the walk of the moved folder, and the rest
@@ -297,7 +298,7 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
     /// <param name="cache">The answers found so far</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns><c>true</c> if the folder is at or below a moved folder</returns>
-    private async Task<bool> ChainCrossesMovedFolderAsync(string folderId, DriveFolderMap map, HashSet<string> movedFolders, Dictionary<string, bool> cache, CancellationToken cancellationToken)
+    private async Task<bool> ChainCrossesMovedFolderAsync(string folderId, FolderMap map, HashSet<string> movedFolders, Dictionary<string, bool> cache, CancellationToken cancellationToken)
     {
         if (movedFolders.Count == 0)
             return false;
@@ -337,7 +338,7 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
     /// <param name="cache">The paths resolved so far</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The folder path, ending with the directory separator</returns>
-    private async Task<string> ResolveFolderPathAsync(string folderId, DriveFolderMap map, Dictionary<string, string> cache, CancellationToken cancellationToken)
+    private async Task<string> ResolveFolderPathAsync(string folderId, FolderMap map, Dictionary<string, string> cache, CancellationToken cancellationToken)
     {
         if (cache.TryGetValue(folderId, out var cached))
             return cached;
@@ -348,7 +349,7 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
         while (!cache.TryGetValue(current, out cached))
         {
             if (chain.Count > 1024 || chain.Contains(current))
-                throw new UserInformationException($"The folder map of drive {drive.Id} has a cycle at folder {current}", "DriveFolderMapCycle");
+                throw new UserInformationException($"The folder map of drive {drive.Id} has a cycle at folder {current}", "FolderMapCycle");
 
             chain.Add(current);
             current = await GetParentAsync(current, map, cancellationToken).ConfigureAwait(false);
@@ -371,12 +372,12 @@ internal class DriveSourceEntry(SourceProvider provider, string path, GraphDrive
     /// <param name="map">The folder map</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The parent id</returns>
-    private async Task<string> GetParentAsync(string folderId, DriveFolderMap map, CancellationToken cancellationToken)
+    private async Task<string> GetParentAsync(string folderId, FolderMap map, CancellationToken cancellationToken)
     {
         if (map.TryGetParent(folderId, out var parentId))
             return parentId;
 
-        Log.WriteVerboseMessage(LOGTAG, "DriveFolderMapMiss", "Folder {0} of drive {1} is not in the stored folder map, looking it up", folderId, drive.Id);
+        Log.WriteVerboseMessage(LOGTAG, "FolderMapMiss", "Folder {0} of drive {1} is not in the stored folder map, looking it up", folderId, drive.Id);
         var folder = await provider.OneDriveApi.GetDriveItemAsync(drive.Id, folderId, cancellationToken).ConfigureAwait(false);
         parentId = folder.ParentReference?.Id
             ?? throw new UserInformationException($"Folder {folderId} of drive {drive.Id} has no parent", "DriveFolderWithoutParent");

@@ -2,6 +2,7 @@
 
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
+using Duplicati.Library.SourceProvider.ChangeTracking;
 using Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
@@ -9,7 +10,7 @@ using User = Google.Apis.Admin.Directory.directory_v1.Data.User;
 
 namespace Duplicati.Proprietary.GoogleWorkspace;
 
-public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
+public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrackingSourceProvider, IDisposable
 {
     /// <summary>
     /// The log tag for this class.
@@ -20,6 +21,49 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
     private readonly string _mountPoint;
     private readonly OptionsHelper.GoogleWorkspaceOptions _options;
     private readonly ConcurrentDictionary<string, ISourceProviderEntry> _entryCache = new();
+
+    /// <summary>
+    /// What the provider learned during this enumeration about which paths it examined,
+    /// and the tokens it carries between backups.
+    /// </summary>
+    private readonly ChangeTracker _changeTracker = new();
+
+    /// <summary>
+    /// What the provider learned during this enumeration about which paths it examined,
+    /// and the tokens it carries between backups.
+    /// </summary>
+    internal ChangeTracker ChangeTracker => _changeTracker;
+
+    /// <summary>
+    /// Builds the API helper of the provider instances created while it is set, in place of
+    /// the one built from the options, so a caller that creates providers through the loader
+    /// can supply its own clients. It follows the asynchronous flow that set it, so flows
+    /// running side by side do not see each other's factory.
+    /// </summary>
+    private static readonly AsyncLocal<Func<OptionsHelper.GoogleWorkspaceOptions, bool, APIHelper>?> _apiHelperFactory = new();
+
+    /// <summary>
+    /// Makes the provider instances created in the current asynchronous flow build their API
+    /// helper with a factory until the returned scope is disposed
+    /// </summary>
+    /// <param name="factory">Builds the API helper from the parsed options and whether the provider is used for a restore</param>
+    /// <returns>A scope that restores the previous factory when disposed</returns>
+    internal static IDisposable UseApiHelperFactory(Func<OptionsHelper.GoogleWorkspaceOptions, bool, APIHelper> factory)
+    {
+        var previous = _apiHelperFactory.Value;
+        _apiHelperFactory.Value = factory;
+        return new ApiHelperFactoryScope(previous);
+    }
+
+    /// <summary>
+    /// Restores the previous API helper factory when disposed
+    /// </summary>
+    /// <param name="previous">The factory to restore</param>
+    private sealed class ApiHelperFactoryScope(Func<OptionsHelper.GoogleWorkspaceOptions, bool, APIHelper>? previous) : IDisposable
+    {
+        /// <inheritdoc />
+        public void Dispose() => _apiHelperFactory.Value = previous;
+    }
 
     /// <summary>
     /// Counter for tracking which licensed paths are being enumerated.
@@ -97,7 +141,7 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
         _mountPoint = mountPoint;
         _options = OptionsHelper.ParseOptions(options);
 
-        _apiHelper = new APIHelper(_options, usedForRestoreOperation);
+        _apiHelper = _apiHelperFactory.Value?.Invoke(_options, usedForRestoreOperation) ?? new APIHelper(_options, usedForRestoreOperation);
         UsedForRestoreOperation = usedForRestoreOperation;
         AvoidCalendarAcl = Library.Utility.Utility.ParseBoolOption(options, OptionsHelper.GOOGLE_AVOID_CALENDAR_ACL_OPTION);
     }
@@ -114,6 +158,46 @@ public sealed partial class SourceProvider : ISourceProviderModule, IDisposable
 
     /// <inheritdoc />
     public bool NeedsStoredMetadata => true;
+
+    /// <inheritdoc />
+    public string ChangeTrackingScope => _mountPoint;
+
+    /// <inheritdoc />
+    public void LoadChangeTrackingState(IReadOnlyDictionary<string, string> state)
+        => _changeTracker.Load(state);
+
+    /// <inheritdoc />
+    public IReadOnlyDictionary<string, string> ExportChangeTrackingState()
+        => _changeTracker.Export();
+
+    /// <inheritdoc />
+    public bool WasPathEnumerated(string path)
+        => _changeTracker.WasPathEnumerated(path);
+
+    /// <inheritdoc />
+    public bool IsIncrementallyEnumeratedFolder(string folderPath)
+        => _changeTracker.IsIncrementallyEnumeratedFolder(folderPath);
+
+    /// <summary>
+    /// Whether mailboxes are walked from the Gmail history in this enumeration: the option is
+    /// on and the provider was handed state by a backup
+    /// </summary>
+    internal bool GmailDeltaActive => _options.GmailDelta && _changeTracker.IsActive;
+
+    /// <summary>
+    /// Whether drives are walked from the changes feed in this enumeration
+    /// </summary>
+    internal bool DriveDeltaActive => _options.DriveDelta && _changeTracker.IsActive;
+
+    /// <summary>
+    /// Whether calendars are walked with sync tokens in this enumeration
+    /// </summary>
+    internal bool CalendarDeltaActive => _options.CalendarDelta && _changeTracker.IsActive;
+
+    /// <summary>
+    /// Whether contacts are walked with sync tokens in this enumeration
+    /// </summary>
+    internal bool ContactsDeltaActive => _options.ContactsDelta && _changeTracker.IsActive;
 
     public void Dispose()
     {

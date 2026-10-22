@@ -2,13 +2,25 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.SourceProvider.ChangeTracking;
 using Google.Apis.Gmail.v1.Data;
 using Google.Apis.Gmail.v1;
 using System.Runtime.CompilerServices;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class GmailLabelSourceEntry(string userId, string parentPath, Label label, GmailService service)
+/// <summary>
+/// A label folder. It either lists the messages carrying the label with a request to Gmail,
+/// or lists a prepared set of changed messages that the mailbox read from its history.
+/// </summary>
+/// <param name="provider">The provider</param>
+/// <param name="userId">The user</param>
+/// <param name="parentPath">The path of the mailbox folder</param>
+/// <param name="label">The label</param>
+/// <param name="service">The Gmail service of the user</param>
+/// <param name="changes">The changed messages to list instead of asking Gmail, or <c>null</c> to list the label in full</param>
+/// <param name="stateKey">The change tracking key of the mailbox, or <c>null</c> if changes are not tracked</param>
+internal class GmailLabelSourceEntry(SourceProvider provider, string userId, string parentPath, Label label, GmailService service, IReadOnlyList<Message>? changes, string? stateKey)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, label.Id)), null, null)
 {
     public override IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken)
@@ -17,6 +29,37 @@ internal class GmailLabelSourceEntry(string userId, string parentPath, Label lab
     }
 
     private async IAsyncEnumerable<ISourceProviderEntry> EnumerateMessages([EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        if (changes != null)
+        {
+            foreach (var message in changes)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                    yield break;
+
+                yield return new GmailMessageSourceEntry(provider, stateKey, userId, this.Path, message, service, null);
+            }
+
+            yield break;
+        }
+
+        // A listing or metadata fetch that fails is reported to the mailbox's key, so the
+        // history id stored by this run does not claim the label was listed
+        await foreach (var message in provider.ChangeTracker.ListWithFailureTrackingAsync(stateKey, ListMessagesAsync(cancellationToken), cancellationToken).ConfigureAwait(false))
+        {
+            if (cancellationToken.IsCancellationRequested)
+                yield break;
+
+            yield return new GmailMessageSourceEntry(provider, stateKey, userId, this.Path, message, service, null);
+        }
+    }
+
+    /// <summary>
+    /// Lists the messages carrying the label with their metadata
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The messages</returns>
+    private async IAsyncEnumerable<Message> ListMessagesAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var request = service.Users.Messages.List(userId);
         request.LabelIds = new[] { label.Id };
@@ -29,14 +72,15 @@ internal class GmailLabelSourceEntry(string userId, string parentPath, Label lab
             var response = await request.ExecuteAsync(cancellationToken);
             if (response.Messages != null && response.Messages.Count > 0)
             {
-                var messages = await GmailMessageBatch.GetMetadataAsync(service, userId, response.Messages.Select(m => m.Id).ToList(), cancellationToken);
+                var messages = await GmailMessageBatch.GetMetadataAsync(service, userId, response.Messages.Select(m => m.Id).ToList(), GoogleRetryHandler.CreateBackOff(),
+                    (id, _) => { if (stateKey != null) provider.ChangeTracker.MarkItemFailed(stateKey, id + GmailMailboxWalk.MESSAGE_EXTENSION); }, cancellationToken);
 
                 foreach (var message in messages)
                 {
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
 
-                    yield return new GmailMessageSourceEntry(userId, this.Path, message, service);
+                    yield return message;
                 }
             }
 

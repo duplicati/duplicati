@@ -87,6 +87,57 @@ internal static class GoogleServiceErrors
     }
 
     /// <summary>
+    /// Whether a Gmail history request was refused because the stored history id is too old.
+    /// Gmail answers a stale or unknown history id with 404.
+    /// </summary>
+    /// <param name="ex">The exception thrown by the history request</param>
+    /// <returns><c>true</c> if the mailbox must be listed in full</returns>
+    public static bool IsGmailHistoryExpired(Exception ex)
+        => ex is GoogleApiException { HttpStatusCode: HttpStatusCode.NotFound };
+
+    /// <summary>
+    /// Whether a Drive changes request refused the stored page token. Drive answers a token
+    /// it cannot read with 400 and one it no longer knows with 404; the caller reports the
+    /// status and lists the drive in full. A 403, which means access to the drive was lost,
+    /// is not a rejection: listing in full would fail the same way, so the walk fails and the
+    /// token is held back instead.
+    /// </summary>
+    /// <param name="ex">The exception thrown by the changes request</param>
+    /// <returns><c>true</c> if the drive must be listed in full</returns>
+    public static bool IsDriveChangesTokenRejected(Exception ex)
+        => ex is GoogleApiException { HttpStatusCode: HttpStatusCode.BadRequest or HttpStatusCode.NotFound };
+
+    /// <summary>
+    /// Whether a Calendar events request refused the stored sync token, which Calendar
+    /// reports with 410 Gone
+    /// </summary>
+    /// <param name="ex">The exception thrown by the events request</param>
+    /// <returns><c>true</c> if the calendar must be listed in full</returns>
+    public static bool IsCalendarSyncTokenExpired(Exception ex)
+        => ex is GoogleApiException { HttpStatusCode: HttpStatusCode.Gone };
+
+    /// <summary>
+    /// Whether a People connections request refused the stored sync token, which the People
+    /// API reports with 400 and the reason <c>EXPIRED_SYNC_TOKEN</c>
+    /// </summary>
+    /// <param name="ex">The exception thrown by the connections request</param>
+    /// <returns><c>true</c> if the contacts must be listed in full</returns>
+    public static bool IsPeopleSyncTokenExpired(Exception ex)
+    {
+        if (ex is not GoogleApiException { HttpStatusCode: HttpStatusCode.BadRequest } gex)
+            return false;
+
+        var reasons = gex.Error?.Errors?.Select(e => e.Reason ?? "") ?? [];
+        if (reasons.Contains("EXPIRED_SYNC_TOKEN", StringComparer.OrdinalIgnoreCase))
+            return true;
+
+        var (bodyReasons, bodyMessage) = ParseErrorBody(gex.Error?.ErrorResponseContent);
+        return bodyReasons.Contains("EXPIRED_SYNC_TOKEN", StringComparer.OrdinalIgnoreCase)
+            || (gex.Message ?? "").Contains("EXPIRED_SYNC_TOKEN", StringComparison.OrdinalIgnoreCase)
+            || (bodyMessage ?? "").Contains("EXPIRED_SYNC_TOKEN", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
     /// Determines whether a failed response is worth repeating after a pause: a server error,
     /// an explicit 429, or a 403 that carries one of Google's rate limit signatures. A daily
     /// quota is never retried, whatever status code it arrives with.

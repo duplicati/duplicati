@@ -35,6 +35,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility.Options;
+using Duplicati.Library.SourceProvider.ChangeTracking;
 using Duplicati.Proprietary.Office365;
 using Duplicati.Proprietary.Office365.SourceItems;
 using NUnit.Framework;
@@ -176,7 +177,7 @@ public class Office365DeltaTests
 
     private static string StoredMap(string token, params (string Folder, string Parent)[] folders)
     {
-        var map = new DriveFolderMap { Token = token, RootId = "root" };
+        var map = new FolderMap { Token = token, RootId = "root" };
         foreach (var (folder, parent) in folders)
             map.SetParent(folder, parent);
         return map.Serialize();
@@ -522,8 +523,8 @@ public class Office365DeltaTests
         Assert.That(handler.CountRequests("/children"), Is.EqualTo(3));
 
         var state = provider.ExportChangeTrackingState();
-        Assert.That(DriveFolderMap.Deserialize(state[DriveKey])!.Token, Is.EqualTo("tok1"));
-        var map = DriveFolderMap.Deserialize(state[DriveKey])!;
+        Assert.That(FolderMap.Deserialize(state[DriveKey])!.Token, Is.EqualTo("tok1"));
+        var map = FolderMap.Deserialize(state[DriveKey])!;
         Assert.That(map.RootId, Is.EqualTo("root"));
         Assert.That(map.TryGetParent("F1", out var p1) && p1 == "root", Is.True);
         Assert.That(map.TryGetParent("F2", out var p2) && p2 == "F1", Is.True);
@@ -549,8 +550,8 @@ public class Office365DeltaTests
         Assert.That(handler.CountRequests("/items/"), Is.EqualTo(0), "No item lookup is needed when the map knows the ancestors");
 
         var state = provider.ExportChangeTrackingState();
-        Assert.That(DriveFolderMap.Deserialize(state[DriveKey])!.Token, Is.EqualTo("tok2"));
-        Assert.That(DriveFolderMap.Deserialize(state[DriveKey])!.Count, Is.EqualTo(2));
+        Assert.That(FolderMap.Deserialize(state[DriveKey])!.Token, Is.EqualTo("tok2"));
+        Assert.That(FolderMap.Deserialize(state[DriveKey])!.Count, Is.EqualTo(2));
 
         Assert.That(provider.WasPathEnumerated(F(DrivePath, "A")), Is.False, "An unchanged file is carried forward");
         Assert.That(provider.WasPathEnumerated(D(DrivePath, "F1")), Is.False, "An unchanged folder is carried forward");
@@ -579,7 +580,7 @@ public class Office365DeltaTests
         Assert.That(provider.WasPathEnumerated(F(DrivePath, "A")), Is.False);
         Assert.That(provider.WasPathEnumerated(F(DrivePath, "G1", "X")), Is.False);
 
-        var map = DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!;
+        var map = FolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!;
         Assert.That(map.Contains("F1"), Is.False);
         Assert.That(map.Contains("F2"), Is.False, "Folders below the removed folder are pruned");
         Assert.That(map.Contains("G1"), Is.True);
@@ -607,7 +608,7 @@ public class Office365DeltaTests
         Assert.That(provider.WasPathEnumerated(D(DrivePath, "F1", "F2")), Is.True);
         Assert.That(provider.WasPathEnumerated(F(DrivePath, "F1", "B")), Is.False);
 
-        var map = DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!;
+        var map = FolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!;
         Assert.That(map.TryGetParent("F2", out var p2) && p2 == "root", Is.True);
         Assert.That(map.TryGetParent("F3", out var p3) && p3 == "F2", Is.True, "Folders found by the walk of the moved folder are recorded");
     }
@@ -650,7 +651,7 @@ public class Office365DeltaTests
         var all = await CollectAsync(drive, true);
         Assert.That(all.Select(x => x.Path), Is.EqualTo(new[] { D(DrivePath, "F1", "F2"), D(DrivePath, "F1", "F2", "F3"), F(DrivePath, "F1", "F2", "F3", "N") }), "The rest are listed below their new parents");
         Assert.That(handler.CountRequests("/children"), Is.EqualTo(2), "A folder the map does not know is walked in full, as it may have been moved while unknown, and the reported items below it are not listed twice");
-        var map = DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!;
+        var map = FolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!;
         Assert.That(map.TryGetParent("F3", out var p3) && p3 == "F2", Is.True, "Folders found by the walk are in the exported map");
     }
 
@@ -669,7 +670,7 @@ public class Office365DeltaTests
         var entries = await CollectAsync(new DriveSourceEntry(provider, SitePath, Drive), true);
         Assert.That(entries.Select(x => x.Path), Is.EqualTo(new[] { F(DrivePath, "F1", "F9", "X") }));
         Assert.That(handler.CountRequests("/items/F9?"), Is.EqualTo(1));
-        Assert.That(DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Contains("F9"), Is.True, "The looked up folder is added to the map");
+        Assert.That(FolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Contains("F9"), Is.True, "The looked up folder is added to the map");
     }
 
     [Test]
@@ -691,8 +692,8 @@ public class Office365DeltaTests
         Assert.That(entries.Count, Is.EqualTo(5));
         Assert.That(messages.Any(x => x.Id == "DriveDeltaResync" && x.Level == LogMessageType.Warning), Is.True);
         var state = provider.ExportChangeTrackingState();
-        Assert.That(DriveFolderMap.Deserialize(state[DriveKey])!.Token, Is.EqualTo("tok3"));
-        Assert.That(DriveFolderMap.Deserialize(state[DriveKey])!.Contains("Stale"), Is.False, "The map is rebuilt");
+        Assert.That(FolderMap.Deserialize(state[DriveKey])!.Token, Is.EqualTo("tok3"));
+        Assert.That(FolderMap.Deserialize(state[DriveKey])!.Contains("Stale"), Is.False, "The map is rebuilt");
         Assert.That(provider.WasPathEnumerated(F(DrivePath, "Stale", "X")), Is.True, "After the full walk everything was examined");
     }
 
@@ -714,7 +715,7 @@ public class Office365DeltaTests
 
         Assert.That(entries.Count, Is.EqualTo(5));
         Assert.That(messages.Any(x => x.Id == "DriveDeltaTooLarge" && x.Level == LogMessageType.Information), Is.True);
-        Assert.That(DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok3"));
+        Assert.That(FolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok3"));
     }
 
     [Test]
@@ -739,7 +740,7 @@ public class Office365DeltaTests
         Assert.That(handler.CountRequests("/items/F9"), Is.EqualTo(1), "The folder was looked up once");
         Assert.That(messages.Any(x => x.Id == "DriveDeltaArrangeFailed" && x.Level == LogMessageType.Warning), Is.True);
         Assert.That(provider.WasPathEnumerated(F(DrivePath, "F1", "B")), Is.True, "After the full walk everything was examined");
-        Assert.That(DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok3"), "The token taken before the full walk is stored");
+        Assert.That(FolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok3"), "The token taken before the full walk is stored");
     }
 
     [Test]
@@ -770,7 +771,7 @@ public class Office365DeltaTests
 
         var state = provider.ExportChangeTrackingState();
         Assert.That(state.Keys, Is.EqualTo(new[] { DriveKey }), "The token describes the drive, not the path");
-        Assert.That(DriveFolderMap.Deserialize(state[DriveKey])!.Token, Is.EqualTo("tok1"));
+        Assert.That(FolderMap.Deserialize(state[DriveKey])!.Token, Is.EqualTo("tok1"));
     }
 
     [Test]
@@ -800,10 +801,10 @@ public class Office365DeltaTests
         });
 
         var entries = await CollectAsync(new DriveSourceEntry(provider, SitePath, Drive), true);
-        Assert.That(DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok2"));
+        Assert.That(FolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok2"));
 
         Assert.ThrowsAsync<HttpRequestException>(async () => await entries[0].OpenRead(CancellationToken.None));
-        Assert.That(DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok1"), "A failed download holds the drive at the previous link");
+        Assert.That(FolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok1"), "A failed download holds the drive at the previous link");
     }
 
     [Test]
@@ -895,7 +896,7 @@ public class Office365DeltaTests
         var provider = CreateProvider(handler, new Dictionary<string, string> { [DriveKey] = storedMap });
 
         var entries = await CollectAsync(new DriveSourceEntry(provider, SitePath, Drive), true);
-        Assert.That(DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok3"));
+        Assert.That(FolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok3"));
 
         var file = entries.Single(x => x.Path == F(DrivePath, "A"));
         Assert.ThrowsAsync<HttpRequestException>(async () => await file.OpenRead(CancellationToken.None));
@@ -935,7 +936,7 @@ public class Office365DeltaTests
 
         var top = await CollectAsync(new DriveSourceEntry(provider, SitePath, Drive), false);
         Assert.That(top.Select(x => x.Path), Is.EqualTo(new[] { D(DrivePath, "F2") }), "The moved folder is listed at its new path");
-        Assert.That(DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok2"));
+        Assert.That(FolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok2"));
 
         Assert.ThrowsAsync<HttpRequestException>(async () => await CollectAsync(top[0], false));
         Assert.That(provider.ExportChangeTrackingState()[DriveKey], Is.EqualTo(storedMap), "The previous link and map are kept so the move is reported again");
@@ -958,7 +959,7 @@ public class Office365DeltaTests
         Assert.That(provider.WasPathEnumerated(D(DrivePath, "F1")), Is.True);
         Assert.That(provider.WasPathEnumerated(F(DrivePath, "F1", "F2", "C")), Is.True, "Everything below a removed folder is dropped, whether or not the map knew the folder");
         Assert.That(provider.WasPathEnumerated(F(DrivePath, "G1", "X")), Is.False);
-        Assert.That(DriveFolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok2"));
+        Assert.That(FolderMap.Deserialize(provider.ExportChangeTrackingState()[DriveKey])!.Token, Is.EqualTo("tok2"));
     }
 
     [Test]
