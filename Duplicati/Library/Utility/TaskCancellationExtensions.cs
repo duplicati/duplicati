@@ -47,6 +47,30 @@ public static class TaskCancellationExtensions
         => UntilCancelledAsync(task, token, static _ => { });
 
     /// <summary>
+    /// Awaits a call that returns no result, but stops waiting when the token is cancelled.
+    /// A call that observes the token ends by itself; one that does not - a stuck folder
+    /// listing, a stuck file open or read - would otherwise hold up the caller until the call
+    /// gives up. The call is left to end on its own, and whatever it ends with is observed so
+    /// it does not surface as an unobserved exception.
+    /// </summary>
+    /// <param name="task">The call to wait for</param>
+    /// <param name="token">The token that stops the wait</param>
+    /// <returns>A task that completes when the call completes</returns>
+    public static async Task UntilCancelledAsync(this Task task, CancellationToken token)
+    {
+        try
+        {
+            await task.WaitAsync(token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+            _ = task.ContinueWith(static t => _ = t.Exception, CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Awaits a call, but stops waiting when the token is cancelled. A call that observes the
     /// token ends by itself; one that does not - a stuck file open or read, a transfer stuck in
     /// a socket write - would otherwise hold up the caller until the call gives up. The call is
