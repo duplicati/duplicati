@@ -245,7 +245,7 @@ namespace Duplicati.Library.Common.IO
                 foreach (var x in n)
                     dict["unix-ext:" + x.Key] = Convert.ToBase64String(x.Value);
 
-            var fse = PosixFile.GetUserGroupAndPermissions(f);
+            var fse = PosixFile.GetUserGroupAndPermissions(f, followSymlink);
             dict["unix:uid-gid-perm"] = string.Format("{0}-{1}-{2}", fse.UID, fse.GID, fse.Permissions);
             if (fse.OwnerName != null)
             {
