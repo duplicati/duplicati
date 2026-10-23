@@ -72,6 +72,10 @@ public class BackupPost : IEndpointV1
             => ExecuteVerify(GetBackup(connection, id), queueRunnerService))
             .RequireAuthorization();
 
+        group.MapPost("/backup/{id}/restore-test", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
+            => ExecuteRestoreTest(GetBackup(connection, id), queueRunnerService))
+            .RequireAuthorization();
+
         group.MapPost("/backup/{id}/compact", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
             => ExecuteCompact(GetBackup(connection, id), queueRunnerService))
             .RequireAuthorization();
@@ -166,6 +170,9 @@ public class BackupPost : IEndpointV1
 
     private static Dto.TaskStartedDto ExecuteVerify(IBackup backup, IQueueRunnerService queueRunnerService)
         => new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.Verify, backup)));
+
+    private static Dto.TaskStartedDto ExecuteRestoreTest(IBackup backup, IQueueRunnerService queueRunnerService)
+        => new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.RestoreTest, backup)));
 
     private static Dto.TaskStartedDto ExecuteCompact(IBackup backup, IQueueRunnerService queueRunnerService)
         => new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.Compact, backup)));

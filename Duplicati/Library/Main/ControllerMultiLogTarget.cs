@@ -52,6 +52,16 @@ namespace Duplicati.Library.Main
         private readonly HashSet<string>? m_supressWarningFilter;
 
         /// <summary>
+        /// The result the messages are collected in, which a nested result replaces
+        /// </summary>
+        private readonly ILogDestination m_primaryTarget;
+
+        /// <summary>
+        /// The nested result that collects the messages in place of <see cref="m_primaryTarget"/>, or null
+        /// </summary>
+        private ILogDestination? m_nestedResult;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="T:Duplicati.Library.Main.ControllerMultiLogTarget"/> class.
         /// </summary>
         /// <param name="target">The log target.</param>
@@ -60,7 +70,34 @@ namespace Duplicati.Library.Main
         public ControllerMultiLogTarget(ILogDestination target, Logging.LogMessageType loglevel, Library.Utility.IFilter? filter, HashSet<string>? supressWarningFilter)
         {
             m_supressWarningFilter = supressWarningFilter;
+            m_primaryTarget = target;
             AddTarget(target, loglevel, filter);
+        }
+
+        /// <summary>
+        /// Collects the messages in a result nested in the one this target collects for, until the returned
+        /// instance is disposed. The messages still reach the other destinations and the outer log scopes, such
+        /// as the server log, but not the outer result, so an operation that runs inside another is reported on
+        /// its own.
+        /// </summary>
+        /// <param name="nestedResult">The nested result to collect the messages in</param>
+        /// <returns>The instance that restores the outer result when disposed</returns>
+        public IDisposable CollectInNestedResult(ILogDestination nestedResult)
+        {
+            if (m_nestedResult != null)
+                throw new InvalidOperationException("Messages are already collected in a nested result");
+
+            m_nestedResult = nestedResult;
+            return new NestedResultScope(this);
+        }
+
+        /// <summary>
+        /// Restores the outer result when disposed
+        /// </summary>
+        /// <param name="Parent">The target to restore</param>
+        private sealed record NestedResultScope(ControllerMultiLogTarget Parent) : IDisposable
+        {
+            public void Dispose() => Parent.m_nestedResult = null;
         }
 
         /// <summary>
@@ -126,8 +163,12 @@ namespace Duplicati.Library.Main
                         continue;
                 }
 
-                // If we get here, write the message
-                e.Target.WriteMessage(entry);
+                // If we get here, write the message, to the nested result in place of the outer one
+                var nestedResult = m_nestedResult;
+                if (nestedResult != null && ReferenceEquals(e.Target, m_primaryTarget))
+                    nestedResult.WriteMessage(entry);
+                else
+                    e.Target.WriteMessage(entry);
             }
         }
     }

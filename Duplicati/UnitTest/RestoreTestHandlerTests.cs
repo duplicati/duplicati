@@ -553,7 +553,7 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RestoreTest")]
-        public async Task FailingRestoreTestAfterBackupMakesTheBackupAnErrorAsync()
+        public async Task FailingRestoreTestAfterBackupDoesNotChangeTheBackupResultAsync()
         {
             CreateSourceFiles(6);
             await RunBackupAsync();
@@ -566,13 +566,21 @@ namespace Duplicati.UnitTest
             var options = RestoreTestOptions("Full");
             options["perform-restore-test-after"] = "1h";
 
-            using var c = new Controller("file://" + TARGETFOLDER, options, null);
-            var backup = await c.BackupAsync([DATAFOLDER]);
+            // An outer scope stands in for the server log, which must still see the restore test
+            var outer = new CapturingLogDestination();
+            IBackupResults backup;
+            using (Library.Logging.Log.StartScope(outer, null))
+            using (var c = new Controller("file://" + TARGETFOLDER, options, null))
+                backup = await c.BackupAsync([DATAFOLDER]);
 
             Assert.IsNotNull(backup.RestoreTestResults);
             Assert.IsTrue(backup.RestoreTestResults!.FilesFailed > 0, "The damaged volume should fail the restore test");
+            Assert.IsTrue(outer.Entries.Any(x => x.Level == Library.Logging.LogMessageType.Error), "The errors of the restore test should reach the outer log scopes");
             Assert.AreEqual(ParsedResultType.Error, backup.RestoreTestResults.ParsedResult);
-            Assert.AreEqual(ParsedResultType.Error, backup.ParsedResult, "A failed restore test should make the backup an error");
+            Assert.IsTrue(backup.RestoreTestResults.Errors.Any(), "The restore test should keep the errors it logged");
+            Assert.AreEqual(ParsedResultType.Success, backup.ParsedResult, string.Join(Environment.NewLine, backup.Errors.Concat(backup.Warnings)));
+            Assert.IsFalse(backup.Errors.Any(), "The errors of the restore test should not be errors on the backup");
+            Assert.IsFalse(backup.Messages.Any(x => x.Contains("FileVerificationFailed")), "The restore test messages are collected in its own result, so they are not in the backup log");
         }
 
         [Test]
@@ -592,6 +600,19 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(expected > 0);
             Assert.AreEqual(expected, results.FilesTested);
             Assert.AreEqual(expected, results.FilesPassed);
+        }
+
+        /// <summary>
+        /// Records the messages that reach a log scope
+        /// </summary>
+        private sealed class CapturingLogDestination : Library.Logging.ILogDestination
+        {
+            public List<Library.Logging.LogEntry> Entries { get; } = [];
+            public void WriteMessage(Library.Logging.LogEntry entry)
+            {
+                lock (Entries)
+                    Entries.Add(entry);
+            }
         }
     }
 }

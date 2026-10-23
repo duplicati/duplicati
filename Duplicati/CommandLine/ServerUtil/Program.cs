@@ -49,6 +49,7 @@ public static class Program
                 DeleteBackup.Create(),
                 ListBackups.Create(),
                 RunBackup.Create(),
+                RestoreTest.Create(),
                 Login.Create(),
                 ChangePassword.Create(),
                 Logout.Create(),

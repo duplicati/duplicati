@@ -126,6 +126,10 @@ namespace Duplicati.Server.Database
             public const string REMOTE_CONTROL_STORAGE_API_KEY = "remote-control-storage-api-key";
             [GuardedInput]
             public const string REMOTE_CONTROL_STORAGE_ENDPOINT_URL = "remote-control-storage-endpoint-url";
+            [GuardedInput]
+            public const string REMOTE_CONTROL_RESTORE_TEST_INTERVALS = "remote-control-restore-test-intervals";
+            [GuardedInput]
+            public const string REMOTE_CONTROL_REPORT_OPERATIONS = "remote-control-report-operations";
             [GuardedInput, GuardedOutput, BooleanOutput]
             public const string CLIENT_LICENSE_KEY = "client-license-key";
             /// <summary>
@@ -938,6 +942,27 @@ namespace Duplicati.Server.Database
         {
             get => settings[CONST.REMOTE_CONTROL_STORAGE_ENDPOINT_URL];
             set => SetAndSaveSetting(CONST.REMOTE_CONTROL_STORAGE_ENDPOINT_URL, value);
+        }
+
+        /// <summary>
+        /// The intervals between restore tests requested by the remote controller, as a JSON object that maps the
+        /// reported backup id to a timespan string, with the default for the backups it does not name under the
+        /// empty id. Applied as the default for <c>perform-restore-test-after</c>, unless the user has set that option.
+        /// </summary>
+        public string? RemoteControlRestoreTestIntervals
+        {
+            get => settings[CONST.REMOTE_CONTROL_RESTORE_TEST_INTERVALS];
+            set => SetAndSaveSetting(CONST.REMOTE_CONTROL_RESTORE_TEST_INTERVALS, value);
+        }
+
+        /// <summary>
+        /// The operations the remote controller accepts reports for, as a comma separated list of
+        /// <c>OperationMode</c> names. Only backup reports are sent when the controller has not said.
+        /// </summary>
+        public string? RemoteControlReportOperations
+        {
+            get => settings[CONST.REMOTE_CONTROL_REPORT_OPERATIONS];
+            set => SetAndSaveSetting(CONST.REMOTE_CONTROL_REPORT_OPERATIONS, value);
         }
 
         public string? ClientLicenseKey
