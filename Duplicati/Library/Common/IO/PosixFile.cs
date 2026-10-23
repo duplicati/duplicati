@@ -385,9 +385,11 @@ namespace Duplicati.Library.Common.IO
         /// </summary>
         /// <returns>The basic user/group/perm tuplet for a file or folder</returns>
         /// <param name="path">The full path to look up</param>
-        public static FileInfo GetUserGroupAndPermissions(string path)
+        /// <param name="followSymlink">If <c>true</c>, a symbolic link is looked up as the entry it points to</param>
+        public static FileInfo GetUserGroupAndPermissions(string path, bool followSymlink = false)
         {
-            return new FileInfo(Mono.Unix.UnixFileInfo.GetFileSystemEntry(path));
+            // UnixFileInfo uses stat, which follows a link; GetFileSystemEntry uses lstat
+            return new FileInfo(followSymlink ? new Mono.Unix.UnixFileInfo(path) : Mono.Unix.UnixFileInfo.GetFileSystemEntry(path));
         }
 
         /// <summary>
