@@ -1073,7 +1073,7 @@ namespace Duplicati.Server
                 {
                     if (!WindowsEventLogSource.SourceExists(source))
                     {
-                        Log.WriteInformationMessage(LOGTAG, "WindowsLogMissingCreating", null, Strings.Program.WindowsEventLogSourceNotFound(source));
+                        Log.WriteInformationMessage(LOGTAG, "WindowsLogMissingCreating", Strings.Program.WindowsEventLogSourceNotFound(source));
                         try
                         {
                             WindowsEventLogSource.CreateEventSource(source);
@@ -1215,7 +1215,7 @@ namespace Duplicati.Server
                 }
                 catch
                 {
-                    Log.WriteInformationMessage(LOGTAG, "SecretProviderFailedToGetEncryptionKey", null, Strings.Program.SecretProviderFailedToGetEncryptionKey);
+                    Log.WriteInformationMessage(LOGTAG, "SecretProviderFailedToGetEncryptionKey", Strings.Program.SecretProviderFailedToGetEncryptionKey);
                     if (!silentConsole)
                         Console.WriteLine(Strings.Program.SecretProviderFailedToGetEncryptionKey);
                 }

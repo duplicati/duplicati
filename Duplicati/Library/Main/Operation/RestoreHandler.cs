@@ -1015,7 +1015,7 @@ namespace Duplicati.Library.Main.Operation
                 else if (m_result.UnmodifiedFiles == 0)
                     Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesRestored", null, "Restore completed without errors but no files were restored");
                 else
-                    Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", null, "Restore completed but all files were already present");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", "Restore completed but all files were already present");
             }
 
             // Harvest restored file hashes for --restore-all-files=unique before the temp
@@ -1135,7 +1135,7 @@ namespace Duplicati.Library.Main.Operation
                 else if (m_result.UnmodifiedFiles == 0)
                     Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesRestored", null, "Restore completed without errors but no files were restored");
                 else
-                    Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", null, "Restore completed but all files were already present");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", "Restore completed but all files were already present");
             }
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Finalize);
