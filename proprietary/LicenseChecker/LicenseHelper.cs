@@ -88,8 +88,17 @@ public static class LicenseHelper
         if (string.IsNullOrWhiteSpace(key))
             return null;
 
-        using var ct = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        return LicenseChecker.ObtainLicenseAsync(key, ct.Token).Await();
+        try
+        {
+            using var ct = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            return LicenseChecker.ObtainLicenseAsync(key, ct.Token).Await();
+        }
+        catch (Exception ex)
+        {
+            // A defective license must not break the application; treat it as unlicensed
+            Library.Logging.Log.WriteWarningMessage(LOGTAG, "InvalidLicense", ex, "The configured license could not be validated and is ignored: {0}", (ex.InnerException ?? ex).Message);
+            return null;
+        }
     }
 
     /// <summary>
