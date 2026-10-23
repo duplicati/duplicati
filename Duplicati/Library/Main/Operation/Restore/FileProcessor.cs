@@ -1077,8 +1077,11 @@ namespace Duplicati.Library.Main.Operation.Restore
             List<BlockRequest> missing_blocks = [];
             List<BlockRequest> verified_blocks = [];
 
-            // Check if the file exists
-            if (await restoreDestination.FileExists(file.TargetPath, cancellationToken).ConfigureAwait(false))
+            // Check if the file exists. A symbolic link has no content to compare: it is
+            // made from its metadata. What is at its path may be a link as well, and reading
+            // it would read what that points to, which need not exist.
+            if (file.BlocksetID != LocalDatabase.SYMLINK_BLOCKSET_ID
+                && await restoreDestination.FileExists(file.TargetPath, cancellationToken).ConfigureAwait(false))
             {
                 filehasher.Initialize();
                 try
