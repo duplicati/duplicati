@@ -33,6 +33,7 @@ using Duplicati.Library.Interface;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.SourceProvider;
 using Duplicati.Library.Snapshots.USN;
+using Duplicati.Library.Utility;
 using System.Collections.ObjectModel;
 
 namespace Duplicati.Library.Main.Operation.Backup
@@ -290,28 +291,38 @@ namespace Duplicati.Library.Main.Operation.Backup
                 if (token.IsCancellationRequested)
                     return;
 
-                var source = EnumerateAsync(sourceProvider, journalService, fileAttributeFilter, emitfilter, symlinkPolicy, hardlinkPolicy, disableBackupExclusionXattr, excludeemptyfolders, keepEmptyFolder, ignorenames, blacklistPaths, changedfilelist, token);
-
-                await foreach (var s in source.WithCancellation(token).ConfigureAwait(false))
+                // Listing a folder and reading the attributes of an entry are synchronous calls that
+                // do not look at a cancellation token. One that is stuck, as on a network share that
+                // stopped answering, would hold up the backup, so the listing runs on its own and is
+                // no longer waited for once the operation is aborted, or the listing is no longer
+                // wanted. It only writes to the output channel, which is retired by then, so a
+                // listing that ends later stops there.
+                using var stopWaiting = CancellationTokenSource.CreateLinkedTokenSource(token, taskreader.ProgressToken);
+                await Task.Run(async () =>
                 {
-#if DEBUG
-                    // For testing purposes, we need exact control
-                    // when requesting a process stop.
-                    // The "onStopRequested" callback is used to detect
-                    // if the process is the real file enumeration process
-                    // because the counter processe does not have a callback
-                    if (onStopRequested != null)
-                        taskreader.TestMethodCallback?.Invoke(s.Path);
-#endif
-                    // Stop if requested
-                    if (token.IsCancellationRequested || !await taskreader.ProgressRendevouzAsync().ConfigureAwait(false))
-                    {
-                        onStopRequested?.Invoke();
-                        return;
-                    }
+                    var source = EnumerateAsync(sourceProvider, journalService, fileAttributeFilter, emitfilter, symlinkPolicy, hardlinkPolicy, disableBackupExclusionXattr, excludeemptyfolders, keepEmptyFolder, ignorenames, blacklistPaths, changedfilelist, token);
 
-                    await self.Output.WriteAsync(s);
-                }
+                    await foreach (var s in source.WithCancellation(token).ConfigureAwait(false))
+                    {
+#if DEBUG
+                        // For testing purposes, we need exact control
+                        // when requesting a process stop.
+                        // The "onStopRequested" callback is used to detect
+                        // if the process is the real file enumeration process
+                        // because the counter processe does not have a callback
+                        if (onStopRequested != null)
+                            taskreader.TestMethodCallback?.Invoke(s.Path);
+#endif
+                        // Stop if requested
+                        if (token.IsCancellationRequested || !await taskreader.ProgressRendevouzAsync().ConfigureAwait(false))
+                        {
+                            onStopRequested?.Invoke();
+                            return;
+                        }
+
+                        await self.Output.WriteAsync(s);
+                    }
+                }).UntilCancelledAsync(stopWaiting.Token).ConfigureAwait(false);
             });
         }
 
