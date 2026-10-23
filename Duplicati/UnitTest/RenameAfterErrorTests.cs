@@ -275,4 +275,98 @@ public class RenameAfterErrorTests : BasicSetupHelper
             async c => TestUtils.AssertResults(await c.RepairAsync()),
             ["a.txt b.txt", "a.txt b.txt c.txt"]);
     }
+
+    /// <summary>
+    /// A backup whose dlist upload fails, and fails again under the next second, leaves its
+    /// fileset with a dlist one second after the fileset time. The next backup uploads a
+    /// synthetic dlist for it under the fileset time, so a retry of that upload one second
+    /// later is the name of the interrupted backup's dlist.
+    /// </summary>
+    [Test]
+    [Category("Targeted")]
+    public async Task SyntheticFilelistRetryDoesNotTakeTheNameOfTheInterruptedDlistAsync()
+    {
+        File.WriteAllText(Path.Combine(DATAFOLDER, "a.txt"), "a");
+        Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+        var target = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
+        var options = new Dictionary<string, string>(Options)
+        {
+            ["number-of-retries"] = "1",
+            ["retry-delay"] = "0s",
+            ["no-auto-compact"] = "true",
+        };
+
+        var interruptedPuts = new List<string>();
+        DeterministicErrorBackend.ErrorGenerator = (action, remotename) =>
+        {
+            if (action != DeterministicErrorBackend.BackendAction.PutBefore || !remotename.Contains(".dlist.", StringComparison.Ordinal))
+                return false;
+            interruptedPuts.Add(remotename);
+            return true;
+        };
+        try
+        {
+            using var c = new Library.Main.Controller(target, options, null);
+            Assert.ThrowsAsync<DeterministicErrorBackend.DeterministicErrorBackendException>(async () => await c.BackupAsync([DATAFOLDER]));
+        }
+        finally
+        {
+            DeterministicErrorBackend.ErrorGenerator = null;
+        }
+        var report = $"interrupted backup:{Environment.NewLine}{await DumpAsync()}";
+        Assert.That(interruptedPuts, Has.Count.EqualTo(2), report);
+        var interruptedName = interruptedPuts[1];
+        Thread.Sleep(3100);
+
+        // Fail the first upload of the synthetic dlist once
+        var puts = new List<string>();
+        var failed = false;
+        DeterministicErrorBackend.ErrorGenerator = (action, remotename) =>
+        {
+            if (action != DeterministicErrorBackend.BackendAction.PutBefore || !remotename.Contains(".dlist.", StringComparison.Ordinal))
+                return false;
+            puts.Add(remotename);
+            return !failed && (failed = true);
+        };
+        Exception? backupError = null;
+        try
+        {
+            using var c = new Library.Main.Controller(target, new Dictionary<string, string>(options) { ["number-of-retries"] = "2" }, null);
+            TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
+        }
+        catch (Exception ex)
+        {
+            backupError = ex;
+        }
+        finally
+        {
+            DeterministicErrorBackend.ErrorGenerator = null;
+        }
+        report += $"{Environment.NewLine}uploads: {string.Join(", ", puts)}{Environment.NewLine}error: {backupError?.GetType().Name}: {backupError?.Message}{Environment.NewLine}{await DumpAsync()}";
+
+        // The test only reaches the clash if the retry one second after the synthetic dlist's
+        // first name would be the interrupted backup's dlist name
+        Assert.That(puts, Has.Count.GreaterThanOrEqualTo(2), report);
+        Assert.That(WithTime(puts[0], Library.Main.Volumes.VolumeBase.ParseFilename(puts[0]).Time.AddSeconds(1)), Is.EqualTo(interruptedName), report);
+
+        // Without the check, the rename of the volume after the failed upload hits the
+        // interrupted backup's entry, and the backup fails its verification of the destination
+        Assert.That(backupError, Is.Null, report);
+
+        // A rename after a failed upload leaves a placeholder for the failed name, which the
+        // next verification of the destination removes
+        using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, Options, null))
+            TestUtils.AssertResults(await c.RepairAsync());
+        var after = await GetFilesetsAsync();
+        report += $"{Environment.NewLine}versions after: {Describe(after)}";
+        // The synthetic version and the new backup
+        Assert.That(after, Has.Length.EqualTo(2), report);
+
+        File.Delete(DBFILE);
+        using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, Options, null))
+            TestUtils.AssertResults(await c.RepairAsync());
+        var recreated = await GetFilesetsAsync();
+        report += $"{Environment.NewLine}versions recreated: {Describe(recreated)}";
+        Assert.That(recreated.Select(x => x.IsFull), Is.EqualTo(after.Select(x => x.IsFull)), report);
+    }
 }
