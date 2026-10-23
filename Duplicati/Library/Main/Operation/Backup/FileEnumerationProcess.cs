@@ -760,7 +760,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// Extended attribute prefix for files that should be excluded from backup.
         /// The "unix-ext:" prefix is added when reading the xattrs via the ISourceProviderEntry interface.
         /// </summary>
-        private static readonly ReadOnlySet<string> ExcludedBackupAttributes = new HashSet<string>(StringComparer.Ordinal)
+        internal static readonly ReadOnlySet<string> ExcludedBackupAttributes = new HashSet<string>(StringComparer.Ordinal)
         {
             // macOS common backup exclusion attributes
             "unix-ext:com.apple.metadata:com_apple_backup_excludeItem",

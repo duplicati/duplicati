@@ -1630,11 +1630,39 @@ namespace Duplicati.Library.Main
 
             //Sanity check for multiple inclusions of the same folder
             for (int i = 0; i < sources.Count; i++)
+            {
+                // A link on the way that the walk stores as a link, if one was met
+                string storedLink = null;
+
                 for (int j = 0; j < sources.Count; j++)
                     if (i != j
                         && sources[i].StartsWith(sources[j], Library.Utility.Utility.ClientFilenameStringComparison)
                         && sources[j].EndsWith(Util.DirectorySeparatorString, Library.Utility.Utility.ClientFilenameStringComparison))
                     {
+                        var reach = WalkTowards(sources[i], sources[j], filter, options, out var link);
+
+                        // An include filter cannot bring it back when the walk of the
+                        // containing source stops on the way to it, because the filter is
+                        // never reached. Keeping it as a source is what works, because a
+                        // source is walked from its own root, and the containing source still
+                        // stops where it is told to. Carry on looking: another source may
+                        // still be able to reach it, and keeping one that is reachable would
+                        // walk the same tree twice.
+                        if (reach == NestedSourceReach.CutOff)
+                        {
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "KeepingSubfolderSource", "Keeping source \"{0}\" although it is inside \"{1}\", because the walk of the latter does not reach it", sources[i], sources[j]);
+                            continue;
+                        }
+
+                        // A link that is stored as a link cannot be kept as a source as well:
+                        // the backup would then hold the link and the folder behind it under
+                        // the same path. Carry on looking, as another source may reach it.
+                        if (reach == NestedSourceReach.StoredAsLink)
+                        {
+                            storedLink ??= link;
+                            continue;
+                        }
+
                         if (filter != null)
                         {
                             bool excludes;
@@ -1644,19 +1672,6 @@ namespace Duplicati.Library.Main
                             // If there are no excludes, there is no need to keep the folder as a filter
                             if (excludes)
                             {
-                                // An include filter cannot bring it back when a folder on the way
-                                // to it is excluded: the walk of the containing source stops at
-                                // that folder, so the filter is never reached. Keeping it as a
-                                // source is what works, because a source is walked from its own
-                                // root, and the containing source still stops where it is told to.
-                                // Carry on looking: another source may still be able to reach it,
-                                // and keeping one that is reachable would walk the same tree twice.
-                                if (IsCutOffByFilter(sources[i], sources[j], filter))
-                                {
-                                    Logging.Log.WriteVerboseMessage(LOGTAG, "KeepingSubfolderSource", "Keeping source \"{0}\" although it is inside \"{1}\", because a folder between them is excluded", sources[i], sources[j]);
-                                    continue;
-                                }
-
                                 Logging.Log.WriteVerboseMessage(LOGTAG, "RemovingSubfolderSource", "Removing source \"{0}\" because it is a folder or file inside \"{1}\", and using it as an include filter", sources[i], sources[j]);
                                 filter = JoinedFilterExpression.Join(new FilterExpression(sources[i]), filter);
                             }
@@ -1668,8 +1683,20 @@ namespace Duplicati.Library.Main
 
                         sources.RemoveAt(i);
                         i--;
+                        storedLink = null;
                         break;
                     }
+
+                // No source reaches it, and one of them stores a link on the way as a link.
+                // Keeping it would put the link and the folder behind it under the same path,
+                // so it is left out, but not quietly.
+                if (storedLink != null)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "NestedSourceBehindStoredSymlink", null, "The source \"{0}\" is not backed up: it is reached through the symbolic link \"{1}\", which is inside another source and is stored as a link. Set --symlink-policy=follow to back up what the link points to.", sources[i], storedLink);
+                    sources.RemoveAt(i);
+                    i--;
+                }
+            }
 
             // If there is nothing to do, don't run the backup
             if (sources.Count == 0)
@@ -1679,28 +1706,44 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
-        /// Reports whether the walk of <paramref name="container"/> stops before it reaches
-        /// <paramref name="source"/>, because a folder on the way is excluded by the filter.
-        /// A folder that the filter excludes is never descended into, so nothing below it is
-        /// reached, no matter what the filter says about the things below it.
+        /// How the walk of a source treats another source inside it
         /// </summary>
-        /// <returns><c>true</c> if a folder between the two is excluded.</returns>
+        internal enum NestedSourceReach
+        {
+            /// <summary>The walk reaches the inner source</summary>
+            Reached,
+            /// <summary>The walk stops before it reaches the inner source, or leaves the inner source out</summary>
+            CutOff,
+            /// <summary>The walk stores a link on the way, or the inner source itself, as a link and does not follow it</summary>
+            StoredAsLink
+        }
+
+        /// <summary>
+        /// Follows the walk of <paramref name="container"/> towards <paramref name="source"/>,
+        /// and reports whether it gets there. The walk does not descend into a folder that the
+        /// filter excludes, that holds an ignore marker, whose attributes are excluded, that is
+        /// marked as excluded from backups by an extended attribute, or that is a symbolic link
+        /// it does not follow. Nothing below such a folder is reached, no matter what the filter
+        /// says about the things below it.
+        /// </summary>
+        /// <returns>How the walk treats the source.</returns>
         /// <param name="source">The source that sits inside the other one.</param>
         /// <param name="container">The source that contains it, ending with a separator.</param>
         /// <param name="filter">The filter to ask.</param>
-        internal static bool IsCutOffByFilter(string source, string container, IFilter filter)
+        /// <param name="options">The options that decide what the walk leaves out.</param>
+        /// <param name="link">The link that is stored as a link, if that is where the walk stops.</param>
+        internal static NestedSourceReach WalkTowards(string source, string container, IFilter filter, Options options, out string link)
         {
-            if (filter == null || filter.Empty)
-                return false;
+            link = null;
 
             // A mounted source is not a path on this machine, so there are no folders
             // between the two to ask about
             if (source.StartsWith("@", StringComparison.Ordinal) || container.StartsWith("@", StringComparison.Ordinal))
-                return false;
+                return NestedSourceReach.Reached;
 
             // Every folder between the two, asked for in the form the enumeration uses,
-            // which is with a trailing separator. The source itself is not one of them:
-            // it is the thing being looked for, not a step on the way.
+            // which is with a trailing separator. The container is not one of them: it is
+            // a root, and the walk never leaves out a root.
             var relative = source.Substring(container.Length);
             for (var at = relative.IndexOf(Util.DirectorySeparatorString, StringComparison.Ordinal);
                  at >= 0;
@@ -1710,13 +1753,100 @@ namespace Duplicati.Library.Main
                 if (folder.Length >= source.Length)
                     break;
 
-                // A path the filter does not mention is not excluded, it only falls to the
-                // default, so what matters is whether an entry matched and said to exclude it
-                if (filter.Matches(folder, out var include, out _) && !include)
-                    return true;
+                var reach = WalkPast(folder, filter, options);
+                if (reach != NestedSourceReach.Reached)
+                {
+                    if (reach == NestedSourceReach.StoredAsLink)
+                        link = folder;
+                    return reach;
+                }
             }
 
-            return false;
+            // The source itself as well. The filter is not asked about it, because the include
+            // filter that replaces it overrules an exclude, but everything else is, as the
+            // enumeration either checks it before the filter, or checks it even when the filter
+            // includes the path, so the include filter never gets a say.
+            var own = WalkPast(source, null, options);
+            if (own == NestedSourceReach.StoredAsLink)
+                link = source;
+            return own;
+        }
+
+        /// <summary>
+        /// Reports how the walk treats a path that is not a root. These are the checks the
+        /// enumeration makes, in the order it makes them, and like it, a path that cannot be
+        /// read is not left out.
+        /// </summary>
+        /// <returns>How the walk treats the path.</returns>
+        /// <param name="path">The path to check, ending with a separator if it is a folder.</param>
+        /// <param name="filter">The filter to ask, or <c>null</c> to not ask it.</param>
+        /// <param name="options">The options that decide what the walk leaves out.</param>
+        private static NestedSourceReach WalkPast(string path, IFilter filter, Options options)
+        {
+            var isFolder = path.EndsWith(Util.DirectorySeparatorString, StringComparison.Ordinal);
+
+            var ignorenames = options.IgnoreFilenames;
+            if (ignorenames != null && isFolder)
+            {
+                try
+                {
+                    if (ignorenames.Any(n => SystemIO.IO_OS.FileExists(Path.Combine(path, n))))
+                        return NestedSourceReach.CutOff;
+                }
+                catch
+                {
+                }
+            }
+
+            FileAttributes? attributes = null;
+            try
+            {
+                attributes = SystemIO.IO_OS.GetFileAttributes(path);
+            }
+            catch
+            {
+            }
+
+            var attributeFilter = options.FileAttributeFilter;
+            if ((attributeFilter & (attributes ?? (isFolder ? FileAttributes.Directory : FileAttributes.Normal))) != 0)
+                return NestedSourceReach.CutOff;
+
+            // A path the filter does not mention is not excluded, it only falls to the
+            // default, so what matters is whether an entry matched and said to exclude it
+            if (filter != null && !filter.Empty && filter.Matches(path, out var include, out _) && !include)
+                return NestedSourceReach.CutOff;
+
+            var isLink = false;
+            try
+            {
+                isLink = attributes != null && Snapshots.SnapshotUtility.IsSymlink(SystemIO.IO_OS, path, attributes.Value);
+            }
+            catch
+            {
+            }
+
+            if (!options.DisableBackupExclusionXattr)
+            {
+                try
+                {
+                    var metadata = SystemIO.IO_OS.GetMetadata(path, isLink, options.SymlinkPolicy == Options.SymlinkStrategy.Follow);
+                    if (metadata != null && metadata.Keys.Any(Operation.Backup.FileEnumerationProcess.ExcludedBackupAttributes.Contains))
+                        return NestedSourceReach.CutOff;
+                }
+                catch
+                {
+                }
+            }
+
+            if (isLink)
+            {
+                if (options.SymlinkPolicy == Options.SymlinkStrategy.Ignore)
+                    return NestedSourceReach.CutOff;
+                if (options.SymlinkPolicy == Options.SymlinkStrategy.Store)
+                    return NestedSourceReach.StoredAsLink;
+            }
+
+            return NestedSourceReach.Reached;
         }
 
         /// <inheritdoc />
