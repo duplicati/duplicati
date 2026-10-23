@@ -406,7 +406,17 @@ namespace Duplicati.Library.Main
         {
             this.BeginTime = DateTime.UtcNow;
             this.m_parent = p;
+            m_messages = new Library.Utility.FileBackedStringList();
+            m_warnings = new Library.Utility.FileBackedStringList();
+            m_errors = new Library.Utility.FileBackedStringList();
         }
+
+        /// <summary>
+        /// Whether messages written to this result are passed on to the parent result. A nested result is
+        /// normally a step of the parent operation and reports through it; a result that is reported on its
+        /// own, such as the restore test after a backup, keeps its messages, and the log target collects them in it in place of the parent.
+        /// </summary>
+        protected virtual bool ForwardsMessagesToParent => true;
 
         protected readonly IBackendStatstics m_backendStatistics;
         public IBackendStatstics BackendStatistics
@@ -445,7 +455,7 @@ namespace Duplicati.Library.Main
 
         public void WriteMessage(LogEntry entry)
         {
-            if (m_parent != null)
+            if (m_parent != null && ForwardsMessagesToParent)
                 m_parent.WriteMessage(entry);
             else
             {
@@ -497,6 +507,11 @@ namespace Duplicati.Library.Main
         public IRepairResults RepairResults { get; internal set; }
         public ITestResults TestResults { get; internal set; }
         public ISetLockResults LockResults { get; internal set; }
+        /// <summary>
+        /// The restore test that ran after the backup, if any. The restore test is reported on its own: the
+        /// log target collects its messages here in place of the backup, and its outcome does not change
+        /// the <see cref="ParsedResult"/> of the backup.
+        /// </summary>
         public IRestoreTestResults RestoreTestResults { get; internal set; }
         public IRemoteSynchronizationResults[] RemoteSynchronizationResults { get; internal set; } = [];
 
@@ -510,7 +525,6 @@ namespace Duplicati.Library.Main
                     (DeleteResults != null && DeleteResults.ParsedResult == ParsedResultType.Fatal) ||
                     (RepairResults != null && RepairResults.ParsedResult == ParsedResultType.Fatal) ||
                     (TestResults != null && TestResults.ParsedResult == ParsedResultType.Fatal) ||
-                    (RestoreTestResults != null && RestoreTestResults.ParsedResult == ParsedResultType.Fatal) ||
                     Fatal)
                 {
                     return ParsedResultType.Fatal;
@@ -521,7 +535,6 @@ namespace Duplicati.Library.Main
                     (DeleteResults != null && DeleteResults.ParsedResult == ParsedResultType.Error) ||
                     (RepairResults != null && RepairResults.ParsedResult == ParsedResultType.Error) ||
                     (TestResults != null && TestResults.ParsedResult == ParsedResultType.Error) ||
-                    (RestoreTestResults != null && RestoreTestResults.ParsedResult == ParsedResultType.Error) ||
                     (Errors != null && Errors.Any()) || FilesWithError > 0)
                 {
                     return ParsedResultType.Error;
@@ -532,7 +545,6 @@ namespace Duplicati.Library.Main
                          (DeleteResults != null && DeleteResults.ParsedResult == ParsedResultType.Warning) ||
                          (RepairResults != null && RepairResults.ParsedResult == ParsedResultType.Warning) ||
                          (TestResults != null && TestResults.ParsedResult == ParsedResultType.Warning) ||
-                         (RestoreTestResults != null && RestoreTestResults.ParsedResult == ParsedResultType.Warning) ||
                          (Warnings != null && Warnings.Any()) || PartialBackup)
                 {
                     return ParsedResultType.Warning;
@@ -1059,6 +1071,11 @@ namespace Duplicati.Library.Main
     {
         public RestoreTestResults() : base() { }
         public RestoreTestResults(BasicResults p) : base(p) { }
+
+        /// <summary>
+        /// A restore test after a backup is reported on its own, so its warnings and errors stay here
+        /// </summary>
+        protected override bool ForwardsMessagesToParent => false;
 
         public override OperationMode MainOperation { get { return OperationMode.RestoreTest; } }
 

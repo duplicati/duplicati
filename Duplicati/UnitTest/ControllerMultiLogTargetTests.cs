@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Duplicati.Library.Main;
@@ -55,6 +56,30 @@ namespace Duplicati.UnitTest
 
             Assert.That(dest1.Entries.Count, Is.EqualTo(1));
             Assert.That(dest2.Entries.Count, Is.EqualTo(0));
+        }
+
+        [Test]
+        [Category("ControllerMultiLogTarget")]
+        public void NestedResultCollectsInPlaceOfThePrimaryTarget()
+        {
+            var primary = new TestDestination();
+            var sink = new TestDestination();
+            var nested = new TestDestination();
+            using var logger = new ControllerMultiLogTarget(primary, LogMessageType.Information, null, null);
+            logger.AddTarget(sink, LogMessageType.Information, null);
+
+            LogEntry Entry(string id) => new LogEntry("msg", System.Array.Empty<object>(), LogMessageType.Information, "tag", id, null);
+
+            using (logger.CollectInNestedResult(nested))
+            {
+                logger.WriteMessage(Entry("inner"));
+                Assert.Throws<System.InvalidOperationException>(() => logger.CollectInNestedResult(new TestDestination()), "Only one nested result at a time");
+            }
+            logger.WriteMessage(Entry("outer"));
+
+            Assert.That(nested.Entries.Select(x => x.Id), Is.EqualTo(new[] { "inner" }), "The nested result gets the messages while active");
+            Assert.That(primary.Entries.Select(x => x.Id), Is.EqualTo(new[] { "outer" }), "The primary target is skipped while a nested result collects");
+            Assert.That(sink.Entries.Select(x => x.Id), Is.EqualTo(new[] { "inner", "outer" }), "The other destinations get every message");
         }
     }
 }

@@ -934,6 +934,53 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Characters in a <c>backup-id</c> or <c>machine-id</c> that are known to cause trouble downstream.
+        /// The ids are joined with underscores and commas by the console and split on semicolons in option
+        /// lists; they are quoted in reports, templates and command lines; they are used as path segments and
+        /// query values in the console's URLs; and they are placed in templates that give percent signs,
+        /// braces and brackets a meaning. Whitespace and control characters are checked separately.
+        /// </summary>
+        public static readonly IReadOnlySet<char> ProblematicIdentifierCharacters = new HashSet<char>
+        {
+            // Separators
+            '_', ',', ';', ':', '|',
+            // Quoting and wildcards
+            '\'', '"', '`', '*', '?',
+            // Addressing and URLs
+            '@', '/', '\\', '#', '%', '&', '+', '=',
+            // Template and markup delimiters
+            '<', '>', '{', '}', '[', ']', '^', '~', '$', '!'
+        };
+
+        /// <summary>
+        /// Whether a character in an identifier option is known to cause trouble
+        /// </summary>
+        public static bool IsProblematicIdentifierCharacter(char c)
+            => ProblematicIdentifierCharacters.Contains(c) || char.IsWhiteSpace(c) || char.IsControl(c);
+
+        /// <summary>
+        /// Finds the characters in an identifier option that are known to cause trouble
+        /// </summary>
+        /// <param name="value">The identifier value</param>
+        /// <returns>The distinct problematic characters, in the order they appear; empty if the value is fine</returns>
+        public static IReadOnlyList<char> GetProblematicIdentifierCharacters(string? value)
+            => string.IsNullOrEmpty(value)
+                ? []
+                : value.Where(IsProblematicIdentifierCharacter).Distinct().ToList();
+
+        /// <summary>
+        /// Describes a problematic character for a message, naming the ones that cannot be seen
+        /// </summary>
+        public static string DescribeIdentifierCharacter(char c)
+            => c switch
+            {
+                ' ' => "space",
+                '\t' => "tab",
+                _ when char.IsWhiteSpace(c) || char.IsControl(c) => $"U+{(int)c:X4}",
+                _ => $"'{c}'"
+            };
+
+        /// <summary>
         /// Checks that no interval of a retention policy is bigger than the timeframe it is in
         /// </summary>
         /// <param name="retentionPolicy">The parsed retention policy</param>

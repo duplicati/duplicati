@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Duplicati.Library.Main;
 using NUnit.Framework;
+using CollectionAssert = NUnit.Framework.Legacy.CollectionAssert;
 
 #nullable enable
 
@@ -32,6 +33,25 @@ namespace Duplicati.UnitTest
     [TestFixture]
     public class OptionsTests
     {
+        [Test]
+        [Category("Options")]
+        public void ProblematicIdentifierCharactersAreFound()
+        {
+            CollectionAssert.IsEmpty(Options.GetProblematicIdentifierCharacters(null));
+            CollectionAssert.IsEmpty(Options.GetProblematicIdentifierCharacters("DB-3"));
+            CollectionAssert.IsEmpty(Options.GetProblematicIdentifierCharacters("office-pc.example.com"));
+            CollectionAssert.AreEqual(new[] { '_' }, Options.GetProblematicIdentifierCharacters("my_backup"));
+            CollectionAssert.AreEqual(new[] { ',', '@', '*' }, Options.GetProblematicIdentifierCharacters("a,b@c,*"), "Each character is reported once, in order");
+            CollectionAssert.AreEquivalent(new[] { ';', '\'', '"' }, Options.GetProblematicIdentifierCharacters("x;'\""));
+            CollectionAssert.AreEquivalent(new[] { '/', '%', ' ', '\t' }, Options.GetProblematicIdentifierCharacters("my/id %20\tx"), "URL delimiters, whitespace and control characters are problematic");
+            Assert.That(Options.DescribeIdentifierCharacter(' '), Is.EqualTo("space"));
+            Assert.That(Options.DescribeIdentifierCharacter('\n'), Is.EqualTo("U+000A"));
+            Assert.That(Options.DescribeIdentifierCharacter('_'), Is.EqualTo("'_'"));
+            // Regex and JSON metacharacters are covered as well
+            CollectionAssert.AreEquivalent(new[] { ':', '{', '}', '\\', '/', '|', '^', '$', '+' }, Options.GetProblematicIdentifierCharacters(":{}\\/|^$+"));
+        }
+
+
         private static Options CreateOptions(IDictionary<string, string?>? values = null)
         {
             if (values is null)

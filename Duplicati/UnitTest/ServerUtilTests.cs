@@ -55,6 +55,8 @@ namespace Duplicati.UnitTest
             ["list-backups", "--detailed"],
             ["run", "1"],
             ["run", "my-backup", "--wait", "--skip-queue", "--poll-interval", "10", "--quiet"],
+            ["restore-test", "1"],
+            ["restore-test", "my-backup", "--quiet"],
             ["login"],
             ["change-password"],
             ["change-password", "new-secret"],
@@ -116,7 +118,7 @@ namespace Duplicati.UnitTest
             var rootCmd = ServerUtilProgram.CreateRootCommand();
             var expected = new[]
             {
-                "pause", "resume", "delete", "list-backups", "run", "login",
+                "pause", "resume", "delete", "list-backups", "run", "restore-test", "login",
                 "change-password", "logout", "import", "export", "health",
                 "issue-forever-token", "status"
             };
@@ -136,6 +138,7 @@ namespace Duplicati.UnitTest
             {
                 ["delete"],
                 ["run"],
+                ["restore-test"],
                 ["import"],
                 ["export"],
             };

@@ -35,7 +35,7 @@ namespace Duplicati.WebserverCore.Services;
 /// <param name="connection">The connection to the database</param>
 /// <param name="httpClientFactory">The HTTP client factory</param>
 /// <param name="jwtTokenProvider">The JWT token provider</param>
-public class RemoteControllerHandler(Connection connection, IHttpClientFactory httpClientFactory, IJWTTokenProvider jwtTokenProvider, IApplicationSettings applicationSettings) : IRemoteControllerHandler
+public class RemoteControllerHandler(Connection connection, IHttpClientFactory httpClientFactory, IJWTTokenProvider jwtTokenProvider, IApplicationSettings applicationSettings, IQueueRunnerService queueRunnerService) : IRemoteControllerHandler
 {
     /// <summary>
     /// The log tag for this class.
@@ -57,6 +57,8 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
         metadata["feature:reduced-reporting-source"] = connection.ApplicationSettings.ReducedReportingSetByConsole
             ? "console"
             : connection.ApplicationSettings.ReducedReporting ? "local" : "off";
+        // The console can queue restore tests with the restore test control command
+        metadata["feature:restore-test"] = "true";
         if (connection.Settings != null)
         {
             var lookup = connection.Settings
@@ -110,7 +112,14 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
         Log.WriteMessage(LogMessageType.Verbose, LOGTAG, "OnControl", "Received control message: {0}", message);
         try
         {
-            if (string.Equals(message.ControlRequestMessage.Command, ControlRequestMessage.UpdateSettingsCommand, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(message.ControlRequestMessage.Command, ControlRequestMessage.RestoreTestCommand, StringComparison.OrdinalIgnoreCase))
+            {
+                result = new Dictionary<string, string?>
+                {
+                    [ControlResponseMessage.QueuedBackupIdsKey] = string.Join(",", QueueRestoreTests(message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.BackupIdsKey)))
+                };
+            }
+            else if (string.Equals(message.ControlRequestMessage.Command, ControlRequestMessage.UpdateSettingsCommand, StringComparison.OrdinalIgnoreCase))
             {
                 result = new Dictionary<string, string?>
                 {
@@ -123,6 +132,8 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
                 connection.ApplicationSettings.RemoteControlStorageApiId = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.StorageApiIdKey);
                 connection.ApplicationSettings.RemoteControlStorageApiKey = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.StorageApiKeyKey);
                 connection.ApplicationSettings.RemoteControlStorageEndpointUrl = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.StorageEndpointUrlKey);
+                connection.ApplicationSettings.RemoteControlRestoreTestIntervals = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.RestoreTestIntervalsKey);
+                connection.ApplicationSettings.RemoteControlReportOperations = message.ControlRequestMessage.Parameters.GetValueOrDefault(ControlRequestMessage.ReportOperationsKey);
 
                 // Full-replace semantics like the other keys: a missing key means the console does not enforce confidential or protected information.
                 // The operator's own setting is never touched from here.
@@ -221,6 +232,20 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
         }
     }
 
+
+    /// <summary>
+    /// Queues a restore test for each of the backups the console names by their reported id
+    /// </summary>
+    /// <param name="backupIds">The comma separated backup ids, as reported in the backup reports</param>
+    /// <returns>The backup ids a restore test is queued or running for</returns>
+    private IReadOnlyList<string> QueueRestoreTests(string? backupIds)
+    {
+        if (connection.ApplicationSettings.DisableConsoleControl)
+            throw new InvalidOperationException("Remote control is disabled.");
+
+        return RestoreTestQueueing.QueueForReportedBackupIds(connection, queueRunnerService,
+            (backupIds ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+    }
 
     /// <inheritdoc/>
     public async Task OnMessageAsync(KeepRemoteConnection.CommandMessage commandMessage)

@@ -278,6 +278,8 @@ public class RemoteControllerService(Connection connection, IRemoteControllerHan
         connection.ApplicationSettings.RemoteControlConfig = string.Empty;
         connection.ApplicationSettings.AdditionalReportUrl = string.Empty;
         connection.ApplicationSettings.AdditionalActivityUrl = string.Empty;
+        connection.ApplicationSettings.RemoteControlRestoreTestIntervals = string.Empty;
+        connection.ApplicationSettings.RemoteControlReportOperations = string.Empty;
         connection.ApplicationSettings.RemoteControlDashboardUrl = string.Empty;
         connection.ApplicationSettings.RemoteControlStorageApiId = string.Empty;
         connection.ApplicationSettings.RemoteControlStorageApiKey = string.Empty;

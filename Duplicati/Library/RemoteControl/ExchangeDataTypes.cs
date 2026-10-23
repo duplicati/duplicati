@@ -92,6 +92,14 @@ public sealed record ControlRequestMessage(string Command, Dictionary<string, st
     /// </summary>
     public const string UpdateSettingsCommand = "updatesettings";
     /// <summary>
+    /// The command to queue a restore test for one or more backups
+    /// </summary>
+    public const string RestoreTestCommand = "restoretest";
+    /// <summary>
+    /// The key that contains the comma separated backup ids to run a restore test for, as reported in the backup reports
+    /// </summary>
+    public const string BackupIdsKey = "backupids";
+    /// <summary>
     /// The key that contains the reporting URL
     /// </summary>
     public const string ReportUrlKey = "reportingurl";
@@ -99,6 +107,18 @@ public sealed record ControlRequestMessage(string Command, Dictionary<string, st
     /// The key that contains the activity URL
     /// </summary>
     public const string ActivityUrlKey = "activityurl";
+    /// <summary>
+    /// The key that contains the intervals between restore tests, as a JSON object that maps the backup id, as
+    /// reported in the backup reports, to a timespan string. A zero interval means the backup gets no restore
+    /// test from the remote controller. The entry under the empty backup id applies to the backups the object
+    /// does not name; the server reads it in <c>Runner.GetRemoteControlRestoreTestInterval</c>.
+    /// </summary>
+    public const string RestoreTestIntervalsKey = "restoretestintervals";
+    /// <summary>
+    /// The key that contains the comma separated operations the console accepts reports for, as <c>OperationMode</c>
+    /// names. Absent on consoles that only take backup reports.
+    /// </summary>
+    public const string ReportOperationsKey = "reportoperations";
     /// <summary>
     /// The key that contains the client license key
     /// </summary>
@@ -149,6 +169,10 @@ public sealed record ControlResponseMessage(bool Success, Dictionary<string, str
     /// The key used for reporting the applied settings version
     /// </summary>
     public const string SettingsVersionKey = "settingsversion";
+    /// <summary>
+    /// The key used for reporting the comma separated backup ids a restore test was queued for
+    /// </summary>
+    public const string QueuedBackupIdsKey = "queuedbackupids";
 }
 
 /// <summary>
