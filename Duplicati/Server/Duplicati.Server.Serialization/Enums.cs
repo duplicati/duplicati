@@ -54,6 +54,7 @@ namespace Duplicati.Server.Serialization
         PurgeBrokenFiles,
         PurgeFiles,
         SetVersionLabel,
+        RestoreTest,
     }
 
     public enum SuggestedStatusIcon

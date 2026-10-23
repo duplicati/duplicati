@@ -459,6 +459,17 @@ public class Connection
     }
 
     /// <summary>
+    /// Queues a restore test for a backup
+    /// </summary>
+    /// <param name="backupId">The ID of the backup</param>
+    /// <returns>The task</returns>
+    public async Task RunRestoreTestAsync(string backupId)
+    {
+        var response = await client.PostAsync($"backup/{Uri.EscapeDataString(backupId)}/restore-test", null);
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
+    }
+
+    /// <summary>
     /// Deletes a backup
     /// </summary>
     /// <param name="backupId">The ID of the backup</param>

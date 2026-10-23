@@ -153,7 +153,7 @@ namespace Duplicati.Library.Main
                 UsageReporter.Reporter.Report("BACKUP_DURATION", (long)config.Result.Duration.TotalSeconds);
 
                 // The backup handler has released the database at this point, so the restore test can open it
-                await RunPostBackupRestoreTestAsync(config.Options, config.Result, config.BackendManager, config.Context.lastRestoreTest).ConfigureAwait(false);
+                await RunPostBackupRestoreTestAsync(config.Options, config.Result, config.BackendManager, config.LogTarget, config.Context.lastRestoreTest).ConfigureAwait(false);
 
                 using (var h = new Operation.RemoteSynchronizationHandler(config.BackendUrl, config.Options, config.Result))
                     await h.RunAsync()
@@ -170,8 +170,9 @@ namespace Duplicati.Library.Main
         /// <param name="options">The options</param>
         /// <param name="result">The backup results to attach the restore test results to</param>
         /// <param name="backendManager">The backend manager</param>
+        /// <param name="logTarget">The log target of the backup, which collects the restore test messages in the restore test results</param>
         /// <param name="lastRestoreTest">The time of the previous restore test as supplied by the caller, or <see cref="DateTime.MinValue"/> if unknown</param>
-        private static async Task RunPostBackupRestoreTestAsync(Options options, BackupResults result, IBackendManager backendManager, DateTime lastRestoreTest)
+        private static async Task RunPostBackupRestoreTestAsync(Options options, BackupResults result, IBackendManager backendManager, ControllerMultiLogTarget logTarget, DateTime lastRestoreTest)
         {
             var interval = options.PerformRestoreTestAfter;
             if (interval <= TimeSpan.Zero || options.Dryrun)
@@ -203,21 +204,28 @@ namespace Duplicati.Library.Main
             result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PostBackupRestoreTest);
             var restoreTestResults = new RestoreTestResults(result);
             result.RestoreTestResults = restoreTestResults;
-            try
+
+            // The restore test is reported on its own: its messages still reach the log files, sinks and the
+            // outer log scopes, but are collected in its own result and never in the backup's, so a failed test
+            // does not fail the backup
+            using (logTarget.CollectInNestedResult(restoreTestResults))
             {
-                await new Operation.RestoreTestHandler(options, restoreTestResults)
-                    .RunAsync(backendManager, null)
-                    .ConfigureAwait(false);
-            }
-            catch (Exception ex) when (!ex.IsAbortOrCancelException())
-            {
-                // The backup itself completed, so a restore test that cannot run is an error on the backup, not a failure of it
-                Logging.Log.WriteErrorMessage(LOGTAG, "RestoreTestFailed", ex, "The restore test after the backup failed: {0}", ex.Message);
-            }
-            finally
-            {
-                if (restoreTestResults.EndTime.Ticks == 0)
-                    restoreTestResults.EndTime = DateTime.UtcNow;
+                try
+                {
+                    await new Operation.RestoreTestHandler(options, restoreTestResults)
+                        .RunAsync(backendManager, null)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex) when (!ex.IsAbortOrCancelException())
+                {
+                    // The backup itself completed, so a restore test that cannot run is an error on the restore test, not on the backup
+                    Logging.Log.WriteErrorMessage(LOGTAG, "RestoreTestFailed", ex, "The restore test after the backup failed: {0}", ex.Message);
+                }
+                finally
+                {
+                    if (restoreTestResults.EndTime.Ticks == 0)
+                        restoreTestResults.EndTime = DateTime.UtcNow;
+                }
             }
         }
 
@@ -616,7 +624,8 @@ namespace Duplicati.Library.Main
             string[] Paths,
             Options Options,
             IFilter Filter,
-            IBackendManager BackendManager);
+            IBackendManager BackendManager,
+            ControllerMultiLogTarget LogTarget);
 
         private async Task<TRes> RunActionAsync<TRes, TCon>(TRes result, string[] paths, IFilter filter, TCon context, Func<RunActionData<TRes, TCon>, Task> method)
             where TRes : ISetCommonOptions, ITaskControlProvider, Logging.ILogDestination, IBasicResults, IBackendWriterProvider
@@ -656,7 +665,7 @@ namespace Duplicati.Library.Main
                         {
                             backend.UpdateThrottleValues(m_options.MaxUploadPrSecond, m_options.MaxDownloadPrSecond);
                             m_currentBackendManager = backend;
-                            var config = new RunActionData<TRes, TCon>(result, context, m_backendUrl, paths, m_options, filter, backend);
+                            var config = new RunActionData<TRes, TCon>(result, context, m_backendUrl, paths, m_options, filter, backend, logTarget);
                             await method(config).ConfigureAwait(false);
                         }
                         finally
@@ -1106,12 +1115,29 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Warns if an identifier option holds characters that are known to cause trouble. The value is
+        /// kept as given, as it may already be in use elsewhere; the user decides whether to change it.
+        /// </summary>
+        /// <param name="option">The name of the identifier option</param>
+        /// <param name="messageId">The id of the warning</param>
+        private void WarnOnProblematicIdentifier(string option, string messageId)
+        {
+            var problematic = Options.GetProblematicIdentifierCharacters(m_options.RawOptions.GetValueOrDefault(option));
+            if (problematic.Count > 0)
+                Logging.Log.WriteWarningMessage(LOGTAG, messageId, null, "The option --{0} contains the character(s) {1}, which may cause problems when the id is used in reports and by remote control. Consider using only letters, digits, dashes and dots, or add {2} to --suppress-warnings to keep the id.", option, string.Join(" ", problematic.Select(Options.DescribeIdentifierCharacter)), messageId);
+        }
+
+        /// <summary>
         /// This function will examine all options passed on the commandline, and test for unsupported or deprecated values.
         /// Any errors will be logged into the statistics module.
         /// </summary>
         /// <param name="paths">The source paths, used to determine the options supported by source providers; null for operations without sources.</param>
         private void ValidateOptions(string[] paths)
         {
+            // The ids are passed around by the console and in reports, where some characters break the handling
+            WarnOnProblematicIdentifier("backup-id", "BackupIdSpecialCharacters");
+            WarnOnProblematicIdentifier("machine-id", "MachineIdSpecialCharacters");
+
             // Check if only one of the retention options is set
             var selectedRetentionOptions = new List<String>();
 

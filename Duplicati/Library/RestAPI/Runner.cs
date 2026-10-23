@@ -1000,6 +1000,12 @@ namespace Duplicati.Server
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
+                        case DuplicatiOperation.RestoreTest:
+                            {
+                                var r = await controller.RestoreTestAsync().ConfigureAwait(false);
+                                UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
+                                return r;
+                            }
                         case DuplicatiOperation.CreateReport:
                             {
                                 using (var tf = new Library.Utility.TempFile())
@@ -1257,6 +1263,38 @@ namespace Duplicati.Server
         }
 
         /// <summary>
+        /// Registers a notification for a restore test after a backup that did not pass. Such a
+        /// restore test does not change the backup result, so it needs its own notification.
+        /// A standalone restore test is covered by the notification for any failed operation.
+        /// </summary>
+        /// <param name="databaseConnection">The database connection</param>
+        /// <param name="backup">The backup that was tested</param>
+        /// <param name="r">The restore test results</param>
+        private static void RegisterRestoreTestNotification(Connection databaseConnection, IBackup backup, IRestoreTestResults r)
+        {
+            if (r.ParsedResult == ParsedResultType.Success)
+                return;
+
+            var isWarning = r.ParsedResult == ParsedResultType.Warning;
+            var message = r.FilesFailed > 0
+                ? $"{r.FilesFailed} of {r.FilesTested} restored file(s) failed verification."
+                : r.Errors?.FirstOrDefault() ?? r.Warnings?.FirstOrDefault() ?? $"The restore test completed with status {r.ParsedResult}.";
+
+            databaseConnection.RegisterNotification(
+                isWarning ? NotificationType.Warning : NotificationType.Error,
+                backup.IsTemporary ? "Restore test" : $"Restore test {(isWarning ? "warning" : "failed")} for {backup.Name}",
+                message,
+                null,
+                backup.ID,
+                "backup:show-log",
+                null,
+                null,
+                null,
+                (n, a) => n
+            );
+        }
+
+        /// <summary>
         /// Records the outcome of a sync run in the backup metadata.
         /// The run is recorded under the "LastSync*" keys, which readers find through
         /// <see cref="LastRunMetadata"/>. This follows the same rule as a backup run:
@@ -1326,6 +1364,11 @@ namespace Duplicati.Server
             if (result is IVacuumResults r5 && !result.Interrupted)
             {
                 UpdateMetadataLastVacuum(backup, r5);
+            }
+
+            if (result is IRestoreTestResults rt && !result.Interrupted)
+            {
+                UpdateMetadataLastRestoreTest(backup, rt);
             }
 
             if (result is ISyncResults r6)
@@ -1450,6 +1493,10 @@ namespace Duplicati.Server
                     (n, a) => n
                 );
             }
+
+            // Registered after the backup notifications, as a clean backup dismisses those
+            if (result is IBackupResults { RestoreTestResults: not null } backupResults && !result.Interrupted)
+                RegisterRestoreTestNotification(databaseConnection, backup, backupResults.RestoreTestResults);
 
             if (!backup.IsTemporary)
                 databaseConnection.SetMetadata(backup.Metadata, long.Parse(backup.ID), null);
@@ -1621,12 +1668,101 @@ namespace Duplicati.Server
             return string.IsNullOrWhiteSpace(dbpath) ? backup.DBPath : dbpath;
         }
 
+        /// <summary>
+        /// The operations the remote controller accepts reports for. Names the controller sent that are not
+        /// operations are ignored, and a controller that has not said gets backup reports only.
+        /// </summary>
+        /// <param name="databaseConnection">The database connection</param>
+        /// <returns>The operation names to report</returns>
+        internal static IEnumerable<string> GetRemoteControlReportOperations(Connection databaseConnection)
+        {
+            var accepted = (databaseConnection.ApplicationSettings.RemoteControlReportOperations ?? string.Empty)
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(x => Enum.TryParse<OperationMode>(x, true, out _))
+                .ToList();
+
+            return accepted.Count == 0 ? [nameof(OperationMode.Backup)] : accepted;
+        }
+
+        /// <summary>
+        /// The prefix of the default backup id that is reported for a backup stored in the server database
+        /// </summary>
+        public const string ReportBackupIdPrefix = "DB-";
+
+        /// <summary>
+        /// The backup id in the remote controller's restore test intervals whose interval applies to every backup
+        /// it does not name. No backup reports an empty id, so it cannot clash with one.
+        /// </summary>
+        public const string DefaultRestoreTestIntervalBackupId = "";
+
+        /// <summary>
+        /// Gets the backup id a backup is reported with. The default is the database id with
+        /// <see cref="ReportBackupIdPrefix"/>, but the user can set <c>backup-id</c> on the backup, so the
+        /// reported id is resolved the same way the report module resolves it rather than assumed.
+        /// </summary>
+        /// <param name="databaseConnection">The database connection</param>
+        /// <param name="backup">The backup</param>
+        /// <returns>The backup id as it appears in the backup's reports</returns>
+        public static string GetReportedBackupId(Connection databaseConnection, Serialization.Interface.IBackup backup)
+        {
+            var options = ApplyOptions(databaseConnection, backup, GetCommonOptions(databaseConnection), out var url);
+            return ResolveReportedBackupId(options, url);
+        }
+
+        /// <summary>
+        /// Resolves the backup id from the options of a backup, as the report module does
+        /// </summary>
+        /// <param name="options">The options of the backup</param>
+        /// <param name="url">The target url of the backup</param>
+        /// <returns>The backup id as it appears in the backup's reports</returns>
+        private static string ResolveReportedBackupId(Dictionary<string, string?> options, string url)
+        {
+            var configured = options.GetValueOrDefault("backup-id");
+            return string.IsNullOrWhiteSpace(configured)
+                ? Library.Utility.Utility.CalculateBackupId(url)
+                : configured;
+        }
+
+        /// <summary>
+        /// Gets the restore test interval the remote controller requested for a backup: the one it sent for the
+        /// backup, otherwise the default it sent for every backup it did not name
+        /// </summary>
+        /// <param name="databaseConnection">The database connection</param>
+        /// <param name="reportedBackupId">The backup id as it appears in the backup's reports</param>
+        /// <returns>The interval as a timespan string, or null when the remote controller sent none</returns>
+        internal static string? GetRemoteControlRestoreTestInterval(Connection databaseConnection, string reportedBackupId)
+        {
+            var intervals = databaseConnection.ApplicationSettings.RemoteControlRestoreTestIntervals;
+            if (string.IsNullOrWhiteSpace(intervals))
+                return null;
+
+            Dictionary<string, string>? perBackup;
+            try
+            {
+                perBackup = JsonSerializer.Deserialize<Dictionary<string, string>>(intervals);
+            }
+            catch (Exception ex)
+            {
+                Library.Logging.Log.WriteWarningMessage(LOGTAG, "InvalidRestoreTestIntervals", ex, "Ignoring invalid restore test intervals: {0}", intervals);
+                return null;
+            }
+
+            if (perBackup == null)
+                return null;
+
+            // An empty reported id would otherwise pick up the default under its own name
+            if (!string.IsNullOrEmpty(reportedBackupId) && perBackup.TryGetValue(reportedBackupId, out var interval))
+                return interval;
+
+            return perBackup.GetValueOrDefault(DefaultRestoreTestIntervalBackupId);
+        }
+
         internal static Dictionary<string, string?> ApplyOptions(Connection databaseConnection, Serialization.Interface.IBackup backup, Dictionary<string, string?> options, out string url)
         {
             url = backup.TargetURL;
             options["backup-name"] = backup.Name;
             options["dbpath"] = backup.DBPath;
-            options["backup-id"] = $"DB-{backup.ID}";
+            options["backup-id"] = $"{ReportBackupIdPrefix}{backup.ID}";
 
             // Apply normal options
             foreach (var o in backup.Settings)
@@ -1665,6 +1801,16 @@ namespace Duplicati.Server
                         additionalReportUrl
                     }.Where(x => !string.IsNullOrWhiteSpace(x))
                 );
+
+                // The additional report url gets reports for the operations the remote controller accepts.
+                // A controller that has not said accepts backup reports only.
+                options["send-http-operations"] = string.Join(",",
+                    new[] { options.GetValueOrDefault("send-http-operations") }
+                    .Concat(GetRemoteControlReportOperations(databaseConnection))
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .SelectMany(x => x!.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                );
             }
 
             // Patch in additional activity urls
@@ -1680,6 +1826,23 @@ namespace Duplicati.Server
             }
 
             url = ApplyDuplicatiStorageCredentials(databaseConnection, url);
+
+            // Patch in the restore test interval, unless the user has set one. The backup is known to the
+            // remote controller by its reported id, which the backup settings applied above may have changed,
+            // so this runs once the url is final.
+            var restoreTestInterval = GetRemoteControlRestoreTestInterval(databaseConnection, ResolveReportedBackupId(options, url));
+            if (!string.IsNullOrWhiteSpace(restoreTestInterval) && string.IsNullOrWhiteSpace(options.GetValueOrDefault("perform-restore-test-after")))
+            {
+                try
+                {
+                    if (Library.Utility.Timeparser.ParseTimeSpan(restoreTestInterval) > TimeSpan.Zero)
+                        options["perform-restore-test-after"] = restoreTestInterval;
+                }
+                catch (Exception ex)
+                {
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "InvalidRestoreTestInterval", ex, "Ignoring invalid restore test interval: {0}", restoreTestInterval);
+                }
+            }
 
             return options;
         }
