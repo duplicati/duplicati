@@ -67,6 +67,26 @@ namespace Duplicati.Library.Main
         private ITaskControl m_currentTaskControl = null;
 
         /// <summary>
+        /// Guards the current task control together with the requests kept for it
+        /// </summary>
+        private readonly object m_taskControlLock = new object();
+
+        /// <summary>
+        /// Set once an operation has started on this controller
+        /// </summary>
+        private bool m_operationStarted = false;
+
+        /// <summary>
+        /// A stop asked for before the first operation started, applied when it starts
+        /// </summary>
+        private bool m_stopBeforeStart = false;
+
+        /// <summary>
+        /// An abort asked for before the first operation started, applied when it starts
+        /// </summary>
+        private bool m_abortBeforeStart = false;
+
+        /// <summary>
         /// The current backend manager
         /// </summary>
         private IBackendManager m_currentBackendManager = null;
@@ -552,7 +572,22 @@ namespace Duplicati.Library.Main
 
                 try
                 {
-                    m_currentTaskControl = result.TaskControl;
+                    bool stopBeforeStart, abortBeforeStart;
+                    lock (m_taskControlLock)
+                    {
+                        m_currentTaskControl = result.TaskControl;
+                        m_operationStarted = true;
+                        stopBeforeStart = m_stopBeforeStart;
+                        abortBeforeStart = m_abortBeforeStart;
+                        m_stopBeforeStart = m_abortBeforeStart = false;
+                    }
+
+                    // A request that came while the operation was being set up
+                    if (abortBeforeStart)
+                        result.TaskControl.Terminate();
+                    else if (stopBeforeStart)
+                        result.TaskControl.Stop();
+
                     m_options.MainAction = result.MainOperation;
                     await ApplySecretProviderAsync(CancellationToken.None).ConfigureAwait(false);
                     (paths, filter) = SetupCommonOptions(result, paths, filter, logTarget);
@@ -778,7 +813,8 @@ namespace Duplicati.Library.Main
                 }
                 finally
                 {
-                    m_currentTaskControl = null;
+                    lock (m_taskControlLock)
+                        m_currentTaskControl = null;
                 }
             }
         }
@@ -1450,7 +1486,14 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public Task StopAsync()
         {
-            var ct = m_currentTaskControl;
+            ITaskControl ct;
+            lock (m_taskControlLock)
+            {
+                ct = m_currentTaskControl;
+                // Before the first operation has started, keep the request for it
+                if (ct == null && !m_operationStarted)
+                    m_stopBeforeStart = true;
+            }
             if (ct == null)
                 return Task.CompletedTask;
 
@@ -1462,7 +1505,15 @@ namespace Duplicati.Library.Main
         /// <inheritdoc />
         public Task AbortAsync()
         {
-            m_currentTaskControl?.Terminate();
+            ITaskControl ct;
+            lock (m_taskControlLock)
+            {
+                ct = m_currentTaskControl;
+                // Before the first operation has started, keep the request for it
+                if (ct == null && !m_operationStarted)
+                    m_abortBeforeStart = true;
+            }
+            ct?.Terminate();
             return Task.CompletedTask;
         }
 
