@@ -152,4 +152,52 @@ public class DlistFilesetTimeTests : BasicSetupHelper
 
         await AssertRecreateKeepsTheVersionsAsync();
     }
+
+    /// <summary>
+    /// Runs a backup whose dlist upload fails without a retry, so the next backup uploads a
+    /// synthetic dlist for it.
+    /// </summary>
+    private async Task InterruptBackupAsync()
+    {
+        Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+        var target = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
+        DeterministicErrorBackend.ErrorGenerator = (action, remotename)
+            => action == DeterministicErrorBackend.BackendAction.PutBefore && remotename.Contains(".dlist.", StringComparison.Ordinal);
+
+        try
+        {
+            using var c = new Library.Main.Controller(target, new Dictionary<string, string>(Options) { ["number-of-retries"] = "0" }, null);
+            Assert.ThrowsAsync<DeterministicErrorBackend.DeterministicErrorBackendException>(async () => await c.BackupAsync([DATAFOLDER]));
+        }
+        finally
+        {
+            DeterministicErrorBackend.ErrorGenerator = null;
+        }
+    }
+
+    [Test]
+    [Category("Targeted")]
+    public async Task SyntheticFilelistRetryKeepsTheFilesetTimeAcrossARecreateAsync()
+    {
+        File.WriteAllText(Path.Combine(DATAFOLDER, "a.txt"), "a");
+        await InterruptBackupAsync();
+        Thread.Sleep(3100);
+
+        // The synthetic dlist is the first dlist the next backup uploads, and it has the
+        // time of the interrupted backup, not of the backup that uploads it
+        var started = DateTime.UtcNow.AddSeconds(-1);
+        string? failedName = null;
+        await RunWithOneFailedUploadAsync(name =>
+            {
+                if (!name.Contains(".dlist.", StringComparison.Ordinal))
+                    return false;
+                failedName = name;
+                return true;
+            },
+            async c => TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER])));
+        Assert.That(Library.Main.Volumes.VolumeBase.ParseFilename(failedName!).Time, Is.LessThan(started),
+            $"The failed upload was not the synthetic dlist: {failedName}");
+
+        await AssertRecreateKeepsTheVersionsAsync();
+    }
 }
