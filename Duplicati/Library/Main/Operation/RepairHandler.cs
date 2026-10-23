@@ -1294,7 +1294,7 @@ namespace Duplicati.Library.Main.Operation
                 var recoverymsg = string.Format("If you want to continue working with the database, you can use the \"{0}\" and \"{1}\" commands to purge the missing data from the database and the remote storage.", "list-broken-files", "purge-broken-files");
                 var logmsg = string.Format("Repair not possible, missing {0} blocks.\n" + recoverymsg, missingBlocks);
 
-                Logging.Log.WriteInformationMessage(LOGTAG, "RecoverySuggestion", null, logmsg);
+                Logging.Log.WriteInformationMessage(LOGTAG, "RecoverySuggestion", logmsg);
                 throw new UserInformationException(logmsg, "RepairIsNotPossible");
             }
             else if (recoveredBlocks > 0)

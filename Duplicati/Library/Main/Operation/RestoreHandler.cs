@@ -1024,7 +1024,7 @@ namespace Duplicati.Library.Main.Operation
                 else if (m_result.UnmodifiedFiles == 0)
                     Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesRestored", null, "Restore completed without errors but no files were restored");
                 else
-                    Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", null, "Restore completed but all files were already present");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", "Restore completed but all files were already present");
             }
 
             await RegisterRestoredItemsAsync(database, m_result.BrokenRemoteFiles.Count > 0 || m_result.BrokenLocalFiles.Count > 0, cancellationToken).ConfigureAwait(false);
@@ -1146,7 +1146,7 @@ namespace Duplicati.Library.Main.Operation
                 else if (m_result.UnmodifiedFiles == 0)
                     Logging.Log.WriteWarningMessage(LOGTAG, "NoFilesRestored", null, "Restore completed without errors but no files were restored");
                 else
-                    Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", null, "Restore completed but all files were already present");
+                    Logging.Log.WriteInformationMessage(LOGTAG, "NoFilesNeededRestore", "Restore completed but all files were already present");
             }
 
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Finalize);
