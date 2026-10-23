@@ -55,27 +55,8 @@ public static class LicenseHelper
     {
         // Priority: File > Environment > ClientLicenseKey (server-provided)
         // Local license always takes precedence over server-provided license
-        string? key = null;
-
         // Check for a license file in the installation directory (highest priority)
-        var keyfilepath = Path.Combine(UpdaterManager.INSTALLATIONDIR, "license.key");
-        if (File.Exists(keyfilepath))
-        {
-            // Fallback to assume we have a direct license key
-            key = $"file://{keyfilepath}";
-
-            try
-            {
-                // Probe if the file has base64 encoded data
-                var content = File.ReadAllText(keyfilepath);
-                if (content.TrimStart().StartsWith("base64:", StringComparison.OrdinalIgnoreCase) || content.TrimStart().StartsWith("jwt:", StringComparison.OrdinalIgnoreCase))
-                    key = content;
-            }
-            catch (Exception ex)
-            {
-                Library.Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToLoadLicenseFile", ex, "Failed to open the existing license file, check permissions");
-            }
-        }
+        var key = GetLicenseFileKey();
 
         // Check for a license key in the environment variables
         if (string.IsNullOrWhiteSpace(key))
@@ -93,17 +74,41 @@ public static class LicenseHelper
     }
 
     /// <summary>
+    /// Gets the license key from the license file in the installation directory, if present.
+    /// The file may contain inline license data (base64: or jwt: prefixed), otherwise the file path is returned.
+    /// </summary>
+    private static string? GetLicenseFileKey()
+    {
+        var keyfilepath = Path.Combine(UpdaterManager.INSTALLATIONDIR, "license.key");
+        if (!File.Exists(keyfilepath))
+            return null;
+
+        // Fallback to assume we have a direct license key
+        var key = $"file://{keyfilepath}";
+
+        try
+        {
+            // Probe if the file has base64 encoded data
+            var content = File.ReadAllText(keyfilepath);
+            if (content.TrimStart().StartsWith("base64:", StringComparison.OrdinalIgnoreCase) || content.TrimStart().StartsWith("jwt:", StringComparison.OrdinalIgnoreCase))
+                key = content;
+        }
+        catch (Exception ex)
+        {
+            Library.Logging.Log.WriteVerboseMessage(LOGTAG, "FailedToLoadLicenseFile", ex, "Failed to open the existing license file, check permissions");
+        }
+
+        return key;
+    }
+
+    /// <summary>
     /// Gets the local license data (from file or environment only, ignoring server-provided license).
     /// Used for SystemInfo to report local license status.
     /// </summary>
     public static LicenseData? GetLocalLicenseData()
     {
-        string? key = null;
-
         // Check for a license file in the installation directory
-        var keyfilepath = Path.Combine(UpdaterManager.INSTALLATIONDIR, "license.key");
-        if (File.Exists(keyfilepath))
-            key = $"file://{keyfilepath}";
+        var key = GetLicenseFileKey();
 
         // Check for a license key in the environment variables
         if (string.IsNullOrWhiteSpace(key))
