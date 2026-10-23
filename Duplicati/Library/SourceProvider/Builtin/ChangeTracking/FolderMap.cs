@@ -1,21 +1,41 @@
-// Copyright (c) 2026 Duplicati Inc. All rights reserved.
+// Copyright (C) 2026, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Duplicati.Proprietary.Office365;
+namespace Duplicati.Library.SourceProvider.ChangeTracking;
 
 /// <summary>
-/// The delta token of a drive and the folders it knew at that point with their parents, kept
+/// The change token of a drive and the folders it knew at that point with their parents, kept
 /// between backups so the path of an item reported by a delta walk can be resolved without a
 /// request per ancestor. Entry paths are chains of item ids, so an item's path depends on its
 /// ancestors, which an incremental delta response does not include. The map describes the
 /// drive as of the token, so the two are stored together. A folder missing from the map costs
 /// a lookup, so the map is an optimization and need not be complete.
 /// </summary>
-internal sealed class DriveFolderMap
+public sealed class FolderMap
 {
     /// <summary>
     /// The prefix marking a compressed serialized map
@@ -210,7 +230,7 @@ internal sealed class DriveFolderMap
     /// </summary>
     /// <param name="value">The serialized map</param>
     /// <returns>The map, or <c>null</c> if the value cannot be read</returns>
-    public static DriveFolderMap? Deserialize(string value)
+    public static FolderMap? Deserialize(string value)
     {
         try
         {
@@ -227,7 +247,7 @@ internal sealed class DriveFolderMap
             if (doc == null || string.IsNullOrWhiteSpace(doc.Root) || string.IsNullOrWhiteSpace(doc.Token))
                 return null;
 
-            var map = new DriveFolderMap { Token = doc.Token, RootId = doc.Root };
+            var map = new FolderMap { Token = doc.Token, RootId = doc.Root };
             foreach (var kv in doc.Folders)
                 map._parents[kv.Key] = kv.Value;
 

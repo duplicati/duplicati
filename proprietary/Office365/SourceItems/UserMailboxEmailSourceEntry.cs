@@ -42,18 +42,20 @@ internal class UserMailboxEmailSourceEntry(SourceProvider provider, string path,
 
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        yield return new StreamResourceEntryFunction(SystemIO.IO_OS.PathCombine(this.Path, "content.eml"),
+        var contentPath = SystemIO.IO_OS.PathCombine(this.Path, "content.eml");
+        yield return new StreamResourceEntryFunction(contentPath,
             createdUtc: email.CreatedDateTime.FromGraphDateTime(),
             lastModificationUtc: email.LastModifiedDateTime.FromGraphDateTime(),
             size: -1,
-            streamFactory: (ct) => provider.OpenWithFailureTrackingAsync(stateKey, c => provider.UserEmailApi.GetEmailContentStreamAsync(user.Id, email.Id, c), ct)
+            streamFactory: (ct) => provider.OpenWithFailureTrackingAsync(stateKey, contentPath, c => provider.UserEmailApi.GetEmailContentStreamAsync(user.Id, email.Id, c), ct)
         );
 
-        yield return new StreamResourceEntryFunction(SystemIO.IO_OS.PathCombine(this.Path, "metadata.json"),
+        var metadataPath = SystemIO.IO_OS.PathCombine(this.Path, "metadata.json");
+        yield return new StreamResourceEntryFunction(metadataPath,
             createdUtc: email.CreatedDateTime.FromGraphDateTime(),
             lastModificationUtc: email.LastModifiedDateTime.FromGraphDateTime(),
             size: -1,
-            streamFactory: (ct) => provider.OpenWithFailureTrackingAsync(stateKey, c => provider.UserEmailApi.GetEmailMetadataStreamAsync(user.Id, email.Id, c), ct)
+            streamFactory: (ct) => provider.OpenWithFailureTrackingAsync(stateKey, metadataPath, c => provider.UserEmailApi.GetEmailMetadataStreamAsync(user.Id, email.Id, c), ct)
         );
     }
 }

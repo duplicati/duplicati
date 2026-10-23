@@ -3,6 +3,7 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Interface;
+using Duplicati.Library.SourceProvider.ChangeTracking;
 using Duplicati.Library.Utility.Options;
 using Duplicati.Proprietary.Office365.SourceItems;
 
@@ -357,27 +358,12 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     /// repeating one incremental walk.
     /// </summary>
     /// <param name="stateKey">The change tracking key of the folder or drive, or <c>null</c> if changes are not tracked</param>
+    /// <param name="item">What identifies the item below the key, such as the entry path</param>
     /// <param name="factory">Opens the stream</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The stream</returns>
-    internal async Task<Stream> OpenWithFailureTrackingAsync(string? stateKey, Func<CancellationToken, Task<Stream>> factory, CancellationToken cancellationToken)
-    {
-        if (stateKey == null || !_changeTracker.IsActive)
-            return await factory(cancellationToken).ConfigureAwait(false);
-
-        Stream stream;
-        try
-        {
-            stream = await factory(cancellationToken).ConfigureAwait(false);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            _changeTracker.MarkStateFailed(stateKey);
-            throw;
-        }
-
-        return new FailureReportingStream(stream, () => _changeTracker.MarkStateFailed(stateKey));
-    }
+    internal Task<Stream> OpenWithFailureTrackingAsync(string? stateKey, string item, Func<CancellationToken, Task<Stream>> factory, CancellationToken cancellationToken)
+        => _changeTracker.OpenWithFailureTrackingAsync(stateKey, item, factory, cancellationToken);
 
     /// <summary>
     /// Lists items and reports a failure to list them to the change tracker, so the token of
@@ -390,35 +376,8 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     /// <param name="source">The listing</param>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The items</returns>
-    internal async IAsyncEnumerable<T> ListWithFailureTrackingAsync<T>(string? stateKey, IAsyncEnumerable<T> source, [EnumeratorCancellation] CancellationToken cancellationToken)
-    {
-        if (stateKey == null || !_changeTracker.IsActive)
-        {
-            await foreach (var item in source.WithCancellation(cancellationToken).ConfigureAwait(false))
-                yield return item;
-            yield break;
-        }
-
-        await using var enumerator = source.GetAsyncEnumerator(cancellationToken);
-        while (true)
-        {
-            bool hasNext;
-            try
-            {
-                hasNext = await enumerator.MoveNextAsync().ConfigureAwait(false);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                _changeTracker.MarkStateFailed(stateKey);
-                throw;
-            }
-
-            if (!hasNext)
-                yield break;
-
-            yield return enumerator.Current;
-        }
-    }
+    internal IAsyncEnumerable<T> ListWithFailureTrackingAsync<T>(string? stateKey, IAsyncEnumerable<T> source, CancellationToken cancellationToken)
+        => _changeTracker.ListWithFailureTrackingAsync(stateKey, source, cancellationToken);
 
     /// <inheritdoc />
     public void Dispose()

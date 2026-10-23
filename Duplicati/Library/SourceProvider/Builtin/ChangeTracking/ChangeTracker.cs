@@ -1,9 +1,33 @@
-// Copyright (c) 2026 Duplicati Inc. All rights reserved.
+// Copyright (C) 2026, The Duplicati Team
+// https://duplicati.com, hello@duplicati.com
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a 
+// copy of this software and associated documentation files (the "Software"), 
+// to deal in the Software without restriction, including without limitation 
+// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the 
+// Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in 
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+// DEALINGS IN THE SOFTWARE.
+
 
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Duplicati.Library.Logging;
 
-namespace Duplicati.Proprietary.Office365;
+namespace Duplicati.Library.SourceProvider.ChangeTracking;
 
 /// <summary>
 /// Keeps what the provider learned during one enumeration about which paths it examined,
@@ -17,7 +41,7 @@ namespace Duplicati.Proprietary.Office365;
 /// The marks are set by the enumeration while download failures are reported from the file
 /// processors that read the content, so the collections are safe for concurrent use.
 /// </remarks>
-internal sealed class ChangeTracker
+public sealed class ChangeTracker
 {
     /// <summary>
     /// The log tag for this class
@@ -31,12 +55,53 @@ internal sealed class ChangeTracker
     /// for a transient failure but would otherwise pin a folder to stale content forever if the
     /// failure is permanent.
     /// </summary>
-    internal const int MAX_CONSECUTIVE_FAILURES = 3;
+    public const int MAX_CONSECUTIVE_FAILURES = 3;
 
     /// <summary>
     /// The prefix of the keys that count the consecutive failures of a state key
     /// </summary>
     private const string FAILURE_COUNT_PREFIX = "failures:";
+
+    /// <summary>
+    /// The prefix of the keys that record which items failed below a state key, so the next
+    /// backup can tell whether the same items fail again
+    /// </summary>
+    private const string FAILED_ITEMS_PREFIX = "failed-items:";
+
+    /// <summary>
+    /// The most failed items remembered for a key. More failures than this are not the fault
+    /// of single items, so the key is held back and reset like a key that failed as a whole
+    /// </summary>
+    public const int MAX_TRACKED_FAILED_ITEMS = 1000;
+
+    /// <summary>
+    /// The most items named in the warning that gives up on them
+    /// </summary>
+    private const int NAMED_FAILED_ITEMS = 5;
+
+    /// <summary>
+    /// The items that failed below a key, as stored between backups. The items are stored as
+    /// short hashes, so the record stays small whatever the items are identified by.
+    /// </summary>
+    private sealed class FailedItems
+    {
+        /// <summary>The consecutive backups in which only these items, or a subset of them, failed</summary>
+        [JsonPropertyName("runs")]
+        public int Runs { get; set; }
+
+        /// <summary>The hashes of what identifies the items</summary>
+        [JsonPropertyName("items")]
+        public List<string> Items { get; set; } = [];
+    }
+
+    /// <summary>
+    /// Hashes what identifies a failed item for storage. 12 bytes of SHA-256 tell a thousand
+    /// items apart with no realistic chance of a collision, in 16 characters per item
+    /// </summary>
+    /// <param name="item">What identifies the item</param>
+    /// <returns>The hash</returns>
+    private static string HashFailedItem(string item)
+        => Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(item)).AsSpan(0, 12));
 
     /// <summary>
     /// What is known about a path
@@ -63,14 +128,22 @@ internal sealed class ChangeTracker
     private readonly ConcurrentDictionary<string, Mark> _marks = new(Library.Utility.Utility.ClientFilenameStringComparer);
 
     /// <summary>
-    /// Ids of items whose own entry was examined; matched against the last segment of a path
+    /// The ids a tree reported, matched against the segments of the paths below the tree
     /// </summary>
-    private readonly ConcurrentDictionary<string, byte> _touchedIds = new(StringComparer.Ordinal);
+    private sealed class IdScope
+    {
+        /// <summary>Ids of items whose own entry was examined; matched against the last segment of a path</summary>
+        public readonly ConcurrentDictionary<string, byte> Touched = new(StringComparer.Ordinal);
+        /// <summary>Ids of items whose whole subtree counts as examined; matched against any segment of a path</summary>
+        public readonly ConcurrentDictionary<string, byte> Subtrees = new(StringComparer.Ordinal);
+    }
 
     /// <summary>
-    /// Ids of folders whose whole subtree left its path; matched against any segment of a path
+    /// The reported ids by the path of the tree that reported them. A change feed may mention
+    /// items that live in another tree, such as a user's My Drive feed reporting activity on a
+    /// shared drive item as a removal, so an id only counts below the tree it was reported for
     /// </summary>
-    private readonly ConcurrentDictionary<string, byte> _goneSubtreeIds = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, IdScope> _idScopes = new(Library.Utility.Utility.ClientFilenameStringComparer);
 
     /// <summary>
     /// The state loaded from the previous backup
@@ -91,6 +164,12 @@ internal sealed class ChangeTracker
     /// Keys whose listing or content had failures in this run, so their token must not advance
     /// </summary>
     private readonly ConcurrentDictionary<string, byte> _failedKeys = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The items that failed below a key in this run, by key, so the next run can tell whether
+    /// the same items keep failing
+    /// </summary>
+    private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, byte>> _failedItems = new(StringComparer.Ordinal);
 
     /// <summary>
     /// Keys whose loaded value this run found unusable, so a failure must not restore it
@@ -173,16 +252,38 @@ internal sealed class ChangeTracker
     }
 
     /// <summary>
-    /// Records that a listing or download below the key failed, so the stored value stays at
-    /// what the previous backup recorded and the failed items are reported again. A key without
-    /// a usable previous value is stored with an empty value, so the key stays known to the
-    /// provider and the next backup walks it in full.
+    /// Records that the walk of the key failed as a whole, so the stored value stays at what
+    /// the previous backup recorded and the changes are reported again. A key without a usable
+    /// previous value is stored with an empty value, so the key stays known to the provider and
+    /// the next backup walks it in full. For a single item that could not be listed or read,
+    /// use <see cref="MarkItemFailed"/>.
     /// </summary>
     /// <param name="key">The state key</param>
     public void MarkStateFailed(string key)
     {
         if (IsActive && _failedKeys.TryAdd(key, 0))
             Log.WriteVerboseMessage(LOGTAG, "ChangeTrackingKeyHeldBack", "A listing or download below \"{0}\" failed, so its change tracking state is not advanced", key);
+    }
+
+    /// <summary>
+    /// Records that one item below the key could not be listed or read, so the stored value
+    /// stays at what the previous backup recorded and the item is reported again. Unlike
+    /// <see cref="MarkStateFailed"/>, the failed items are remembered between backups: when
+    /// the same items, and no others, fail in <see cref="MAX_CONSECUTIVE_FAILURES"/>
+    /// consecutive backups, the failure is taken as permanent and the key advances past them,
+    /// as holding the key back or listing it in full would only fail on the same items again
+    /// and would keep the whole key from ever being walked incrementally.
+    /// </summary>
+    /// <param name="key">The state key</param>
+    /// <param name="item">What identifies the item below the key, such as its path or id</param>
+    public void MarkItemFailed(string key, string item)
+    {
+        if (!IsActive)
+            return;
+
+        var items = _failedItems.GetOrAdd(key, _ => new ConcurrentDictionary<string, byte>(StringComparer.Ordinal));
+        if (items.TryAdd(item, 0))
+            Log.WriteVerboseMessage(LOGTAG, "ChangeTrackingItemHeldBack", "The listing or download of \"{0}\" below \"{1}\" failed, so the change tracking state of the key is not advanced", item, key);
     }
 
     /// <summary>
@@ -201,18 +302,48 @@ internal sealed class ChangeTracker
     /// backup stored, whether or not a value was recorded for it in this run, for up to
     /// <see cref="MAX_CONSECUTIVE_FAILURES"/> consecutive backups; after that, or when there is
     /// no usable previous value, the key is stored with an empty value so the next backup
-    /// walks it in full.
+    /// walks it in full. A key that failed only on single items remembers which, and once the
+    /// same items have failed in <see cref="MAX_CONSECUTIVE_FAILURES"/> consecutive backups the
+    /// key advances past them instead, so a permanently unreadable item does not keep its tree
+    /// from being walked incrementally.
     /// </summary>
     /// <returns>The state rows</returns>
     public IReadOnlyDictionary<string, string> Export()
     {
         var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        var heldBack = new HashSet<string>(_failedKeys.Keys, StringComparer.Ordinal);
+        heldBack.UnionWith(_failedItems.Keys);
+
         foreach (var kv in _exported)
-            if (!_failedKeys.ContainsKey(kv.Key))
+            if (!heldBack.Contains(kv.Key))
                 result[kv.Key] = kv.Value();
 
-        foreach (var key in _failedKeys.Keys)
+        foreach (var key in heldBack)
         {
+            // A key that failed as a whole, or on more items than are remembered, starts the
+            // item tracking over; otherwise the items are compared with the previous run's
+            var items = !_failedKeys.ContainsKey(key) && _failedItems.TryGetValue(key, out var failed) && failed.Count <= MAX_TRACKED_FAILED_ITEMS
+                ? failed.Keys.ToList()
+                : null;
+            if (items != null)
+            {
+                var hashes = items.Select(HashFailedItem).ToList();
+                var previousItems = GetPreviousFailedItems(key);
+                var sameItems = previousItems != null && hashes.All(new HashSet<string>(previousItems.Items, StringComparer.Ordinal).Contains);
+                var itemRuns = sameItems ? previousItems!.Runs + 1 : 1;
+                if (sameItems && itemRuns >= MAX_CONSECUTIVE_FAILURES && _exported.TryGetValue(key, out var factory))
+                {
+                    var named = string.Join(", ", items.Take(NAMED_FAILED_ITEMS));
+                    if (items.Count > NAMED_FAILED_ITEMS)
+                        named += $" and {items.Count - NAMED_FAILED_ITEMS} more";
+                    Log.WriteWarningMessage(LOGTAG, "ChangeTrackingItemsGivenUp", null, "The same {0} item(s) below \"{1}\" could not be read in {2} consecutive backups, so its change tracking state is advanced past them; they are backed up again when they change: {3}", items.Count, key, itemRuns, named);
+                    result[key] = factory();
+                    continue;
+                }
+
+                result[FAILED_ITEMS_PREFIX + key] = JsonSerializer.Serialize(new FailedItems { Runs = itemRuns, Items = hashes });
+            }
+
             if (_invalidatedKeys.ContainsKey(key) || !_loaded.TryGetValue(key, out var previous) || string.IsNullOrEmpty(previous))
             {
                 result[key] = string.Empty;
@@ -246,6 +377,27 @@ internal sealed class ChangeTracker
             : 0;
 
     /// <summary>
+    /// Gets the items that failed below the key in the previous backup
+    /// </summary>
+    /// <param name="key">The state key</param>
+    /// <returns>The failed items, or <c>null</c> if none were recorded or the record cannot be read</returns>
+    private FailedItems? GetPreviousFailedItems(string key)
+    {
+        if (!_loaded.TryGetValue(FAILED_ITEMS_PREFIX + key, out var value) || string.IsNullOrWhiteSpace(value))
+            return null;
+
+        try
+        {
+            var items = JsonSerializer.Deserialize<FailedItems>(value);
+            return items == null || items.Runs < 1 ? null : items;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Marks a folder as walked with a delta token: only the paths below it that are
     /// explicitly marked, or whose ids were reported, count as examined
     /// </summary>
@@ -268,20 +420,24 @@ internal sealed class ChangeTracker
         => AddMark(folderPath, Mark.ExaminedSubtree);
 
     /// <summary>
-    /// Marks an item id as examined: a path below an incremental folder whose last
-    /// segment is the id counts as examined
+    /// Marks an item id as examined: a path below an incremental folder inside the scope whose
+    /// last segment is the id counts as examined
     /// </summary>
+    /// <param name="scopePath">The path of the tree that reported the id, ending with the separator; the id applies below it only</param>
     /// <param name="id">The item id</param>
-    public void MarkIdTouched(string id)
-        => _touchedIds.TryAdd(id, 0);
+    public void MarkIdTouched(string scopePath, string id)
+        => _idScopes.GetOrAdd(scopePath, _ => new IdScope()).Touched.TryAdd(id, 0);
 
     /// <summary>
-    /// Marks a folder id as gone from its path: any path below an incremental folder
-    /// that has the id as a segment counts as examined
+    /// Marks everything below an item id as examined: any path below an incremental folder
+    /// inside the scope that has the id as a segment counts as examined. Used for a folder
+    /// whose whole subtree left its path, and for an item that is a folder of derived entries
+    /// which are all re-listed when the item is reported
     /// </summary>
-    /// <param name="id">The folder id</param>
-    public void MarkIdSubtreeGone(string id)
-        => _goneSubtreeIds.TryAdd(id, 0);
+    /// <param name="scopePath">The path of the tree that reported the id, ending with the separator; the id applies below it only</param>
+    /// <param name="id">The item id</param>
+    public void MarkIdSubtreeExamined(string scopePath, string id)
+        => _idScopes.GetOrAdd(scopePath, _ => new IdScope()).Subtrees.TryAdd(id, 0);
 
     /// <summary>
     /// Adds a mark to a path
@@ -324,7 +480,7 @@ internal sealed class ChangeTracker
                 return true;
 
             if ((mark & Mark.Incremental) != 0)
-                return IsTouchedByIds(path.AsSpan(i + 1, end - (i + 1)));
+                return IsTouchedByIds(path, end);
         }
 
         return true;
@@ -364,17 +520,47 @@ internal sealed class ChangeTracker
     }
 
     /// <summary>
-    /// Whether a path relative to an incremental folder has an id segment that was reported
+    /// Whether a path below an incremental folder has an id segment that was reported by a
+    /// tree the path is in. Only the scopes that contain the path are consulted, so an id
+    /// reported by one tree never decides a path in another. A scope is the path of a tree,
+    /// ending with the separator, so the scopes containing the path are among its ancestor
+    /// prefixes and are looked up directly; this runs once per carried-forward path, so it
+    /// must not depend on the number of trees
     /// </summary>
-    /// <param name="relative">The path below the incremental folder, without a trailing separator</param>
+    /// <param name="path">The path</param>
+    /// <param name="end">The length of the path without its trailing separator</param>
     /// <returns><c>true</c> if a segment matches a reported id</returns>
-    private bool IsTouchedByIds(ReadOnlySpan<char> relative)
+    private bool IsTouchedByIds(string path, int end)
     {
-        if (_touchedIds.IsEmpty && _goneSubtreeIds.IsEmpty)
+        if (_idScopes.IsEmpty)
             return false;
 
-        var gone = _goneSubtreeIds.GetAlternateLookup<ReadOnlySpan<char>>();
-        var touched = _touchedIds.GetAlternateLookup<ReadOnlySpan<char>>();
+        var lookup = _idScopes.GetAlternateLookup<ReadOnlySpan<char>>();
+        for (var i = 0; i < end; i++)
+        {
+            if (path[i] != SEPARATOR)
+                continue;
+
+            if (lookup.TryGetValue(path.AsSpan(0, i + 1), out var scope) && IsTouchedByIds(scope, path.AsSpan(i + 1, end - (i + 1))))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Whether a path relative to a scope has an id segment the scope reported
+    /// </summary>
+    /// <param name="scope">The reported ids</param>
+    /// <param name="relative">The path below the scope, without a trailing separator</param>
+    /// <returns><c>true</c> if a segment matches a reported id</returns>
+    private static bool IsTouchedByIds(IdScope scope, ReadOnlySpan<char> relative)
+    {
+        if (scope.Touched.IsEmpty && scope.Subtrees.IsEmpty)
+            return false;
+
+        var gone = scope.Subtrees.GetAlternateLookup<ReadOnlySpan<char>>();
+        var touched = scope.Touched.GetAlternateLookup<ReadOnlySpan<char>>();
 
         while (true)
         {

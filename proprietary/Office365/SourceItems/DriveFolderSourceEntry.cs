@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.SourceProvider.ChangeTracking;
 using Duplicati.Library.Logging;
 
 namespace Duplicati.Proprietary.Office365.SourceItems;
@@ -20,7 +21,7 @@ internal class DriveFolderSourceEntry : MetaEntryBase
     private readonly SourceProvider provider;
     private readonly GraphDrive drive;
     private readonly GraphDriveItem item;
-    private readonly DriveFolderMap? map;
+    private readonly FolderMap? map;
     private readonly DriveChangeSet? changes;
 
     /// <summary>
@@ -31,7 +32,7 @@ internal class DriveFolderSourceEntry : MetaEntryBase
     /// <param name="drive">The drive</param>
     /// <param name="item">The folder item</param>
     /// <param name="map">The folder map to record child folders in, or <c>null</c> if changes are not tracked</param>
-    public DriveFolderSourceEntry(SourceProvider provider, string path, GraphDrive drive, GraphDriveItem item, DriveFolderMap? map)
+    public DriveFolderSourceEntry(SourceProvider provider, string path, GraphDrive drive, GraphDriveItem item, FolderMap? map)
         : this(provider, path, drive, item, map, null)
     {
     }
@@ -58,7 +59,7 @@ internal class DriveFolderSourceEntry : MetaEntryBase
     /// <param name="item">The folder item</param>
     /// <param name="map">The folder map to record child folders in, or <c>null</c> if changes are not tracked</param>
     /// <param name="changes">The changes to list instead of asking Graph, or <c>null</c> to list the children with a request</param>
-    private DriveFolderSourceEntry(SourceProvider provider, string path, GraphDrive drive, GraphDriveItem item, DriveFolderMap? map, DriveChangeSet? changes)
+    private DriveFolderSourceEntry(SourceProvider provider, string path, GraphDrive drive, GraphDriveItem item, FolderMap? map, DriveChangeSet? changes)
         : base(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(path, item.Id)), item.CreatedDateTime.FromGraphDateTime(), item.LastModifiedDateTime.FromGraphDateTime())
     {
         this.provider = provider;

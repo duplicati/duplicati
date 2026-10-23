@@ -3,6 +3,7 @@
 using System.Net;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Logging;
+using Duplicati.Library.SourceProvider.ChangeTracking;
 using System.Text.Json;
 using File = Google.Apis.Drive.v3.Data.File;
 using Google;
@@ -11,7 +12,7 @@ using Google.Apis.Drive.v3.Data;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class DriveFileCommentsSourceEntry(string parentPath, File file, bool userIsInactive, DriveService driveService)
+internal class DriveFileCommentsSourceEntry(SourceProvider provider, string? stateKey, string parentPath, File file, bool userIsInactive, DriveService driveService)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, "comments.json"), file.CreatedTimeDateTimeOffset.HasValue ? file.CreatedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch, file.ModifiedTimeDateTimeOffset.HasValue ? file.ModifiedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch)
 {
     /// <summary>
@@ -21,28 +22,29 @@ internal class DriveFileCommentsSourceEntry(string parentPath, File file, bool u
 
     public override long Size => -1;
 
-    public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
-    {
-        var request = driveService.Comments.List(file.Id);
-        request.Fields = "*";
-
-        CommentList comments;
-        try
+    public override Task<Stream> OpenRead(CancellationToken cancellationToken)
+        => provider.ChangeTracker.OpenWithFailureTrackingAsync(stateKey, this.Path, async ct =>
         {
-            comments = await request.ExecuteAsync(cancellationToken);
-        }
-        catch (GoogleApiException ex) when (userIsInactive && ex.HttpStatusCode is HttpStatusCode.Forbidden or HttpStatusCode.NotFound)
-        {
-            // A suspended or archived account keeps read access to the file itself, but Google
-            // no longer lets it read the comments of files it does not own. The comments are
-            // not reachable through this account, so record an empty list instead of a warning.
-            Log.WriteVerboseMessage(LOGTAG, "CommentsNotReadableForInactiveUser", Strings.CommentsNotReadableForInactiveUser(file.Id));
-            comments = new CommentList { Comments = [] };
-        }
+            var request = driveService.Comments.List(file.Id);
+            request.Fields = "*";
 
-        var json = JsonSerializer.Serialize(comments, new JsonSerializerOptions { WriteIndented = true });
-        return new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
-    }
+            CommentList comments;
+            try
+            {
+                comments = await request.ExecuteAsync(ct).ConfigureAwait(false);
+            }
+            catch (GoogleApiException ex) when (userIsInactive && ex.HttpStatusCode is HttpStatusCode.Forbidden or HttpStatusCode.NotFound)
+            {
+                // A suspended or archived account keeps read access to the file itself, but Google
+                // no longer lets it read the comments of files it does not own. The comments are
+                // not reachable through this account, so record an empty list instead of a warning.
+                Log.WriteVerboseMessage(LOGTAG, "CommentsNotReadableForInactiveUser", Strings.CommentsNotReadableForInactiveUser(file.Id));
+                comments = new CommentList { Comments = [] };
+            }
+
+            var json = JsonSerializer.Serialize(comments, new JsonSerializerOptions { WriteIndented = true });
+            return (Stream)new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
+        }, cancellationToken);
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
     {

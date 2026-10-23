@@ -20,7 +20,7 @@ internal class SharedDrivesSourceEntry(SourceProvider provider, string parentPat
             if (cancellationToken.IsCancellationRequested) yield break;
 
             if (provider.LicenseApprovedForEntry(path, GoogleRootType.SharedDrives, drive.Id, increment: false, countsAsSeat: true))
-                yield return new SharedDriveSourceEntry(provider, path, userId!, userIsInactive, drive, driveService);
+                yield return new SharedDriveSourceEntry(provider, path, userId, userIsInactive, drive, driveService);
         }
     }
 

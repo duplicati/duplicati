@@ -65,21 +65,14 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
             throw new Exception($"Error enumerating Gmail labels for user {userId}: {ex.Message}", ex);
         }
 
-        if (response.Labels != null)
+        var labels = (response.Labels ?? []).Where(x => !string.IsNullOrEmpty(x.Id)).ToList();
+        await foreach (var entry in GmailMailboxWalk.EnumerateAsync(provider, userId, this.Path, service, labels, cancellationToken).ConfigureAwait(false))
         {
-            foreach (var label in response.Labels)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                    yield break;
+            if (cancellationToken.IsCancellationRequested)
+                yield break;
 
-                yield return new GmailLabelSourceEntry(userId, this.Path, label, service);
-            }
+            yield return entry;
         }
-
-        if (cancellationToken.IsCancellationRequested)
-            yield break;
-
-        yield return new GmailSettingsSourceEntry(userId, this.Path, service);
     }
 
     private async IAsyncEnumerable<ISourceProviderEntry> EnumerateCalendar([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -111,7 +104,7 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
                 foreach (var calendar in calendars.Items)
                 {
                     if (cancellationToken.IsCancellationRequested) yield break;
-                    yield return new CalendarSourceEntry(this.Path, userId, calendar, service, driveService, aclService);
+                    yield return new CalendarSourceEntry(provider, this.Path, userId, calendar, service, driveService, aclService);
                 }
             }
             nextPageToken = calendars.NextPageToken;
@@ -123,7 +116,7 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
         var peopleService = provider.ApiHelper.GetPeopleService(userId);
 
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new ContactsFolderSourceEntry(this.Path, userIsInactive, peopleService);
+        yield return new ContactsFolderSourceEntry(provider, this.Path, userId, userIsInactive, peopleService);
 
         if (cancellationToken.IsCancellationRequested) yield break;
         yield return new ContactGroupsFolderSourceEntry(this.Path, peopleService);
@@ -134,7 +127,7 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
         var driveService = provider.ApiHelper.GetDriveService(userId);
 
         if (cancellationToken.IsCancellationRequested) yield break;
-        yield return new DriveFolderSourceEntry(this.Path, userId, userIsInactive, "My Drive", "root", driveService);
+        yield return new DriveTreeSourceEntry(provider, this.Path, userId, userIsInactive, "My Drive", "root", null, driveService);
 
         if (cancellationToken.IsCancellationRequested) yield break;
         yield return new SharedDrivesSourceEntry(provider, this.Path, userId, userIsInactive, driveService);

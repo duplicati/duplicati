@@ -43,6 +43,17 @@ public static class OptionsHelper
     public const string GOOGLE_AVOID_CALENDAR_ACL_OPTION = "google-ignore-calendar-acl";
     public const string GOOGLE_EXCLUDE_ARCHIVED_USERS_OPTION = "google-exclude-archived-users";
     public const string GOOGLE_EXCLUDE_SUSPENDED_USERS_OPTION = "google-exclude-suspended-users";
+    public const string GOOGLE_DISABLE_GMAIL_DELTA_OPTION = "google-disable-gmail-delta";
+    public const string GOOGLE_DISABLE_DRIVE_DELTA_OPTION = "google-disable-drive-delta";
+    public const string GOOGLE_DISABLE_CALENDAR_DELTA_OPTION = "google-disable-calendar-delta";
+    public const string GOOGLE_DISABLE_CONTACTS_DELTA_OPTION = "google-disable-contacts-delta";
+    public const string GOOGLE_DRIVE_DELTA_MAX_ITEMS_OPTION = "google-drive-delta-max-items";
+
+    /// <summary>
+    /// The default number of changes a drive may report before the backup gives up on the
+    /// incremental walk and lists the drive in full
+    /// </summary>
+    internal const int DEFAULT_DRIVE_DELTA_MAX_ITEMS = 100000;
 
     private static readonly ICommandLineArgument[] SupportedCommands =
     [
@@ -68,6 +79,11 @@ public static class OptionsHelper
         new CommandLineArgument(GOOGLE_AVOID_CALENDAR_ACL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleAvoidCalendarAclOptionShort, Strings.Options.GoogleAvoidCalendarAclOptionLong),
         new CommandLineArgument(GOOGLE_EXCLUDE_ARCHIVED_USERS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleExcludeArchivedUsersShort, Strings.Options.GoogleExcludeArchivedUsersLong, "false"),
         new CommandLineArgument(GOOGLE_EXCLUDE_SUSPENDED_USERS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleExcludeSuspendedUsersShort, Strings.Options.GoogleExcludeSuspendedUsersLong, "false"),
+        new CommandLineArgument(GOOGLE_DISABLE_GMAIL_DELTA_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleDisableGmailDeltaShort, Strings.Options.GoogleDisableGmailDeltaLong, "false"),
+        new CommandLineArgument(GOOGLE_DISABLE_DRIVE_DELTA_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleDisableDriveDeltaShort, Strings.Options.GoogleDisableDriveDeltaLong, "false"),
+        new CommandLineArgument(GOOGLE_DISABLE_CALENDAR_DELTA_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleDisableCalendarDeltaShort, Strings.Options.GoogleDisableCalendarDeltaLong, "false"),
+        new CommandLineArgument(GOOGLE_DISABLE_CONTACTS_DELTA_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleDisableContactsDeltaShort, Strings.Options.GoogleDisableContactsDeltaLong, "false"),
+        new CommandLineArgument(GOOGLE_DRIVE_DELTA_MAX_ITEMS_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.Options.GoogleDriveDeltaMaxItemsShort, Strings.Options.GoogleDriveDeltaMaxItemsLong, DEFAULT_DRIVE_DELTA_MAX_ITEMS.ToString()),
     ];
 
     public class GoogleWorkspaceOptions
@@ -89,6 +105,27 @@ public static class OptionsHelper
         /// do not consume a seat.
         /// </summary>
         public bool ExcludeSuspendedUsers { get; set; }
+        /// <summary>
+        /// Whether mailboxes are walked from the Gmail history when the provider is used for a backup
+        /// </summary>
+        public bool GmailDelta { get; set; } = true;
+        /// <summary>
+        /// Whether drives are walked from the Drive changes feed when the provider is used for a backup
+        /// </summary>
+        public bool DriveDelta { get; set; } = true;
+        /// <summary>
+        /// Whether calendars are walked with sync tokens when the provider is used for a backup
+        /// </summary>
+        public bool CalendarDelta { get; set; } = true;
+        /// <summary>
+        /// Whether contacts are walked with sync tokens when the provider is used for a backup
+        /// </summary>
+        public bool ContactsDelta { get; set; } = true;
+        /// <summary>
+        /// The number of changes a drive may report before the incremental walk is abandoned
+        /// and the drive is listed in full
+        /// </summary>
+        public int DriveDeltaMaxItems { get; set; } = DEFAULT_DRIVE_DELTA_MAX_ITEMS;
     }
 
     public static GoogleWorkspaceOptions ParseOptions(Dictionary<string, string?> options)
@@ -124,6 +161,13 @@ public static class OptionsHelper
         result.IncludedUserTypes = Enum.GetValues<GoogleUserType>().Where(n => includedUserTypes.HasFlag(n)).ToArray();
         result.ExcludeArchivedUsers = Library.Utility.Utility.ParseBoolOption(options, GOOGLE_EXCLUDE_ARCHIVED_USERS_OPTION);
         result.ExcludeSuspendedUsers = Library.Utility.Utility.ParseBoolOption(options, GOOGLE_EXCLUDE_SUSPENDED_USERS_OPTION);
+        result.GmailDelta = !Library.Utility.Utility.ParseBoolOption(options, GOOGLE_DISABLE_GMAIL_DELTA_OPTION);
+        result.DriveDelta = !Library.Utility.Utility.ParseBoolOption(options, GOOGLE_DISABLE_DRIVE_DELTA_OPTION);
+        result.CalendarDelta = !Library.Utility.Utility.ParseBoolOption(options, GOOGLE_DISABLE_CALENDAR_DELTA_OPTION);
+        result.ContactsDelta = !Library.Utility.Utility.ParseBoolOption(options, GOOGLE_DISABLE_CONTACTS_DELTA_OPTION);
+        result.DriveDeltaMaxItems = Library.Utility.Utility.ParseIntOption(options, GOOGLE_DRIVE_DELTA_MAX_ITEMS_OPTION, DEFAULT_DRIVE_DELTA_MAX_ITEMS);
+        if (result.DriveDeltaMaxItems < 1)
+            throw new UserInformationException($"The option --{GOOGLE_DRIVE_DELTA_MAX_ITEMS_OPTION} must be a positive number", "InvalidDriveDeltaMaxItems");
 
         return result;
     }

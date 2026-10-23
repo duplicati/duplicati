@@ -55,6 +55,7 @@ internal class DriveFileSourceEntry(SourceProvider provider, string path, GraphD
     public override Task<Stream> OpenRead(CancellationToken cancellationToken)
         => provider.OpenWithFailureTrackingAsync(
             provider.DriveDeltaEnabled ? ChangeTrackingKeys.Drive(drive.Id) : null,
+            this.Path,
             OpenContentAsync,
             cancellationToken);
 
