@@ -222,8 +222,17 @@ backupApp.directive('restoreFilePicker', function() {
                         cur = p;
                         p = findParent(p);
 
-                        if (p == null && all && !$scope.ngSearchMode)
+                        if (p == null && all && !$scope.ngSearchMode) {
+                            // The root now covers everything below it. Remove the entries below
+                            // it, as the loop does for a folder with a parent, or they stay
+                            // selected when the root is unchecked.
+                            var rc = compareablePath(cur.id);
+                            for (var i = $scope.ngSelected.length - 1; i >= 0; i--)
+                                if (compareablePath($scope.ngSelected[i]).indexOf(rc) == 0)
+                                    $scope.ngSelected.splice(i, 1);
+
                             $scope.ngSelected.push(cur.id);
+                        }
                     }
 
                 } else {
