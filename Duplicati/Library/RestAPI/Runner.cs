@@ -97,23 +97,69 @@ namespace Duplicati.Server
             public DateTime? TaskStarted { get; set; }
             public DateTime? TaskFinished { get; set; }
 
-            internal Library.Main.IController? Controller { get; set; }
+            internal Library.Main.IController? Controller { get; private set; }
+
+            /// <summary>
+            /// Guards the controller together with the requests kept for it
+            /// </summary>
+            private readonly object m_controllerLock = new object();
+
+            /// <summary>
+            /// A stop asked for after the task started, but before it had a controller
+            /// </summary>
+            private bool m_stopBeforeController;
+
+            /// <summary>
+            /// An abort asked for after the task started, but before it had a controller
+            /// </summary>
+            private bool m_abortBeforeController;
 
             public void SetController(Library.Main.IController? controller)
             {
-                Controller = controller;
+                bool stop, abort;
+                lock (m_controllerLock)
+                {
+                    Controller = controller;
+                    stop = m_stopBeforeController;
+                    abort = m_abortBeforeController;
+                    m_stopBeforeController = m_abortBeforeController = false;
+                }
+
+                // Pass on a request that came while the task was being set up
+                if (controller == null)
+                    return;
+                if (abort)
+                    controller.AbortAsync().Await();
+                else if (stop)
+                    controller.StopAsync().Await();
             }
 
             public async Task StopAsync()
             {
-                if (Controller != null)
-                    await Controller.StopAsync().ConfigureAwait(false);
+                Library.Main.IController? controller;
+                lock (m_controllerLock)
+                {
+                    controller = Controller;
+                    // A queued task is left alone; a started one keeps the request for its controller
+                    if (controller == null && TaskStarted != null)
+                        m_stopBeforeController = true;
+                }
+                if (controller != null)
+                    await controller.StopAsync().ConfigureAwait(false);
             }
 
             public async Task AbortAsync()
             {
-                if (Controller != null)
-                    await Controller.AbortAsync().ConfigureAwait(false);
+                Library.Main.IController? controller;
+                lock (m_controllerLock)
+                {
+                    controller = Controller;
+                    // A queued task is left alone; a started one keeps the request for its controller
+                    if (controller == null && TaskStarted != null)
+                        m_abortBeforeController = true;
+                }
+                if (controller != null)
+                    await controller.AbortAsync().ConfigureAwait(false);
             }
 
             public async Task PauseAsync(bool alsoTransfers)
@@ -919,7 +965,7 @@ namespace Duplicati.Server
                         Library.Logging.Log.WriteWarningMessage(LOGTAG, "ParseDownloadThrottleError", ex, "Failed to parse throttle-download, continuing without it: {0}", options["throttle-download"]);
                     }
 
-                    ((RunnerData)data).Controller = controller;
+                    data.SetController(controller);
                     var appSettings = databaseConnection.ApplicationSettings;
                     await data.UpdateThrottleSpeedsAsync(appSettings.UploadSpeedLimit, appSettings.DownloadSpeedLimit).ConfigureAwait(false);
 
