@@ -529,15 +529,36 @@ namespace Duplicati.Library.Main.Operation
                     // Blocks are recreated with the entire list of missing files to handle cases where partial recreation is needed
                     await RunRepairDblocksAsync(backendManager, db, missingDblocks, incrementProgress, cancellationToken).ConfigureAwait(false);
 
-                    // Filesets are recreated one at a time
+                    // The time to keep is the fileset time in the database. The name of a file
+                    // that has been replaced before is later than the fileset it describes, so
+                    // taking the time from the name would move the fileset again.
+                    var missingFilelists = new List<(RemoteVolumeEntry Volume, DateTime Time)>();
                     foreach (var n in tp.MissingVolumes.Where(x => x.Type == RemoteVolumeType.Files))
+                    {
+                        DateTime filesetTime;
+                        try
+                        {
+                            filesetTime = (await db.GetFilesetFromRemotenameAsync(n.Name, cancellationToken).ConfigureAwait(false)).Time.ToUniversalTime();
+                        }
+                        catch (Exception ex) when (!ex.IsAbortException())
+                        {
+                            // Replacing it below fails the same way, and reports it
+                            filesetTime = VolumeBase.ParseFilename(n.Name).Time;
+                        }
+                        missingFilelists.Add((n, filesetTime));
+                    }
+
+                    // Filesets are recreated one at a time, the oldest first. Each replacement
+                    // takes the first free name at or after its fileset time, so a newer one
+                    // replaced first can take the name an older one would get, and push the
+                    // older one's name past its own.
+                    foreach (var (n, timestamp) in missingFilelists.OrderBy(x => x.Time))
                     {
                         FilesetVolumeWriter newEntry = null;
                         incrementProgress();
 
                         try
                         {
-                            var timestamp = VolumeBase.ParseFilename(n.Name).Time;
                             var fileTime =
                                 await FilesetVolumeWriter.ProbeUnusedFilenameNameAsync(db, m_options, timestamp, cancellationToken)
                                     .ConfigureAwait(false);
