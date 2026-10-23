@@ -604,7 +604,7 @@ namespace Duplicati.Library.Modules.Builtin
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteWarningMessage(LOGTAG, "HttpReportStatusSendError", ex, "Failed to post status report to {0}: {1}", string.Join(", ", m_urls ?? []), ex.Message);
+                Logging.Log.WriteMessage(Logging.LogMessageType.Information, LOGTAG, "HttpReportStatusSendError", ex, "Failed to post status report to {0}: {1}", string.Join(", ", m_urls ?? []), ex.Message);
             }
         }
 
