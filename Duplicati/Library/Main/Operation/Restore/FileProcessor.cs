@@ -211,9 +211,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Verify the target file blocks that may already exist.
                         long bytes_verified;
                         List<BlockRequest> missing_blocks, verified_blocks;
+                        bool target_differs;
                         try
                         {
-                            (bytes_verified, missing_blocks, verified_blocks) = await VerifyTargetBlocksAsync(file, restoreDestination, blocks, filehasher, blockhasher, buffer, options, results, results.TaskControl.ProgressToken).ConfigureAwait(false);
+                            (bytes_verified, missing_blocks, verified_blocks, target_differs) = await VerifyTargetBlocksAsync(file, restoreDestination, blocks, filehasher, blockhasher, buffer, options, results, results.TaskControl.ProgressToken).ConfigureAwait(false);
                         }
                         // Now that the reads observe the token, a shutdown reaches this handler.
                         // Letting it through matters twice over: continuing would carry on with
@@ -243,7 +244,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         sw_work_retarget?.Start();
                         // Check if the target file needs to be retargeted
-                        if (missing_blocks.Count > 0 && !options.Overwrite && await restoreDestination.FileExists(file.TargetPath, results.TaskControl.ProgressToken).ConfigureAwait(false))
+                        if ((missing_blocks.Count > 0 || target_differs) && !options.Overwrite && await restoreDestination.FileExists(file.TargetPath, results.TaskControl.ProgressToken).ConfigureAwait(false))
                         {
                             var new_name = await GenerateNewNameAsync(file, db, restoreDestination, filehasher, results.TaskControl.ProgressToken).ConfigureAwait(false);
                             if (await restoreDestination.FileExists(new_name, results.TaskControl.ProgressToken).ConfigureAwait(false))
@@ -1070,12 +1071,13 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="options">The Duplicati configuration options.</param>
         /// <param name="results">The restoration results.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>An awaitable `Task`, which returns a collection of data blocks that are missing.</returns>
-        private static async Task<(long, List<BlockRequest>, List<BlockRequest>)> VerifyTargetBlocksAsync(FileRequest file, IRestoreDestinationProvider restoreDestination, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, byte[] buffer, Options options, RestoreResults results, CancellationToken cancellationToken)
+        /// <returns>An awaitable `Task`, which returns the number of bytes verified, the data blocks that are missing, the data blocks that are verified, and whether the file that is there is a different file although every block matches.</returns>
+        private static async Task<(long, List<BlockRequest>, List<BlockRequest>, bool)> VerifyTargetBlocksAsync(FileRequest file, IRestoreDestinationProvider restoreDestination, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, byte[] buffer, Options options, RestoreResults results, CancellationToken cancellationToken)
         {
             long bytes_read = 0;
             List<BlockRequest> missing_blocks = [];
             List<BlockRequest> verified_blocks = [];
+            var target_differs = false;
 
             // Check if the file exists. A symbolic link has no content to compare: it is
             // made from its metadata. What is at its path may be a link as well, and reading
@@ -1144,7 +1146,22 @@ namespace Duplicati.Library.Main.Operation.Restore
                         var currentLength = await restoreDestination.GetFileLength(file.TargetPath, cancellationToken).ConfigureAwait(false);
                         if (file.Length < currentLength)
                         {
-                            if (options.Dryrun)
+                            if (!options.Overwrite)
+                            {
+                                // The file starts with the restored content but goes on after
+                                // it, so it is not that file: most likely it was appended to
+                                // after the backup. Without --overwrite it is left as it is,
+                                // and the file is restored under a new name, as a file that
+                                // differs in any other way is. None of its blocks are used for
+                                // that, as the copy reads whole blocks and would pick up what
+                                // follows the last one.
+                                Logging.Log.WriteVerboseMessage(LOGTAG, "TargetFileIsLonger", "The file {0} starts with the restored content but is longer ({1} bytes, not {2}), so it is not overwritten", file.TargetPath, currentLength, file.Length);
+                                missing_blocks.AddRange(verified_blocks);
+                                verified_blocks.Clear();
+                                bytes_read = 0;
+                                target_differs = true;
+                            }
+                            else if (options.Dryrun)
                             {
                                 Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.TargetPath}"" from {currentLength} to {file.Length}");
                             }
@@ -1178,7 +1195,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 missing_blocks.AddRange(blocks);
             }
 
-            return (bytes_read, missing_blocks, verified_blocks);
+            return (bytes_read, missing_blocks, verified_blocks, target_differs);
         }
 
         /// <summary>
