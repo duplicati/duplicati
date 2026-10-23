@@ -116,7 +116,7 @@ internal class GroupConversationsSourceEntry(SourceProvider provider, string par
                     if (cancellationToken.IsCancellationRequested)
                         yield break;
 
-                    yield return new GmailMessageSourceEntry(userId, this.Path, message, service, groupEmail);
+                    yield return new GmailMessageSourceEntry(provider, null, userId, this.Path, message, service, groupEmail);
                 }
             }
 

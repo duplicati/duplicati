@@ -1,37 +1,37 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.SourceProvider.ChangeTracking;
 using Google.Apis.Calendar.v3.Data;
 using Google.Apis.Drive.v3;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class CalendarEventAttachmentSourceEntry(string parentPath, EventAttachment attachment, DriveService driveService)
+internal class CalendarEventAttachmentSourceEntry(SourceProvider provider, string? stateKey, string parentPath, EventAttachment attachment, DriveService driveService)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, attachment.Title), DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override long Size => -1;
 
-    public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
+    public override Task<Stream> OpenRead(CancellationToken cancellationToken)
+        => provider.ChangeTracker.OpenWithFailureTrackingAsync(stateKey, this.Path, ct => DownloadAsync(ct), cancellationToken);
+
+    /// <summary>
+    /// Downloads the attachment
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The content</returns>
+    private async Task<Stream> DownloadAsync(CancellationToken cancellationToken)
     {
         if (!string.IsNullOrEmpty(attachment.FileId))
         {
             var request = driveService.Files.Get(attachment.FileId);
-            var stream = new MemoryStream();
-            await request.DownloadAsync(stream, cancellationToken);
-            stream.Seek(0, SeekOrigin.Begin);
-            return stream;
+            request.SupportsAllDrives = true;
+            return await GoogleDownloads.ToMemoryAsync(request.DownloadAsync, $"attachment {attachment.FileId}", cancellationToken).ConfigureAwait(false);
         }
         else if (!string.IsNullOrEmpty(attachment.FileUrl))
         {
             using var client = new HttpClient();
-            var response = await client.GetAsync(attachment.FileUrl, cancellationToken);
-            if (response.IsSuccessStatusCode)
-            {
-                var stream = new MemoryStream();
-                await response.Content.CopyToAsync(stream, cancellationToken);
-                stream.Seek(0, SeekOrigin.Begin);
-                return stream;
-            }
+            return await GoogleDownloads.ToMemoryAsync(client, attachment.FileUrl, $"attachment {attachment.FileUrl}", cancellationToken).ConfigureAwait(false);
         }
 
         throw new FileNotFoundException("Cannot download attachment");

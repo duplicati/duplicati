@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
 using Duplicati.Library.Interface;
+using Duplicati.Library.SourceProvider.ChangeTracking;
 using Duplicati.Library.Logging;
 
 namespace Duplicati.Proprietary.Office365.SourceItems;
@@ -17,7 +18,7 @@ internal sealed class DriveChangeSet
     /// <summary>
     /// The folder map, updated with the changes
     /// </summary>
-    public DriveFolderMap Map { get; }
+    public FolderMap Map { get; }
 
     /// <summary>
     /// The ids of the folders that were moved to another parent. The delta reports only the
@@ -34,7 +35,7 @@ internal sealed class DriveChangeSet
     /// Creates a change set over a folder map
     /// </summary>
     /// <param name="map">The folder map</param>
-    public DriveChangeSet(DriveFolderMap map)
+    public DriveChangeSet(FolderMap map)
     {
         Map = map;
     }

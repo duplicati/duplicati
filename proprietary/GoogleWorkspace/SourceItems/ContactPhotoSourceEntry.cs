@@ -1,34 +1,27 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.SourceProvider.ChangeTracking;
 using Google.Apis.PeopleService.v1;
 using Google.Apis.PeopleService.v1.Data;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class ContactPhotoSourceEntry(string parentPath, Photo photo, int index, PeopleServiceService peopleService)
+internal class ContactPhotoSourceEntry(SourceProvider provider, string? stateKey, string parentPath, Photo photo, int index, PeopleServiceService peopleService)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, $"photo-{index}.jpg"), DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override long Size => -1;
 
-    public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
-    {
-        if (!string.IsNullOrEmpty(photo.Url))
+    public override Task<Stream> OpenRead(CancellationToken cancellationToken)
+        => provider.ChangeTracker.OpenWithFailureTrackingAsync(stateKey, this.Path, ct =>
         {
+            if (string.IsNullOrEmpty(photo.Url))
+                throw new FileNotFoundException("Cannot download photo");
+
             // The photo URLs are not public, so the download goes through the People service's
             // client, whose credential interceptor attaches the impersonated user's token.
-            var response = await peopleService.HttpClient.GetAsync(photo.Url, cancellationToken);
-            if (response.IsSuccessStatusCode)
-            {
-                var stream = new MemoryStream();
-                await response.Content.CopyToAsync(stream, cancellationToken);
-                stream.Seek(0, SeekOrigin.Begin);
-                return stream;
-            }
-        }
-
-        throw new FileNotFoundException("Cannot download photo");
-    }
+            return GoogleDownloads.ToMemoryAsync(peopleService.HttpClient, photo.Url, "photo", ct);
+        }, cancellationToken);
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
     {
