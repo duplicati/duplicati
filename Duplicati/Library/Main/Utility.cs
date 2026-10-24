@@ -80,6 +80,18 @@ namespace Duplicati.Library.Main
         ];
 
         /// <summary>
+        /// Database keys that only affect how new remote volumes are written,
+        /// and can be changed on an existing backup
+        /// </summary>
+        private static readonly string[] ChangeableOptionKeys =
+        [
+            "prefix",
+            "dblock-size",
+            "compression-module",
+            "encryption-module"
+        ];
+
+        /// <summary>
         /// Implementation of the IMetahash interface
         /// </summary>
         private class Metahash : IMetahash
@@ -242,6 +254,11 @@ namespace Duplicati.Library.Main
                 else if (CaseInsensitiveOptionKeys.Contains(k.Key) && string.Equals(opts[k.Key], k.Value, StringComparison.OrdinalIgnoreCase))
                 {
                     // Module names are matched without regard to case, so store the name reported by the module
+                    if (opts[k.Key] != k.Value)
+                        needsUpdate = true;
+                }
+                else if (ChangeableOptionKeys.Contains(k.Key))
+                {
                     if (opts[k.Key] != k.Value)
                         needsUpdate = true;
                 }
