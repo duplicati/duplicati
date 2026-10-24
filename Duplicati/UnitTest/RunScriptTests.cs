@@ -89,6 +89,36 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Border")]
+        [TestCase(0, 0, "Backup completed successfully!")]
+        [TestCase(1, 1, "Backup was stopped before it completed")]
+        [TestCase(4, 3, "Backup completed with errors")]
+        [TestCase(5, 3, "Backup was stopped before it completed")]
+        public void CommandLineBackupReportsTheResultOfTheScript(int scriptExitCode, int expectedExitCode, string expectedMessage)
+        {
+            File.WriteAllText(Path.Combine(DATAFOLDER, "file.txt"), "content");
+
+            var options = new Dictionary<string, string>(TestOptions)
+            {
+                ["run-script-before"] = CreateScript(scriptExitCode),
+                ["run-script-timeout"] = "5s",
+            };
+            var args = new[] { "backup", "file://" + TARGETFOLDER, DATAFOLDER }
+                .Concat(options.Select(x => $"--{x.Key}={x.Value}"))
+                .ToArray();
+
+            using var output = new StringWriter();
+            using var errors = new StringWriter();
+            var exitCode = Duplicati.CommandLine.Program.RunCommandLine(output, errors, _ => { }, args);
+
+            var lines = output.ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
+            Assert.AreEqual(expectedExitCode, exitCode, output.ToString() + errors.ToString());
+            Assert.That(lines, Does.Contain(expectedMessage), output.ToString());
+            if (expectedMessage != "Backup completed successfully!")
+                Assert.That(lines, Does.Not.Contain("Backup completed successfully!"), output.ToString());
+        }
+
+        [Test]
+        [Category("Border")]
         public async Task RunScriptBeforeAsync()
         {
             var blocksize = 10 * 1024;

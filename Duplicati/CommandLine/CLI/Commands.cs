@@ -875,7 +875,13 @@ namespace Duplicati.CommandLine
                 if (result.ExaminedFiles == 0 && (filter != null && !filter.Empty))
                     output.MessageEvent("No files were processed. If this was not intentional you may want to use the \"test-filters\" command");
 
-                output.MessageEvent("Backup completed successfully!");
+                // A script or a stop request can end the backup early, and it can end with errors
+                if (result.Interrupted)
+                    output.MessageEvent("Backup was stopped before it completed");
+                else if (result.ParsedResult == Library.Interface.ParsedResultType.Error)
+                    output.MessageEvent("Backup completed with errors");
+                else
+                    output.MessageEvent("Backup completed successfully!");
 
                 //Interrupted = 50
                 if (result.PartialBackup)
