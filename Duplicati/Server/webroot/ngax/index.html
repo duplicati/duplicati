@@ -40,11 +40,11 @@
         }
     </script>
 
-    <script type="text/javascript" src="scripts/angular/angular.min.js"></script>
-    <script type="text/javascript" src="scripts/angular/angular-route.min.js"></script>
+    <script type="text/javascript" src="scripts/angular/angular.min.js?v=1.8.3"></script>
+    <script type="text/javascript" src="scripts/angular/angular-route.min.js?v=1.8.3"></script>
 
-    <script type="text/javascript" src="scripts/angular/angular-cookies.min.js"></script>
-    <script type="text/javascript" src="scripts/angular/angular-sanitize.min.js"></script>
+    <script type="text/javascript" src="scripts/angular/angular-cookies.min.js?v=1.8.3"></script>
+    <script type="text/javascript" src="scripts/angular/angular-sanitize.min.js?v=1.8.3"></script>
 
     <script type="text/javascript" src="scripts/libs/dxTree.js"></script>
     <script type="text/javascript" src="scripts/libs/moment-with-locales.min.js"></script>
@@ -132,7 +132,7 @@
                 </div>
             </div>
 
-            <a href class="menubutton hidden" data-target="mainmenu" translate>Menu</a>
+            <a href class="menubutton hidden" data-target="mainmenu"><span translate>Menu</span></a>
 
             <div class="action-icons-small">
                 <button class="pause" ng-class="{'active': state.programState != 'Running'}" ng-click="pauseOptions()" title="{{state.programState == 'Running' ? 'Click to see the pause options' : 'Click to resume'}}"></button>
