@@ -1379,7 +1379,7 @@ namespace Duplicati.Server
             }
         }
 
-        private static void UpdateMetadataBase(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IBackup backup, IBasicResults result)
+        internal static void UpdateMetadataBase(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IBackup backup, IBasicResults result)
         {
             if (result is IRestoreResults r1)
             {
@@ -1455,20 +1455,14 @@ namespace Duplicati.Server
 
                 // Only the latest run is reported, so the notifications of the earlier runs go,
                 // whether or not this run has a warning or error of its own
-                var notificationIds = databaseConnection.GetNotifications()
-                    .Where(n => n.BackupID == backup.ID)
-                    .Select(x => x.ID)
-                    .ToList();
-
-                foreach (var id in notificationIds)
-                    try
-                    {
-                        databaseConnection.DismissNotification(id);
-                    }
-                    catch (Exception ex)
-                    {
-                        databaseConnection.LogError(backup.ID, "Failed to dismiss notification", ex);
-                    }
+                try
+                {
+                    databaseConnection.DismissNotificationsForBackup(backup.ID);
+                }
+                catch (Exception ex)
+                {
+                    databaseConnection.LogError(backup.ID, "Failed to dismiss notifications", ex);
+                }
 
                 if (r.FilesWithError > 0 || r.Warnings.Any() || r.Errors.Any())
                 {
