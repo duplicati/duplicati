@@ -1,9 +1,3 @@
-// AngularJS 1.7 removed angular.lowercase, but the bundled angular-gettext still calls it
-if (!angular.lowercase)
-    angular.lowercase = function (value) {
-        return angular.isString(value) ? value.toLowerCase() : value;
-    };
-
 var backupApp = angular.module(
     'backupApp',
     [
