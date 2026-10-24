@@ -1,4 +1,4 @@
-backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, $http, gettextCatalog) {
+backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo, EditUriBackendConfig, DialogService, $http, $sce, gettextCatalog) {
 
     EditUriBackendConfig.mergeServerAndPath = function (scope) {
         if ((scope.Server || '') != '') {
@@ -259,7 +259,8 @@ backupApp.service('EditUriBuiltins', function (AppService, AppUtils, SystemInfo,
             var recheck = function () {
                 countDown--;
                 if (countDown > 0 && ft == scope.oauth_create_token) {
-                    $http.jsonp(servicelink + 'fetch?callback=JSON_CALLBACK', {params: {'token': ft}}).then(
+                    // The service link is the default OAuth server or one set with --oauth-url
+                    $http.jsonp($sce.trustAsResourceUrl(servicelink + 'fetch'), {params: {'token': ft}, jsonpCallbackParam: 'callback'}).then(
                         function (response) {
                             if (response.data.authid) {
                                 scope.AuthID = response.data.authid;
