@@ -52,6 +52,10 @@ namespace Duplicati.Library.Backend.GoogleServices
             req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             return req;
         }
+
+        /// <inheritdoc />
+        public override Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage? responseContext, CancellationToken cancellationToken)
+            => GoogleCommon.ThrowWithErrorReasonAsync(ex, responseContext, cancellationToken);
     }
 }
 
