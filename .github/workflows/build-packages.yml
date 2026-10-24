@@ -10,6 +10,8 @@ jobs:
   build_packages:
     name: Build packages
     runs-on: ${{ matrix.os }}
+    # Successful runs take up to ~90 minutes; fail a stalled build instead of holding the runner for 6 hours
+    timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
