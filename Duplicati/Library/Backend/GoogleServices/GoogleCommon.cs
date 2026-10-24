@@ -19,8 +19,10 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -33,6 +35,102 @@ namespace Duplicati.Library.Backend.GoogleServices
         /// The size of upload chunks
         /// </summary>
         private const long UPLOAD_CHUNK_SIZE = 1024 * 1024 * 10;
+
+        /// <summary>
+        /// How long to wait for the body of a failed response
+        /// </summary>
+        private static readonly TimeSpan ERROR_BODY_TIMEOUT = TimeSpan.FromSeconds(30);
+
+        /// <summary>
+        /// The reasons Google gives for a rate limit. Google reports them with 403 Forbidden,
+        /// the same status it uses for a missing permission, and asks for the request to be
+        /// repeated with exponential backoff:
+        /// https://developers.google.com/workspace/drive/api/guides/handle-errors
+        /// </summary>
+        private static readonly HashSet<string> RATE_LIMIT_REASONS = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "rateLimitExceeded",
+            "userRateLimitExceeded"
+        };
+
+        /// <summary>
+        /// Rethrows a failed request with the reason Google gives in the error body, so that
+        /// the log tells a rate limit from a missing permission. A rate limit carries a
+        /// <see cref="TooManyRequestException"/> as the inner exception. A response without
+        /// a Google error body is left alone.
+        /// </summary>
+        /// <param name="ex">The exception for the failed request</param>
+        /// <param name="response">The response, if one was received</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        public static async Task ThrowWithErrorReasonAsync(Exception ex, HttpResponseMessage? response, CancellationToken cancellationToken)
+        {
+            if (ex is not HttpRequestException || response == null)
+                return;
+
+            string body;
+            try
+            {
+                body = await Utility.Utility.WithTimeout(ERROR_BODY_TIMEOUT, cancellationToken, ct => response.Content.ReadAsStringAsync(ct)).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch
+            {
+                // Keep the original failure if the body cannot be read
+                return;
+            }
+
+            var (reasons, message) = ParseErrorBody(body);
+            if (reasons.Count == 0 && string.IsNullOrWhiteSpace(message))
+                return;
+
+            var text = $"{ex.Message} Google reason: {(reasons.Count == 0 ? "none" : string.Join(", ", reasons))}, message: {message}";
+            var rateLimited = response.StatusCode == HttpStatusCode.TooManyRequests || reasons.Any(RATE_LIMIT_REASONS.Contains);
+
+            throw new HttpRequestException(HttpRequestError.Unknown, text, rateLimited ? new TooManyRequestException(response.Headers.RetryAfter!) : ex, response.StatusCode);
+        }
+
+        /// <summary>
+        /// Determines whether the failure is a rate limit marked by <see cref="ThrowWithErrorReasonAsync"/>
+        /// </summary>
+        /// <param name="ex">The exception to inspect</param>
+        /// <returns><c>true</c> if the request was refused by a rate limit</returns>
+        public static bool IsRateLimited(Exception ex)
+            => ex.InnerException is TooManyRequestException;
+
+        /// <summary>
+        /// Extracts the reasons and the message from a Google error body of the form
+        /// <c>{"error":{"errors":[{"reason":...}],"message":...}}</c>
+        /// </summary>
+        /// <param name="body">The response body</param>
+        /// <returns>The reasons found, and the message if any</returns>
+        internal static (IReadOnlyList<string> Reasons, string? Message) ParseErrorBody(string? body)
+        {
+            if (string.IsNullOrWhiteSpace(body))
+                return ([], null);
+
+            try
+            {
+                if (JToken.Parse(body) is not JObject root || root["error"] is not JObject error)
+                    return ([], null);
+
+                var reasons = (error["errors"] as JArray ?? [])
+                    .OfType<JObject>()
+                    .Select(x => x["reason"]?.Type == JTokenType.String ? (string?)x["reason"] : null)
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(x => x!)
+                    .ToList();
+
+                var message = error["message"]?.Type == JTokenType.String ? (string?)error["message"] : null;
+                return (reasons, message);
+            }
+            catch (JsonException)
+            {
+                return ([], null);
+            }
+        }
 
         /// <summary>
         /// Helper method that queries a resumeable upload uri for progress

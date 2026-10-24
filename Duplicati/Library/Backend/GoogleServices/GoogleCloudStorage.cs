@@ -123,7 +123,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             {
                 var authId = AuthIdOptionsHelper.Parse(options)
                     .RequireCredentials(TOKEN_URL);
-                m_oauth = new OAuthHelperHttpClient(authId.AuthId!, this.ProtocolKey, authId.OAuthUrl)
+                m_oauth = new GoogleOAuthHelperHttpClient(authId.AuthId!, this.ProtocolKey, authId.OAuthUrl)
                 {
                     AutoAuthHeader = true
                 };
@@ -131,6 +131,25 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 // This does not work with the current OAuth server as it only grants read/write access.
                 m_create_oauth_fullcontrol = () => null;
             }
+        }
+
+        /// <summary>
+        /// Creates a backend that talks through the supplied <see cref="HttpClient"/>,
+        /// so the Cloud Storage API responses can be decided by a test
+        /// </summary>
+        /// <param name="url">The backend url</param>
+        /// <param name="options">The options to use</param>
+        /// <param name="httpClient">The client to send the requests through</param>
+        internal GoogleCloudStorage(string url, Dictionary<string, string?> options, HttpClient httpClient)
+            : this(url, options)
+        {
+            var authId = AuthIdOptionsHelper.Parse(options)
+                .RequireCredentials(TOKEN_URL);
+
+            m_oauth = new GoogleOAuthHelperHttpClient(authId.AuthId!, this.ProtocolKey, authId.OAuthUrl, httpClient)
+            {
+                AutoAuthHeader = true
+            };
         }
 
         private class ListBucketResponse
@@ -193,7 +212,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }
             catch (HttpRequestException wex)
             {
-                if (wex.StatusCode == HttpStatusCode.Forbidden)
+                if (wex.StatusCode == HttpStatusCode.Forbidden && !GoogleCommon.IsRateLimited(wex))
                     throw new FolderMissingException();
                 throw;
             }

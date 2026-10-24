@@ -68,7 +68,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
             m_timeouts = TimeoutOptionsHelper.Parse(options);
             m_teamDriveID = options.GetValueOrDefault(TEAMDRIVE_ID);
-            m_oauth = new OAuthHelperHttpClient(auth.AuthId!, this.ProtocolKey, auth.OAuthUrl) { AutoAuthHeader = true };
+            m_oauth = new GoogleOAuthHelperHttpClient(auth.AuthId!, this.ProtocolKey, auth.OAuthUrl) { AutoAuthHeader = true };
             m_filecache = new Dictionary<string, GoogleDriveFolderItem[]>();
         }
 
@@ -85,7 +85,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             var auth = AuthIdOptionsHelper.Parse(options)
                 .RequireCredentials(TOKEN_URL);
 
-            m_oauth = new OAuthHelperHttpClient(auth.AuthId!, this.ProtocolKey, auth.OAuthUrl, httpClient) { AutoAuthHeader = true };
+            m_oauth = new GoogleOAuthHelperHttpClient(auth.AuthId!, this.ProtocolKey, auth.OAuthUrl, httpClient) { AutoAuthHeader = true };
         }
 
         private async Task<string> GetFolderIdAsync(string path, bool autocreate, CancellationToken cancelToken)
