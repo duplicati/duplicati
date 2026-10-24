@@ -433,11 +433,17 @@ namespace Duplicati.Library.Backend.GoogleDrive
         {
             try
             {
-                var entries = await GetFileEntriesAsync(remotename, true, cancelToken).ConfigureAwait(false);
-                if (entries == null)
+                // The cache can be missing a copy of the name: an upload that timed out
+                // may still be finished by Drive, after the retry has made a new file and
+                // the cache only knows that one. Drive is asked again, and the cached
+                // entries are kept, as a file that was just made may not be listed yet.
+                m_filecache.Remove(remotename, out var cached);
+                var listed = await GetFileEntriesAsync(remotename, cached == null, cancelToken).ConfigureAwait(false);
+                var entries = (cached ?? []).Concat(listed ?? []).ToArray();
+                if (entries.Length == 0)
                     throw new FileMissingException(Strings.GoogleDrive.FilenotFound(remotename));
 
-                foreach (var fileid in entries.Select(x => x.id).WhereNotNullOrWhiteSpace())
+                foreach (var fileid in entries.Select(x => x.id).WhereNotNullOrWhiteSpace().Distinct())
                 {
                     var url = WebApi.GoogleDrive.DeleteUrl(fileid, m_teamDriveID);
                     await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken,
