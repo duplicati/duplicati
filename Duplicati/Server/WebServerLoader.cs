@@ -319,6 +319,8 @@ public static class WebServerLoader
             var userroot = options[OPTION_WEBROOT];
 #if DEBUG
             //In debug mode we do not care where the path points
+            if (!string.IsNullOrWhiteSpace(userroot))
+                webroot = userroot;
 #else
             //In release mode we check that the user supplied path is located
             // in the same folders as the running application, to avoid users
