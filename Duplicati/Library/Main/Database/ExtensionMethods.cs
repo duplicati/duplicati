@@ -339,11 +339,30 @@ public static partial class ExtensionMethods
         if (values != null && values.Count > 0)
             self.SetParameterValues(values);
 
-        using (SlowQueryMonitor.StartQuery(self, "ExecuteReaderEnumerableAsync"))
         using (writeLog ? new Logging.Timer(LOGTAG, "ExecuteReaderEnumerableAsync", $"ExecuteReaderEnumerableAsync: {self.GetPrintableCommandText()}") : null)
-        await using (var rd = await self.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
-            while (await rd.ReadAsync(cancellationToken).ConfigureAwait(false))
-                yield return rd;
+        {
+            // Only the time spent in the database is monitored, not the time the caller spends on each row
+            SqliteDataReader rd;
+            using (SlowQueryMonitor.StartQuery(self, "ExecuteReaderEnumerableAsync"))
+                rd = await self.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+
+            await using (rd)
+                while (await ReadMonitoredAsync(self, rd, cancellationToken).ConfigureAwait(false))
+                    yield return rd;
+        }
+    }
+
+    /// <summary>
+    /// Advances the reader to the next row while the slow query monitor tracks the command.
+    /// </summary>
+    /// <param name="self">The command that produced the reader.</param>
+    /// <param name="rd">The reader to advance.</param>
+    /// <param name="cancellationToken">Cancellation token to cancel the operation.</param>
+    /// <returns>A task that when awaited contains <c>true</c> if there are more rows; otherwise, <c>false</c>.</returns>
+    private static async Task<bool> ReadMonitoredAsync(SqliteCommand self, SqliteDataReader rd, CancellationToken cancellationToken)
+    {
+        using (SlowQueryMonitor.StartQuery(self, "ExecuteReaderEnumerableAsync"))
+            return await rd.ReadAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
