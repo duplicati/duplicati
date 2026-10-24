@@ -249,6 +249,82 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Utility")]
+        public async Task VerifyOptionsAllowsChangingWritePathValuesAsync()
+        {
+            using var tempDb = new TempFile();
+            await using var db = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "test", true, null, CancellationToken.None);
+
+            var originalOptions = new Options(new Dictionary<string, string?>
+            {
+                { "prefix", "original-prefix" },
+                { "blocksize", "16kb" },
+                { "dblock-size", "25mb" },
+                { "compression-module", "zip" },
+                { "encryption-module", "aes" },
+                { "passphrase", "secret" }
+            });
+
+            await Utility.VerifyOptionsAndUpdateDatabaseAsync(db, originalOptions, CancellationToken.None);
+
+            var changedOptions = new Options(new Dictionary<string, string?>
+            {
+                { "prefix", "changed-prefix" },
+                { "blocksize", "16kb" },
+                { "dblock-size", "100mb" },
+                { "compression-module", "7z" },
+                { "encryption-module", "gpg" },
+                { "passphrase", "secret" }
+            });
+
+            await Utility.VerifyOptionsAndUpdateDatabaseAsync(db, changedOptions, CancellationToken.None);
+
+            var storedOptions = await db.GetDbOptionsAsync(CancellationToken.None);
+            Assert.That(storedOptions["prefix"], Is.EqualTo("changed-prefix"));
+            Assert.That(storedOptions["dblock-size"], Is.EqualTo(changedOptions.VolumeSize.ToString()));
+            Assert.That(storedOptions["compression-module"], Is.EqualTo("7z"));
+            Assert.That(storedOptions["encryption-module"], Is.EqualTo("gpg"));
+            Assert.That(storedOptions["blocksize"], Is.EqualTo(originalOptions.Blocksize.ToString()));
+
+            var restoredOptions = new Options(new Dictionary<string, string?>());
+            await Utility.UpdateOptionsFromDbAsync(db, restoredOptions, CancellationToken.None);
+            Assert.That(restoredOptions.Prefix, Is.EqualTo("changed-prefix"));
+            Assert.That(restoredOptions.VolumeSize, Is.EqualTo(changedOptions.VolumeSize));
+            Assert.That(restoredOptions.CompressionModule, Is.EqualTo("7z"));
+            Assert.That(restoredOptions.EncryptionModule, Is.EqualTo("gpg"));
+        }
+
+        [Test]
+        [Category("Utility")]
+        public async Task VerifyOptionsThrowsWhenChangingBlockHashAsync()
+        {
+            using var tempDb = new TempFile();
+            await using var db = await LocalDatabase.CreateLocalDatabaseAsync(tempDb, "test", true, null, CancellationToken.None);
+
+            await Utility.VerifyOptionsAndUpdateDatabaseAsync(db, new Options(new Dictionary<string, string?>
+            {
+                { "block-hash-algorithm", Library.Utility.HashFactory.SHA256 },
+                { "dblock-size", "25mb" },
+                { "passphrase", "secret" }
+            }), CancellationToken.None);
+
+            var changedOptions = new Options(new Dictionary<string, string?>
+            {
+                { "block-hash-algorithm", Library.Utility.HashFactory.SHA512 },
+                { "dblock-size", "100mb" },
+                { "passphrase", "secret" }
+            });
+
+            var ex = Assert.ThrowsAsync<UserInformationException>(async () =>
+                await Utility.VerifyOptionsAndUpdateDatabaseAsync(db, changedOptions, CancellationToken.None));
+            Assert.That(ex?.HelpID, Is.EqualTo("ParameterChangeNotSupported"));
+
+            var storedOptions = await db.GetDbOptionsAsync(CancellationToken.None);
+            Assert.That(storedOptions["blockhash"], Is.EqualTo(Library.Utility.HashFactory.SHA256));
+            Assert.That(storedOptions["dblock-size"], Is.EqualTo(new Options(new Dictionary<string, string?> { { "dblock-size", "25mb" } }).VolumeSize.ToString()));
+        }
+
+        [Test]
+        [Category("Utility")]
         public async Task PersistOptionsToDatabaseRemovesStaleEncryptionMarkersForUnencryptedBackup_Async()
         {
             using var tempDb = new TempFile();
