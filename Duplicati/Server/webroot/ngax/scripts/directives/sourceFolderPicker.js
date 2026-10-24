@@ -26,6 +26,9 @@ backupApp.directive('sourceFolderPicker', function() {
         var partialincludemap = {};
         var filterList = null;
         var displayMap = {};
+        // The %...% folders from the folder list. Their keys in displayMap depend on the
+        // system info, so they are added again when it arrives after the folder list
+        var specialFolders = [];
 
         scope.dirsep = null;
 
@@ -34,6 +37,11 @@ backupApp.directive('sourceFolderPicker', function() {
                 path += scope.dirsep;
 
             return scope.systeminfo.CaseSensitiveFilesystem ? path : path.toLowerCase();
+        }
+
+        function mapSpecialFolderNames() {
+            for (var i = 0; i < specialFolders.length; i++)
+                displayMap[compareablePath(specialFolders[i].id)] = specialFolders[i].text;
         }
 
         function setEntryType(n)
@@ -371,6 +379,7 @@ backupApp.directive('sourceFolderPicker', function() {
         $scope.$watch('systeminfo.DirectorySeparator', function (val, oldVal) {
             if (val != null) {
                 scope.dirsep = val;
+                mapSpecialFolderNames();
                 syncTreeWithLists();
             }
         }, true);
@@ -604,13 +613,14 @@ backupApp.directive('sourceFolderPicker', function() {
                     } else {
                         usernode.children.push(data.data[i]);
                     }
-                    displayMap[path] = data.data[i].text;
+                    specialFolders.push(data.data[i]);
                     setIconCls(data.data[i]);
                 }
                 else
                     systemnode.children.push(data.data[i]);
             }
 
+            mapSpecialFolderNames();
             syncTreeWithLists();
 
         }, AppUtils.connectionError);
