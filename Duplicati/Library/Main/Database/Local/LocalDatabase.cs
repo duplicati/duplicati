@@ -3600,12 +3600,13 @@ namespace Duplicati.Library.Main.Database.Local
         /// </summary>
         /// <param name="result">The results to write.</param>
         /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
-        /// <returns>A task that completes when the results have been written and committed.</returns>
-        public async Task WriteResultsAndCommitAsync(IBasicResults result, CancellationToken token)
+        /// <returns>A task that completes with the ID of the log entry holding the results, or -1 if nothing was written.</returns>
+        public async Task<long> WriteResultsAndCommitAsync(IBasicResults result, CancellationToken token)
         {
             if (IsDisposed)
-                return;
+                return -1;
 
+            var id = -1L;
             if (m_connection != null && result != null)
             {
                 if (result is BasicResults basicResults)
@@ -3623,8 +3624,44 @@ namespace Duplicati.Library.Main.Database.Local
                 )
                     .ConfigureAwait(false);
 
+                await using (var cmd = m_connection.CreateCommand(m_rtr))
+                    id = await cmd.SetCommandAndParameters(@"SELECT last_insert_rowid()")
+                        .ExecuteScalarInt64Async(-1, token)
+                        .ConfigureAwait(false);
+
                 await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
             }
+
+            return id;
+        }
+
+        /// <summary>
+        /// Replaces the results in a log entry written by <see cref="WriteResultsAndCommitAsync"/> and commits the transaction.
+        /// </summary>
+        /// <param name="logId">The ID of the log entry holding the results.</param>
+        /// <param name="result">The results to write.</param>
+        /// <param name="token">Cancellation token to monitor for cancellation requests.</param>
+        /// <returns>A task that completes when the results have been written and committed.</returns>
+        public async Task UpdateResultsAndCommitAsync(long logId, IBasicResults result, CancellationToken token)
+        {
+            if (IsDisposed || m_connection == null || result == null)
+                return;
+
+            await using var cmd = m_connection.CreateCommand(m_rtr);
+            await cmd.SetCommandAndParameters(@"
+                UPDATE ""LogData""
+                SET ""Message"" = @Message
+                WHERE
+                    ""ID"" = @ID
+                    AND ""Type"" = @Type
+            ")
+                .SetParameterValue("@Message", new JsonFormatSerializer().SerializeResults(result))
+                .SetParameterValue("@ID", logId)
+                .SetParameterValue("@Type", ResultLogType)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
         }
 
         /// <summary>
