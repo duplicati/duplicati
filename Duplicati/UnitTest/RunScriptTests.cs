@@ -630,6 +630,58 @@ namespace Duplicati.UnitTest
             Assert.IsFalse(reduced.Contains("Including path"), "The reduced result file holds message text");
         }
 
+        [Test]
+        [Category("Border")]
+        [TestCase("run-script-before", 3, true)]
+        [TestCase("run-script-before", 5, true)]
+        [TestCase("run-script-before-required", 1, true)]
+        // Exit code 1 asks to skip the run without a warning, which is not reported
+        [TestCase("run-script-before", 1, false)]
+        public async Task ReportIsSentWhenScriptStopsOperationAsync(string scriptOption, int exitCode, bool expectReport)
+        {
+            var probe = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+            probe.Start();
+            var port = ((System.Net.IPEndPoint)probe.LocalEndpoint).Port;
+            probe.Stop();
+
+            using var listener = new System.Net.HttpListener();
+            listener.Prefixes.Add($"http://localhost:{port}/");
+            listener.Start();
+            var received = new System.Collections.Concurrent.ConcurrentQueue<string>();
+            // Stop() aborts the pending wait before IsListening turns false, so a flag set beforehand marks the abort as expected
+            var stopping = false;
+            var serve = Task.Run(async () =>
+            {
+                while (listener.IsListening)
+                {
+                    System.Net.HttpListenerContext context;
+                    try { context = await listener.GetContextAsync(); }
+                    catch (Exception) when (System.Threading.Volatile.Read(ref stopping)) { return; }
+
+                    received.Enqueue(context.Request.RawUrl);
+                    context.Response.StatusCode = 200;
+                    context.Response.Close();
+                }
+            });
+
+            var options = new Dictionary<string, string>(this.TestOptions);
+            options[scriptOption] = CreateScript(exitCode);
+            options["send-http-url"] = $"http://localhost:{port}/report";
+            options["send-http-level"] = "all";
+            options["send-http-retries"] = "0";
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                try { await c.BackupAsync(new[] { this.DATAFOLDER }); }
+                catch (UserInformationException) { }
+            }
+
+            System.Threading.Volatile.Write(ref stopping, true);
+            listener.Stop();
+            await serve;
+
+            Assert.That(received, Is.EqualTo(expectReport ? new[] { "/report" } : Array.Empty<string>()), "Unexpected reports about the stopped backup");
+        }
+
         private string CreateScript(int exitcode, string stderr = null, string stdout = null, int sleeptime = 0, List<string> customCommands = null)
         {
             var id = Guid.NewGuid().ToString("N").Substring(0, 6);
