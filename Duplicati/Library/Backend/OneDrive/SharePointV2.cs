@@ -29,34 +29,46 @@ namespace Duplicati.Library.Backend
         private const string SITE_ID_OPTION = "site-id";
         private const string PROTOCOL_KEY = "sharepoint";
 
-        private readonly Task<string> drivePath;
-        private string siteId;
+        private readonly Lazy<string> drivePath;
+        private string? siteId;
 
         public SharePointV2()
         {
             // Constructor needed for dynamic loading to find it
             drivePath = null!;
-            siteId = null!;
+            siteId = null;
         }
 
         public SharePointV2(string url, Dictionary<string, string?> options)
-            : base(url, PROTOCOL_KEY, options)
+            : this(url, options, null)
+        {
+        }
+
+        internal SharePointV2(string url, Dictionary<string, string?> options, OAuthHttpMessageHandler? handler)
+            : base(url, PROTOCOL_KEY, options, handler)
         {
             // Check to see if a site ID was explicitly provided
             var siteIdOption = options.GetValueOrDefault(SITE_ID_OPTION);
             if (!string.IsNullOrWhiteSpace(siteIdOption))
                 siteId = siteIdOption;
-            else
-                throw new UserInformationException(Strings.SharePointV2.MissingSiteId, "SharePointMissingSiteId");
 
-            drivePath = Task.FromResult(string.Format("/sites/{0}/drive", siteId));
+            // Without the option, the site is looked up from the url along with the root path
+            drivePath = new Lazy<string>(() =>
+            {
+                if (string.IsNullOrWhiteSpace(siteId))
+                    _ = RootPath;
+                if (string.IsNullOrWhiteSpace(siteId))
+                    throw new UserInformationException(Strings.SharePointV2.MissingSiteId, "SharePointMissingSiteId");
+
+                return string.Format("/sites/{0}/drive", siteId);
+            });
         }
 
         public override string ProtocolKey => PROTOCOL_KEY;
 
         public override string DisplayName => Strings.SharePointV2.DisplayName;
 
-        protected override Task<string> GetDrivePath(CancellationToken cancelToken) => drivePath;
+        protected override Task<string> GetDrivePath(CancellationToken cancelToken) => Task.FromResult(drivePath.Value);
 
         protected override DescriptionTemplateDelegate DescriptionTemplate => Strings.SharePointV2.Description;
 
