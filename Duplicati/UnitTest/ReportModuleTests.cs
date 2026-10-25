@@ -381,6 +381,28 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("ReportModule")]
+        public void ReportModuleReceivesFailureFromOptionValidation()
+        {
+            File.WriteAllText(Path.Combine(this.DATAFOLDER, "invalid-options.txt"), "content");
+
+            // The options are checked after the modules are loaded and configured. A prefix
+            // with a hyphen is rejected there, so the operation fails before it starts.
+            var backupOptions = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["enable-module"] = RecordingReportModule.KEY,
+                ["prefix"] = "has-hyphen",
+            };
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, backupOptions, null))
+                Assert.ThrowsAsync<UserInformationException>(() => c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            Assert.AreEqual(1, RecordingReportModule.StartCalls, "OnOperationStartedAsync should be invoked once");
+            Assert.AreEqual(1, RecordingReportModule.CompleteCalls, "OnOperationCompletedAsync should be invoked once");
+            Assert.AreEqual("Failed", RecordingReportModule.LastCompleteStatus);
+        }
+
+        [Test]
+        [Category("ReportModule")]
         public async Task InactiveReportModuleIsNotWiredAsync()
         {
             File.WriteAllText(Path.Combine(this.DATAFOLDER, "inactive.txt"), "content");
