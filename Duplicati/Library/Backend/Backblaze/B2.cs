@@ -103,6 +103,11 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
     private const int B2_RETRY_AFTER_SECONDS = 5;
 
     /// <summary>
+    /// Maximum number of consecutive rate-limit retries for a single list request
+    /// </summary>
+    private const int B2_MAX_RATE_LIMIT_RETRIES = 5;
+
+    /// <summary>
     /// The name of the B2 bucket being accessed
     /// </summary>
     private readonly string _bucketName;
@@ -359,6 +364,7 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
             request.Content.Headers.Add("Content-Length", timeoutStream.Length.ToString());
 
             var response = await _httpClient.UploadStream(request, cancelToken).ConfigureAwait(false);
+            B2AuthHelper.ThrowIfTooManyRequests(response);
             response.EnsureSuccessStatusCode();
 
             var rdata = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
@@ -389,9 +395,12 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
         {
             _filecache = null;
 
-            var code = (int)B2AuthHelper.GetExceptionStatusCode(ex);
-            if (code is >= 500 and <= 599)
-                _uploadUrl = null;
+            // B2 requires a new upload URL after any failed upload (401, 408, 429, 5xx, timeouts and connection errors)
+            _uploadUrl = null;
+
+            // An expired upload token can also mean the account token has expired
+            if (B2AuthHelper.GetExceptionStatusCode(ex) == HttpStatusCode.Unauthorized)
+                _b2AuthHelper.InvalidateAuthorization();
 
             throw;
         }
@@ -479,8 +488,9 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
         var listVersionUrl = $"{config.APIUrl}/b2api/v1/b2_list_file_versions";
 
         var listRetryHelper = RetryAfterHelper.CreateOrGetRetryAfterHelper(listVersionUrl);
+        var rateLimitRetries = 0;
 
-        do
+        while (true)
         {
             try
             {
@@ -500,6 +510,7 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
                     ).ConfigureAwait(false)
                 ).ConfigureAwait(false);
 
+                rateLimitRetries = 0;
                 nextFileId = resp.NextFileID;
                 nextFileName = resp.NextFileName;
 
@@ -523,9 +534,15 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
                         cache[name] = lst = new System.Collections.Generic.List<FileEntity>(1);
                     lst.Add(file);
                 }
+
+                if (nextFileId == null)
+                    break;
             }
-            catch (TooManyRequestException tex)
+            catch (TooManyRequestException tex) when (rateLimitRetries < B2_MAX_RATE_LIMIT_RETRIES)
             {
+                // Once the limit is reached the filter lets the exception escape, so the caller's retry logic takes over
+                rateLimitRetries++;
+
                 // Backblaze's B2 API rate limit reached. Presently they don't add Retry-After headers, we will default to a delay, but respect it if present.
                 if (tex.RetryAfter == null || (tex.RetryAfter.Date == null && tex.RetryAfter.Delta == null))
                     listRetryHelper.SetRetryAfter(
@@ -535,7 +552,7 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
 
                 await listRetryHelper.WaitForRetryAfterAsync(cancellationToken);
             }
-        } while (nextFileId != null);
+        }
 
         return _filecache = cache;
     }
