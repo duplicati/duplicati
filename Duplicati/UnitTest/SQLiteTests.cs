@@ -200,5 +200,52 @@ namespace Duplicati.UnitTest
 
             Assert.IsEmpty(warnings, "The query was reported, so the shape is no longer the unmonitored one");
         }
+
+        [Test]
+        [Category("SQLite")]
+        public async Task TimeSpentByTheCallerBetweenRowsIsNotReportedAsync()
+        {
+            using var tf = new TempFile();
+            using var connection = await CreateDummyDatabaseAsync(tf).ConfigureAwait(false);
+
+            var rows = 0;
+            var warnings = await WarningsWhileAsync(TimeSpan.FromSeconds(1), async () =>
+            {
+                await using var cmd = connection.CreateCommand();
+                cmd.CommandText = "SELECT ID FROM TestTable";
+                // Each row is held for longer than the threshold, but the database itself is quick
+                await foreach (var _ in cmd.ExecuteReaderEnumerableAsync(writeLog: false, null, null, CancellationToken.None).ConfigureAwait(false))
+                {
+                    rows++;
+                    await Task.Delay(TimeSpan.FromSeconds(1.5)).ConfigureAwait(false);
+                }
+            }).ConfigureAwait(false);
+
+            Assert.AreEqual(3, rows);
+            Assert.IsEmpty(warnings, string.Join("; ", warnings.Select(w => w.FormattedMessage)));
+        }
+
+        [Test]
+        [Category("SQLite")]
+        public async Task ASlowRowInAnEnumeratedReaderIsReportedAsync()
+        {
+            using var tf = new TempFile();
+            using var connection = await CreateDummyDatabaseAsync(tf).ConfigureAwait(false);
+            AddSlowFunction(connection, TimeSpan.FromSeconds(2.5));
+
+            var rows = 0;
+            var warnings = await WarningsWhileAsync(TimeSpan.FromSeconds(1), async () =>
+            {
+                await using var cmd = connection.CreateCommand();
+                // Only the last row is slow, so the wait happens while reading, not while the reader is created
+                cmd.CommandText = "SELECT CASE WHEN ID = 3 THEN slow_marker() ELSE 0 END FROM TestTable ORDER BY ID";
+                await foreach (var _ in cmd.ExecuteReaderEnumerableAsync(writeLog: false, null, null, CancellationToken.None).ConfigureAwait(false))
+                    rows++;
+            }).ConfigureAwait(false);
+
+            Assert.AreEqual(3, rows);
+            Assert.IsNotEmpty(warnings, "A row took longer than the threshold to read but was not reported");
+            Assert.IsTrue(warnings[0].FormattedMessage.Contains("slow_marker"), warnings[0].FormattedMessage);
+        }
     }
 }
