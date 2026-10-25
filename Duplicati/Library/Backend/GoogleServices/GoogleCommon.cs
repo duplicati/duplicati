@@ -67,6 +67,36 @@ namespace Duplicati.Library.Backend.GoogleServices
             if (ex is not HttpRequestException || response == null)
                 return;
 
+            var (reasons, message) = await ReadErrorBodyAsync(response, cancellationToken).ConfigureAwait(false);
+            if (reasons.Count == 0 && string.IsNullOrWhiteSpace(message))
+                return;
+
+            throw CreateException(HttpRequestError.Unknown, ex.Message, response, reasons, message, ex);
+        }
+
+        /// <summary>
+        /// Creates the exception for a response with a status the caller did not expect, with the
+        /// reason Google gives in the error body. A rate limit carries a
+        /// <see cref="TooManyRequestException"/> as the inner exception; status 429 counts as one
+        /// even without a body.
+        /// </summary>
+        /// <param name="response">The response</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>The exception to throw</returns>
+        private static async Task<HttpRequestException> CreateUnexpectedStatusExceptionAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+        {
+            var (reasons, message) = await ReadErrorBodyAsync(response, cancellationToken).ConfigureAwait(false);
+            return CreateException(HttpRequestError.HttpProtocolError, string.Format("Unexpected status code: {0}", (int)response.StatusCode), response, reasons, message, null);
+        }
+
+        /// <summary>
+        /// Reads the reasons and the message from the error body of a failed response
+        /// </summary>
+        /// <param name="response">The response</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>The reasons found, and the message if any; nothing if the body cannot be read</returns>
+        private static async Task<(IReadOnlyList<string> Reasons, string? Message)> ReadErrorBodyAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+        {
             string body;
             try
             {
@@ -79,17 +109,30 @@ namespace Duplicati.Library.Backend.GoogleServices
             catch
             {
                 // Keep the original failure if the body cannot be read
-                return;
+                return ([], null);
             }
 
-            var (reasons, message) = ParseErrorBody(body);
-            if (reasons.Count == 0 && string.IsNullOrWhiteSpace(message))
-                return;
+            return ParseErrorBody(body);
+        }
 
-            var text = $"{ex.Message} Google reason: {(reasons.Count == 0 ? "none" : string.Join(", ", reasons))}, message: {message}";
+        /// <summary>
+        /// Creates the exception for a failed response, adding the reason Google gave if there is one
+        /// </summary>
+        /// <param name="error">The kind of failure</param>
+        /// <param name="text">The message without the reason</param>
+        /// <param name="response">The response</param>
+        /// <param name="reasons">The reasons found in the error body</param>
+        /// <param name="message">The message found in the error body, if any</param>
+        /// <param name="inner">The exception to keep as the inner exception, unless it is a rate limit</param>
+        /// <returns>The exception to throw</returns>
+        private static HttpRequestException CreateException(HttpRequestError error, string text, HttpResponseMessage response, IReadOnlyList<string> reasons, string? message, Exception? inner)
+        {
+            if (reasons.Count > 0 || !string.IsNullOrWhiteSpace(message))
+                text = $"{text} Google reason: {(reasons.Count == 0 ? "none" : string.Join(", ", reasons))}, message: {message}";
+
             var rateLimited = response.StatusCode == HttpStatusCode.TooManyRequests || reasons.Any(RATE_LIMIT_REASONS.Contains);
 
-            throw new HttpRequestException(HttpRequestError.Unknown, text, rateLimited ? new TooManyRequestException(response.Headers.RetryAfter!) : ex, response.StatusCode);
+            return new HttpRequestException(error, text, rateLimited ? new TooManyRequestException(response.Headers.RetryAfter!) : inner, response.StatusCode);
         }
 
         /// <summary>
@@ -181,7 +224,7 @@ namespace Duplicati.Library.Backend.GoogleServices
                 return (long.Parse(rangeValues.First().Split('-')[1]) + 1, null);
             }
             else
-                throw new HttpRequestException(HttpRequestError.HttpProtocolError, string.Format("Unexpected status code: {0}", code), null, resp.StatusCode);
+                throw await CreateUnexpectedStatusExceptionAsync(resp, cancellationToken).ConfigureAwait(false);
 
         }
 
@@ -297,7 +340,7 @@ namespace Duplicati.Library.Backend.GoogleServices
                     }
                     else
                     {
-                        throw new HttpRequestException(HttpRequestError.HttpProtocolError, string.Format("Unexpected status code: {0}", code), null, resp.StatusCode);
+                        throw await CreateUnexpectedStatusExceptionAsync(resp, cancelToken).ConfigureAwait(false);
                     }
                 }
                 catch (Exception ex)
@@ -308,7 +351,7 @@ namespace Duplicati.Library.Backend.GoogleServices
                     if (ex is HttpRequestException httpEx && httpEx.StatusCode.HasValue)
                     {
                         var code = (int)httpEx.StatusCode.Value;
-                        retry = code >= 500 && code <= 599;
+                        retry = (code >= 500 && code <= 599) || IsRateLimited(httpEx);
                     }
                     else if (ex is IOException ||
                              ex is System.Net.Sockets.SocketException ||
