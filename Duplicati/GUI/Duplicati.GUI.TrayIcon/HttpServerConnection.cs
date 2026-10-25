@@ -139,8 +139,10 @@ namespace Duplicati.GUI.TrayIcon
             m_lastNotificationId = -1;
         }
 
+        // Not a named channel: a named channel is shared by the whole process, so closing
+        // one connection would retire the queue of any connection made after it
         private readonly IChannel<BackgroundRequest> m_workQueue =
-            Channel.Create<BackgroundRequest>(name: "TrayIconRequestQueue");
+            Channel.Create<BackgroundRequest>();
 
         private readonly CancellationToken _applicationExitEvent;
         private readonly PasswordStorageHelper _passwordStorageHelper;
