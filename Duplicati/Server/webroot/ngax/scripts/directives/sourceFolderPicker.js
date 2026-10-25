@@ -259,7 +259,7 @@ backupApp.directive('sourceFolderPicker', function() {
         }
 
         function syncTreeWithLists() {
-            if (scope.ngSources === null || sourceNodeChildren === null || scope.dirsep === null)
+            if (scope.ngSources == null || sourceNodeChildren === null || scope.dirsep === null)
                 return;
 
             sourcemap = {};
