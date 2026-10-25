@@ -69,6 +69,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v2:backup:delete-versions",
         "v2:backup:set-version-label",
         "v1:backup:restore-options",
+        "v2:systemstatus",
 
         // "v1:subscribe:scheduler",
     ];

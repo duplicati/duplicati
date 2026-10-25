@@ -33,6 +33,12 @@ public interface ITaskQueueService
     IEnumerable<Dto.GetTaskStateDto> GetTaskQueue();
 
     /// <summary>
+    /// Gets the task queue with details about each task, such as the backup and operation.
+    /// </summary>
+    /// <returns>A collection of queue items, with the running task first.</returns>
+    IEnumerable<Dto.SystemStatusQueueItemDto> GetTaskQueueDetails();
+
+    /// <summary>
     /// Gets the task information for a specific task ID.
     /// </summary>
     /// <param name="taskid">The ID of the task to retrieve information for.</param>

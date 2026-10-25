@@ -42,8 +42,15 @@ public class WebsocketAccessor : IWebsocketAccessor
     private readonly IBackupListService _backupListService;
     private readonly IRemoteController _remoteController;
     private readonly IRemoteControllerRegistration _remoteControllerRegistration;
+    private readonly ISystemStatusService _systemStatusService;
+
+    /// <summary>
+    /// Flag indicating if the system status loop is running; 1 if running, 0 otherwise
+    /// </summary>
+    private int _systemStatusLoopRunning;
 
     private const int APIVersion = 1;
+
 
     private record WebSocketRequest(int Version, string Id, string Action, string? Service);
     private record WebSocketRequest<T>(int Version, string Id, string Action, string? Service, T? Data) where T : class;
@@ -64,7 +71,8 @@ public class WebsocketAccessor : IWebsocketAccessor
         INotificationService notificationService,
         IBackupListService backupListService,
         IRemoteController remoteController,
-        IRemoteControllerRegistration remoteControllerRegistration)
+        IRemoteControllerRegistration remoteControllerRegistration,
+        ISystemStatusService systemStatusService)
     {
         _jsonSettings = jsonSettings;
         _statusService = statusService;
@@ -74,6 +82,7 @@ public class WebsocketAccessor : IWebsocketAccessor
         _notificationService = notificationService;
         _remoteController = remoteController;
         _remoteControllerRegistration = remoteControllerRegistration;
+        _systemStatusService = systemStatusService;
 
         eventPollNotify.NewEvent += async (_, _) => { await SendAsync(SubscriptionService.LegacyStatus); };
         eventPollNotify.ServerSettingsUpdate += async (_, _) => { await SendAsync(SubscriptionService.ServerSettings); };
@@ -187,6 +196,47 @@ public class WebsocketAccessor : IWebsocketAccessor
         );
     }
 
+    private bool HasSubscribers(SubscriptionService key)
+        => _subscribers.Any(c => c.Value.ContainsKey(key));
+
+    /// <summary>
+    /// Starts the loop that sends system status snapshots, if it is not already running.
+    /// The loop stops when there are no more subscribers.
+    /// </summary>
+    private void EnsureSystemStatusLoop()
+    {
+        if (Interlocked.CompareExchange(ref _systemStatusLoopRunning, 1, 0) != 0)
+            return;
+
+        Task.Run(async () =>
+        {
+            try
+            {
+                while (true)
+                {
+                    await Task.Delay(_systemStatusService.Interval).ConfigureAwait(false);
+                    ClearClosed();
+                    if (!HasSubscribers(SubscriptionService.SystemStatus))
+                        break;
+
+                    await SendAsync(SubscriptionService.SystemStatus).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.WriteErrorMessage(LOGTAG, "WebsocketSystemStatusLoopFailed", ex, "System status loop failed");
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _systemStatusLoopRunning, 0);
+            }
+
+            // A subscriber may have been added after the last check, but before the flag was cleared
+            if (HasSubscribers(SubscriptionService.SystemStatus))
+                EnsureSystemStatusLoop();
+        });
+    }
+
     private ArraySegment<byte> GetBytes<T>(T Data)
     {
         var json = JsonConvert.SerializeObject(Data, _jsonSettings);
@@ -264,6 +314,9 @@ public class WebsocketAccessor : IWebsocketAccessor
                 break;
             case SubscriptionService.RemoteControl:
                 await SendDataAsync(SubscriptionService.RemoteControl, GetRemoteControlStatus(), connections);
+                break;
+            case SubscriptionService.SystemStatus:
+                await SendDataAsync(SubscriptionService.SystemStatus, _systemStatusService.GetSystemStatus(), connections);
                 break;
             default:
                 Log.WriteWarningMessage(LOGTAG, "WebsocketUnknownSubscription", null, $"Unknown subscription service: {key}");
@@ -356,6 +409,8 @@ public class WebsocketAccessor : IWebsocketAccessor
                             subscribed.AddOrUpdate(serviceEnum, config, (key, oldValue) => config);
                             await SendRequestSuccessReplyAsync<object>(socket, message, "Subscribed successfully");
                             await SendAsync(serviceEnum, [socket]);
+                            if (serviceEnum == SubscriptionService.SystemStatus)
+                                EnsureSystemStatusLoop();
                         }
                         else if (message.Action == "unsub")
                         {

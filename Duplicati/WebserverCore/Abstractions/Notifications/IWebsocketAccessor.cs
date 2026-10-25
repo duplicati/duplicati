@@ -62,7 +62,12 @@ public enum SubscriptionService
     /// <summary>
     /// Remote control status updates, such as when enabled, disabled, or connected state changes.
     /// </summary>
-    RemoteControl
+    RemoteControl,
+    /// <summary>
+    /// Periodic system status snapshots with resource usage, the task queue and progress.
+    /// Snapshots are only generated while there are subscribers.
+    /// </summary>
+    SystemStatus
 }
 
 

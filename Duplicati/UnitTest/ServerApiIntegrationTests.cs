@@ -628,6 +628,53 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// The transferred totals in the progress count every completed transfer. A local destination
+    /// copies a volume in milliseconds, so its transfers are rarely seen as active; counting only
+    /// the active transfers showed no backend activity at all.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task ProgressCountsTransfersThatCompleteBetweenReads_Async()
+    {
+        var rnd = new Random(3);
+        for (var i = 0; i < 4; i++)
+        {
+            var data = new byte[1024 * 1024];
+            rnd.NextBytes(data);
+            File.WriteAllBytes(Path.Combine(this.DATAFOLDER, $"file{i}.bin"), data);
+        }
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var backupId = await CreateBackupAsync(httpClient, "integration-passphrase").ConfigureAwait(false);
+
+            var eventPollNotify = (EventPollNotify)ServerProgram.DuplicatiWebserver.Provider.GetService(typeof(EventPollNotify))!;
+            IProgressEventData? last = null;
+            void OnProgressUpdate(object? sender, Func<IProgressEventData>? progress)
+            {
+                var value = progress?.Invoke();
+                if (value?.BackupID == backupId)
+                    last = value;
+            }
+
+            eventPollNotify.ProgressUpdate += OnProgressUpdate;
+            try
+            {
+                await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+            }
+            finally
+            {
+                eventPollNotify.ProgressUpdate -= OnProgressUpdate;
+            }
+
+            var uploadedFiles = Directory.GetFiles(this.TARGETFOLDER).Sum(x => new FileInfo(x).Length);
+            Assert.That(last, Is.Not.Null, "no progress was reported for the backup");
+            Assert.That(last!.BackendBytesUploaded, Is.EqualTo(uploadedFiles), "every uploaded volume is counted");
+            Assert.That(last.BackendBytesDownloaded, Is.GreaterThanOrEqualTo(0));
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// A backup that warns on every run keeps one notification, for its latest run, rather than
     /// one more for each run (#6420). Before, the notifications piled up into the thousands,
     /// which made dismissing them all hang the browser (#4719).

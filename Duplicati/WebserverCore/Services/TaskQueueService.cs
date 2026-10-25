@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto;
 using Duplicati.WebserverCore.Exceptions;
@@ -109,6 +110,25 @@ public class TaskQueueService(IQueueRunnerService queueRunnerService) : ITaskQue
                 Exception: res?.Exception?.ToString()
             );
         });
+    }
+
+    /// <inheritdoc/>
+    public IEnumerable<SystemStatusQueueItemDto> GetTaskQueueDetails()
+    {
+        var cur = queueRunnerService.GetCurrentTask();
+        var n = queueRunnerService.GetCurrentTasks();
+
+        if (cur != null)
+            n.Insert(0, cur);
+
+        return n.Select(x => new SystemStatusQueueItemDto(
+            TaskID: x.TaskID,
+            BackupID: x.BackupID,
+            BackupName: (x as Runner.IRunnerData)?.Backup?.Name,
+            Operation: x.Operation.ToString(),
+            Status: x == cur ? "Running" : "Waiting",
+            TaskStarted: x.TaskStarted
+        )).ToList();
     }
 
     /// <inheritdoc/>

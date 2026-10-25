@@ -146,8 +146,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     hashcollector.Add(hashkey);
                                     filesize += lastread;
 
-                                    // Don't spam updates
-                                    if (send_close && (DateTime.Now - lastupdate).TotalSeconds > 5)
+                                    // Don't spam updates, but update often enough for per-file progress to be shown
+                                    if (send_close && (DateTime.Now - lastupdate) > ProgressReporting.Interval)
                                     {
                                         await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Path, Length = filesize, Type = EventType.FileProgressUpdate });
                                         lastupdate = DateTime.Now;
