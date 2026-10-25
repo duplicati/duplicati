@@ -127,6 +127,10 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 Console.WriteLine("Found {0} files which belongs to backup with prefix {1}", remotefiles.Count(), m_Options.Prefix);
 
+                var unencryptedCount = remotefiles.Count(a => a.EncryptionModule == null);
+                if (reencrypt && unencryptedCount > 0)
+                    Console.WriteLine("Warning: {0} of {1} files are not encrypted, so --reencrypt has no effect on them and they stay unencrypted", unencryptedCount, remotefiles.Count());
+
                 foreach (var remoteFile in remotefiles)
                 {
                     try
@@ -280,8 +284,12 @@ namespace Duplicati.CommandLine.RecoveryTool
                         if (reupload)
                         {
                             Console.Write(" reuploading ...");
-                            backend.PutAsync((new FileInfo(localFileTarget)).Name, localFileTarget, CancellationToken.None).Await();
-                            backend.DeleteAsync(remoteFile.File.Name, CancellationToken.None).Await();
+                            var uploadName = new FileInfo(localFileTarget).Name;
+                            backend.PutAsync(uploadName, localFileTarget, CancellationToken.None).Await();
+
+                            // When the format is unchanged the upload overwrote the original, so deleting it would remove the new file
+                            if (!string.Equals(uploadName, remoteFile.File.Name, StringComparison.Ordinal))
+                                backend.DeleteAsync(remoteFile.File.Name, CancellationToken.None).Await();
 
                             if (remoteFile.FileType == RemoteVolumeType.Blocks && indexes.Length > 0)
                                 retainedReuploadedBlockFiles.Add(localFileTarget);
