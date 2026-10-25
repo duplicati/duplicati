@@ -355,5 +355,92 @@ namespace Duplicati.UnitTest
             }
         }
 
+        [Test]
+        [Category("RecoveryTool")]
+        [TestCase(false)]
+        [TestCase(true)]
+        public async Task RecompressSameFormatWithReuploadKeepsRemoteFilesAsync(bool noEncryption)
+        {
+            File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "file.txt"), new byte[] { 1, 2, 3 });
+
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["no-encryption"] = noEncryption.ToString()
+            };
+            var backendURL = "file://" + this.TARGETFOLDER;
+            using (var c = new Controller(backendURL, options, null))
+            {
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
+
+            var remoteFilesBefore = Directory.GetFiles(this.TARGETFOLDER).Select(Path.GetFileName).OrderBy(x => x).ToArray();
+            File.Delete(options["dbpath"]);
+
+            // Recompressing zip to zip (and re-encrypting with the same module) yields the same remote names,
+            // so the reuploaded files must not be deleted afterwards.
+            var recompressFolder = Path.Combine(this.RESTOREFOLDER, "recompressed");
+            Directory.CreateDirectory(recompressFolder);
+            var args = new List<string> { "recompress", "zip", backendURL, recompressFolder, "--reupload", $"--passphrase={options["passphrase"]}" };
+            if (!noEncryption)
+                args.Add("--reencrypt");
+            var status = CommandLine.RecoveryTool.Program.Main(args.ToArray());
+            Assert.AreEqual(0, status);
+
+            var remoteFilesAfter = Directory.GetFiles(this.TARGETFOLDER).Select(Path.GetFileName).OrderBy(x => x).ToArray();
+            Assert.That(remoteFilesAfter, Is.EqualTo(remoteFilesBefore));
+
+            using (var c = new Controller(backendURL, options, null))
+            {
+                var repairResults = await c.RepairAsync();
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(0, repairResults.Warnings.Count());
+            }
+        }
+
+        [Test]
+        [Category("RecoveryTool")]
+        public async Task RecompressReencryptWarnsAboutUnencryptedFilesAsync()
+        {
+            File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "file.txt"), new byte[] { 1, 2, 3 });
+
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["no-encryption"] = "true"
+            };
+            var backendURL = "file://" + this.TARGETFOLDER;
+            using (var c = new Controller(backendURL, options, null))
+            {
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
+
+            var remoteFilesBefore = Directory.GetFiles(this.TARGETFOLDER).Select(Path.GetFileName).OrderBy(x => x).ToArray();
+
+            var recompressFolder = Path.Combine(this.RESTOREFOLDER, "recompressed");
+            Directory.CreateDirectory(recompressFolder);
+            var output = new StringWriter();
+            var originalOut = Console.Out;
+            int status;
+            try
+            {
+                Console.SetOut(output);
+                status = CommandLine.RecoveryTool.Program.Main(new[] { "recompress", "zip", backendURL, recompressFolder, "--reupload", "--reencrypt", "--passphrase=abc" });
+            }
+            finally
+            {
+                Console.SetOut(originalOut);
+            }
+
+            var consoleOutput = output.ToString();
+            Assert.AreEqual(0, status, consoleOutput);
+            Assert.That(consoleOutput, Does.Contain("are not encrypted, so --reencrypt has no effect on them"));
+
+            // The files are still uploaded without encryption
+            var remoteFilesAfter = Directory.GetFiles(this.TARGETFOLDER).Select(Path.GetFileName).OrderBy(x => x).ToArray();
+            Assert.That(remoteFilesAfter, Is.EqualTo(remoteFilesBefore));
+        }
     }
 }
