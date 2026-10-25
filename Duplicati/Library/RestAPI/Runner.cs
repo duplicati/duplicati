@@ -934,6 +934,9 @@ namespace Duplicati.Server
                 if (data.Operation == DuplicatiOperation.BackupOrSync)
                     tempfolder = StoreTaskConfigAndGetTempFolder(databaseConnection, data, options);
 
+                // Always remove this option as it is a server-only option
+                options.Remove("store-task-config");
+
                 var useOutOfProcess = databaseConnection.ApplicationSettings.UseOutOfProcessController;
 
                 // Attach a log scope that tags all messages to relay the TaskID and BackupID
@@ -1208,8 +1211,6 @@ namespace Duplicati.Server
             var mode = ParseStoreTaskConfigMode(options.GetValueOrDefault("store-task-config"));
             var encryptionEnabled = IsBackupEncryptionEnabled(options);
             var effectiveMode = mode.ResolvedTaskConfigMode(encryptionEnabled);
-
-            options.Remove("store-task-config");
 
             if (effectiveMode == null)
                 return null;
