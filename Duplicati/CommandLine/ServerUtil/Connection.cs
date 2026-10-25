@@ -465,7 +465,8 @@ public class Connection
     /// <returns>The task</returns>
     public async Task RunRestoreTestAsync(string backupId)
     {
-        var response = await client.PostAsync($"backup/{Uri.EscapeDataString(backupId)}/restore-test", null);
+        // The client base address is the v1 API, so step up to reach the v2 endpoint
+        var response = await client.PostAsync("../v2/backup/restore-test", JsonContent.Create(new { BackupId = backupId }));
         await EnsureSuccessStatusCodeWithParsingAsync(response);
     }
 
