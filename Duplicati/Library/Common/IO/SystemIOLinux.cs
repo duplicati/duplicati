@@ -99,7 +99,10 @@ namespace Duplicati.Library.Common.IO
 
         public void FileSetCreationTimeUtc(string path, DateTime time)
         {
-            File.SetCreationTimeUtc(path, time);
+            // Only macOS lets the creation time be set. Elsewhere .NET sets the last write time
+            // instead, which would overwrite the one that is restored.
+            if (OperatingSystem.IsMacOS())
+                File.SetCreationTimeUtc(path, time);
         }
 
         public DateTime FileGetLastWriteTimeUtc(string path)
@@ -222,7 +225,9 @@ namespace Duplicati.Library.Common.IO
 
         public void DirectorySetCreationTimeUtc(string path, DateTime time)
         {
-            Directory.SetCreationTimeUtc(NormalizePath(path), time);
+            // See FileSetCreationTimeUtc
+            if (OperatingSystem.IsMacOS())
+                Directory.SetCreationTimeUtc(NormalizePath(path), time);
         }
 
         public void FileMove(string source, string target)
