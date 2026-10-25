@@ -119,4 +119,58 @@ public class RestoreSymlinkMetadataTests : BasicSetupHelper
             });
         }
     }
+
+    /// <summary>
+    /// A link to a read-only file is stored with the read-only attribute. Restoring that attribute
+    /// with chmod would follow the link, so it must not change the file the link points to.
+    /// </summary>
+    [Test]
+    [Category("SymLink")]
+    [UnsupportedOSPlatform("windows")]
+    public async Task RestoredSymlinkDoesNotChangeTheReadOnlyStateOfItsTargetAsync(
+        [Values(true, false)] bool readOnlyAtBackup,
+        [Values(true, false)] bool legacyRestore)
+    {
+        if (!OperatingSystem.IsLinux() && !OperatingSystem.IsMacOS())
+            Assert.Ignore("The read-only attribute is set with chmod only on POSIX");
+
+        const UnixFileMode writable = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead;
+        const UnixFileMode readOnly = UnixFileMode.UserRead | UnixFileMode.GroupRead;
+
+        var target = Path.Combine(DATAFOLDER, "target.txt");
+        File.WriteAllText(target, "target");
+        var link = Path.Combine(DATAFOLDER, "link");
+        File.CreateSymbolicLink(link, target);
+        File.SetUnixFileMode(target, readOnlyAtBackup ? readOnly : writable);
+
+        using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
+        {
+            var backupResults = await c.BackupAsync(new[] { DATAFOLDER });
+            Assert.That(backupResults.Errors.Count(), Is.EqualTo(0));
+            Assert.That(backupResults.Warnings.Count(), Is.EqualTo(0));
+        }
+
+        // The file the link points to changes after the backup, and the restore should leave it so
+        var modeBeforeRestore = readOnlyAtBackup ? writable : readOnly;
+        File.SetUnixFileMode(target, modeBeforeRestore);
+
+        var restoreOptions = new Dictionary<string, string>(TestOptions)
+        {
+            ["restore-path"] = RESTOREFOLDER,
+            // The link points at the file in the source folder, outside the restore target
+            ["allow-restore-outside-target-directory"] = "true",
+            ["restore-symlink-metadata"] = "true",
+            ["restore-legacy"] = legacyRestore.ToString()
+        };
+
+        using (var c = new Controller("file://" + TARGETFOLDER, restoreOptions, null))
+        {
+            var restoreResults = await c.RestoreAsync(null);
+            Assert.That(restoreResults.Errors.Count(), Is.EqualTo(0), string.Join("; ", restoreResults.Errors));
+            Assert.That(restoreResults.Warnings.Count(), Is.EqualTo(0), string.Join("; ", restoreResults.Warnings));
+        }
+
+        Assert.That(new Mono.Unix.UnixSymbolicLinkInfo(Path.Combine(RESTOREFOLDER, "link")).IsSymbolicLink, Is.True, "the restored path is not a symbolic link");
+        Assert.That(File.GetUnixFileMode(target), Is.EqualTo(modeBeforeRestore), "the permissions of the link target changed");
+    }
 }
