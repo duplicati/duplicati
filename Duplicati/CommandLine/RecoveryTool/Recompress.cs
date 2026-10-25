@@ -115,6 +115,31 @@ namespace Duplicati.CommandLine.RecoveryTool
 
                 bool reencrypt = Library.Utility.Utility.ParseBoolOption(options, "reencrypt");
                 bool reupload = Library.Utility.Utility.ParseBoolOption(options, "reupload");
+                bool addEncryption = Library.Utility.Utility.ParseBoolOption(options, "add-encryption");
+                var reencryptPassphrase = string.IsNullOrWhiteSpace(m_Options.NewPassphrase) ? m_Options.Passphrase : m_Options.NewPassphrase;
+
+                string addEncryptionModule = null;
+                string addEncryptionExtension = null;
+                if (addEncryption)
+                {
+                    if (string.IsNullOrWhiteSpace(reencryptPassphrase))
+                    {
+                        Console.WriteLine("The --add-encryption option requires --passphrase or --new-passphrase");
+                        return 100;
+                    }
+
+                    // The local database may have set --no-encryption, so read the module name directly
+                    m_Options.RawOptions.TryGetValue("encryption-module", out var requestedEncryptionModule);
+                    addEncryptionModule = Library.DynamicLoader.EncryptionLoader.GetCanonicalKey(string.IsNullOrWhiteSpace(requestedEncryptionModule) ? "aes" : requestedEncryptionModule);
+                    if (!Library.DynamicLoader.EncryptionLoader.Keys.Contains(addEncryptionModule))
+                    {
+                        Console.WriteLine("Encryption module not found: {0}{1}Modules supported: {2}", addEncryptionModule, Environment.NewLine, string.Join(", ", Library.DynamicLoader.EncryptionLoader.Keys));
+                        return 100;
+                    }
+
+                    using (var m = Library.DynamicLoader.EncryptionLoader.GetModule(addEncryptionModule, reencryptPassphrase, options))
+                        addEncryptionExtension = m.FilenameExtension;
+                }
 
                 // Needs order (Files or Blocks) and Indexes as last because indexes content will be adjusted based on recompressed blocks
                 var files = remotefiles.Where(a => a.FileType == RemoteVolumeType.Files).ToArray();
@@ -128,8 +153,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                 Console.WriteLine("Found {0} files which belongs to backup with prefix {1}", remotefiles.Count(), m_Options.Prefix);
 
                 var unencryptedCount = remotefiles.Count(a => a.EncryptionModule == null);
-                if (reencrypt && unencryptedCount > 0)
-                    Console.WriteLine("Warning: {0} of {1} files are not encrypted, so --reencrypt has no effect on them and they stay unencrypted", unencryptedCount, remotefiles.Count());
+                if (reencrypt && !addEncryption && unencryptedCount > 0)
+                    Console.WriteLine("Warning: {0} of {1} files are not encrypted, so --reencrypt has no effect on them and they stay unencrypted, use --add-encryption to encrypt them", unencryptedCount, remotefiles.Count());
 
                 foreach (var remoteFile in remotefiles)
                 {
@@ -164,7 +189,21 @@ namespace Duplicati.CommandLine.RecoveryTool
                             continue;
                         }
 
-                        if ((!reencrypt && File.Exists(localFileTarget)) || (reencrypt && File.Exists(localFileTarget + "." + localFileSourceEncryption)))
+                        string targetEncryptionModule = null;
+                        string targetEncryptionExtension = null;
+                        if (remoteFile.EncryptionModule != null && reencrypt)
+                        {
+                            targetEncryptionModule = remoteFile.EncryptionModule;
+                            targetEncryptionExtension = localFileSourceEncryption;
+                        }
+                        else if (remoteFile.EncryptionModule == null && addEncryption)
+                        {
+                            targetEncryptionModule = addEncryptionModule;
+                            targetEncryptionExtension = addEncryptionExtension;
+                        }
+
+                        var localFileFinal = targetEncryptionModule == null ? localFileTarget : localFileTarget + "." + targetEncryptionExtension;
+                        if (File.Exists(localFileFinal))
                         {
                             Console.WriteLine(" - target file already exist");
                             continue;
@@ -228,6 +267,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                                         cmfileNew = cmfileNew.Replace("." + cmFileVolume.CompressionModule, "." + target_compr_module);
                                         if (!reencrypt && !string.IsNullOrWhiteSpace(cmFileVolume.EncryptionModule))
                                             cmfileNew = cmfileNew.Replace("." + cmFileVolume.EncryptionModule, "");
+                                        else if (addEncryption && string.IsNullOrWhiteSpace(cmFileVolume.EncryptionModule))
+                                            cmfileNew = cmfileNew + "." + addEncryptionExtension;
 
                                         //Because compression changes blocks file sizes - needs to be updated
                                         string textJSON;
@@ -266,15 +307,14 @@ namespace Duplicati.CommandLine.RecoveryTool
                             destinationFileInfo.LastWriteTime = originLastWriteTime;
                         }
 
-                        if (reencrypt && remoteFile.EncryptionModule != null)
+                        if (targetEncryptionModule != null)
                         {
-                            var reencryptPassphrase = string.IsNullOrWhiteSpace(m_Options.NewPassphrase) ? m_Options.Passphrase : m_Options.NewPassphrase;
-                            Console.Write(" reencrypting ...");
-                            using (var m = Library.DynamicLoader.EncryptionLoader.GetModule(remoteFile.EncryptionModule, reencryptPassphrase, options))
+                            Console.Write(remoteFile.EncryptionModule != null ? " reencrypting ..." : " encrypting ...");
+                            using (var m = Library.DynamicLoader.EncryptionLoader.GetModule(targetEncryptionModule, reencryptPassphrase, options))
                             {
-                                m.Encrypt(localFileTarget, localFileTarget + "." + localFileSourceEncryption);
+                                m.Encrypt(localFileTarget, localFileFinal);
                                 File.Delete(localFileTarget);
-                                localFileTarget = localFileTarget + "." + localFileSourceEncryption;
+                                localFileTarget = localFileFinal;
                             }
 
                             destinationFileInfo = new FileInfo(localFileTarget);
