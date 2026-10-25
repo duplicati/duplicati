@@ -194,11 +194,13 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
     }
 
     /// <summary>
-    /// Helper class for reporting th length of a stream
+    /// Helper class for reporting th length of a stream,
+    /// and detecting streams that end before the reported length
     /// </summary>
     /// <param name="stream">The stream to wrap</param>
     /// <param name="reportedLength">The length to report</param>
-    private class LengthReportingStream(Stream stream, long reportedLength) : OverrideableStream(stream)
+    /// <param name="entryPath">The path of the entry, used for error messages</param>
+    private class LengthReportingStream(Stream stream, long reportedLength, string entryPath) : OverrideableStream(stream)
     {
         /// <summary>
         /// Track the position
@@ -227,6 +229,7 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
         {
             var read = base.Read(buffer, offset, count);
             position += read;
+            ThrowIfTruncated(read, count);
             return read;
         }
 
@@ -235,7 +238,21 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
         {
             var read = await base.ReadAsync(buffer, offset, count, cancellationToken);
             position += read;
+            ThrowIfTruncated(read, count);
             return read;
+        }
+
+        /// <summary>
+        /// Throws if the stream ended before the reported length was read
+        /// </summary>
+        /// <param name="read">The number of bytes read</param>
+        /// <param name="count">The number of bytes requested</param>
+        private void ThrowIfTruncated(int read, int count)
+        {
+            // Some backends do not report an error if the connection is lost during a download,
+            // so we treat an early end-of-stream as an error instead of storing a truncated file
+            if (read == 0 && count > 0 && position < reportedLength)
+                throw new IOException($"The stream for {entryPath} ended after {position} bytes, but the reported size is {reportedLength} bytes");
         }
 
         /// <inheritdoc/>
@@ -279,7 +296,7 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
             });
 
             // Return the readable stream so the caller can read data as it's produced
-            return new LengthReportingStream(pipe.Reader.AsStream(), size);
+            return new LengthReportingStream(pipe.Reader.AsStream(), size, this.Path);
         }
         else
         {
@@ -290,6 +307,8 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
                 tempFile = new TempFile();
                 await parent.WrappedBackend.GetAsync(path, tempFile, cancellationToken);
                 file = TempFileStream.Create(tempFile);
+                if (file.Length < size)
+                    throw new IOException($"The downloaded file for {this.Path} is {file.Length} bytes, but the reported size is {size} bytes");
                 return file;
             }
             catch
