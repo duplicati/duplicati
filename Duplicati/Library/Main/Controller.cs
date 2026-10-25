@@ -105,6 +105,17 @@ namespace Duplicati.Library.Main
         private ReportModuleController.ReportModulesHandle ReportModulesHandler;
 
         /// <summary>
+        /// The ID of the job log entry holding the results of the current operation, or -1 if none was written.
+        /// The reports are sent after the results are written, so a report that fails is added to the entry afterwards.
+        /// </summary>
+        private long m_resultLogId = -1;
+
+        /// <summary>
+        /// The number of warnings and errors the results held when they were written to the job log.
+        /// </summary>
+        private int m_resultLogIssueCount;
+
+        /// <summary>
         /// Callback method invoked when an operation is started
         /// </summary>
         public Action<IBasicResults> OnOperationStarted { get; set; }
@@ -665,6 +676,7 @@ namespace Duplicati.Library.Main
                     lock (m_taskControlLock)
                     {
                         m_currentTaskControl = result.TaskControl;
+                        m_resultLogId = -1;
                         m_operationStarted = true;
                         stopBeforeStart = m_stopBeforeStart;
                         abortBeforeStart = m_abortBeforeStart;
@@ -755,7 +767,7 @@ namespace Duplicati.Library.Main
                         try
                         {
                             await using var db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).ConfigureAwait(false);
-                            await db.WriteResultsAndCommitAsync(result, CancellationToken.None).ConfigureAwait(false);
+                            await WriteResultsAsync(db, result).ConfigureAwait(false);
                             await db.PurgeLogDataAsync(m_options.LogRetention, CancellationToken.None).ConfigureAwait(false);
                             await db.PurgeDeletedVolumesAsync(DateTime.UtcNow, CancellationToken.None).ConfigureAwait(false);
 
@@ -817,7 +829,7 @@ namespace Duplicati.Library.Main
                             await WriteSyncResultsAsync(result, false).ConfigureAwait(false);
                         else if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                             await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, null, CancellationToken.None).ConfigureAwait(false))
-                                await db.WriteResultsAndCommitAsync(result, CancellationToken.None).ConfigureAwait(false);
+                                await WriteResultsAsync(db, result).ConfigureAwait(false);
                     }
                     catch (Exception we)
                     {
@@ -856,7 +868,7 @@ namespace Duplicati.Library.Main
                             await WriteSyncResultsAsync(result, false).ConfigureAwait(false);
                         else if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                             await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).ConfigureAwait(false))
-                                await db.WriteResultsAndCommitAsync(result, CancellationToken.None).ConfigureAwait(false);
+                                await WriteResultsAsync(db, result).ConfigureAwait(false);
                     }
                     catch (Exception we)
                     {
@@ -888,7 +900,7 @@ namespace Duplicati.Library.Main
                             await WriteSyncResultsAsync(result, false).ConfigureAwait(false);
                         else if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                             await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).ConfigureAwait(false))
-                                await db.WriteResultsAndCommitAsync(result, CancellationToken.None).ConfigureAwait(false);
+                                await WriteResultsAsync(db, result).ConfigureAwait(false);
                     }
                     catch (Exception we)
                     {
@@ -926,6 +938,53 @@ namespace Duplicati.Library.Main
             if (purgeOldResults)
                 await db.PurgeResultsAsync(m_options.LogRetention, CancellationToken.None).ConfigureAwait(false);
         }
+
+        /// <summary>
+        /// Writes the results of an operation to the job log, and remembers the entry so
+        /// <see cref="UpdateResultLogAsync"/> can add what is logged after it was written.
+        /// </summary>
+        /// <param name="db">The database to write the results to</param>
+        /// <param name="result">The results to write</param>
+        /// <returns>A task that completes when the results have been written</returns>
+        private async Task WriteResultsAsync(LocalDatabase db, IBasicResults result)
+        {
+            m_resultLogId = await db.WriteResultsAndCommitAsync(result, CancellationToken.None).ConfigureAwait(false);
+            m_resultLogIssueCount = CountIssues(result);
+        }
+
+        /// <summary>
+        /// Rewrites the results in the job log if warnings or errors were logged after they were
+        /// written, such as a report that could not be sent. The operation is already done, so a
+        /// failure here leaves the job log as it was and does not change the outcome.
+        /// </summary>
+        /// <param name="result">The results of the operation</param>
+        /// <returns>A task that completes when the job log has been updated</returns>
+        private async Task UpdateResultLogAsync(IBasicResults result)
+        {
+            var logId = m_resultLogId;
+            m_resultLogId = -1;
+            if (logId < 0 || result == null || CountIssues(result) == m_resultLogIssueCount || !File.Exists(m_options.Dbpath))
+                return;
+
+            try
+            {
+                await using var db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).ConfigureAwait(false);
+                await db.UpdateResultsAndCommitAsync(logId, result, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                // Verbose, as a warning would itself change the outcome of the operation
+                Logging.Log.WriteVerboseMessage(LOGTAG, "FailedUpdateOperation", ex, "Failed to update operation results in database: {0}", ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Counts the warnings and errors in the results.
+        /// </summary>
+        /// <param name="result">The results to count in</param>
+        /// <returns>The number of warnings and errors</returns>
+        private static int CountIssues(IBasicResults result)
+            => (result.Warnings?.Count() ?? 0) + (result.Errors?.Count() ?? 0);
 
         /// <summary>
         /// Temporarily pushes the filter into the raw options so modules can read it.
@@ -1006,6 +1065,8 @@ namespace Duplicati.Library.Main
                 m_localeChange.Dispose();
                 m_localeChange = null;
             }
+
+            await UpdateResultLogAsync(result).ConfigureAwait(false);
 
             OnOperationCompleted?.Invoke(result, exception);
         }
