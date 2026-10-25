@@ -30,6 +30,18 @@ namespace Duplicati.Library.Utility;
 public static class RetryHelper
 {
     public static async Task<T> Retry<T>(Func<Task<T>> action, Action<Exception, int>? errorCallback, int maxRetries, TimeSpan delay, CancellationToken token)
+        => await Retry(action, errorCallback, maxRetries, _ => delay, token);
+
+    /// <summary>
+    /// Retries an action, using a delay that depends on the number of failed attempts so far
+    /// </summary>
+    /// <param name="action">The action to run</param>
+    /// <param name="errorCallback">Callback invoked with the exception and the attempt number after each failure</param>
+    /// <param name="maxRetries">The maximum number of attempts</param>
+    /// <param name="delay">Returns the delay to wait after the given failed attempt number</param>
+    /// <param name="token">The cancellation token</param>
+    /// <returns>The result of the action</returns>
+    public static async Task<T> Retry<T>(Func<Task<T>> action, Action<Exception, int>? errorCallback, int maxRetries, Func<int, TimeSpan> delay, CancellationToken token)
     {
         var attempt = 0;
 
@@ -50,7 +62,7 @@ public static class RetryHelper
                     throw;
             }
 
-            await Task.Delay(delay, token);
+            await Task.Delay(delay(attempt), token);
         }
     }
 
@@ -60,5 +72,7 @@ public static class RetryHelper
         => await Retry(async () => { await action(); return true; }, errorCallback, maxRetries, delay, token);
     public static async Task Retry(Func<Task> action, int maxRetries, TimeSpan delay, CancellationToken token)
         => await Retry(async () => { await action(); return true; }, null, maxRetries, delay, token);
+    public static async Task Retry(Func<Task> action, Action<Exception, int>? errorCallback, int maxRetries, Func<int, TimeSpan> delay, CancellationToken token)
+        => await Retry(async () => { await action(); return true; }, errorCallback, maxRetries, delay, token);
 
 }
