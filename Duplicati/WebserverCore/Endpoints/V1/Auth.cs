@@ -178,9 +178,27 @@ public partial class Auth : IEndpointV1
     }
 
     /// <summary>
-    /// The path of the refresh token cookie
+    /// The path of the refresh token cookie, relative to the prefix the server is served under
     /// </summary>
     private const string CookiePath = "/api/v1/auth/refresh";
+
+    /// <summary>
+    /// Gets the path of the refresh token cookie as the browser sees it. Behind a reverse proxy
+    /// that serves the server under a prefix, the browser requests the refresh endpoint below that
+    /// prefix, so the cookie must be set for it; the prefix is the same one the index page uses
+    /// for the base href.
+    /// </summary>
+    private static string GetCookiePath(HttpContext context)
+    {
+        var prefix = StaticFilesExtensions.GetForwardedPrefix(context.Request).Trim().TrimEnd('/');
+
+        // The prefix comes from a header, so only a plain absolute path is used, as anything else
+        // would not match the request path, or could add attributes to the cookie
+        if (prefix.Length == 0 || !prefix.StartsWith('/') || prefix.Any(c => char.IsControl(c) || char.IsWhiteSpace(c) || c == ';' || c == ','))
+            return CookiePath;
+
+        return prefix + CookiePath;
+    }
 
     /// <summary>
     /// Sets the refresh token cookie. It has no domain, so it is for the host the browser asked
@@ -197,7 +215,7 @@ public partial class Auth : IEndpointV1
         context.Response.Cookies.Append(name, value, new CookieOptions
         {
             Expires = expires,
-            Path = CookiePath,
+            Path = GetCookiePath(context),
             Secure = context.Request.IsHttps,
             HttpOnly = true,
             SameSite = SameSiteMode.Strict,
@@ -211,7 +229,7 @@ public partial class Auth : IEndpointV1
     private static void DeleteDomainCookie(HttpContext context, string name)
         => context.Response.Cookies.Delete(name, new CookieOptions
         {
-            Path = CookiePath,
+            Path = GetCookiePath(context),
             Domain = context.Request.Host.Host
         });
 
@@ -241,7 +259,7 @@ public partial class Auth : IEndpointV1
         // domain, is removed as well.
         context.Response.Cookies.Delete(cookieName, new CookieOptions
         {
-            Path = CookiePath
+            Path = GetCookiePath(context)
         });
         DeleteDomainCookie(context, cookieName);
         return new { success = true };

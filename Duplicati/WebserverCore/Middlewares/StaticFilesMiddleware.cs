@@ -58,6 +58,20 @@ public static class StaticFilesExtensions
     private const string XSRF_FORWARDING_CONFIG_ENVIRONMENT_VARIABLE = "DUPLICATI_XSRF_FORWARDING_CONFIG";
     private const string NGCLIENT_LOCATION = "ngclient/";
 
+    /// <summary>
+    /// Gets the path prefix a reverse proxy serves the server under, or an empty string if none is given
+    /// </summary>
+    internal static string GetForwardedPrefix(HttpRequest request)
+    {
+        var forwardedPrefix = request.Headers[FORWARDED_PREFIX_HEADER].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(forwardedPrefix))
+            forwardedPrefix = request.Headers[FORWARDED_PREFIX_HEADER_ALT].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(forwardedPrefix))
+            forwardedPrefix = "";
+
+        return forwardedPrefix;
+    }
+
     private sealed record SpaConfig(string Prefix, string FileContent, string BasePath);
 
     private static readonly Regex _baseHrefRegex = new Regex(
@@ -166,11 +180,7 @@ public static class StaticFilesExtensions
                     // In debug mode, we re-read the index file to ensure we have the latest content for debugging
                     indexContent = File.ReadAllText(Path.Combine(spaConfig.BasePath, "index.html"));
 #endif
-                    var forwardedPrefix = context.Request.Headers[FORWARDED_PREFIX_HEADER].FirstOrDefault();
-                    if (string.IsNullOrWhiteSpace(forwardedPrefix))
-                        forwardedPrefix = context.Request.Headers[FORWARDED_PREFIX_HEADER_ALT].FirstOrDefault();
-                    if (string.IsNullOrWhiteSpace(forwardedPrefix))
-                        forwardedPrefix = "";
+                    var forwardedPrefix = GetForwardedPrefix(context.Request);
 
                     var ngclientPrefix = context.Request.Headers[FORWARDED_PREFIX_HEADER_NGCLIENT].FirstOrDefault();
                     if (string.IsNullOrWhiteSpace(ngclientPrefix))
