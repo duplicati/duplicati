@@ -147,6 +147,7 @@ Error message: {0}", error); }
     public static class Server
     {
         public static string StartedServer(string ip, int port) { return LC.L(@"Server has started and is listening on {0}, port {1}", ip, port); }
+        public static string WebrootOutsideInstallationFolder(string webroot, string installationFolder) { return LC.L(@"The webroot folder {0} is not inside the installation folder {1} and is ignored", webroot, installationFolder); }
         public static string SSLCertificateFileMissingOption { get { return LC.L(@"SSL certificate password option has no meaning when provided without SSL certificate file option!"); } }
         public static string ServerStartFailure(IEnumerable<int> portstried) { return LC.L(@"Unable to open a socket for listening, tried ports: {0}", string.Join(",", from n in (portstried ?? new int[0]) select n.ToString())); }
     }

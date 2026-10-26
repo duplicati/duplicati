@@ -218,6 +218,36 @@ public static class WebServerLoader
         IReadOnlySet<string> PreAuthTokens
     );
 
+    /// <summary>
+    /// Checks that a user supplied webroot is a folder below the given folder
+    /// </summary>
+    /// <param name="webroot">The user supplied webroot</param>
+    /// <param name="folder">The folder the webroot must be below</param>
+    /// <param name="comparison">The comparison to use for file names</param>
+    /// <returns><c>true</c> if the webroot is below the folder, <c>false</c> otherwise</returns>
+    public static bool IsWebrootBelowFolder([System.Diagnostics.CodeAnalysis.NotNullWhen(true)] string? webroot, string folder, StringComparison comparison)
+    {
+        if (string.IsNullOrWhiteSpace(webroot) || string.IsNullOrWhiteSpace(folder))
+            return false;
+
+        string fullWebroot, fullFolder;
+        try
+        {
+            // Resolve "..", "." and relative paths, so they cannot leave the folder
+            fullWebroot = System.IO.Path.GetFullPath(webroot);
+            fullFolder = System.IO.Path.GetFullPath(folder);
+        }
+        catch (Exception ex) when (ex is ArgumentException || ex is NotSupportedException || ex is System.IO.PathTooLongException)
+        {
+            return false;
+        }
+
+        // Compare with a trailing separator, so "/app2" is not taken as below "/app"
+        fullWebroot = Duplicati.Library.Common.IO.Util.AppendDirSeparator(fullWebroot);
+        fullFolder = Duplicati.Library.Common.IO.Util.AppendDirSeparator(fullFolder);
+
+        return fullWebroot.StartsWith(fullFolder, comparison) && !fullWebroot.Equals(fullFolder, comparison);
+    }
 
     /// <summary>
     /// Sets up the webserver and starts it
@@ -293,8 +323,10 @@ public static class WebServerLoader
             //In release mode we check that the user supplied path is located
             // in the same folders as the running application, to avoid users
             // that inadvertently expose top level folders
-            if (!string.IsNullOrWhiteSpace(userroot) && userroot.StartsWith(Duplicati.Library.Common.IO.Util.AppendDirSeparator(Duplicati.Library.Utility.Utility.getEntryAssembly().Location), Library.Utility.Utility.ClientFilenameStringComparison))
+            if (IsWebrootBelowFolder(userroot, Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR, Library.Utility.Utility.ClientFilenameStringComparison))
                 webroot = userroot;
+            else if (!string.IsNullOrWhiteSpace(userroot))
+                Library.Logging.Log.WriteWarningMessage(LOGTAG, "WebrootOutsideInstallation", null, Strings.Server.WebrootOutsideInstallationFolder(userroot, Library.AutoUpdater.UpdaterManager.INSTALLATIONDIR));
 #endif
         }
 
