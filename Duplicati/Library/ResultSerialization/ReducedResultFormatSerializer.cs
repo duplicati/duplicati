@@ -98,6 +98,7 @@ namespace Duplicati.Library.ResultSerialization
     {
         /// <summary>
         /// String-valued properties that survive the reduction. Mirrors the receivers' allowlist.
+        /// Every name must only ever hold an enum name or a module name, never a message or a path.
         /// </summary>
         public static readonly IReadOnlySet<string> AllowedStringProperties = new HashSet<string>(StringComparer.Ordinal)
         {
@@ -106,8 +107,24 @@ namespace Duplicati.Library.ResultSerialization
             "Mode",
             "Version",
             "EncryptionModule",
-            "CompressionModule"
+            "CompressionModule",
+            "Reason"
         };
+
+        /// <summary>
+        /// Allowed properties whose value must also look like an enum member name to survive.
+        /// "Reason" is the restore test failure and budget reason, but the name invites reuse
+        /// for free text, so a sentence or a path under it is dropped like any other string.
+        /// </summary>
+        public static readonly IReadOnlySet<string> EnumValuedProperties = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "Reason"
+        };
+
+        /// <summary>
+        /// An enum member name: letters, digits and underscores only
+        /// </summary>
+        private static readonly Regex EnumNamePattern = new Regex(@"^[A-Za-z_][A-Za-z0-9_]*$", RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
         /// <summary>
         /// A serialized date-time, which carries no report content
@@ -169,6 +186,18 @@ namespace Duplicati.Library.ResultSerialization
             => value != null && (DateTimePattern.IsMatch(value) || DurationPattern.IsMatch(value));
 
         /// <summary>
+        /// Returns whether a string property survives the reduction: the name is allowed and,
+        /// for an enum-valued property, the value is shaped like an enum member name
+        /// </summary>
+        /// <param name="name">The property name</param>
+        /// <param name="value">The string value</param>
+        /// <returns><c>true</c> when the value is kept</returns>
+        public static bool IsAllowedStringProperty(string name, string value)
+            => value != null
+                && AllowedStringProperties.Contains(name)
+                && (!EnumValuedProperties.Contains(name) || EnumNamePattern.IsMatch(value));
+
+        /// <summary>
         /// Reduces a token tree to a dictionary/list tree of allowed values
         /// </summary>
         /// <param name="token">The token to reduce</param>
@@ -186,7 +215,7 @@ namespace Duplicati.Library.ResultSerialization
                             if (value.Type == JTokenType.String)
                             {
                                 var text = value.Value<string>();
-                                if (AllowedStringProperties.Contains(prop.Name) || IsDateOrDurationValue(text))
+                                if (IsAllowedStringProperty(prop.Name, text) || IsDateOrDurationValue(text))
                                     dict[prop.Name] = text;
                                 continue;
                             }
