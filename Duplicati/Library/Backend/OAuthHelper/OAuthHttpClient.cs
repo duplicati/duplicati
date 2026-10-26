@@ -35,7 +35,7 @@ namespace Duplicati.Library
         private readonly OAuthHttpMessageHandler m_authenticator;
 
         public OAuthHttpClient(string authid, string protocolKey, string oauthurl)
-            : this(CreateMessageHandler(authid, protocolKey, oauthurl))
+            : this(new OAuthHttpMessageHandler(authid, protocolKey, oauthurl))
         {
         }
 
@@ -106,34 +106,6 @@ namespace Duplicati.Library
         public HttpRequestMessage PreventAuthentication(HttpRequestMessage request)
         {
             return this.m_authenticator.PreventAuthentication(request);
-        }
-
-        /// <summary>
-        /// Create a message handler with the global timeout / certificate settings.
-        /// </summary>
-        /// <param name="authid">OAuth Auth-ID</param>
-        /// <param name="protocolKey">Protocol key</param>
-        /// <returns>Http message handler</returns>
-        private static OAuthHttpMessageHandler CreateMessageHandler(string authid, string protocolKey, string oauthurl)
-        {
-            OAuthHttpMessageHandler handler = new OAuthHttpMessageHandler(authid, protocolKey, oauthurl);
-
-            /* TODO-DNC - not supported https://github.com/dotnet/corefx/issues/26223
-            // Set the read/write timeout
-            if (HttpContextSettings.ReadWriteTimeout > TimeSpan.Zero)
-            {
-                // TODO: This is no longer supported, OAuthHelper should be rewritten
-                // handler.ReadWriteTimeout = (int)HttpContextSettings.ReadWriteTimeout.TotalMilliseconds;
-            }
-
-            // Set the certificate validator
-            if (HttpContextSettings.CertificateValidator != null)
-            {
-                // TODO: This is no longer supported, the validation can now be done pr. connection as it should always have been
-                // handler.ServerCertificateValidationCallback = HttpContextSettings.CertificateValidator.ValidateServerCertficate;
-            }
-            */
-            return handler;
         }
     }
 }
