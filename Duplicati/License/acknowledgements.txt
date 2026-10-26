@@ -1,14 +1,14 @@
-﻿We would like to thank all contributors who made Duplicati what it is today. 
-  These are the contributors to Duplicati 1.x that got it all started.
-  These are the people who help others to get their backups up and running. 
-  These are the testers and translators.
-  These are the people who give us hints how to improve Duplicati further.
-  These are the people who just say "thank you".
-  
-You are the reason why this project gets ahead. You do not only contribute to the software but also keep us involved and motivated. Thank you!
+﻿Duplicati would not exist without its community, and we are deeply grateful to everyone who is, or has been, part of it.
 
-Due to their recent contributions to Duplicati 2.0 we would like to thank some people in particular:
-  Stefan Lück (@footstark) for providing great performance optimizations to Duplicati 2.0
-  Tobias Käs (@weltkante) for his C# library that implements LZMA2 and 7z
-  Alexander Franzelin (@AlexFRAN) for the design of the Duplicati UI and the website
-  @agrajaghh for building localization support and improving the user interface
+Thank you to the developers who write code, fix bugs, review pull requests and shape the design of Duplicati.
+Thank you to the early contributors whose work on Duplicati 1.x got it all started.
+Thank you to everyone who helps others on the forum and in issues, patiently getting their backups up and running.
+Thank you to the testers who try new builds and report what breaks, so it can be fixed before it reaches everyone else.
+Thank you to the translators who make Duplicati available in languages from all over the world.
+Thank you to the authors of the open source libraries Duplicati builds on.
+Thank you to everyone who shares ideas, suggestions and feedback on how Duplicati can be improved.
+And thank you to everyone who simply takes a moment to say "thank you" - it means more than you might think.
+
+Every contribution, large or small, has helped make Duplicati what it is today. You keep this project moving forward, and you keep us motivated and inspired. Together we are making sure that more people's data is safe.
+
+Thank you, all of you!

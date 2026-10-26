@@ -691,7 +691,17 @@ namespace Duplicati.Library.Main
 
                     m_options.MainAction = result.MainOperation;
                     await ApplySecretProviderAsync(CancellationToken.None).ConfigureAwait(false);
-                    (paths, filter) = SetupCommonOptions(result, paths, filter, logTarget);
+                    try
+                    {
+                        (paths, filter) = SetupCommonOptions(result, paths, filter, logTarget);
+                    }
+                    catch
+                    {
+                        // The report modules that were loaded before the failure must still
+                        // see the operation, or the failure is never reported to them
+                        ReportModulesHandler = await ReportModuleController.SetupAsync(this, result, m_options, m_currentTaskControl.StopToken);
+                        throw;
+                    }
 
                     ReportModulesHandler = await ReportModuleController.SetupAsync(this, result, m_options, m_currentTaskControl.StopToken);
 
@@ -1113,6 +1123,11 @@ namespace Duplicati.Library.Main
             // Make the filter read-n-write able in the generic modules
             using (PushFilterToOptions(m_options, filter, out var pristinefilter))
             {
+                // A module that fails the operation in OnStart (a run-script-before script) is
+                // started before the report modules, so the remaining modules are still configured
+                // and started. Otherwise their OnFinish has nothing to report the failure with.
+                // A script asking to skip the run without a warning or error is not reported.
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo startFailure = null;
                 foreach (var mx in m_options.LoadedModules)
                 {
                     if (mx is IConnectionModule)
@@ -1121,8 +1136,27 @@ namespace Duplicati.Library.Main
                         mx.Configure(m_options.RawOptions);
 
                     if (mx is IGenericCallbackModule module)
-                        RunScriptCallbackWithStatus(result, mx, () => module.OnStart(result.MainOperation.ToString(), ref m_backendUrl, ref paths));
+                    {
+                        try
+                        {
+                            RunScriptCallbackWithStatus(result, mx, () => module.OnStart(result.MainOperation.ToString(), ref m_backendUrl, ref paths));
+                        }
+                        catch (OperationAbortException oae) when (startFailure == null && oae.AbortReason == OperationAbortReason.Normal)
+                        {
+                            throw;
+                        }
+                        catch (Exception ex) when (startFailure == null)
+                        {
+                            startFailure = System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteWarningMessage(LOGTAG, $"OnStartError{mx.Key}", ex, "OnStart callback {0} failed: {1}", mx.Key, ex.Message);
+                        }
+                    }
                 }
+
+                startFailure?.Throw();
 
                 // If the filters were changed by a module, read them back in
                 if (pristinefilter != m_options.RawOptions["filter"])

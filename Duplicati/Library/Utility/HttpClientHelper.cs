@@ -22,6 +22,7 @@
 #nullable enable
 
 using System.Net.Http;
+using System.Threading;
 
 namespace Duplicati.Library.Utility;
 
@@ -36,7 +37,7 @@ public static class HttpClientHelper
     /// Reference to the HttpClientFactory instance so we can create specific clients
     /// when the singleton pattnern is not desirable.
     /// </summary>
-    private static IHttpClientFactory? _factory { get; set; }
+    private static IHttpClientFactory? _factory;
 
     /// <summary>
     /// Sets the factory reference.
@@ -45,6 +46,16 @@ public static class HttpClientHelper
     public static void Configure(IHttpClientFactory factory)
     {
         _factory = factory;
+    }
+
+    /// <summary>
+    /// Removes the factory reference, if it is still the configured one,
+    /// so clients are created without a factory once its owner is disposed.
+    /// </summary>
+    /// <param name="factory">The IHttpClientFactory instance that is no longer usable</param>
+    public static void Unconfigure(IHttpClientFactory factory)
+    {
+        Interlocked.CompareExchange(ref _factory, null, factory);
     }
 
     /// <summary>

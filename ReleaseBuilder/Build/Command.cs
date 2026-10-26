@@ -862,17 +862,9 @@ public static partial class Command
         }
 
         // Clean up the source tree
-        foreach (var folder in foldersToRemove)
-            if (Directory.Exists(folder))
-                Directory.Delete(folder, true);
-
-        // This often fails and should be fixed
         try
         {
-            await ProcessHelper.Execute(new[] {
-                "git", "checkout",
-            }.Concat(revertableFiles.Select(x => Path.GetRelativePath(baseDir, x)))
-             , workingDirectory: baseDir);
+            await RestoreSourceDirectory(baseDir, revertableFiles, foldersToRemove);
         }
         catch (Exception ex)
         {
@@ -880,6 +872,50 @@ public static partial class Command
         }
 
         Console.WriteLine("All done!");
+    }
+
+    /// <summary>
+    /// Reverts the changes made to the source tree during the build
+    /// </summary>
+    /// <param name="baseDir">The base directory</param>
+    /// <param name="revertableFiles">The files that were modified or deleted</param>
+    /// <param name="foldersToRemove">The folders that were replaced by npm packages</param>
+    /// <returns>An awaitable task</returns>
+    static async Task RestoreSourceDirectory(string baseDir, IEnumerable<string> revertableFiles, IEnumerable<string> foldersToRemove)
+    {
+        var tracked = (await ProcessHelper.ExecuteWithOutput(["git", "ls-files", "-z"], workingDirectory: baseDir))
+            .Split('\0', StringSplitOptions.RemoveEmptyEntries)
+            .ToHashSet(StringComparer.Ordinal);
+
+        string ToGitPath(string path)
+            => Path.GetRelativePath(baseDir, path).Replace(Path.DirectorySeparatorChar, '/');
+
+        // A resumed build finds the npm package already in place from the previous run,
+        // so the folders are also found by the package-lock.json file tracked in git
+        var webroot = Path.Combine(baseDir, "Duplicati", "Server", "webroot");
+        var npmFolders = Directory.EnumerateDirectories(webroot, "*", SearchOption.TopDirectoryOnly)
+            .Where(x => tracked.Contains(ToGitPath(Path.Combine(x, "package-lock.json"))))
+            .Concat(foldersToRemove)
+            .Select(Path.GetFullPath)
+            .Distinct()
+            .ToList();
+
+        foreach (var folder in npmFolders)
+            if (Directory.Exists(folder))
+                Directory.Delete(folder, true);
+
+        // Files that are not tracked, such as npm build output, would make git reject the whole checkout
+        var pathspecs = revertableFiles
+            .Select(ToGitPath)
+            .Where(tracked.Contains)
+            .Concat(npmFolders.Select(ToGitPath))
+            .Distinct()
+            .ToList();
+
+        if (pathspecs.Count == 0)
+            return;
+
+        await ProcessHelper.Execute(new[] { "git", "checkout", "--" }.Concat(pathspecs), workingDirectory: baseDir);
     }
 
     /// <summary>

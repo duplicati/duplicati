@@ -123,9 +123,22 @@ namespace Duplicati.UnitTest
         }
         private Timer memoryTimer = SetupTimer();
 
+        /// <summary>
+        /// The variables that SQLiteLoader points at TempFolder.SystemTempPath. They belong to
+        /// the whole process, so a test that redirects the temp folder would otherwise leave
+        /// Path.GetTempPath() inside its own test folder for every test that runs after it.
+        /// </summary>
+        private static readonly string[] TempEnvironmentVariables = ["TMP", "TEMP", "TMPDIR", "SQLITE_TMPDIR"];
+
+        /// <summary>
+        /// The values of <see cref="TempEnvironmentVariables"/> when the current test started
+        /// </summary>
+        private Dictionary<string, string> savedTempEnvironment;
+
         [SetUp]
         public void BasicHelperSetUp()
         {
+            savedTempEnvironment = TempEnvironmentVariables.ToDictionary(x => x, Environment.GetEnvironmentVariable);
             memoryTimer.Enabled = true;
             var me = Process.GetCurrentProcess();
             TestContext.Progress.WriteLine("Setup {0} {1}MB {2}MB", TestContext.CurrentContext.Test.Name, GC.GetTotalMemory(true) / 1000 / 1000, me.WorkingSet64 / 1000 / 1000);
@@ -162,6 +175,12 @@ namespace Duplicati.UnitTest
         public void BasicHelperTearDown()
         {
             memoryTimer.Enabled = false;
+            if (savedTempEnvironment != null)
+            {
+                foreach (var entry in savedTempEnvironment)
+                    Environment.SetEnvironmentVariable(entry.Key, entry.Value);
+                savedTempEnvironment = null;
+            }
             if (TestContext.CurrentContext.Test.MethodName != null)
             {
                 var me = Process.GetCurrentProcess();

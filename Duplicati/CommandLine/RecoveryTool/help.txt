@@ -87,11 +87,12 @@ Use the filters, --exclude, to show a subset of files.
 
 Recompress
 ----
-%RECOVERY_EXE% recompress <targetcompression> <remoteurl> <localfolder> --reupload --reencrypt [options]
+%RECOVERY_EXE% recompress <targetcompression> <remoteurl> <localfolder> --reupload --reencrypt --add-encryption [options]
 
 1) Downloads whole remote storage to <localfolder>.
 2) Recompress from existing compression type to <targetcompression>
-3) If --reencrypt is supplied, again reencrypts using same passphrase. If the --new-passphrase option is present, encryption happens using the new passphrase instead (needs to be decrypted for compression type change)
+3) If --reencrypt is supplied, again reencrypts using same passphrase. If the --new-passphrase option is present, encryption happens using the new passphrase instead (needs to be decrypted for compression type change). Files that were not encrypted are left unencrypted by --reencrypt.
+   If --add-encryption is supplied, files that were not encrypted are encrypted with the module from --encryption-module (default: aes), using --new-passphrase if present, otherwise --passphrase. Already encrypted files are handled as described above.
 4) If --reupload is supplied, files with old compression are deleted and recompressed files are uploaded back to remote storage (it is recommended to take at least temporary copy of remote storage before enabling this switch)
 
 If --reupload is supplied it is advisable to specify --reencrypt for perfect security.

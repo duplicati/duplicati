@@ -22,7 +22,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Collections.Concurrent;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.IPC;
@@ -139,5 +141,80 @@ public class IPCTests : BasicSetupHelper
         {
             (controller as IDisposable)?.Dispose();
         }
+    }
+
+    /// <summary>
+    /// The controller process only pushes progress when it is first set and when the phase changes.
+    /// The proxy reads it while the operation runs, so the progress within a phase is updated too.
+    /// </summary>
+    [Test]
+    [Category("IPC")]
+    public async Task RunBackupViaIPC_ProgressIsUpdatedWithinAPhaseAsync()
+    {
+        var rnd = new Random(11);
+        var data = new byte[1024 * 1024];
+        const int fileCount = 30;
+        for (var i = 0; i < fileCount; i++)
+        {
+            rnd.NextBytes(data);
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, $"file{i}.bin"), data);
+        }
+
+        var options = new Dictionary<string, string?>(TestOptions)
+        {
+            ["machine-id"] = "unittestid",
+            ["dblock-size"] = "1MB",
+            // Keeps the files being processed for a few seconds, as the uploads hold them back
+            ["throttle-upload"] = "4MB",
+        };
+
+        var exePath = typeof(ControllerRpcProxy)
+            .GetMethod("GetControllerExecutablePath", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
+            ?.Invoke(null, null) as string;
+        if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+        {
+            Assert.Ignore($"Controller executable not found at '{exePath}', skipping IPC test.");
+            return;
+        }
+
+        var sink = new RecordingMessageSink();
+        var processedWhileProcessing = new ConcurrentDictionary<long, bool>();
+        long maxBytesRead = 0;
+
+        using var stop = new CancellationTokenSource();
+        var poller = Task.Run(async () =>
+        {
+            while (!stop.IsCancellationRequested)
+            {
+                var progress = sink.OperationProgressUpdates.LastOrDefault();
+                if (progress != null)
+                {
+                    progress.UpdateOverall(out var phase, out _, out var processed, out _, out _, out _, out _);
+                    if (phase == OperationPhase.Backup_ProcessingFiles)
+                        processedWhileProcessing[processed] = true;
+                    maxBytesRead = Math.Max(maxBytesRead, progress.GetSourceBytesRead() ?? 0);
+                }
+
+                await Task.Delay(50);
+            }
+        });
+
+        IController controller = await ControllerRpcProxy.CreateProxyAsync("file://" + TARGETFOLDER, options, sink);
+        try
+        {
+            var backupResults = await controller.BackupAsync(new[] { DATAFOLDER });
+            Assert.AreEqual(0, backupResults.Errors.Count(), "Backup should have no errors");
+        }
+        finally
+        {
+            stop.Cancel();
+            await poller;
+            (controller as IDisposable)?.Dispose();
+        }
+
+        var counts = processedWhileProcessing.Keys.OrderBy(x => x).ToList();
+        TestContext.Progress.WriteLine($"Processed file counts seen while processing: {string.Join(", ", counts)}");
+        Assert.That(counts.Count(x => x > 0 && x < fileCount), NUnit.Framework.Is.GreaterThan(0), "the processed file count was not updated while the files were processed");
+        Assert.That(maxBytesRead, NUnit.Framework.Is.GreaterThan(0), "the bytes read were not passed on from the controller process");
     }
 }

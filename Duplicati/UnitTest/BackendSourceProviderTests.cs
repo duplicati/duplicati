@@ -22,6 +22,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -88,6 +89,65 @@ public class BackendSourceProviderTests
         public Task TestAsync(bool alsoWrite, CancellationToken cancelToken) => Task.CompletedTask;
         public Task CreateFolderAsync(CancellationToken cancelToken) => Task.CompletedTask;
         public void Dispose() { }
+    }
+
+    /// <summary>
+    /// A streaming backend that lists a single file of <see cref="ListedSize"/> bytes,
+    /// but only delivers <paramref name="deliveredSize"/> bytes without reporting an error,
+    /// as happens when an SFTP connection is lost during a download
+    /// </summary>
+    /// <param name="deliveredSize">The number of bytes written when the file is downloaded</param>
+    private sealed class TruncatingBackend(int deliveredSize) : IFolderEnabledBackend, IStreamingBackend
+    {
+        /// <summary>
+        /// The size reported when listing the file
+        /// </summary>
+        public const int ListedSize = 42;
+
+        public string DisplayName => "Truncating Backend";
+        public string ProtocolKey => "truncating";
+        public string Description => "A testing backend";
+        public IList<ICommandLineArgument> SupportedCommands => [];
+        public bool SupportsStreaming => true;
+
+        public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            await Task.CompletedTask.ConfigureAwait(false);
+            yield return new FileEntry("file.txt", ListedSize, TIMESTAMP, TIMESTAMP, false, false) { Created = TIMESTAMP };
+        }
+
+        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken)
+            => ListAsync("", cancellationToken);
+
+        public Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
+            => stream.WriteAsync(new byte[deliveredSize], 0, deliveredSize, cancelToken);
+
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
+        public Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+            => Task.FromResult<IFileEntry?>(new FileEntry("folder", 0, TIMESTAMP, TIMESTAMP, true, false) { Created = TIMESTAMP });
+        public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken) => throw new NotImplementedException();
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken) => throw new NotImplementedException();
+        public Task GetAsync(string remotename, string filename, CancellationToken cancelToken) => throw new NotImplementedException();
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken) => throw new NotImplementedException();
+        public Task TestAsync(bool alsoWrite, CancellationToken cancelToken) => Task.CompletedTask;
+        public Task CreateFolderAsync(CancellationToken cancelToken) => Task.CompletedTask;
+        public void Dispose() { }
+    }
+
+    /// <summary>
+    /// Reads the single file listed by a <see cref="TruncatingBackend"/>
+    /// </summary>
+    /// <param name="deliveredSize">The number of bytes the backend delivers</param>
+    /// <returns>The number of bytes read</returns>
+    private static async Task<long> ReadTruncatingFileAsync(int deliveredSize)
+    {
+        using var provider = new BackendSourceProvider(new TruncatingBackend(deliveredSize), "/mnt/stub/", "truncating://host/path");
+        var root = await provider.EnumerateAsync(CancellationToken.None).SingleAsync();
+        var child = await root.Enumerate(CancellationToken.None).SingleAsync();
+        using var stream = await child.OpenRead(CancellationToken.None);
+        using var target = new MemoryStream();
+        await stream.CopyToAsync(target);
+        return target.Length;
     }
 
     /// <summary>
@@ -245,5 +305,26 @@ public class BackendSourceProviderTests
             Assert.That(child.Size, Is.EqualTo(42));
             Assert.That(await child.GetMinorMetadata(CancellationToken.None), Is.Empty);
         }
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public async Task CompleteStreamedReadSucceedsAsync()
+    {
+        Assert.That(await ReadTruncatingFileAsync(TruncatingBackend.ListedSize), Is.EqualTo(TruncatingBackend.ListedSize));
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public void TruncatedStreamedReadThrows()
+    {
+        Assert.ThrowsAsync<IOException>(() => ReadTruncatingFileAsync(10));
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public void EmptyStreamedReadOfNonEmptyFileThrows()
+    {
+        Assert.ThrowsAsync<IOException>(() => ReadTruncatingFileAsync(0));
     }
 }

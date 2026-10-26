@@ -341,7 +341,8 @@ public class DuplicatiWebserver
         }
 
         var app = builder.Build();
-        HttpClientHelper.Configure(app.Services.GetRequiredService<IHttpClientFactory>());
+        var httpClientFactory = app.Services.GetRequiredService<IHttpClientFactory>();
+        HttpClientHelper.Configure(httpClientFactory);
 
         if (useCors)
             app.UseCors(CorsPolicyName);
@@ -439,6 +440,10 @@ public class DuplicatiWebserver
 
         // Register SIGTERM handler
         lifetime.ApplicationStopping.Register(() => applicationSettings.SignalApplicationExit());
+
+        // The factory is disposed with the service provider when the server stops,
+        // so clients created after that must not come from it
+        lifetime.ApplicationStopped.Register(() => HttpClientHelper.Unconfigure(httpClientFactory));
 
         return new DuplicatiWebserver()
         {

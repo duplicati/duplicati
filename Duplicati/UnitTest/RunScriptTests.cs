@@ -89,6 +89,36 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Border")]
+        [TestCase(0, 0, "Backup completed successfully!")]
+        [TestCase(1, 1, "Backup was stopped before it completed")]
+        [TestCase(4, 3, "Backup completed with errors")]
+        [TestCase(5, 3, "Backup was stopped before it completed")]
+        public void CommandLineBackupReportsTheResultOfTheScript(int scriptExitCode, int expectedExitCode, string expectedMessage)
+        {
+            File.WriteAllText(Path.Combine(DATAFOLDER, "file.txt"), "content");
+
+            var options = new Dictionary<string, string>(TestOptions)
+            {
+                ["run-script-before"] = CreateScript(scriptExitCode),
+                ["run-script-timeout"] = "5s",
+            };
+            var args = new[] { "backup", "file://" + TARGETFOLDER, DATAFOLDER }
+                .Concat(options.Select(x => $"--{x.Key}={x.Value}"))
+                .ToArray();
+
+            using var output = new StringWriter();
+            using var errors = new StringWriter();
+            var exitCode = Duplicati.CommandLine.Program.RunCommandLine(output, errors, _ => { }, args);
+
+            var lines = output.ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
+            Assert.AreEqual(expectedExitCode, exitCode, output.ToString() + errors.ToString());
+            Assert.That(lines, Does.Contain(expectedMessage), output.ToString());
+            if (expectedMessage != "Backup completed successfully!")
+                Assert.That(lines, Does.Not.Contain("Backup completed successfully!"), output.ToString());
+        }
+
+        [Test]
+        [Category("Border")]
         public async Task RunScriptBeforeAsync()
         {
             var blocksize = 10 * 1024;
@@ -598,6 +628,58 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(reduced.Contains("ExaminedFiles"), "The reduced result file was expected to hold the counters");
             Assert.IsTrue(System.Text.RegularExpressions.Regex.IsMatch(reduced, @"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} [+-]\d{2} - \[Verbose-[^\s\]]+\]"), "The reduced result file was expected to hold reduced log lines");
             Assert.IsFalse(reduced.Contains("Including path"), "The reduced result file holds message text");
+        }
+
+        [Test]
+        [Category("Border")]
+        [TestCase("run-script-before", 3, true)]
+        [TestCase("run-script-before", 5, true)]
+        [TestCase("run-script-before-required", 1, true)]
+        // Exit code 1 asks to skip the run without a warning, which is not reported
+        [TestCase("run-script-before", 1, false)]
+        public async Task ReportIsSentWhenScriptStopsOperationAsync(string scriptOption, int exitCode, bool expectReport)
+        {
+            var probe = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+            probe.Start();
+            var port = ((System.Net.IPEndPoint)probe.LocalEndpoint).Port;
+            probe.Stop();
+
+            using var listener = new System.Net.HttpListener();
+            listener.Prefixes.Add($"http://localhost:{port}/");
+            listener.Start();
+            var received = new System.Collections.Concurrent.ConcurrentQueue<string>();
+            // Stop() aborts the pending wait before IsListening turns false, so a flag set beforehand marks the abort as expected
+            var stopping = false;
+            var serve = Task.Run(async () =>
+            {
+                while (listener.IsListening)
+                {
+                    System.Net.HttpListenerContext context;
+                    try { context = await listener.GetContextAsync(); }
+                    catch (Exception) when (System.Threading.Volatile.Read(ref stopping)) { return; }
+
+                    received.Enqueue(context.Request.RawUrl);
+                    context.Response.StatusCode = 200;
+                    context.Response.Close();
+                }
+            });
+
+            var options = new Dictionary<string, string>(this.TestOptions);
+            options[scriptOption] = CreateScript(exitCode);
+            options["send-http-url"] = $"http://localhost:{port}/report";
+            options["send-http-level"] = "all";
+            options["send-http-retries"] = "0";
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                try { await c.BackupAsync(new[] { this.DATAFOLDER }); }
+                catch (UserInformationException) { }
+            }
+
+            System.Threading.Volatile.Write(ref stopping, true);
+            listener.Stop();
+            await serve;
+
+            Assert.That(received, Is.EqualTo(expectReport ? new[] { "/report" } : Array.Empty<string>()), "Unexpected reports about the stopped backup");
         }
 
         private string CreateScript(int exitcode, string stderr = null, string stdout = null, int sleeptime = 0, List<string> customCommands = null)
