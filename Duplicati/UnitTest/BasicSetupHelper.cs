@@ -171,6 +171,31 @@ namespace Duplicati.UnitTest
             systemIO.DirectoryDelete(path, true);
         }
 
+        /// <summary>
+        /// Deletes a file, trying again for a short while if it is in use. On the Windows CI
+        /// runner the database is sometimes still locked just after a test has closed it, with
+        /// no process holding it open, and the lock goes away within 100ms.
+        /// </summary>
+        /// <param name="path">The file to delete</param>
+        private static void DeleteFileWithRetry(string path)
+        {
+            for (var attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    systemIO.FileDelete(path);
+                    return;
+                }
+                catch (IOException) when (attempt < 10)
+                {
+                    // If there is a leaked handled somewhere, flush it
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
+                    System.Threading.Thread.Sleep(100);
+                }
+            }
+        }
+
         [TearDown]
         public void BasicHelperTearDown()
         {
@@ -200,7 +225,7 @@ namespace Duplicati.UnitTest
             }
             if (systemIO.FileExists(this.DBFILE))
             {
-                systemIO.FileDelete(this.DBFILE);
+                DeleteFileWithRetry(this.DBFILE);
             }
             if (systemIO.FileExists($"{this.DBFILE}-journal"))
             {
