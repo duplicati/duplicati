@@ -691,7 +691,17 @@ namespace Duplicati.Library.Main
 
                     m_options.MainAction = result.MainOperation;
                     await ApplySecretProviderAsync(CancellationToken.None).ConfigureAwait(false);
-                    (paths, filter) = SetupCommonOptions(result, paths, filter, logTarget);
+                    try
+                    {
+                        (paths, filter) = SetupCommonOptions(result, paths, filter, logTarget);
+                    }
+                    catch
+                    {
+                        // The report modules that were loaded before the failure must still
+                        // see the operation, or the failure is never reported to them
+                        ReportModulesHandler = await ReportModuleController.SetupAsync(this, result, m_options, m_currentTaskControl.StopToken);
+                        throw;
+                    }
 
                     ReportModulesHandler = await ReportModuleController.SetupAsync(this, result, m_options, m_currentTaskControl.StopToken);
 

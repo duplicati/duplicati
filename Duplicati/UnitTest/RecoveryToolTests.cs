@@ -442,5 +442,46 @@ namespace Duplicati.UnitTest
             var remoteFilesAfter = Directory.GetFiles(this.TARGETFOLDER).Select(Path.GetFileName).OrderBy(x => x).ToArray();
             Assert.That(remoteFilesAfter, Is.EqualTo(remoteFilesBefore));
         }
+        [Test]
+        [Category("RecoveryTool")]
+        public async Task RecompressAddEncryptionEncryptsUnencryptedFilesAsync()
+        {
+            File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "file.txt"), new byte[] { 1, 2, 3 });
+
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["no-encryption"] = "true"
+            };
+            var backendURL = "file://" + this.TARGETFOLDER;
+            using (var c = new Controller(backendURL, options, null))
+            {
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+            }
+
+            var remoteFilesBefore = Directory.GetFiles(this.TARGETFOLDER).Select(Path.GetFileName).OrderBy(x => x).ToArray();
+            File.Delete(options["dbpath"]);
+
+            var recompressFolder = Path.Combine(this.RESTOREFOLDER, "recompressed");
+            Directory.CreateDirectory(recompressFolder);
+            var status = CommandLine.RecoveryTool.Program.Main(new[] { "recompress", "zip", backendURL, recompressFolder, "--reupload", "--add-encryption", "--passphrase=abc" });
+            Assert.AreEqual(0, status);
+
+            var remoteFilesAfter = Directory.GetFiles(this.TARGETFOLDER).Select(Path.GetFileName).OrderBy(x => x).ToArray();
+            Assert.That(remoteFilesAfter, Is.EqualTo(remoteFilesBefore.Select(x => x + ".aes").ToArray()));
+
+            options.Remove("no-encryption");
+            options["passphrase"] = "abc";
+            using (var c = new Controller(backendURL, options, null))
+            {
+                var repairResults = await c.RepairAsync();
+                Assert.AreEqual(0, repairResults.Errors.Count());
+                Assert.AreEqual(0, repairResults.Warnings.Count());
+            }
+
+            using (var c = new Controller(backendURL, options, null))
+                TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
+        }
     }
 }

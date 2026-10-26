@@ -39,6 +39,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.DynamicLoader;
+using Duplicati.Library.Utility;
 using Duplicati.Server;
 using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Dto.V2;
@@ -142,6 +143,19 @@ public class ServerApiIntegrationTests : BasicSetupHelper
             var importedBackup = await AssertBackupListedAsync(httpClient, result.Id!).ConfigureAwait(false);
             Assert.That(importedBackup.IsUnencryptedOrPassphraseStored, Is.True, "Imported backup should be ready to run without prompting for a passphrase");
         }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
+    public async Task HttpClientHelperStillCreatesClientsAfterTheServerStops_Async()
+    {
+        await WithAuthenticatedServerAsync(_ => Task.CompletedTask).ConfigureAwait(false);
+
+        // Once the webserver has terminated, its service provider and client factory are disposed
+        await ServerProgram.DuplicatiWebserver.TerminationTask.WaitAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+
+        Assert.DoesNotThrow(() => HttpClientHelper.CreateClient().Dispose(),
+            "The helper must not keep using the client factory of a stopped server");
     }
 
     [Test]

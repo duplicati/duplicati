@@ -103,6 +103,44 @@ public static partial class Command
         }
 
         /// <summary>
+        /// The number of attempts for each S3 request
+        /// </summary>
+        private const int S3MaxAttempts = 5;
+
+        /// <summary>
+        /// The delays between S3 attempts, indexed by the failed attempt number
+        /// </summary>
+        private static readonly TimeSpan[] S3RetryDelays = [
+            TimeSpan.FromSeconds(5),
+            TimeSpan.FromSeconds(15),
+            TimeSpan.FromSeconds(30),
+            TimeSpan.FromSeconds(60)
+        ];
+
+        /// <summary>
+        /// Gets the delay to wait after the given failed S3 attempt
+        /// </summary>
+        /// <param name="attempt">The failed attempt number, starting at 1</param>
+        /// <returns>The delay</returns>
+        private static TimeSpan GetS3RetryDelay(int attempt)
+            => S3RetryDelays[Math.Min(attempt, S3RetryDelays.Length) - 1];
+
+        /// <summary>
+        /// Logs a failed S3 attempt
+        /// </summary>
+        /// <param name="operation">A description of the failed operation</param>
+        /// <param name="ex">The exception</param>
+        /// <param name="attempt">The failed attempt number, starting at 1</param>
+        private static void LogS3Failure(string operation, Exception ex, int attempt)
+        {
+            var next = attempt < S3MaxAttempts
+                ? $"retrying in {GetS3RetryDelay(attempt).TotalSeconds}s"
+                : "giving up";
+            var inner = ex.InnerException == null ? "" : $" ({ex.GetBaseException().Message})";
+            Console.WriteLine($"Attempt {attempt}/{S3MaxAttempts} to {operation} failed, {next}: {ex.GetType().Name}: {ex.Message}{inner}");
+        }
+
+        /// <summary>
         /// Upload release files to S3 storage
         /// </summary>
         /// <param name="files">The files to upload</param>
@@ -137,7 +175,7 @@ public static partial class Command
                         file.Path,
                         rtcfg.Configuration.ConfigFiles.AwsUploadBucket,
                         $"{rtcfg.ReleaseInfo.Channel.ToString().ToLowerInvariant()}/{file.Name}"
-                    ), 3, TimeSpan.FromSeconds(1), CancellationToken.None);
+                    ), (ex, attempt) => LogS3Failure($"upload {file.Name}", ex, attempt), S3MaxAttempts, GetS3RetryDelay, CancellationToken.None);
 
                 var filesize = new FileInfo(file.Path).Length;
                 size += filesize;
@@ -157,7 +195,7 @@ public static partial class Command
                         source,
                         rtcfg.Configuration.ConfigFiles.AwsUploadBucket,
                         target
-                    ), 3, TimeSpan.FromSeconds(1), CancellationToken.None);
+                    ), (ex, attempt) => LogS3Failure($"copy {source} to {target}", ex, attempt), S3MaxAttempts, GetS3RetryDelay, CancellationToken.None);
             }
         }
 
