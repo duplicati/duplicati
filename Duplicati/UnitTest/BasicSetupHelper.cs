@@ -188,6 +188,9 @@ namespace Duplicati.UnitTest
                 }
                 catch (IOException) when (attempt < 10)
                 {
+                    // If there is a leaked handled somewhere, flush it
+                    GC.Collect();
+                    GC.WaitForPendingFinalizers();
                     System.Threading.Thread.Sleep(100);
                 }
             }
