@@ -29,10 +29,16 @@ using System.Collections.Generic;
 namespace Duplicati.Library.Main.Operation.Backup
 {
     /// <summary>
-    /// The progress handler reads all progress messages and reports progress as if the processing is sequential
+    /// The progress handler reads all progress messages and reports progress as if the processing is sequential.
+    /// The files processed in parallel are also reported as a list, for clients that can show them.
     /// </summary>
     internal static class ProgressHandler
     {
+        /// <summary>
+        /// The maximum number of active files reported
+        /// </summary>
+        private const int MAX_ACTIVE_FILES = 32;
+
         public static Task RunAsync(Channels channels, BackupResults stat)
         {
             return AutomationExtensions.RunTask(new
@@ -48,43 +54,75 @@ namespace Duplicati.Library.Main.Operation.Backup
                 long processedFileSize = 0;
                 string current = null;
 
+                // Bytes actually read, which unlike the processed size leaves out skipped files.
+                // The bytes of open files are counted from their last progress update.
+                long closedBytesRead = 0;
+                long openBytesRead = 0;
+                stat.OperationProgressUpdater.UpdateSourceBytesRead(0);
+
+                // The list is read from the thread that reports progress, so changes to the files are locked
+                var filesLock = new object();
+                stat.OperationProgressUpdater.SetActiveFilesProvider(() =>
+                {
+                    lock (filesLock)
+                        return filesStarted
+                            .OrderByDescending(x => x.Value)
+                            .Take(MAX_ACTIVE_FILES)
+                            .Select(x => new ActiveFileProgress(x.Key, x.Value, fileProgress.TryGetValue(x.Key, out var offset) ? offset : 0))
+                            .ToArray();
+                });
+
                 while (true)
                 {
                     var t = await self.Input.ReadAsync();
-                    switch (t.Type)
+                    lock (filesLock)
                     {
-                        case EventType.FileStarted:
-                            filesStarted[t.Filepath] = t.Length;
-                            fileProgress[t.Filepath] = 0;
-                            break;
-                        case EventType.FileProgressUpdate:
-                            if (t.Filepath == current)
-                                stat.OperationProgressUpdater.UpdateFileProgress(t.Length);
-                            break;
-                        case EventType.FileClosed:
-                            if (fileProgress.ContainsKey(t.Filepath))
-                                fileProgress[t.Filepath] = t.Length;
+                        switch (t.Type)
+                        {
+                            case EventType.FileStarted:
+                                filesStarted[t.Filepath] = t.Length;
+                                fileProgress[t.Filepath] = 0;
+                                break;
+                            case EventType.FileProgressUpdate:
+                                if (fileProgress.TryGetValue(t.Filepath, out var lastOffset))
+                                {
+                                    openBytesRead += t.Length - lastOffset;
+                                    fileProgress[t.Filepath] = t.Length;
+                                    stat.OperationProgressUpdater.UpdateSourceBytesRead(closedBytesRead + openBytesRead);
+                                }
+                                if (t.Filepath == current)
+                                    stat.OperationProgressUpdater.UpdateFileProgress(t.Length);
+                                break;
+                            case EventType.FileClosed:
+                                if (fileProgress.TryGetValue(t.Filepath, out var openOffset))
+                                {
+                                    openBytesRead -= openOffset;
+                                    fileProgress[t.Filepath] = t.Length;
+                                }
+                                closedBytesRead += t.Length;
+                                stat.OperationProgressUpdater.UpdateSourceBytesRead(closedBytesRead + openBytesRead);
 
-                            if (t.Filepath == current)
-                            {
-                                stat.OperationProgressUpdater.UpdateFileProgress(t.Length);
-                                current = null;
-                            }
+                                if (t.Filepath == current)
+                                {
+                                    stat.OperationProgressUpdater.UpdateFileProgress(t.Length);
+                                    current = null;
+                                }
 
-                            processedFileCount += 1;
-                            processedFileSize += t.Length;
+                                processedFileCount += 1;
+                                processedFileSize += t.Length;
 
-                            stat.OperationProgressUpdater.UpdatefilesProcessed(processedFileCount, processedFileSize);
-                            filesStarted.Remove(t.Filepath);
-                            fileProgress.Remove(t.Filepath);
-                            break;
-                        case EventType.FileSkipped:
+                                stat.OperationProgressUpdater.UpdatefilesProcessed(processedFileCount, processedFileSize);
+                                filesStarted.Remove(t.Filepath);
+                                fileProgress.Remove(t.Filepath);
+                                break;
+                            case EventType.FileSkipped:
 
-                            processedFileCount += 1;
-                            processedFileSize += t.Length;
+                                processedFileCount += 1;
+                                processedFileSize += t.Length;
 
-                            stat.OperationProgressUpdater.UpdatefilesProcessed(processedFileCount, processedFileSize);
-                            break;
+                                stat.OperationProgressUpdater.UpdatefilesProcessed(processedFileCount, processedFileSize);
+                                break;
+                        }
                     }
 
                     if (current == null)

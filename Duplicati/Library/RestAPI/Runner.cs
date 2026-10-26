@@ -601,6 +601,10 @@ namespace Duplicati.Server
                 internal bool m_backendIsBlocking;
 
                 internal ActiveTransfer[] m_activeTransfers = [];
+                internal ActiveFile[] m_activeFiles = [];
+                internal long? m_sourceBytesRead;
+                internal long m_backendBytesUploaded;
+                internal long m_backendBytesDownloaded;
 
                 internal string? m_currentFilename;
                 internal long m_currentFilesize;
@@ -629,6 +633,7 @@ namespace Duplicati.Server
                 {
                     var res = (ProgressState)this.MemberwiseClone();
                     res.m_activeTransfers = [.. m_activeTransfers];
+                    res.m_activeFiles = [.. m_activeFiles];
                     return res;
                 }
 
@@ -653,6 +658,10 @@ namespace Duplicati.Server
                 public long TotalFileSize { get { return m_totalFileSize; } }
                 public bool StillCounting { get { return m_stillCounting; } }
                 public ActiveTransfer[] ActiveTransfers => m_activeTransfers;
+                public ActiveFile[] ActiveFiles => m_activeFiles;
+                public long? SourceBytesRead => m_sourceBytesRead;
+                public long? BackendBytesUploaded => m_backendBytesUploaded;
+                public long? BackendBytesDownloaded => m_backendBytesDownloaded;
                 public int RemoteSyncDestinationIndex { get { return m_remoteSyncDestinationIndex; } }
                 public int RemoteSyncDestinationCount { get { return m_remoteSyncDestinationCount; } }
                 public TimeSpan? EstimatedTimeToCompletion { get { return m_estimatedTimeToCompletion; } }
@@ -664,6 +673,18 @@ namespace Duplicati.Server
             private Library.Main.IBackendProgress? m_backendProgress;
             private Library.Main.IOperationProgress? m_operationProgress;
             private readonly object m_lock = new object();
+
+            /// <summary>
+            /// The bytes of transfers that have completed, counted from the backend events
+            /// </summary>
+            private long m_completedBytesUploaded;
+            private long m_completedBytesDownloaded;
+
+            /// <summary>
+            /// Completed transfers that may still be listed as active; their progress is already counted
+            /// </summary>
+            private readonly HashSet<string> m_completedTransferPaths = new();
+
             internal TaskCompletionSource<Library.Main.OperationPhase> m_phaseChangeTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
             public MessageSink(long taskId, string? backupId)
@@ -675,6 +696,8 @@ namespace Duplicati.Server
             {
                 lock (m_lock)
                 {
+                    UpdateBackendBytes();
+
                     if (m_backendProgress != null)
                     {
                         var transfers = m_backendProgress.GetActiveTransfers();
@@ -714,10 +737,41 @@ namespace Duplicati.Server
                         m_operationProgress.UpdateOverall(out m_state.m_phase, out m_state.m_overallProgress, out m_state.m_processedFileCount, out m_state.m_processedFileSize, out m_state.m_totalFileCount, out m_state.m_totalFileSize, out m_state.m_stillCounting);
                         m_operationProgress.UpdateRemoteSyncDestination(out m_state.m_remoteSyncDestinationIndex, out m_state.m_remoteSyncDestinationCount);
                         m_state.m_estimatedTimeToCompletion = m_operationProgress.EstimatedTimeToCompletion;
+                        m_state.m_activeFiles = m_operationProgress.GetActiveFiles()
+                            .Select(x => new ActiveFile(x.Path, x.Size, x.Offset))
+                            .ToArray();
+                        m_state.m_sourceBytesRead = m_operationProgress.GetSourceBytesRead();
                     }
 
                     return m_state.Clone();
                 }
+            }
+
+            /// <summary>
+            /// Sets the transferred totals to the completed transfers plus the progress of the active ones.
+            /// Must be called with the lock held.
+            /// </summary>
+            private void UpdateBackendBytes()
+            {
+                long activeUploaded = 0, activeDownloaded = 0;
+                var activePaths = new HashSet<string>();
+                foreach (var transfer in m_backendProgress?.GetActiveTransfers() ?? [])
+                {
+                    activePaths.Add(transfer.Path);
+                    if (m_completedTransferPaths.Contains(transfer.Path))
+                        continue;
+
+                    if (transfer.Action == Library.Main.BackendActionType.Put)
+                        activeUploaded += Math.Max(0, transfer.Progress);
+                    else if (transfer.Action == Library.Main.BackendActionType.Get)
+                        activeDownloaded += Math.Max(0, transfer.Progress);
+                }
+
+                // Completed transfers are only remembered while they are still listed
+                m_completedTransferPaths.RemoveWhere(x => !activePaths.Contains(x));
+
+                m_state.m_backendBytesUploaded = m_completedBytesUploaded + activeUploaded;
+                m_state.m_backendBytesDownloaded = m_completedBytesDownloaded + activeDownloaded;
             }
 
             public Task PhaseChangedAsync { get { return m_phaseChangeTcs.Task; } }
@@ -727,6 +781,21 @@ namespace Duplicati.Server
             {
                 lock (m_lock)
                 {
+                    // Count every completed transfer, as fast ones can start and finish between two progress reads
+                    if (type == Duplicati.Library.Main.BackendEventType.Completed && path != null && size > 0)
+                    {
+                        if (action == Library.Main.BackendActionType.Put)
+                        {
+                            m_completedBytesUploaded += size;
+                            m_completedTransferPaths.Add(path);
+                        }
+                        else if (action == Library.Main.BackendActionType.Get)
+                        {
+                            m_completedBytesDownloaded += size;
+                            m_completedTransferPaths.Add(path);
+                        }
+                    }
+
                     if (path == m_state.m_currentFilename && type != Duplicati.Library.Main.BackendEventType.Started && type != Duplicati.Library.Main.BackendEventType.Progress)
                     {
                         m_state.m_backendFileSize = 0;
@@ -891,7 +960,7 @@ namespace Duplicati.Server
                     {
                         while (!cts.IsCancellationRequested)
                         {
-                            await Task.WhenAny(sink.PhaseChangedAsync, Task.Delay(1000, cts.Token));
+                            await Task.WhenAny(sink.PhaseChangedAsync, Task.Delay(Library.Main.ProgressReporting.Interval, cts.Token));
                             if (!cts.IsCancellationRequested)
                                 eventPollNotify.SignalProgressUpdate(sink.Copy);
                         }
@@ -938,7 +1007,7 @@ namespace Duplicati.Server
                     {
                         while (!cts.IsCancellationRequested)
                         {
-                            await Task.WhenAny(sink.PhaseChangedAsync, Task.Delay(1000, cts.Token));
+                            await Task.WhenAny(sink.PhaseChangedAsync, Task.Delay(Library.Main.ProgressReporting.Interval, cts.Token));
                             if (!cts.IsCancellationRequested)
                                 eventPollNotify.SignalProgressUpdate(sink.Copy);
                         }

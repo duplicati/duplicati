@@ -70,6 +70,8 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<IQueueRunnerService, QueueRunnerService>()
             .AddSingleton<IDatabaseLockTracker, DatabaseLockTracker>()
             .AddSingleton<IProgressStateProviderService, ProgressStateProviderService>()
+            .AddSingleton<ISystemResourceSampler, SystemResourceSampler>()
+            .AddSingleton<ISystemStatusService, SystemStatusService>()
             .AddTransient<INotificationService, NotificationService>()
             .AddTransient<IBackupListService, BackupListService>()
             .AddTransient<ITaskQueueService, TaskQueueService>()

@@ -363,6 +363,14 @@ public class OperationProgressDto
     public int RemoteSyncDestinationIndex { get; set; }
     public int RemoteSyncDestinationCount { get; set; }
     public TimeSpan? EstimatedTimeToCompletion { get; set; }
+    /// <summary>
+    /// The files being processed in parallel; null from controllers that do not report them
+    /// </summary>
+    public ActiveFileProgress[]? ActiveFiles { get; set; }
+    /// <summary>
+    /// The bytes read from source files; null from controllers that do not report it
+    /// </summary>
+    public long? SourceBytesRead { get; set; }
 
     public static OperationProgressDto? FromProgress(IOperationProgress? progress)
     {
@@ -385,6 +393,8 @@ public class OperationProgressDto
         dto.RemoteSyncDestinationIndex = destinationIndex;
         dto.RemoteSyncDestinationCount = destinationCount;
         dto.EstimatedTimeToCompletion = progress.EstimatedTimeToCompletion;
+        dto.ActiveFiles = progress.GetActiveFiles();
+        dto.SourceBytesRead = progress.GetSourceBytesRead();
         return dto;
     }
 }

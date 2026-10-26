@@ -228,4 +228,24 @@ public class TaskQueueServiceTests
         Assert.That(state.TaskFinished, Is.EqualTo(Finished));
         Assert.That(state.ErrorMessage, Is.EqualTo(failed ? "The passphrase is wrong" : null));
     }
+
+    /// <summary>
+    /// The queue details used by the system status page list the running task first,
+    /// followed by the waiting tasks, with the operation of each.
+    /// </summary>
+    [Test]
+    public void GetTaskQueueDetails_ListsRunningTaskFirst()
+    {
+        var runner = new MockQueueRunnerService();
+        runner.CurrentTask = new MockQueuedTask { TaskID = 7, BackupID = "1", Operation = DuplicatiOperation.BackupOrSync, TaskStarted = Started };
+        runner.QueuedTasks.Add(new MockQueuedTask { TaskID = 8, BackupID = "2", Operation = DuplicatiOperation.Verify });
+
+        var queue = new TaskQueueService(runner).GetTaskQueueDetails().ToList();
+
+        Assert.That(queue.Select(x => x.TaskID), Is.EqualTo(new long[] { 7, 8 }));
+        Assert.That(queue.Select(x => x.Status), Is.EqualTo(new[] { "Running", "Waiting" }));
+        Assert.That(queue.Select(x => x.Operation), Is.EqualTo(new[] { "BackupOrSync", "Verify" }));
+        Assert.That(queue[0].TaskStarted, Is.EqualTo(Started));
+        Assert.That(queue[1].TaskStarted, Is.Null);
+    }
 }

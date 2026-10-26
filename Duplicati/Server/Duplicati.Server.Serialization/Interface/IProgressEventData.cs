@@ -43,6 +43,18 @@ namespace Duplicati.Server.Serialization.Interface
         bool BackendIsBlocking
     );
 
+    /// <summary>
+    /// Representation of a file being processed.
+    /// </summary>
+    /// <param name="Path">The path of the file</param>
+    /// <param name="Size">The size of the file</param>
+    /// <param name="Offset">How much of the file has been processed</param>
+    public sealed record ActiveFile(
+        string Path,
+        long Size,
+        long Offset
+    );
+
     public interface IProgressEventData
     {
         string? BackupID { get; }
@@ -69,6 +81,29 @@ namespace Duplicati.Server.Serialization.Interface
         bool StillCounting { get; }
 
         ActiveTransfer[]? ActiveTransfers { get; }
+
+        /// <summary>
+        /// The files being processed in parallel, largest first.
+        /// Empty for operations that process one file at a time, which report it in <see cref="CurrentFilename"/>.
+        /// </summary>
+        ActiveFile[]? ActiveFiles => null;
+
+        /// <summary>
+        /// The bytes read from source files. Unlike <see cref="ProcessedFileSize"/>, files skipped
+        /// because they had not changed are not counted. Null for operations that do not read source files.
+        /// </summary>
+        long? SourceBytesRead => null;
+
+        /// <summary>
+        /// The bytes uploaded by the operation, counting completed transfers and the progress of active ones.
+        /// Unlike <see cref="ActiveTransfers"/>, transfers that complete between two progress reads are included.
+        /// </summary>
+        long? BackendBytesUploaded => null;
+
+        /// <summary>
+        /// The bytes downloaded by the operation, counted like <see cref="BackendBytesUploaded"/>.
+        /// </summary>
+        long? BackendBytesDownloaded => null;
 
         /// <summary>
         /// The 1-based index of the current remote sync destination being processed.

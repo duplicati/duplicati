@@ -332,6 +332,14 @@ namespace Duplicati.Library.Main
     public delegate void PhaseChangedDelegate(OperationPhase phase, OperationPhase previousPhase);
 
     /// <summary>
+    /// A file that is being processed
+    /// </summary>
+    /// <param name="Path">The path of the file</param>
+    /// <param name="Size">The size of the file</param>
+    /// <param name="Offset">How much of the file has been processed</param>
+    public sealed record ActiveFileProgress(string Path, long Size, long Offset);
+
+    /// <summary>
     /// Operation progress update object.
     /// The engine updates these statistics very often,
     /// so an event based system would take up too many resources.
@@ -359,6 +367,22 @@ namespace Duplicati.Library.Main
         /// <param name="filesize">Filesize.</param>
         /// <param name="fileoffset">Fileoffset.</param>
         void UpdateFile(out string filename, out long filesize, out long fileoffset, out bool filecomplete);
+
+        /// <summary>
+        /// Gets the files that are being processed in parallel, largest first.
+        /// Operations that process one file at a time only report it through <see cref="UpdateFile"/>
+        /// and return an empty list here.
+        /// </summary>
+        /// <returns>The files being processed</returns>
+        ActiveFileProgress[] GetActiveFiles() => [];
+
+        /// <summary>
+        /// Gets the number of bytes read from source files, which unlike the processed size
+        /// does not count files that were skipped because they had not changed.
+        /// Returns <c>null</c> for operations that do not read source files.
+        /// </summary>
+        /// <returns>The number of bytes read, or null</returns>
+        long? GetSourceBytesRead() => null;
 
         /// <summary>
         /// Gets the current remote sync destination index (1-based) and total count.
@@ -396,6 +420,19 @@ namespace Duplicati.Library.Main
         void UpdatefilesProcessed(long count, long size);
 
         /// <summary>
+        /// Sets the function that lists the files being processed in parallel.
+        /// The function is called when progress is read, and is cleared when the phase changes.
+        /// </summary>
+        /// <param name="provider">The function, or null to clear it</param>
+        void SetActiveFilesProvider(Func<ActiveFileProgress[]> provider);
+
+        /// <summary>
+        /// Sets the number of bytes read from source files so far in the operation
+        /// </summary>
+        /// <param name="bytesRead">The number of bytes read</param>
+        void UpdateSourceBytesRead(long bytesRead);
+
+        /// <summary>
         /// Sets the current remote sync destination index and total count.
         /// </summary>
         /// <param name="destinationIndex">The 1-based index of the current destination being synced.</param>
@@ -417,6 +454,8 @@ namespace Duplicati.Library.Main
         private long m_curfilesize;
         private long m_curfileoffset;
         private bool m_curfilecomplete;
+        private Func<ActiveFileProgress[]> m_activeFilesProvider;
+        private long? m_sourceBytesRead;
 
         private long m_filesprocessed;
         private long m_filesizeprocessed;
@@ -468,6 +507,7 @@ namespace Duplicati.Library.Main
                 m_curfilesize = 0;
                 m_curfileoffset = 0;
                 m_curfilecomplete = false;
+                m_activeFilesProvider = null;
                 // A new phase has a different work profile, so any throughput and
                 // estimate accumulated so far no longer apply. Reset the EWMA state.
                 m_phaseStarted = DateTime.UtcNow;
@@ -500,6 +540,34 @@ namespace Duplicati.Library.Main
         {
             lock (m_lock)
                 m_curfileoffset = offset;
+        }
+
+        public void SetActiveFilesProvider(Func<ActiveFileProgress[]> provider)
+        {
+            lock (m_lock)
+                m_activeFilesProvider = provider;
+        }
+
+        public void UpdateSourceBytesRead(long bytesRead)
+        {
+            lock (m_lock)
+                m_sourceBytesRead = bytesRead;
+        }
+
+        public long? GetSourceBytesRead()
+        {
+            lock (m_lock)
+                return m_sourceBytesRead;
+        }
+
+        public ActiveFileProgress[] GetActiveFiles()
+        {
+            Func<ActiveFileProgress[]> provider;
+            lock (m_lock)
+                provider = m_activeFilesProvider;
+
+            // The provider takes its own lock, so it is called outside this one
+            return provider?.Invoke() ?? [];
         }
 
         public void UpdatefileCount(long filecount, long filesize, bool done)

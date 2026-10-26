@@ -20,11 +20,13 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.IPC.Dto;
@@ -44,11 +46,26 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
 
     private Process? _process;
     private JsonRpc? _rpc;
+
+    /// <summary>
+    /// The process IDs of the controller processes that are currently running
+    /// </summary>
+    private static readonly ConcurrentDictionary<int, byte> _activeProcessIds = new();
+
+    /// <summary>
+    /// Gets the process IDs of the controller processes that are currently running
+    /// </summary>
+    public static IReadOnlyCollection<int> ActiveProcessIds => _activeProcessIds.Keys.ToArray();
     private readonly IMessageSink _messageSink;
     private readonly string _backendUrl;
     private readonly Dictionary<string, string?> _options;
 
     private JsonRpc Rpc => _rpc ?? throw new InvalidOperationException("RPC connection not established");
+
+    /// <summary>
+    /// Stops reading progress when the proxy is disposed
+    /// </summary>
+    private readonly CancellationTokenSource _progressPollCancellation = new();
 
     /// <inheritdoc />
     public Action<IBasicResults>? OnOperationStarted { get; set; }
@@ -97,6 +114,8 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
 
             // For debugging purposes, we can also start a mocked remote process
             // await proxy.StartMockedRemoteProcessAsync().ConfigureAwait(false);
+
+            _ = Task.Run(() => proxy.PollProgressAsync(proxy._progressPollCancellation.Token));
         }
         catch
         {
@@ -106,6 +125,50 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
             throw;
         }
         return proxy;
+    }
+
+    /// <summary>
+    /// Reads the progress from the controller process while it runs, and passes it on
+    /// the same way as the progress the controller pushes
+    /// </summary>
+    /// <param name="token">The token that stops reading</param>
+    /// <returns>An awaitable task</returns>
+    private async Task PollProgressAsync(CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            try
+            {
+                // The controller only pushes progress when it is first set and when the phase
+                // changes, so without reading it, the progress within a phase is not updated
+                await Task.Delay(ProgressReporting.Interval, token).ConfigureAwait(false);
+
+                var rpc = _rpc;
+                if (rpc == null)
+                    continue;
+
+                var backend = await rpc.InvokeWithCancellationAsync<BackendProgressDto?>("GetBackendProgressAsync", null, token).ConfigureAwait(false);
+                if (backend != null)
+                    await OnBackendProgressAsync(backend).ConfigureAwait(false);
+
+                var operation = await rpc.InvokeWithCancellationAsync<OperationProgressDto?>("GetOperationProgressAsync", null, token).ConfigureAwait(false);
+                if (operation != null)
+                    await OnOperationProgressAsync(operation).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (Exception ex) when (ex is ConnectionLostException or ObjectDisposedException)
+            {
+                // The controller process has exited
+                return;
+            }
+            catch (Exception ex)
+            {
+                Library.Logging.Log.WriteVerboseMessage(LOGTAG, "ProgressPollFailed", ex, "Failed to read progress from the controller process");
+            }
+        }
     }
 
     /// <summary>
@@ -139,6 +202,7 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
 
         _process = Process.Start(psi)
             ?? throw new InvalidOperationException("Failed to start controller process");
+        _activeProcessIds.TryAdd(_process.Id, 0);
 
         // Setup StreamJsonRpc over stdio
         var formatter = new SystemTextJsonFormatter { JsonSerializerOptions = RpcJsonOptions.Options };
@@ -578,6 +642,9 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
     /// <inheritdoc />
     public void Dispose()
     {
+        try { _progressPollCancellation.Cancel(); }
+        catch { }
+
         try
         {
             if (_rpc != null)
@@ -605,7 +672,14 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         }
         catch { }
 
+        if (_process != null)
+        {
+            try { _activeProcessIds.TryRemove(_process.Id, out _); }
+            catch { }
+        }
+
         _process?.Dispose();
+        _progressPollCancellation.Dispose();
     }
 
     #endregion
@@ -642,6 +716,8 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         private int _remoteSyncDestinationIndex;
         private int _remoteSyncDestinationCount;
         private TimeSpan? _estimatedTimeToCompletion;
+        private ActiveFileProgress[] _activeFiles = [];
+        private long? _sourceBytesRead;
 
         public event PhaseChangedDelegate? PhaseChanged;
 
@@ -661,7 +737,13 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
             _remoteSyncDestinationIndex = dto.RemoteSyncDestinationIndex;
             _remoteSyncDestinationCount = dto.RemoteSyncDestinationCount;
             _estimatedTimeToCompletion = dto.EstimatedTimeToCompletion;
+            _activeFiles = dto.ActiveFiles ?? [];
+            _sourceBytesRead = dto.SourceBytesRead;
         }
+
+        public ActiveFileProgress[] GetActiveFiles() => _activeFiles;
+
+        public long? GetSourceBytesRead() => _sourceBytesRead;
 
         public TimeSpan? EstimatedTimeToCompletion => _estimatedTimeToCompletion;
 
