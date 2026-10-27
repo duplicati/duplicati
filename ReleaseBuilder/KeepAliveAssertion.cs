@@ -21,6 +21,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using Duplicati.Library.Utility.Power;
 
 namespace ReleaseBuilder;
 
@@ -34,9 +35,13 @@ public class KeepAliveAssertion : IDisposable
     /// </summary>
     private NativeMethods.EXECUTION_STATE? _previousState;
     /// <summary>
-    /// The process that keeps the system awake, on Linux and MacOS
+    /// The process that keeps the system awake, on Linux
     /// </summary>
     private Process? _keepAliveProcess;
+    /// <summary>
+    /// The power assertion that keeps the display awake, on MacOS
+    /// </summary>
+    private MacOSSleepAssertion? _macOSSleepAssertion;
 
     /// <summary>
     /// Creates a new instance of the <see cref="KeepAliveAssertion"/> class
@@ -57,9 +62,9 @@ public class KeepAliveAssertion : IDisposable
         {
             try
             {
-                // Keep the display awake until this process exits
-                var selfProcessId = Process.GetCurrentProcess().Id;
-                _keepAliveProcess = Process.Start("caffeinate", ["-d", "-w", selfProcessId.ToString()]);
+                // Keep the display awake, like `caffeinate -d`; the kernel drops the
+                // assertion when this process exits, so nothing can be left behind
+                _macOSSleepAssertion = MacOSSleepAssertion.Create(MacOSSleepAssertion.AssertionType.PreventUserIdleDisplaySleep, "Duplicati release build in progress");
             }
             catch { }
         }
@@ -98,8 +103,9 @@ public class KeepAliveAssertion : IDisposable
         }
         else if (OperatingSystem.IsMacOS())
         {
-            _keepAliveProcess?.Kill();
-            _keepAliveProcess?.Dispose();
+            try { _macOSSleepAssertion?.Dispose(); }
+            catch { }
+            _macOSSleepAssertion = null;
         }
     }
 }

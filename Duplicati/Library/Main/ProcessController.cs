@@ -27,6 +27,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.Utility;
+using Duplicati.Library.Utility.Power;
 using Tmds.DBus.Protocol;
 
 namespace Duplicati.Library.Main
@@ -59,9 +60,9 @@ namespace Duplicati.Library.Main
         private bool m_hasEnabledBackgroundIOPriority;
 
         /// <summary>
-        /// The caffeinate process runner
+        /// The macOS power assertion that keeps the system awake, released on dispose
         /// </summary>
-        private System.Diagnostics.Process m_caffeinate;
+        private MacOSSleepAssertion m_macOSSleepAssertion;
 
         /// <summary>
         /// The login1 inhibitor file descriptor, must be kept open to hold the lock
@@ -198,15 +199,9 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    // -s prevents sleep on AC, -i prevents sleep generally
-                    var psi = new System.Diagnostics.ProcessStartInfo("caffeinate", "-s")
-                    {
-                        RedirectStandardInput = true,
-                        RedirectStandardError = false,
-                        RedirectStandardOutput = false,
-                        UseShellExecute = false
-                    };
-                    m_caffeinate = System.Diagnostics.Process.Start(psi);
+                    // Same assertion as `caffeinate -s`: prevents sleep on AC power only.
+                    // Held in-process so the kernel drops it if the process dies.
+                    m_macOSSleepAssertion = MacOSSleepAssertion.Create(MacOSSleepAssertion.AssertionType.PreventSystemSleep, "Duplicati operation in progress");
                     m_runningSleepPrevention = true;
                 }
                 catch (Exception ex)
@@ -588,21 +583,9 @@ namespace Duplicati.Library.Main
                 try
                 {
                     m_runningSleepPrevention = false;
-                    if (m_caffeinate != null && !m_caffeinate.HasExited)
-                    {
-                        // Send CTRL+C
-                        m_caffeinate.StandardInput.Write("\x3");
-                        m_caffeinate.StandardInput.Flush();
-                        m_caffeinate.WaitForExit(500);
-
-                        if (!m_caffeinate.HasExited)
-                        {
-                            m_caffeinate.Kill();
-                            m_caffeinate.WaitForExit(500);
-                            if (!m_caffeinate.HasExited)
-                                throw new Exception("Failed to kill the caffeinate process");
-                        }
-                    }
+                    var assertion = m_macOSSleepAssertion;
+                    m_macOSSleepAssertion = null;
+                    assertion?.Dispose();
                 }
                 catch (Exception ex)
                 {
