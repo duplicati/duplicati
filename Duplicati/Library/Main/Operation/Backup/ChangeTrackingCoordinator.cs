@@ -25,13 +25,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Duplicati.Library.DynamicLoader;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Operation.Common;
-using Duplicati.Library.SourceProvider;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 
@@ -81,6 +81,11 @@ internal sealed class ChangeTrackingCoordinator
     /// The providers, ordered by the length of their mount paths so the most specific owner is found first
     /// </summary>
     private readonly List<TrackedProvider> _providers;
+
+    /// <summary>
+    /// The progress estimate that follows the enumeration, while one runs
+    /// </summary>
+    private ProgressEstimate? _progressEstimate;
 
     /// <summary>
     /// Creates a new coordinator
@@ -329,6 +334,47 @@ internal sealed class ChangeTrackingCoordinator
     }
 
     /// <summary>
+    /// Starts following the enumeration to keep the file count and size shown as the progress
+    /// total close to what the enumeration produces. The total starts as the whole previous
+    /// fileset, which is what a full walk lists again, but a provider that was handed state
+    /// lists only the changes below the folders it walks incrementally and carries the rest
+    /// forward. The providers report such folders as they reach them, and what the previous
+    /// fileset holds below each is taken out of the total; a folder listed in full after all
+    /// is put back. The lookups run in the background, one at a time in the order the folders
+    /// are reported, so a folder below one already reported is covered by it.
+    /// </summary>
+    /// <param name="database">The database to read the previous fileset from</param>
+    /// <param name="lastFilesetId">The previous fileset, or a negative value if there is none</param>
+    /// <param name="previousCount">The number of files in the previous fileset, which the total starts at</param>
+    /// <param name="previousSize">The size of the files in the previous fileset, which the total starts at</param>
+    /// <param name="report">Called with the adjusted file count and size</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    public void StartProgressEstimate(BackupDatabase database, long lastFilesetId, long previousCount, long previousSize, Action<long, long> report, CancellationToken cancellationToken)
+    {
+        // A provider without state walks everything and reports no incremental folders
+        if (lastFilesetId < 0 || !HasLoadedState)
+            return;
+
+        var estimate = new ProgressEstimate(database, lastFilesetId, previousCount, previousSize, report, cancellationToken);
+        _progressEstimate = estimate;
+        foreach (var tracked in _providers.Where(x => x.HasLoadedState))
+            tracked.Provider.SetFolderWalkObserver(estimate.Report);
+    }
+
+    /// <summary>
+    /// Stops the progress estimate and waits for the lookups still pending, so no late
+    /// adjustment overwrites the totals the backup sets once the files are processed.
+    /// Does nothing if no estimate runs.
+    /// </summary>
+    /// <returns>An awaitable task</returns>
+    public async Task StopProgressEstimateAsync()
+    {
+        var estimate = Interlocked.Exchange(ref _progressEstimate, null);
+        if (estimate != null)
+            await estimate.StopAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Stores the state the providers export with the current fileset, so each fileset
     /// carries the tokens its enumeration ended with. If the fileset is later dropped
     /// because nothing needed uploading, the rows move to the previous fileset, whose
@@ -366,5 +412,204 @@ internal sealed class ChangeTrackingCoordinator
         var removed = await database.PruneSourceProviderStateAsync(STATE_FILESETS_TO_KEEP, cancellationToken).ConfigureAwait(false);
         if (removed > 0)
             Log.WriteVerboseMessage(LOGTAG, "PrunedChangeTrackingState", "Removed {0} change tracking state rows stored with older filesets", removed);
+    }
+
+    /// <summary>
+    /// Follows the folders the providers report as walked incrementally and takes what the
+    /// previous fileset holds below them out of the progress total, as those entries are
+    /// carried forward rather than enumerated. The reports are queued and applied one at a
+    /// time in the background, in the order they arrive. The folders taken out are kept with
+    /// none below another, so nothing is counted twice: a folder below one already taken out
+    /// is covered by it, and a folder above ones taken out replaces them.
+    /// </summary>
+    private sealed class ProgressEstimate
+    {
+        /// <summary>
+        /// The database to read the previous fileset from
+        /// </summary>
+        private readonly BackupDatabase _database;
+
+        /// <summary>
+        /// The previous fileset
+        /// </summary>
+        private readonly long _filesetId;
+
+        /// <summary>
+        /// Called with the adjusted totals
+        /// </summary>
+        private readonly Action<long, long> _report;
+
+        /// <summary>
+        /// The cancellation token
+        /// </summary>
+        private readonly CancellationToken _cancellationToken;
+
+        /// <summary>
+        /// The reports waiting to be applied
+        /// </summary>
+        private readonly Channel<(string Path, FolderWalkMode Mode)> _queue = Channel.CreateUnbounded<(string Path, FolderWalkMode Mode)>(new UnboundedChannelOptions { SingleReader = true });
+
+        /// <summary>
+        /// The task applying the reports
+        /// </summary>
+        private readonly Task _worker;
+
+        /// <summary>
+        /// The folders taken out of the total, none below another, with what the previous fileset holds below them
+        /// </summary>
+        private readonly Dictionary<string, (long Count, long Size)> _carried = new(Library.Utility.Utility.ClientFilenameStringComparer);
+
+        /// <summary>
+        /// The folders taken out of the total in sorted order, so the folders below one form a range
+        /// </summary>
+        private readonly SortedSet<string> _carriedOrder = new(Library.Utility.Utility.ClientFilenameStringComparer);
+
+        /// <summary>
+        /// The file count the total stands at
+        /// </summary>
+        private long _count;
+
+        /// <summary>
+        /// The file size the total stands at
+        /// </summary>
+        private long _size;
+
+        /// <summary>
+        /// Whether reports are no longer taken
+        /// </summary>
+        private volatile bool _stopped;
+
+        /// <summary>
+        /// Creates the estimate and starts applying reports
+        /// </summary>
+        /// <param name="database">The database to read the previous fileset from</param>
+        /// <param name="filesetId">The previous fileset</param>
+        /// <param name="previousCount">The number of files in the previous fileset</param>
+        /// <param name="previousSize">The size of the files in the previous fileset</param>
+        /// <param name="report">Called with the adjusted totals</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        public ProgressEstimate(BackupDatabase database, long filesetId, long previousCount, long previousSize, Action<long, long> report, CancellationToken cancellationToken)
+        {
+            _database = database;
+            _filesetId = filesetId;
+            _count = previousCount;
+            _size = previousSize;
+            _report = report;
+            _cancellationToken = cancellationToken;
+            _worker = Task.Run(ProcessAsync, CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Queues a report from a provider. Called from the enumeration, so it only queues.
+        /// </summary>
+        /// <param name="folderPath">The folder path</param>
+        /// <param name="mode">How the folder is walked</param>
+        public void Report(string folderPath, FolderWalkMode mode)
+        {
+            if (!_stopped)
+                _queue.Writer.TryWrite((folderPath, mode));
+        }
+
+        /// <summary>
+        /// Stops taking reports and waits for the queued ones to be applied
+        /// </summary>
+        /// <returns>An awaitable task</returns>
+        public async Task StopAsync()
+        {
+            _stopped = true;
+            _queue.Writer.TryComplete();
+            await _worker.ConfigureAwait(false);
+
+            if (_carried.Count > 0)
+                Log.WriteVerboseMessage(LOGTAG, "ProgressEstimateCarriedForward", "The progress total left out {0} file(s) ({1}) that the previous backup holds below {2} folder(s) walked incrementally, as they are carried forward instead of enumerated", _carried.Values.Sum(x => x.Count), Library.Utility.Utility.FormatSizeString(_carried.Values.Sum(x => x.Size)), _carried.Count);
+        }
+
+        /// <summary>
+        /// Applies the queued reports until the queue is completed
+        /// </summary>
+        /// <returns>An awaitable task</returns>
+        private async Task ProcessAsync()
+        {
+            try
+            {
+                await foreach (var (path, mode) in _queue.Reader.ReadAllAsync(_cancellationToken).ConfigureAwait(false))
+                    await ApplyAsync(path, mode).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                // The estimate only drives the progress display, so a failed lookup ends it
+                // and the backup goes on with the total it has
+                _stopped = true;
+                Log.WriteVerboseMessage(LOGTAG, "ProgressEstimateStopped", ex, "The progress estimate stopped: {0}", ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Applies one report to the total
+        /// </summary>
+        /// <param name="path">The folder path</param>
+        /// <param name="mode">How the folder is walked</param>
+        /// <returns>An awaitable task</returns>
+        private async Task ApplyAsync(string path, FolderWalkMode mode)
+        {
+            if (mode == FolderWalkMode.Full)
+            {
+                // The folder is listed in full after all. A folder that was covered by one
+                // above it was never taken out, so there is nothing to put back for it
+                if (!_carried.Remove(path, out var restored))
+                    return;
+
+                _carriedOrder.Remove(path);
+                _count += restored.Count;
+                _size += restored.Size;
+            }
+            else
+            {
+                if (IsCovered(path))
+                    return;
+
+                var below = await _database.GetFileCountAndSizeBelowPathAsync(_filesetId, path, _cancellationToken).ConfigureAwait(false);
+
+                // Folders below this one that were taken out on their own are covered by it now
+                foreach (var covered in _carriedOrder.GetViewBetween(path, path + char.MaxValue).ToList())
+                {
+                    if (!covered.StartsWith(path, Library.Utility.Utility.ClientFilenameStringComparison))
+                        continue;
+
+                    _carriedOrder.Remove(covered);
+                    _carried.Remove(covered, out var amount);
+                    _count += amount.Count;
+                    _size += amount.Size;
+                }
+
+                _carried[path] = below;
+                _carriedOrder.Add(path);
+                _count -= below.Count;
+                _size -= below.Size;
+            }
+
+            _report(Math.Max(0, _count), Math.Max(0, _size));
+        }
+
+        /// <summary>
+        /// Whether the folder, or a folder above it, was already taken out of the total
+        /// </summary>
+        /// <param name="path">The folder path, ending with the separator</param>
+        /// <returns><c>true</c> if the folder is covered</returns>
+        private bool IsCovered(string path)
+        {
+            if (_carried.ContainsKey(path))
+                return true;
+
+            // Each separator before the last one ends the path of a folder above
+            for (var i = path.Length - 2; i >= 0; i--)
+                if (path[i] == System.IO.Path.DirectorySeparatorChar && _carried.ContainsKey(path[..(i + 1)]))
+                    return true;
+
+            return false;
+        }
     }
 }
