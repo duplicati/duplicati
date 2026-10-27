@@ -286,6 +286,82 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        public void ReducedResultViewKeepsRestoreTestReasonsButNoPaths()
+        {
+            var result = new
+            {
+                MainOperation = "RestoreTest",
+                ParsedResult = "Error",
+                Mode = "RandomFiles",
+                Version = 0L,
+                Seed = 42,
+                FilesTested = 3L,
+                FilesFailed = 2L,
+                BytesRestored = 4096L,
+                Failures = new[]
+                {
+                    new { Path = SecretPath, Reason = "HashMismatch", Expected = "abc=", Actual = "def=" },
+                    new { Path = SecretPath, Reason = "RestoreError", Expected = $"File restored to C:\\Temp\\scratch\\{SecretPath}", Actual = "The restore stopped" }
+                },
+                FailuresActualLength = 2,
+                SourceDifferences = new[] { new { Path = SecretPath, Reason = "The source file content differs from the backup", Expected = "abc=", Actual = "ghi=" } },
+                Budget = new { Exceeded = true, Reason = "DownloadSize" },
+                RestoreResults = new { MainOperation = "Restore", RestoredFiles = 3L, Errors = new[] { $"Failed to restore {SecretPath}" } },
+                BackendStatistics = new { RetryAttempts = 1L, Reason = $"File {SecretPath} is locked" }
+            };
+
+            var reduced = ReducedResultView.Create(result) as Dictionary<string, object>;
+            Assert.That(reduced, Is.Not.Null);
+            Assert.That(reduced["MainOperation"], Is.EqualTo("RestoreTest"));
+            Assert.That(reduced["Mode"], Is.EqualTo("RandomFiles"));
+            Assert.That(reduced["FilesFailed"], Is.EqualTo(2L));
+
+            var failures = reduced["Failures"] as List<object>;
+            Assert.That(failures, Has.Count.EqualTo(2), "the failure count is preserved");
+            foreach (var entry in failures.Cast<Dictionary<string, object>>())
+            {
+                Assert.That(entry.Keys, Is.EquivalentTo(new[] { "Reason" }), "only the reason survives");
+                Assert.That(entry["Reason"], Is.AnyOf("HashMismatch", "RestoreError"));
+            }
+
+            var budget = reduced["Budget"] as Dictionary<string, object>;
+            Assert.That(budget["Exceeded"], Is.EqualTo(true));
+            Assert.That(budget["Reason"], Is.EqualTo("DownloadSize"));
+
+            var differences = reduced["SourceDifferences"] as List<object>;
+            var difference = differences.Single() as Dictionary<string, object>;
+            Assert.That(difference, Is.Empty, "the source path and the free-text reason are both dropped");
+
+            var stats = reduced["BackendStatistics"] as Dictionary<string, object>;
+            Assert.That(stats["RetryAttempts"], Is.EqualTo(1L));
+            Assert.That(stats.ContainsKey("Reason"), Is.False, "a Reason holding a sentence or a path is not an enum name");
+
+            var restore = reduced["RestoreResults"] as Dictionary<string, object>;
+            Assert.That(restore["RestoredFiles"], Is.EqualTo(3L));
+            Assert.That(restore["Errors"], Is.Empty, "nested error lists are emptied");
+
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(reduced);
+            Assert.That(json, Does.Not.Contain("John Doe"));
+            Assert.That(json, Does.Not.Contain("scratch"));
+            Assert.That(json, Does.Not.Contain("locked"));
+        }
+
+        [Test]
+        public void EnumValuedPropertyKeepsOnlyEnumShapedValues()
+        {
+            Assert.That(ReducedResultView.IsAllowedStringProperty("Reason", "HashMismatch"), Is.True);
+            Assert.That(ReducedResultView.IsAllowedStringProperty("Reason", "None"), Is.True);
+            Assert.That(ReducedResultView.IsAllowedStringProperty("Reason", "Missing_Volume2"), Is.True);
+            Assert.That(ReducedResultView.IsAllowedStringProperty("Reason", "File abc.txt is locked"), Is.False);
+            Assert.That(ReducedResultView.IsAllowedStringProperty("Reason", SecretPath), Is.False);
+            Assert.That(ReducedResultView.IsAllowedStringProperty("Reason", "abc.txt"), Is.False);
+            Assert.That(ReducedResultView.IsAllowedStringProperty("Reason", ""), Is.False);
+            Assert.That(ReducedResultView.IsAllowedStringProperty("Reason", null), Is.False);
+            Assert.That(ReducedResultView.IsAllowedStringProperty("Version", "2.3.1.1 (2.3.1.1_canary)"), Is.True, "name-only entries are not shape checked");
+            Assert.That(ReducedResultView.IsAllowedStringProperty("Message", "HashMismatch"), Is.False, "an enum-shaped value under a non-allowed name is still dropped");
+        }
+
+        [Test]
         public void ReducedSerializerRendersReducedExceptionInEveryFormat()
         {
             var exception = new UserInformationException($"Source folder {SecretPath} is missing", "MissingSourceFolder");
