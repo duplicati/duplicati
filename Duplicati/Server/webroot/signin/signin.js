@@ -1,11 +1,32 @@
-$(document).ready(function() {
+document.addEventListener('DOMContentLoaded', function() {
     var processing = false;
 
     document.getElementById('no-js-warning').style.display = 'none';
     
     function getQueryParam(name) {
-        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+        var regex = new RegExp("[\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
         return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+
+    // Posts the body as JSON and resolves with the parsed reply, or rejects with the error text
+    function postJson(url, body) {
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: body === undefined ? undefined : JSON.stringify(body)
+        })
+        .catch(function() {
+            throw 'error';
+        })
+        .then(function(response) {
+            return response.json()
+                .catch(function() { return null; })
+                .then(function(data) {
+                    if (response.ok)
+                        return data || {};
+                    throw (data && data.Error) || response.statusText;
+                });
+        });
     }
 
     // Function that logs in using a stored refresh token
@@ -17,18 +38,12 @@ $(document).ready(function() {
         const storedNonce = localStorage.getItem('v1:persist:duplicati:refreshNonce');
         const body = storedNonce ? { Nonce: storedNonce } : undefined;
 
-        $.ajax({
-            url: './api/v1/auth/refresh',
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(body)
-        })
-        .done(function(data) {
+        postJson('./api/v1/auth/refresh', body)
+        .then(function(data) {
             if (data.RefreshNonce)
                 localStorage.setItem('v1:persist:duplicati:refreshNonce', data.RefreshNonce);
             window.location = './';
-        })
-        .fail(function(data) {
+        }, function(txt) {
             processing = false;
             if (followUpCallback)
             {
@@ -36,16 +51,9 @@ $(document).ready(function() {
             }
             else
             {
-                var txt = data;
-                if (txt && txt.responseJSON && txt.responseJSON.Error)
-                    txt = txt.responseJSON.Error;
-                else if (txt && txt.statusText)
-                    txt = txt.statusText;
                 alert('Signin failed: ' + txt);
             }
         });
-
-        return false;            
     }
 
     // Function that logs in using a sign-in token
@@ -55,35 +63,25 @@ $(document).ready(function() {
 
         processing = true;
 
-        $.ajax({
-            url: './api/v1/auth/signin',
-            type: 'POST',
-            contentType: 'application/json',            
-            data: JSON.stringify({'SigninToken': $('#signin-token').val(), 'RememberMe': true })
-        })
-        .done(function(data) {
+        postJson('./api/v1/auth/signin', {'SigninToken': document.getElementById('signin-token').value, 'RememberMe': true })
+        .then(function(data) {
             if (data.RefreshNonce)
                 localStorage.setItem('v1:persist:duplicati:refreshNonce', data.RefreshNonce);
             window.location = './';
-        })
-        .fail(function(data) {
-            var txt = data;
-            if (txt && txt.responseJSON && txt.responseJSON.Error)
-                txt = txt.responseJSON.Error;
-            else if (txt && txt.statusText)
-                txt = txt.statusText;
+        }, function(txt) {
             alert('Signin failed: ' + txt);
             processing = false;
         });
-
-        return false;        
     }
 
-    $('#signin-form').on('submit', submitToken);
+    document.getElementById('signin-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitToken();
+    });
 
     var token = getQueryParam('token');
     if (token) {
-        $('#signin-token').val(token);
+        document.getElementById('signin-token').value = token;
         tryLogin(() => submitToken());
     } else {
         tryLogin(null);
