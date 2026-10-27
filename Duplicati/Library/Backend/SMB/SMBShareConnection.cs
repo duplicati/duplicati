@@ -150,9 +150,19 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                     {
                         DeletePending = true
                     };
-                    status = _smbFileStore.SetFileInformation(fileHandle, fileDispositionInformation);
-                    if (status != NTStatus.STATUS_SUCCESS)
-                        throw new UserInformationException($"{LC.L("Failed to delete file on DeleteAsync")} with status {status}", "DeleteFileError");
+                    try
+                    {
+                        status = _smbFileStore.SetFileInformation(fileHandle, fileDispositionInformation);
+                        if (status != NTStatus.STATUS_SUCCESS)
+                            throw new UserInformationException($"{LC.L("Failed to delete file on DeleteAsync")} with status {status}", "DeleteFileError");
+                    }
+                    catch
+                    {
+                        // Release the handle so the file is not left open on the server
+                        try { _smbFileStore.CloseFile(fileHandle); }
+                        catch { }
+                        throw;
+                    }
                     status = _smbFileStore.CloseFile(fileHandle);
                     if (status != NTStatus.STATUS_SUCCESS)
                         throw new UserInformationException($"{LC.L("Failed to close file on DeleteAsync")} with status {status}", "CloseFileError");
@@ -402,35 +412,46 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
 
             if (status == NTStatus.STATUS_SUCCESS || fileStatus != FileStatus.FILE_DOES_NOT_EXIST)
             {
-                long bytesRead = 0;
-                while (true)
+                try
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    // Use the provided read buffer size if set, otherwise use the protocol negotiated maximum. Never exceed the negotiated maximum.
-                    int readBufferSize = Math.Min(_connectionParameters.ReadBufferSize ?? (int)_smb2Client.MaxReadSize, (int)_smb2Client.MaxReadSize);
-                    var readOffset = bytesRead;
-
-                    // Each read is a single request to the server, so the timeout is applied to that request only.
-                    // Writing to the destination is not timed: the destination is allowed to block for as long as
-                    // it needs while the rest of the pipeline catches up, as that says nothing about the share.
-                    (status, var data) = await Utility.Utility.WithTimeout(_timeouts.ReadWriteTimeout, cancellationToken, _ =>
+                    long bytesRead = 0;
+                    while (true)
                     {
-                        var readStatus = _smbFileStore.ReadFile(out var readData, fileHandle, readOffset, readBufferSize);
-                        return (readStatus, readData);
-                    }).ConfigureAwait(false);
+                        cancellationToken.ThrowIfCancellationRequested();
 
-                    if (status != NTStatus.STATUS_SUCCESS && status != NTStatus.STATUS_END_OF_FILE)
-                        throw new UserInformationException($"{LC.L("Failed to read file on GetAsync")} {filename} with status {status.ToString()}", "FileReadError");
+                        // Use the provided read buffer size if set, otherwise use the protocol negotiated maximum. Never exceed the negotiated maximum.
+                        int readBufferSize = Math.Min(_connectionParameters.ReadBufferSize ?? (int)_smb2Client.MaxReadSize, (int)_smb2Client.MaxReadSize);
+                        var readOffset = bytesRead;
 
-                    if (status == NTStatus.STATUS_END_OF_FILE || data == null || data.Length == 0)
-                        break;
+                        // Each read is a single request to the server, so the timeout is applied to that request only.
+                        // Writing to the destination is not timed: the destination is allowed to block for as long as
+                        // it needs while the rest of the pipeline catches up, as that says nothing about the share.
+                        (status, var data) = await Utility.Utility.WithTimeout(_timeouts.ReadWriteTimeout, cancellationToken, _ =>
+                        {
+                            var readStatus = _smbFileStore.ReadFile(out var readData, fileHandle, readOffset, readBufferSize);
+                            return (readStatus, readData);
+                        }).ConfigureAwait(false);
 
-                    bytesRead += data.Length;
-                    await destinationStream.WriteAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
+                        if (status != NTStatus.STATUS_SUCCESS && status != NTStatus.STATUS_END_OF_FILE)
+                            throw new UserInformationException($"{LC.L("Failed to read file on GetAsync")} {filename} with status {status.ToString()}", "FileReadError");
+
+                        if (status == NTStatus.STATUS_END_OF_FILE || data == null || data.Length == 0)
+                            break;
+
+                        bytesRead += data.Length;
+                        await destinationStream.WriteAsync(data, 0, data.Length, cancellationToken).ConfigureAwait(false);
+                    }
+
+                    await destinationStream.FlushAsync(cancellationToken).ConfigureAwait(false);
                 }
-
-                await destinationStream.FlushAsync(cancellationToken).ConfigureAwait(false);
+                catch
+                {
+                    // Release the handle so the file is not left open on the server
+                    if (fileHandle != null)
+                        try { _smbFileStore.CloseFile(fileHandle); }
+                        catch { }
+                    throw;
+                }
 
                 if (fileHandle != null)
                 {
@@ -585,9 +606,19 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                         ReplaceIfExists = true,
                         FileName = NormalizeSlashes(Path.Combine(_connectionParameters.Path, newname))
                     };
-                    status = _smbFileStore.SetFileInformation(fileHandle, fileRenameInformation);
-                    if (status != NTStatus.STATUS_SUCCESS)
-                        throw new UserInformationException($"{LC.L("Failed to rename file on RenameAsync")} with status {status}", "RenameFileError");
+                    try
+                    {
+                        status = _smbFileStore.SetFileInformation(fileHandle, fileRenameInformation);
+                        if (status != NTStatus.STATUS_SUCCESS)
+                            throw new UserInformationException($"{LC.L("Failed to rename file on RenameAsync")} with status {status}", "RenameFileError");
+                    }
+                    catch
+                    {
+                        // Release the handle so the file is not left open on the server
+                        try { _smbFileStore.CloseFile(fileHandle); }
+                        catch { }
+                        throw;
+                    }
                     status = _smbFileStore.CloseFile(fileHandle);
                     if (status != NTStatus.STATUS_SUCCESS)
                         throw new UserInformationException($"{LC.L("Failed to close file on RenameAsync")} with status {status}", "CloseFileError");
