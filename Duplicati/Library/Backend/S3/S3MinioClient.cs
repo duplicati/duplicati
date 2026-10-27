@@ -65,6 +65,7 @@ namespace Duplicati.Library.Backend
 
         private static async IAsyncEnumerable<T> ToAsyncEnumerable<T>(
             IObservable<T> observable,
+            TimeSpan timeout,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var channel = Channel.CreateUnbounded<T>(); // Buffered channel for async iteration
@@ -75,8 +76,25 @@ namespace Duplicati.Library.Backend
                 () => channel.Writer.TryComplete()
             );
 
-            while (await channel.Reader.WaitToReadAsync(cancellationToken))
+            while (true)
             {
+                // The observable sends the list requests only now, so the timeout applies to each
+                // wait for the server; the time the caller spends on the items does not count
+                using var wait = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                wait.CancelAfter(timeout);
+                bool more;
+                try
+                {
+                    more = await channel.Reader.WaitToReadAsync(wait.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+                {
+                    throw new TimeoutException();
+                }
+
+                if (!more)
+                    break;
+
                 while (channel.Reader.TryRead(out var item))
                 {
                     yield return item;
@@ -112,22 +130,29 @@ namespace Duplicati.Library.Backend
             if (!string.IsNullOrWhiteSpace(prefix))
                 prefix = Util.AppendDirSeparator(prefix, "/");
 
-            var observable = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancellationToken, ct
-                           => m_client.ListObjectsAsync(new ListObjectsArgs().WithBucket(bucketName).WithPrefix(prefix).WithRecursive(recursive), ct)
-                       ).ConfigureAwait(false);
+            // The requests run while the observable is read, and must stop when the listing does
+            using var listing = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var observable = m_client.ListObjectsAsync(new ListObjectsArgs().WithBucket(bucketName).WithPrefix(prefix).WithRecursive(recursive), listing.Token);
 
-            await foreach (var obj in ToAsyncEnumerable(observable, cancellationToken).ConfigureAwait(false))
+            try
             {
-                if (obj.Key == prefix || !obj.Key.StartsWith(prefix))
-                    continue;
+                await foreach (var obj in ToAsyncEnumerable(observable, m_timeouts.ListTimeout, cancellationToken).ConfigureAwait(false))
+                {
+                    if (obj.Key == prefix || !obj.Key.StartsWith(prefix))
+                        continue;
 
-                yield return new FileEntry(
-                    obj.Key.Substring(prefix.Length),
-                    (long)obj.Size,
-                    Convert.ToDateTime(obj.LastModified),
-                    Convert.ToDateTime(obj.LastModified)
-                )
-                { IsFolder = obj.Key.EndsWith("/") };
+                    yield return new FileEntry(
+                        obj.Key.Substring(prefix.Length),
+                        (long)obj.Size,
+                        Convert.ToDateTime(obj.LastModified),
+                        Convert.ToDateTime(obj.LastModified)
+                    )
+                    { IsFolder = obj.Key.EndsWith("/") };
+                }
+            }
+            finally
+            {
+                listing.Cancel();
             }
         }
 
