@@ -69,7 +69,7 @@ internal class DriveFileSourceEntry(SourceProvider provider, string path, GraphD
         HttpRequestException notFound;
         try
         {
-            return await provider.OneDriveApi.GetDriveItemContentStreamAsync(drive.Id, item.Id, cancellationToken).ConfigureAwait(false);
+            return await provider.OneDriveApi.GetDriveItemContentStreamAsync(drive.Id, item.Id, item.Size, cancellationToken).ConfigureAwait(false);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {

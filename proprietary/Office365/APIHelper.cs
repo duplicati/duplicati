@@ -924,48 +924,114 @@ internal class APIHelper : IDisposable
     }
 
     /// <summary>
-    /// Returns the response from the Graph API as a stream.
+    /// Returns the response from the Graph API as a stream read straight from the
+    /// connection, for content of any size.
     /// </summary>
     /// <param name="url">The URL to fetch</param>
     /// <param name="accept">The Accept header value</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>The response stream</returns>
-    public async Task<Stream> GetGraphResponseAsRealStreamAsync(string url, string accept, CancellationToken ct)
-    {
-        async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
-        {
-            var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
-            req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
+    public Task<Stream> GetGraphResponseAsRealStreamAsync(string url, string accept, CancellationToken ct)
+        => GetGraphResponseAsRealStreamAsync(url, accept, null, ct);
 
-            req.Headers.Accept.Clear();
-            req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(accept));
-            return req;
+    /// <summary>
+    /// Returns the response from the Graph API as a stream read straight from the
+    /// connection, for content of any size. The content is never held in memory or on disk
+    /// as a whole: the caller reads it as it arrives. A connection that fails or stalls is
+    /// resumed from where reading stopped with a range request, sent with the same retries
+    /// and token refresh as any other request. A download that cannot be completed fails,
+    /// never ends early.
+    /// </summary>
+    /// <remarks>
+    /// The callers need the length of the stream, as the backup reports progress from it
+    /// and entries of unknown size take their size from it. The length is known from the
+    /// listing or from the <c>Content-Length</c> header for all but a few responses, such
+    /// as chunked ones; those are read into a temporary file, as all responses were before,
+    /// so the length is known there too.
+    /// </remarks>
+    /// <param name="url">The URL to fetch</param>
+    /// <param name="accept">The Accept header value</param>
+    /// <param name="expectedLength">The length of the content from the listing, or <c>null</c> to take it from the response</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>The response stream</returns>
+    public async Task<Stream> GetGraphResponseAsRealStreamAsync(string url, string accept, long? expectedLength, CancellationToken ct)
+    {
+        async Task<HttpResponseMessage> openAsync(long offset, CancellationToken oct)
+        {
+            async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
+            {
+                var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
+                req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
+
+                req.Headers.Accept.Clear();
+                req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue(accept));
+
+                if (offset > 0)
+                    req.Headers.Range = new RangeHeaderValue(offset, null);
+
+                return req;
+            }
+
+            var resp = await SendWithRetryAsync(
+                requestFactory,
+                HttpCompletionOption.ResponseHeadersRead,
+                null,
+                _timeouts.ShortTimeout,
+                oct).ConfigureAwait(false);
+
+            try
+            {
+                await EnsureOfficeApiSuccessAsync(resp, oct).ConfigureAwait(false);
+            }
+            catch
+            {
+                resp.Dispose();
+                throw;
+            }
+
+            return resp;
         }
 
-        using var resp = await SendWithRetryAsync(
-            requestFactory,
-            HttpCompletionOption.ResponseHeadersRead,
-            null,
-            _timeouts.ShortTimeout,
-            ct).ConfigureAwait(false);
+        var stream = new ResumableHttpReadStream(openAsync, expectedLength, _timeouts.ReadWriteTimeout, url);
+        try
+        {
+            await stream.EnsureOpenedAsync(ct).ConfigureAwait(false);
+        }
+        catch
+        {
+            stream.Dispose();
+            throw;
+        }
 
-        await EnsureOfficeApiSuccessAsync(resp, ct).ConfigureAwait(false);
+        if (stream.HasKnownLength)
+        {
+            if (stream.Length == 0)
+            {
+                stream.Dispose();
+                return Stream.Null;
+            }
 
-        if (resp.Content.Headers.ContentLength == 0)
-            return Stream.Null;
+            return stream;
+        }
 
-        // Return a stream the caller can own safely after HttpResponseMessage disposal.
-        using var stream = await resp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-        using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+        // Nothing states the length, so it is only known once the content is read
+        using (stream)
+        {
+            var tempStream = TempFileStream.Create();
+            try
+            {
+                await stream.CopyToAsync(tempStream, ct).ConfigureAwait(false);
+                tempStream.Position = 0;
+            }
+            catch
+            {
+                tempStream.Dispose();
+                throw;
+            }
 
-        // The caller expects a FileStream-like stream, so we need to buffer to a temp file.
-        // We could wrap this in a stream that exposes the Length property, which would avoid the temp file.
-        var tempStream = TempFileStream.Create();
-        await timeoutStream.CopyToAsync(tempStream, ct).ConfigureAwait(false);
-        tempStream.Position = 0;
-
-        // Return the stream, will delete on dispose.
-        return tempStream;
+            // Return the stream, will delete on dispose.
+            return tempStream;
+        }
     }
 
     /// <summary>

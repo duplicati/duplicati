@@ -17,15 +17,19 @@ internal class DriveFileContentSourceEntry(SourceProvider provider, string? stat
         {
             if (GoogleMimeTypes.IsGoogleDoc(file.MimeType))
             {
-                var exportMimeType = GoogleMimeTypes.GetExportMimeType(file.MimeType);
-                var request = driveService.Files.Export(file.Id, exportMimeType);
-                return GoogleDownloads.ToMemoryAsync(request.DownloadAsync, $"file {file.Id}", ct);
+                // A Docs Editors file has no binary content; it is exported. The size Drive lists
+                // for it is its storage footprint, not the size of the export, so no length is given
+                var request = driveService.Files.Export(file.Id, GoogleMimeTypes.GetExportMimeType(file.MimeType));
+                return GoogleDownloads.OpenMediaAsync(request, null, provider.ApiHelper.Timeouts.ReadWriteTimeout, $"file {file.Id}", ct);
             }
             else
             {
+                // Binary content is read straight from the connection, whatever its size; the
+                // service's client carries the credentials and the retries of the request
                 var request = driveService.Files.Get(file.Id);
                 request.SupportsAllDrives = true;
-                return GoogleDownloads.ToMemoryAsync(request.DownloadAsync, $"file {file.Id}", ct);
+                request.Alt = FilesResource.GetRequest.AltEnum.Media;
+                return GoogleDownloads.OpenMediaAsync(request, file.Size, provider.ApiHelper.Timeouts.ReadWriteTimeout, $"file {file.Id}", ct);
             }
         }, cancellationToken);
 

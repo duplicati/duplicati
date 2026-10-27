@@ -211,7 +211,7 @@ public class GoogleDeltaTests
             .Json("/settings/autoForwarding", Settings()).Json("/settings/vacation", Settings()).Json("/settings/sendAs", "{\"sendAs\":[]}");
 
     private static UserTypeSourceEntry GmailEntry(SourceProvider provider)
-        => new(provider, UserPath, USER, false, "Gmail", SourceItemType.UserGmail);
+        => new(provider, UserPath, USER, "100000000000000000001", false, "Gmail", SourceItemType.UserGmail);
 
     [Test]
     [Category("GoogleWorkspace")]
