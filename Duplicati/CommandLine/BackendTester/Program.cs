@@ -718,6 +718,51 @@ namespace Duplicati.CommandLine.BackendTester
             return failures;
         }
 
+        /// <summary>
+        /// How long to wait after a rate limit that does not say when to try again.
+        /// Limits such as Google's are counted per minute, so a wait of a few seconds
+        /// runs into the same limit again
+        /// </summary>
+        internal static readonly TimeSpan RateLimitDelay = TimeSpan.FromMinutes(1);
+
+        /// <summary>
+        /// Gets the delay before the next attempt of a failed operation
+        /// </summary>
+        /// <param name="ex">The exception the attempt failed with</param>
+        /// <param name="attempt">The number of the attempt that failed, starting at 1</param>
+        /// <param name="now">The current time, used for a Retry-After date</param>
+        /// <returns>The delay before the next attempt</returns>
+        internal static TimeSpan GetRetryDelay(Exception ex, int attempt, DateTimeOffset now)
+        {
+            var delay = Utility.GetRetryDelay(TimeSpan.FromSeconds(1), attempt, true);
+            var rateLimit = FindRateLimit(ex);
+            if (rateLimit == null)
+                return delay;
+
+            var retryAfter = rateLimit.RetryAfter;
+            var wait = retryAfter?.Delta
+                ?? (retryAfter?.Date is DateTimeOffset date ? date - now : RateLimitDelay);
+
+            return wait > delay ? wait : delay;
+        }
+
+        /// <summary>
+        /// Finds the rate limit that caused a failure, if any
+        /// </summary>
+        /// <param name="ex">The exception to inspect</param>
+        /// <returns>The rate limit, or <c>null</c> if the failure was not caused by one</returns>
+        private static TooManyRequestException FindRateLimit(Exception ex)
+        {
+            if (ex == null)
+                return null;
+            if (ex is TooManyRequestException rateLimit)
+                return rateLimit;
+            if (ex is AggregateException aggregate)
+                return aggregate.InnerExceptions.Select(FindRateLimit).FirstOrDefault(x => x != null);
+
+            return FindRateLimit(ex.InnerException);
+        }
+
         private static async Task<T> Retry<T>(Func<Task<T>> action, int retries)
         {
             var total = retries;
@@ -728,12 +773,12 @@ namespace Duplicati.CommandLine.BackendTester
                 {
                     return await action();
                 }
-                catch
+                catch (Exception ex)
                 {
                     if (retries <= 0)
                         throw;
 
-                    var delay = Utility.GetRetryDelay(TimeSpan.FromSeconds(1), total - retries, true);
+                    var delay = GetRetryDelay(ex, total - retries, DateTimeOffset.UtcNow);
                     Console.WriteLine($"{LogTimeStamp}Operation failed with exception, {retries} retries left, delaying retry for {delay.TotalMilliseconds} ms");
                     await Task.Delay(delay);
 
