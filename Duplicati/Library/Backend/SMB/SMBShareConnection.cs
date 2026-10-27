@@ -93,6 +93,21 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
+    /// Converts the configured read-write timeout to the response timeout used by the SMB client.
+    /// The SMB client waits this long for the server to answer each request, including each WRITE and READ chunk.
+    /// A zero or infinite timeout disables the wait limit.
+    /// </summary>
+    /// <param name="readWriteTimeout">The configured read-write timeout</param>
+    /// <returns>The response timeout in milliseconds</returns>
+    private static int GetResponseTimeoutInMilliseconds(TimeSpan readWriteTimeout)
+    {
+        if (readWriteTimeout.Ticks <= 0 || readWriteTimeout == Timeout.InfiniteTimeSpan)
+            return int.MaxValue;
+
+        return (int)Math.Min(readWriteTimeout.TotalMilliseconds, int.MaxValue);
+    }
+
+    /// <summary>
     /// Runs a call with a timeout, and disconnects the client if the call is given up on.
     /// The call may still be waiting for the server on another thread, and the client allows only
     /// one request at a time; closing the socket makes that call return and the client unusable.
@@ -158,7 +173,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
     /// <exception cref="UserInformationException">Exception to be displayed to user</exception>
     public static async Task<SMBShareConnection> CreateAsync(SMBConnectionParameters connectionParameters, TimeoutOptionsHelper.Timeouts timeouts, CancellationToken cancellationToken)
     {
-        var client = new SMB2Client(SMB2Client.DefaultResponseTimeoutInMilliseconds, connectionParameters.EnableSMB311Support);
+        var client = new SMB2Client(GetResponseTimeoutInMilliseconds(timeouts.ReadWriteTimeout), connectionParameters.EnableSMB311Support);
         var connected = await WithTimeoutAsync(client, timeouts.ShortTimeout, cancellationToken, _ =>
             client.Connect(connectionParameters.ServerName, connectionParameters.TransportType)
         ).ConfigureAwait(false);
