@@ -22,16 +22,20 @@ internal class CalendarEventAttachmentSourceEntry(SourceProvider provider, strin
     /// <returns>The content</returns>
     private async Task<Stream> DownloadAsync(CancellationToken cancellationToken)
     {
+        var readTimeout = provider.ApiHelper.Timeouts.ReadWriteTimeout;
         if (!string.IsNullOrEmpty(attachment.FileId))
         {
+            // The attachment is a Drive file, read through the Drive client with its credentials
             var request = driveService.Files.Get(attachment.FileId);
             request.SupportsAllDrives = true;
-            return await GoogleDownloads.ToMemoryAsync(request.DownloadAsync, $"attachment {attachment.FileId}", cancellationToken).ConfigureAwait(false);
+            request.Alt = FilesResource.GetRequest.AltEnum.Media;
+            return await GoogleDownloads.OpenMediaAsync(request, null, readTimeout, $"attachment {attachment.FileId}", cancellationToken).ConfigureAwait(false);
         }
         else if (!string.IsNullOrEmpty(attachment.FileUrl))
         {
-            using var client = new HttpClient();
-            return await GoogleDownloads.ToMemoryAsync(client, attachment.FileUrl, $"attachment {attachment.FileUrl}", cancellationToken).ConfigureAwait(false);
+            // An attachment that is only a link is fetched as is, without credentials: the link
+            // may point anywhere, and a Google token must not be sent to an unknown host
+            return await GoogleDownloads.OpenMediaAsync(provider.LinkDownloadClient, attachment.FileUrl, null, readTimeout, $"attachment {attachment.FileUrl}", cancellationToken).ConfigureAwait(false);
         }
 
         throw new FileNotFoundException("Cannot download attachment");

@@ -63,6 +63,7 @@ public static class OptionsHelper
         new CommandLineArgument(GOOGLE_SERVICE_ACCOUNT_JSON_OPTION, CommandLineArgument.ArgumentType.Password, Strings.Options.GoogleServiceAccountJsonShort, Strings.Options.GoogleServiceAccountJsonLong),
         new CommandLineArgument(GOOGLE_SERVICE_ACCOUNT_FILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.Options.GoogleServiceAccountFileShort, Strings.Options.GoogleServiceAccountFileLong),
         new CommandLineArgument(GOOGLE_ADMIN_EMAIL_OPTION, CommandLineArgument.ArgumentType.String, Strings.Options.GoogleAdminEmailShort, Strings.Options.GoogleAdminEmailLong),
+        ..TimeoutOptionsHelper.GetOptions(),
     ];
 
     public static readonly ICommandLineArgument[] RestoreSupportedCommands =
@@ -127,6 +128,11 @@ public static class OptionsHelper
         /// and the drive is listed in full
         /// </summary>
         public int DriveDeltaMaxItems { get; set; } = DEFAULT_DRIVE_DELTA_MAX_ITEMS;
+        /// <summary>
+        /// The standard timeouts. The read-write timeout bounds how long a read of file content
+        /// may wait for bytes before the connection is taken as stalled and the download resumed.
+        /// </summary>
+        public TimeoutOptionsHelper.Timeouts Timeouts { get; set; } = TimeoutOptionsHelper.Parse(new Dictionary<string, string?>());
     }
 
     public static GoogleWorkspaceOptions ParseOptions(Dictionary<string, string?> options)
@@ -174,6 +180,8 @@ public static class OptionsHelper
         result.DriveDeltaMaxItems = Library.Utility.Utility.ParseIntOption(options, GOOGLE_DRIVE_DELTA_MAX_ITEMS_OPTION, DEFAULT_DRIVE_DELTA_MAX_ITEMS);
         if (result.DriveDeltaMaxItems < 1)
             throw new UserInformationException($"The option --{GOOGLE_DRIVE_DELTA_MAX_ITEMS_OPTION} must be a positive number", "InvalidDriveDeltaMaxItems");
+
+        result.Timeouts = TimeoutOptionsHelper.Parse(options);
 
         return result;
     }

@@ -20,7 +20,7 @@ internal class ContactPhotoSourceEntry(SourceProvider provider, string? stateKey
 
             // The photo URLs are not public, so the download goes through the People service's
             // client, whose credential interceptor attaches the impersonated user's token.
-            return GoogleDownloads.ToMemoryAsync(peopleService.HttpClient, photo.Url, "photo", ct);
+            return GoogleDownloads.OpenMediaAsync(peopleService.HttpClient, photo.Url, null, provider.ApiHelper.Timeouts.ReadWriteTimeout, "photo", ct);
         }, cancellationToken);
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)

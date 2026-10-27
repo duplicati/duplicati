@@ -41,19 +41,19 @@ internal class UserSourceEntry(SourceProvider provider, string parentPath, User 
                 yield break;
 
             if (type == GoogleUserType.Gmail)
-                yield return new UserTypeSourceEntry(provider, this.Path, userId, userIsInactive, "Gmail", SourceItemType.UserGmail);
+                yield return new UserTypeSourceEntry(provider, this.Path, userId, user.Id, userIsInactive, "Gmail", SourceItemType.UserGmail);
             else if (type == GoogleUserType.Calendar)
-                yield return new UserTypeSourceEntry(provider, this.Path, userId, userIsInactive, "Calendar", SourceItemType.UserCalendar);
+                yield return new UserTypeSourceEntry(provider, this.Path, userId, user.Id, userIsInactive, "Calendar", SourceItemType.UserCalendar);
             else if (type == GoogleUserType.Contacts)
-                yield return new UserTypeSourceEntry(provider, this.Path, userId, userIsInactive, "Contacts", SourceItemType.UserContacts);
+                yield return new UserTypeSourceEntry(provider, this.Path, userId, user.Id, userIsInactive, "Contacts", SourceItemType.UserContacts);
             else if (type == GoogleUserType.Drive)
-                yield return new UserTypeSourceEntry(provider, this.Path, userId, userIsInactive, "Drive", SourceItemType.UserDrive);
+                yield return new UserTypeSourceEntry(provider, this.Path, userId, user.Id, userIsInactive, "Drive", SourceItemType.UserDrive);
             else if (type == GoogleUserType.Tasks)
-                yield return new UserTypeSourceEntry(provider, this.Path, userId, userIsInactive, "Tasks", SourceItemType.UserTasks);
+                yield return new UserTypeSourceEntry(provider, this.Path, userId, user.Id, userIsInactive, "Tasks", SourceItemType.UserTasks);
             else if (type == GoogleUserType.Keep)
-                yield return new UserTypeSourceEntry(provider, this.Path, userId, userIsInactive, "Keep", SourceItemType.UserKeep);
+                yield return new UserTypeSourceEntry(provider, this.Path, userId, user.Id, userIsInactive, "Keep", SourceItemType.UserKeep);
             else if (type == GoogleUserType.Chat)
-                yield return new UserTypeSourceEntry(provider, this.Path, userId, userIsInactive, "Chat", SourceItemType.UserChat);
+                yield return new UserTypeSourceEntry(provider, this.Path, userId, user.Id, userIsInactive, "Chat", SourceItemType.UserChat);
         }
     }
 

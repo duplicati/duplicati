@@ -778,7 +778,7 @@ partial class SourceProvider
             return provider.GetAllGraphItemsAsync<GraphDriveItem>(url, ct);
         }
 
-        internal Task<Stream> GetDriveItemContentStreamAsync(string driveId, string itemId, CancellationToken ct)
+        internal Task<Stream> GetDriveItemContentStreamAsync(string driveId, string itemId, long? expectedLength, CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
             var drive = Uri.EscapeDataString(driveId);
@@ -786,7 +786,7 @@ partial class SourceProvider
 
             // Returns the file content stream (302 redirect handled by HttpClient by default)
             var url = $"{baseUrl}/v1.0/drives/{drive}/items/{item}/content";
-            return provider.GetGraphResponseAsRealStreamAsync(url, "application/octet-stream", ct);
+            return provider.GetGraphResponseAsRealStreamAsync(url, "application/octet-stream", expectedLength, ct);
         }
 
         internal IAsyncEnumerable<GraphPermission> GetDriveItemPermissionsAsync(

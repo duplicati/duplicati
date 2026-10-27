@@ -6,29 +6,18 @@ using Google.Apis.Keep.v1;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class KeepNoteAttachmentSourceEntry(string parentPath, Attachment attachment, KeepService keepService)
+internal class KeepNoteAttachmentSourceEntry(SourceProvider provider, string parentPath, Attachment attachment, KeepService keepService)
     : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, attachment.Name.Split('/').Last()), DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override long Size => -1;
 
-    public override async Task<Stream> OpenRead(CancellationToken cancellationToken)
+    public override Task<Stream> OpenRead(CancellationToken cancellationToken)
     {
-        // Keep API attachments are downloaded via media URL?
-        // attachment.Name is like "notes/123/attachments/456".
-        // Docs say: GET https://keep.googleapis.com/v1/notes/{noteId}/attachments/{attachmentId}?alt=media
-
-        var url = $"https://keep.googleapis.com/v1/{attachment.Name}?alt=media";
-
-        var response = await keepService.HttpClient.GetAsync(url, cancellationToken);
-        if (response.IsSuccessStatusCode)
-        {
-            var stream = new MemoryStream();
-            await response.Content.CopyToAsync(stream, cancellationToken);
-            stream.Seek(0, SeekOrigin.Begin);
-            return stream;
-        }
-
-        throw new FileNotFoundException($"Cannot download attachment: {response.StatusCode}");
+        // attachment.Name is like "notes/123/attachments/456"; the media endpoint serves its
+        // bytes, read through the Keep client with its credentials
+        var request = keepService.Media.Download(attachment.Name);
+        request.Alt = MediaResource.DownloadRequest.AltEnum.Media;
+        return GoogleDownloads.OpenMediaAsync(request, null, provider.ApiHelper.Timeouts.ReadWriteTimeout, $"attachment {attachment.Name}", cancellationToken);
     }
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)

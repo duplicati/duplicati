@@ -23,6 +23,11 @@ public class APIHelper
     private readonly string? _refreshToken;
     private readonly string? _serviceAccountJson;
     private readonly string? _adminEmail;
+
+    /// <summary>
+    /// The standard timeouts from the options
+    /// </summary>
+    public Duplicati.Library.Utility.Options.TimeoutOptionsHelper.Timeouts Timeouts { get; }
     private readonly bool _isRestoreOperation;
 
     /// <summary>
@@ -51,6 +56,7 @@ public class APIHelper
         _serviceAccountJson = options.ServiceAccountJson;
         _adminEmail = options.AdminEmail;
         _isRestoreOperation = isRestoreOperation;
+        Timeouts = options.Timeouts;
     }
 
     /// <summary>
