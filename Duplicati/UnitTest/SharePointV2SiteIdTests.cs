@@ -109,6 +109,22 @@ public class SharePointV2SiteIdTests
         Assert.AreEqual("SharePointMissingSiteId", ex!.HelpID);
     }
 
+    [Test]
+    public void ASiteIdOptionThatDiffersFromTheUrlIsAConflict()
+    {
+        var graph = new StubGraph();
+        using var backend = new SharePointV2(
+            "sharepoint://contoso-my.sharepoint.com/personal/someone_contoso_com//Documents/Vhds",
+            new Dictionary<string, string?> { ["authid"] = "test-authid", ["site-id"] = "another-site" },
+            graph);
+
+        var ex = Assert.ThrowsAsync<Duplicati.Library.Interface.UserInformationException>(
+            async () => await backend.ListAsync(CancellationToken.None).ToListAsync());
+        Assert.AreEqual("SharePointConflictingSiteId", ex!.HelpID);
+        Assert.IsFalse(graph.Requests.Any(x => x.Contains("/sites/another-site/", StringComparison.Ordinal)),
+            string.Join(Environment.NewLine, graph.Requests));
+    }
+
     /// <summary>
     /// BackendLoader creates the backend from the url and the options alone
     /// </summary>

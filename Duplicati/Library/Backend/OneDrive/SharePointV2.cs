@@ -30,13 +30,13 @@ namespace Duplicati.Library.Backend
         private const string PROTOCOL_KEY = "sharepoint";
 
         private readonly Lazy<string> drivePath;
-        private string? siteId;
+        private readonly string? siteIdOption;
+        private string? siteIdFromUrl;
 
         public SharePointV2()
         {
             // Constructor needed for dynamic loading to find it
             drivePath = null!;
-            siteId = null;
         }
 
         public SharePointV2(string url, Dictionary<string, string?> options)
@@ -50,13 +50,16 @@ namespace Duplicati.Library.Backend
             // Check to see if a site ID was explicitly provided
             var siteIdOption = options.GetValueOrDefault(SITE_ID_OPTION);
             if (!string.IsNullOrWhiteSpace(siteIdOption))
-                siteId = siteIdOption;
+                this.siteIdOption = siteIdOption;
 
-            // Without the option, the site is looked up from the url along with the root path
+            // The site is also looked up from the url along with the root path, and the two must agree
             drivePath = new Lazy<string>(() =>
             {
-                if (string.IsNullOrWhiteSpace(siteId))
-                    _ = RootPath;
+                _ = RootPath;
+                if (!string.IsNullOrWhiteSpace(this.siteIdOption) && !string.IsNullOrWhiteSpace(siteIdFromUrl) && !string.Equals(this.siteIdOption, siteIdFromUrl, StringComparison.Ordinal))
+                    throw new UserInformationException(Strings.SharePointV2.ConflictingSiteId(this.siteIdOption, siteIdFromUrl), "SharePointConflictingSiteId");
+
+                var siteId = string.IsNullOrWhiteSpace(this.siteIdOption) ? siteIdFromUrl : this.siteIdOption;
                 if (string.IsNullOrWhiteSpace(siteId))
                     throw new UserInformationException(Strings.SharePointV2.MissingSiteId, "SharePointMissingSiteId");
 
@@ -108,7 +111,7 @@ namespace Duplicati.Library.Backend
 
                     if (drive != null && !string.IsNullOrEmpty(drive.WebUrl) && !string.IsNullOrWhiteSpace(site.Id))
                     {
-                        siteId = site.Id;
+                        siteIdFromUrl = site.Id;
                         var driveWebUrl = new Uri(drive.WebUrl);
 
                         // Make sure to replace any "//" in the original path with "/", so the substrings line up.
