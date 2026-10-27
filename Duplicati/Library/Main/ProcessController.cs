@@ -198,12 +198,16 @@ namespace Duplicati.Library.Main
             {
                 try
                 {
-                    // -s prevents sleep on AC, -i prevents sleep generally
-                    var psi = new System.Diagnostics.ProcessStartInfo("caffeinate", "-s")
+                    // -s prevents sleep on AC, -i prevents sleep generally.
+                    // -w ties the assertion to this process, so caffeinate exits on its own
+                    // if this process is killed before it can stop it. The console is
+                    // redirected so caffeinate never inherits this process' stdout and
+                    // stderr, which carry log output when running as a controller process.
+                    var psi = new System.Diagnostics.ProcessStartInfo("caffeinate", $"-s -w {Environment.ProcessId}")
                     {
                         RedirectStandardInput = true,
-                        RedirectStandardError = false,
-                        RedirectStandardOutput = false,
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true,
                         UseShellExecute = false
                     };
                     m_caffeinate = System.Diagnostics.Process.Start(psi);
