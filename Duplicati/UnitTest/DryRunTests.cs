@@ -255,5 +255,81 @@ namespace Duplicati.UnitTest
             using (var c = new Controller(target, realopts, null))
                 TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
         }
+
+        /// <summary>
+        /// A backup with dry-run that triggers the retention delete and the compact step must
+        /// likewise leave the remote volume table untouched, even though those steps record the
+        /// volumes they would delete and upload as they go.
+        /// </summary>
+        [Test]
+        [Category("Compact")]
+        public async Task TestBackupDryRunDoesNotCommitDeleteOrCompactStateAsync()
+        {
+            var testopts = TestOptions;
+            testopts["dblock-size"] = "20KB";
+            testopts["blocksize"] = "1KB";
+            testopts["threshold"] = "5";
+
+            const long filesize = 44971;
+            var target = "file://" + TARGETFOLDER;
+            var files = Enumerable.Range(1, 4).Select(i => Path.Combine(DATAFOLDER, $"f{i}")).ToArray();
+            foreach (var file in files)
+                TestUtils.WriteTestFile(file, filesize);
+
+            using (var c = new Controller(target, testopts, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
+
+            // Make sure the next fileset gets a distinct timestamp
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            File.Delete(files[0]);
+            File.Delete(files[2]);
+            using (var c = new Controller(target, testopts, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { DATAFOLDER }));
+
+            var backendBefore = Directory.GetFiles(TARGETFOLDER).Select(Path.GetFileName).OrderBy(x => x).ToArray();
+            var volumesBefore = await ReadRemoteVolumeStatesAsync();
+            Assert.IsFalse(volumesBefore.Any(x => x.EndsWith(": Temporary") || x.EndsWith(": Uploading") || x.EndsWith(": Deleting")), "No volume should be in a transient state before the dry-run");
+
+            await Task.Delay(TimeSpan.FromSeconds(2));
+
+            // Keeping one version makes the dry-run delete the oldest fileset, and the
+            // wasted space that leaves behind makes it run the compact step
+            var dryrunopts = new Dictionary<string, string>(testopts)
+            {
+                ["dry-run"] = "true",
+                ["keep-versions"] = "1"
+            };
+
+            using (var c = new Controller(target, dryrunopts, null))
+            {
+                var res = await c.BackupAsync(new[] { DATAFOLDER });
+                TestUtils.AssertResults(res);
+                Assert.IsNotNull(res.DeleteResults, "The dry-run should report the versions it would delete");
+                Assert.AreEqual(1, res.DeleteResults.DeletedSets.Count(), "The dry-run should report the version it would delete");
+                Assert.IsNotNull(res.DeleteResults.CompactResults, "The dry-run should report the compaction it would do");
+                Assert.IsTrue(res.DeleteResults.CompactResults.Dryrun, "The compaction should be reported as a dry-run");
+                Assert.Greater(res.DeleteResults.CompactResults.DeletedFileCount + res.DeleteResults.CompactResults.UploadedFileCount, 0, "The dry-run compaction should have reported volumes it would delete or upload");
+            }
+
+            var backendAfter = Directory.GetFiles(TARGETFOLDER).Select(Path.GetFileName).OrderBy(x => x).ToArray();
+            CollectionAssert.AreEqual(backendBefore, backendAfter, "Remote files should not be changed during dry-run");
+
+            // The backup registers its own fileset volume as temporary before it knows whether it
+            // will upload it, and that registration is committed even in dry-run. It is removed by
+            // the remote verification of the next run, so it is left out here; the delete and
+            // compact steps must not have left anything behind.
+            var volumesAfter = (await ReadRemoteVolumeStatesAsync())
+                .Where(x => !(x.Contains(".dlist.") && x.EndsWith(": Temporary")))
+                .ToArray();
+            CollectionAssert.AreEqual(volumesBefore, volumesAfter, "The remote volume table should not be changed during dry-run");
+
+            // The next real operations must work on the untouched state
+            using (var c = new Controller(target, testopts, null))
+                TestUtils.AssertResults(await c.CompactAsync());
+
+            using (var c = new Controller(target, testopts, null))
+                TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
+        }
     }
 }
