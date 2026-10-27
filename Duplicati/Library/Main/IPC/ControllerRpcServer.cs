@@ -44,6 +44,18 @@ public class ControllerRpcServer : IController, IDisposable
     private CallbackMessageSink? _callbackSink;
 
     /// <summary>
+    /// Completes when the operation that is currently running has finished
+    /// </summary>
+    private TaskCompletionSource? _operationCompletion;
+
+    /// <summary>
+    /// A task that completes when the running operation, if any, has finished.
+    /// Lets the process wait for the engine to unwind and run its cleanup
+    /// after an abort before it exits.
+    /// </summary>
+    public Task OperationCompletion => _operationCompletion?.Task ?? Task.CompletedTask;
+
+    /// <summary>
     /// Gets or sets the callback for when an operation is started
     /// </summary>
     public Action<IBasicResults>? OnOperationStarted { get; set; }
@@ -75,6 +87,8 @@ public class ControllerRpcServer : IController, IDisposable
             // Wire up events
             OnOperationStarted = (results) =>
                 {
+                    _operationCompletion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
                     // Try to get the operation mode from the results
                     OperationMode operation = OperationMode.Backup;
                     if (results is IBackupResults)
@@ -118,6 +132,7 @@ public class ControllerRpcServer : IController, IDisposable
                     var exceptionDto = exception != null ? ExceptionDto.FromException(exception) : null;
                     _callbacks?.OnOperationCompletedAsync(resultDto, exceptionDto).FireAndForget();
                     OnOperationCompleted?.Invoke(results, exception);
+                    _operationCompletion?.TrySetResult();
                 }
         };
 

@@ -42,13 +42,6 @@ namespace Duplicati.CommandLine
         /// </summary>
         public static int Main(string[] args)
         {
-            // In controller server mode stdout carries the JSON-RPC stream, so anything else
-            // written to the console (preload diagnostics, crash output) must go to stderr,
-            // which the server process forwards to its log. The redirect happens before the
-            // preload settings are loaded, as that is the first code that may write output.
-            if (ControllerProcessEntry.IsControllerServerMode(args))
-                Console.SetOut(Console.Error);
-
             PreloadSettingsLoader.ConfigurePreloadSettings(ref args, PackageHelper.NamedExecutable.CommandLine);
 
             // Check for controller server mode

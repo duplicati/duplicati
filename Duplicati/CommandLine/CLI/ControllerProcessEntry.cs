@@ -21,6 +21,7 @@
 
 using System;
 using System.Diagnostics;
+using System.IO.Pipes;
 using Duplicati.Library.Main.IPC;
 using Duplicati.Library.Utility;
 using StreamJsonRpc;
@@ -33,14 +34,9 @@ namespace Duplicati.CommandLine;
 public static class ControllerProcessEntry
 {
     /// <summary>
-    /// The command that selects controller server mode; must be the first argument
-    /// </summary>
-    public const string COMMAND = "controller-server";
-
-    /// <summary>
     /// Environment variable that, when set to a truthy value, launches the debugger
-    /// before any RPC traffic is handled. The variable is inherited from the server
-    /// process, so setting it there is enough to break into the controller process.
+    /// before the process connects to the server. The variable is inherited from the
+    /// server process, so setting it there is enough to break into the controller process.
     /// </summary>
     public const string DEBUG_ENV_VAR = "DUPLICATI_CONTROLLER_PROCESS_DEBUG";
 
@@ -49,12 +45,32 @@ public static class ControllerProcessEntry
     /// </summary>
     /// <param name="args">The command line arguments</param>
     public static bool IsControllerServerMode(string[] args)
-        => args.Length > 0 && string.Equals(args[0], COMMAND, StringComparison.Ordinal);
+        => args.Length > 0 && string.Equals(args[0], ControllerPipeHandshake.COMMAND, StringComparison.Ordinal);
 
     /// <summary>
-    /// Runs the controller server process
+    /// The time the running operation gets to unwind after the server is gone,
+    /// so the engine can run its own cleanup before the process exits
+    /// </summary>
+    private static readonly TimeSpan AbortGracePeriod = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// Runs the controller server process and ends the process when done.
+    /// Returning from Main does not end the process while a foreground thread is
+    /// still running, and the engine starts such threads, so the process is ended
+    /// explicitly: without a server there is nobody left to report to.
     /// </summary>
     public static int Run(string[] args)
+    {
+        var exitCode = RunServer();
+        Environment.Exit(exitCode);
+        return exitCode;
+    }
+
+    /// <summary>
+    /// Serves the controller until the server disconnects
+    /// </summary>
+    /// <returns>The exit code</returns>
+    private static int RunServer()
     {
         try
         {
@@ -64,13 +80,17 @@ public static class ControllerProcessEntry
                 Debugger.Launch();
             }
 
-            // Setup RPC over stdio. Stdout is reserved for the RPC stream; all other
-            // console output is redirected to stderr by Program.Main before this point.
+            // The server hands over the pipe name and the token on stdin; the RPC channel is
+            // the pipe, so stdout and stderr are free for ordinary output, which the server
+            // forwards to its log
+            var (pipeName, token) = ControllerPipeHandshake.ReadHandshake(Console.In);
+
+            using var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+            pipe.Connect((int)ControllerPipeHandshake.ConnectTimeout.TotalMilliseconds);
+            ControllerPipeHandshake.WriteToken(pipe, token);
+
             var formatter = new SystemTextJsonFormatter { JsonSerializerOptions = RpcJsonOptions.Options };
-            var handler = new NewLineDelimitedMessageHandler(
-                Console.OpenStandardOutput(),
-                Console.OpenStandardInput(),
-                formatter);
+            var handler = new NewLineDelimitedMessageHandler(pipe, pipe, formatter);
 
             using var rpc = new JsonRpc(handler);
             using var trace = RpcTracing.AttachStderrListener(rpc);
@@ -83,7 +103,26 @@ public static class ControllerProcessEntry
             rpc.StartListening();
 
             // Wait for completion
-            rpc.Completion.Await();
+            try
+            {
+                rpc.Completion.Await();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Controller process lost the connection to the server: {ex.Message}");
+            }
+
+            // Without a server there is nobody to report to, so stop any running
+            // operation and give it a bounded time to unwind and clean up
+            try
+            {
+                server.AbortAsync().WaitAsync(AbortGracePeriod).Await();
+                server.OperationCompletion.WaitAsync(AbortGracePeriod).Await();
+            }
+            catch
+            {
+                // The operation is gone or did not unwind in time; the process exits either way
+            }
 
             return 0;
         }
