@@ -605,17 +605,21 @@ namespace Duplicati.Library.Modules.Builtin
                 {
                     // Source paths and the remote URL are content; the reduced form leaves them out
                     var reducedOut = m_reducedReporting && (key == LOCALPATH || key == REMOTEURL);
-                    input = Regex.Replace(input, $"%{key}%", reducedOut ? "" : GetDefaultValue(key) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                    input = Regex.Replace(input, $"%{key}%", _ => reducedOut ? "" : GetDefaultValue(key) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                 }
 
                 if (subjectline)
                 {
-                    input = Regex.Replace(input, "\\%RESULT\\%", m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                    input = Regex.Replace(input, "\\%RESULT\\%", _ => m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                 }
                 else
                 {
                     if (input.IndexOf("%RESULT%", StringComparison.OrdinalIgnoreCase) >= 0)
-                        input = Regex.Replace(input, "\\%RESULT\\%", resultFormatSerializer.Serialize(result, exception, LogLines, resultFormatSerializer.Format == ResultExportFormat.Template ? GetTemplateValues() : null), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                    {
+                        // Values go through an evaluator so a '$' in them is not read as a substitution
+                        var serialized = resultFormatSerializer.Serialize(result, exception, LogLines, resultFormatSerializer.Format == ResultExportFormat.Template ? GetTemplateValues() : null);
+                        input = Regex.Replace(input, "\\%RESULT\\%", _ => serialized, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                    }
                 }
 
                 foreach (KeyValuePair<string, string> kv in m_options)
@@ -623,16 +627,16 @@ namespace Duplicati.Library.Modules.Builtin
                     // Reduced reports only expand the environment metadata keys, never arbitrary option values
                     if (m_reducedReporting && !EXTRA_TEMPLATE_KEYS.Contains(kv.Key))
                         continue;
-                    input = Regex.Replace(input, "\\%" + kv.Key + "\\%", kv.Value ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                    input = Regex.Replace(input, "\\%" + kv.Key + "\\%", _ => kv.Value ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                 }
 
                 foreach (var key in EXTRA_TEMPLATE_KEYS)
                     if (!m_options.ContainsKey(key))
-                        input = Regex.Replace(input, $"%{key}%", GetDefaultValue(key) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                        input = Regex.Replace(input, $"%{key}%", _ => GetDefaultValue(key) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
                 if (m_extraValues != null && !m_reducedReporting)
                     foreach (var v in m_extraValues)
-                        input = Regex.Replace(input, $"%{v.Key}%", v.Value, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                        input = Regex.Replace(input, $"%{v.Key}%", _ => v.Value, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
 
                 // Remove any remaining template keys
