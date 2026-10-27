@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -530,6 +531,56 @@ namespace Duplicati.UnitTest
                 "The original path should be kept when the global option is enabled and the module option is not set");
             Assert.AreEqual("/some/file.txt", progressReport.Progress!.CurrentFilename,
                 "The current filename should be included when the global option is enabled");
+        }
+
+        /// <summary>
+        /// Records every URL a report is posted to, and fails the posts to URLs containing "fail"
+        /// </summary>
+        private sealed class FailingUrlHttpReportStatus : HttpReportStatus
+        {
+            public List<string> PostedUrls { get; } = new();
+
+            protected override Task SendAsync(string url, string json, CancellationToken cancellationToken)
+            {
+                PostedUrls.Add(url);
+                if (url.Contains("fail"))
+                    throw new System.Net.Http.HttpRequestException("Simulated failure");
+                return Task.CompletedTask;
+            }
+        }
+
+        private sealed class LogSink : Duplicati.Library.Logging.ILogDestination
+        {
+            public List<Duplicati.Library.Logging.LogEntry> Entries { get; } = new();
+
+            public void WriteMessage(Duplicati.Library.Logging.LogEntry entry)
+            {
+                lock (Entries)
+                    Entries.Add(entry);
+            }
+        }
+
+        [Test]
+        public async Task FailingUrlDoesNotStopTheNextOneAsync()
+        {
+            using var module = new FailingUrlHttpReportStatus();
+            module.Configure(new Dictionary<string, string?>
+            {
+                ["http-report-status-url"] = "http://localhost/fail;http://localhost/ok",
+                ["http-report-status-interval"] = "1s",
+            });
+
+            var sink = new LogSink();
+            using (Duplicati.Library.Logging.Log.StartScope(sink, Duplicati.Library.Logging.LogMessageType.Information))
+                await module.OnOperationStartedAsync("Backup", null!, CancellationToken.None);
+
+            Assert.That(module.PostedUrls, Is.EqualTo(new[] { "http://localhost/fail", "http://localhost/ok" }),
+                "The report was not posted to the URL after the failing one");
+            var warning = sink.Entries.Single(x => x.Id == "HttpReportStatusSendError");
+            Assert.That(warning.Level, Is.EqualTo(Duplicati.Library.Logging.LogMessageType.Information));
+            Assert.That(warning.FormattedMessage, Does.Contain("http://localhost/fail"));
+            Assert.That(warning.FormattedMessage, Does.Not.Contain("http://localhost/ok"),
+                "The URL that worked was reported as failing");
         }
     }
 }
