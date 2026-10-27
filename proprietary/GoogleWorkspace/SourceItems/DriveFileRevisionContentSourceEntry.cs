@@ -21,32 +21,23 @@ internal class DriveFileRevisionContentSourceEntry(SourceProvider provider, stri
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The content</returns>
-    private async Task<Stream> DownloadAsync(CancellationToken cancellationToken)
+    private Task<Stream> DownloadAsync(CancellationToken cancellationToken)
     {
-        var url = $"https://www.googleapis.com/drive/v3/files/{file.Id}/revisions/{revision.Id}?alt=media";
-
         if (GoogleMimeTypes.IsGoogleDoc(file.MimeType))
         {
+            // A Docs Editors revision has no binary content; it is exported through the link
+            // Drive hands out for it, and an export has no length anyone can state
             var exportMimeType = GoogleMimeTypes.GetExportMimeType(file.MimeType);
-            if (revision.ExportLinks != null && revision.ExportLinks.ContainsKey(exportMimeType))
-            {
-                url = revision.ExportLinks[exportMimeType];
-            }
-            else
-            {
-                // Try to construct export URL if not present?
-                // Or skip.
-                // For now, let's try the constructed URL, but it might fail for Docs.
-                // Actually, for Docs, we can't download via alt=media.
-                // If ExportLinks is missing, we might be out of luck for that revision.
-                if (revision.ExportLinks == null || !revision.ExportLinks.ContainsKey(exportMimeType))
-                {
-                    throw new NotSupportedException($"Cannot export revision {revision.Id} for mimeType {file.MimeType}");
-                }
-            }
+            if (revision.ExportLinks == null || !revision.ExportLinks.TryGetValue(exportMimeType, out var exportUrl))
+                throw new NotSupportedException($"Cannot export revision {revision.Id} for mimeType {file.MimeType}");
+
+            return GoogleDownloads.OpenMediaAsync(driveService.HttpClient, exportUrl, null, provider.ApiHelper.Timeouts.ReadWriteTimeout, $"revision {revision.Id}", cancellationToken);
         }
 
-        return await GoogleDownloads.ToMemoryAsync(driveService.HttpClient, url, $"revision {revision.Id}", cancellationToken).ConfigureAwait(false);
+        // Binary content is read straight from the connection, whatever its size
+        var request = driveService.Revisions.Get(file.Id, revision.Id);
+        request.Alt = RevisionsResource.GetRequest.AltEnum.Media;
+        return GoogleDownloads.OpenMediaAsync(request, revision.Size, provider.ApiHelper.Timeouts.ReadWriteTimeout, $"revision {revision.Id}", cancellationToken);
     }
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)

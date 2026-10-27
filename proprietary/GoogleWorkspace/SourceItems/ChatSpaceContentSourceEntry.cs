@@ -22,7 +22,7 @@ internal class ChatSpaceContentSourceEntry(string parentPath, Space space)
         {
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.ChatSpaceContent.ToString() },
-            { "gsuite:Name", "message.json" },
+            { "gsuite:Name", "content.json" },
             { "gsuite:Id", space.Name }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
