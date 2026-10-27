@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Diagnostics;
 using Duplicati.Library.Main.IPC;
 using Duplicati.Library.Utility;
 using StreamJsonRpc;
@@ -32,13 +33,39 @@ namespace Duplicati.CommandLine;
 public static class ControllerProcessEntry
 {
     /// <summary>
+    /// The command that selects controller server mode; must be the first argument
+    /// </summary>
+    public const string COMMAND = "controller-server";
+
+    /// <summary>
+    /// Environment variable that, when set to a truthy value, launches the debugger
+    /// before any RPC traffic is handled. The variable is inherited from the server
+    /// process, so setting it there is enough to break into the controller process.
+    /// </summary>
+    public const string DEBUG_ENV_VAR = "DUPLICATI_CONTROLLER_PROCESS_DEBUG";
+
+    /// <summary>
+    /// Returns <c>true</c> if the arguments select controller server mode
+    /// </summary>
+    /// <param name="args">The command line arguments</param>
+    public static bool IsControllerServerMode(string[] args)
+        => args.Length > 0 && string.Equals(args[0], COMMAND, StringComparison.Ordinal);
+
+    /// <summary>
     /// Runs the controller server process
     /// </summary>
     public static int Run(string[] args)
     {
         try
         {
-            // Setup RPC over stdio
+            if (Utility.ParseBool(Environment.GetEnvironmentVariable(DEBUG_ENV_VAR), false))
+            {
+                Console.Error.WriteLine($"Controller process {Environment.ProcessId} is waiting for a debugger");
+                Debugger.Launch();
+            }
+
+            // Setup RPC over stdio. Stdout is reserved for the RPC stream; all other
+            // console output is redirected to stderr by Program.Main before this point.
             var formatter = new SystemTextJsonFormatter { JsonSerializerOptions = RpcJsonOptions.Options };
             var handler = new NewLineDelimitedMessageHandler(
                 Console.OpenStandardOutput(),
@@ -46,6 +73,7 @@ public static class ControllerProcessEntry
                 formatter);
 
             using var rpc = new JsonRpc(handler);
+            using var trace = RpcTracing.AttachStderrListener(rpc);
 
             // Create server instance - callbacks will be attached via RPC
             var callbacks = rpc.Attach<IControllerRpcCallbacks>();

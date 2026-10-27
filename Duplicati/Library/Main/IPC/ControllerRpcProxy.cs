@@ -46,6 +46,7 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
 
     private Process? _process;
     private JsonRpc? _rpc;
+    private TraceListener? _traceListener;
 
     /// <summary>
     /// The process IDs of the controller processes that are currently running
@@ -212,6 +213,7 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
             formatter);
 
         _rpc = new JsonRpc(handler, this);
+        _traceListener = RpcTracing.AttachServerListener(_rpc, $"controller process {_process.Id} ({exePath})");
         _rpc.StartListening();
 
         // Start stderr reader for logging
@@ -659,6 +661,14 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
                 }
                 _rpc.Dispose();
             }
+        }
+        catch { }
+
+        try
+        {
+            _traceListener?.Flush();
+            _traceListener?.Dispose();
+            _traceListener = null;
         }
         catch { }
 
