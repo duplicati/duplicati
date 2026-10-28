@@ -272,7 +272,18 @@ namespace Duplicati.Library.Main.Operation
                         .DoCompactAsync(cdb, true, backendManager)
                         .ConfigureAwait(false);
 
-                    await cdb.Transaction.CommitAsync("PostCompact", true, m_result.TaskControl.ProgressToken);
+                    // The compact step records the volumes it would upload and delete in the database
+                    // as it goes, but in dry-run nothing is uploaded or deleted, so that bookkeeping
+                    // must be discarded. Committing it would make the next real run delete the
+                    // original volumes and then fail on the replacements that were never uploaded.
+                    if (m_options.Dryrun)
+                        await cdb.Transaction
+                            .RollBackAsync("PostCompact", true, m_result.TaskControl.ProgressToken)
+                            .ConfigureAwait(false);
+                    else
+                        await cdb.Transaction
+                            .CommitAsync("PostCompact", true, m_result.TaskControl.ProgressToken)
+                            .ConfigureAwait(false);
                 }
 
                 m_result.OperationProgressUpdater.UpdateProgress(pgoffset + pgspan);
