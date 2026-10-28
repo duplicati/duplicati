@@ -185,7 +185,7 @@ internal class APIHelper : IDisposable
         if ((!refresh || _fixedAccessToken) && !string.IsNullOrWhiteSpace(_graphAccessToken))
             return _graphAccessToken;
 
-        var tokenEndpoint = new Uri($"https://login.microsoftonline.com/{_tenantId}/oauth2/v2.0/token");
+        var tokenEndpoint = new System.Uri($"https://login.microsoftonline.com/{_tenantId}/oauth2/v2.0/token");
         var parameters = new Dictionary<string, string>
         {
             ["grant_type"] = "client_credentials",
@@ -446,7 +446,7 @@ internal class APIHelper : IDisposable
     {
         async Task<HttpRequestMessage> requestFactory(CancellationToken ct)
         {
-            var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
+            var req = new HttpRequestMessage(HttpMethod.Get, new System.Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, ct).ConfigureAwait(false);
             req.Headers.Accept.Clear();
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -552,11 +552,11 @@ internal class APIHelper : IDisposable
             if (eq <= 0)
                 continue;
 
-            var partName = Uri.UnescapeDataString(part.Substring(0, eq));
+            var partName = System.Uri.UnescapeDataString(part.Substring(0, eq));
             if (!string.Equals(partName, name, StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            return Uri.UnescapeDataString(part.Substring(eq + 1));
+            return System.Uri.UnescapeDataString(part.Substring(eq + 1));
         }
 
         return null;
@@ -573,7 +573,7 @@ internal class APIHelper : IDisposable
     {
         async Task<HttpRequestMessage> requestFactory(CancellationToken ct)
         {
-            var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
+            var req = new HttpRequestMessage(HttpMethod.Get, new System.Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, ct).ConfigureAwait(false);
             req.Headers.Accept.Clear();
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -727,7 +727,7 @@ internal class APIHelper : IDisposable
     {
         async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
         {
-            var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
+            var req = new HttpRequestMessage(HttpMethod.Get, new System.Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, cancellationToken);
             req.Headers.Accept.Clear();
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -753,7 +753,7 @@ internal class APIHelper : IDisposable
     {
         async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
         {
-            var req = new HttpRequestMessage(HttpMethod.Post, new Uri(url));
+            var req = new HttpRequestMessage(HttpMethod.Post, new System.Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, cancellationToken);
             req.Headers.Accept.Clear();
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -787,7 +787,7 @@ internal class APIHelper : IDisposable
 
         async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
         {
-            var req = new HttpRequestMessage(HttpMethod.Post, new Uri(url));
+            var req = new HttpRequestMessage(HttpMethod.Post, new System.Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, cancellationToken);
             req.Headers.Accept.Clear();
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -812,7 +812,7 @@ internal class APIHelper : IDisposable
     {
         async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
         {
-            var req = new HttpRequestMessage(HttpMethod.Post, new Uri(url));
+            var req = new HttpRequestMessage(HttpMethod.Post, new System.Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, cancellationToken);
             req.Headers.Accept.Clear();
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -835,7 +835,7 @@ internal class APIHelper : IDisposable
     {
         async Task<HttpRequestMessage> requestFactory(CancellationToken cancellationToken)
         {
-            var req = new HttpRequestMessage(HttpMethod.Patch, new Uri(url));
+            var req = new HttpRequestMessage(HttpMethod.Patch, new System.Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, cancellationToken);
             req.Headers.Accept.Clear();
             req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -890,7 +890,7 @@ internal class APIHelper : IDisposable
     {
         async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
         {
-            var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
+            var req = new HttpRequestMessage(HttpMethod.Get, new System.Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
 
             req.Headers.Accept.Clear();
@@ -934,7 +934,7 @@ internal class APIHelper : IDisposable
     {
         async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
         {
-            var req = new HttpRequestMessage(HttpMethod.Get, new Uri(url));
+            var req = new HttpRequestMessage(HttpMethod.Get, new System.Uri(url));
             req.Headers.Authorization = await GetAuthenticationHeaderAsync(false, rct).ConfigureAwait(false);
 
             req.Headers.Accept.Clear();
@@ -1169,7 +1169,7 @@ internal class APIHelper : IDisposable
 
             HttpRequestMessage requestFactory(CancellationToken rct)
             {
-                var req = new HttpRequestMessage(HttpMethod.Put, new Uri(uploadUrl));
+                var req = new HttpRequestMessage(HttpMethod.Put, new System.Uri(uploadUrl));
                 var ms = new MemoryStream(buffer, 0, bytesRead);
                 var timeoutStream = ms.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
                 req.Content = new StreamContent(timeoutStream);
