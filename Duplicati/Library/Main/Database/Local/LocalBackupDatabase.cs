@@ -1393,6 +1393,54 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// Gets the number of files a fileset holds below a folder, and their total size. The
+        /// backup uses it to estimate how much of the previous fileset an enumeration that lists
+        /// only the changes below the folder carries forward. Folders and symlinks are not counted.
+        /// </summary>
+        /// <param name="filesetId">The fileset to read, or a negative value if there is none</param>
+        /// <param name="folderPath">The folder path, ending with a directory separator</param>
+        /// <param name="token">The cancellation token</param>
+        /// <returns>The file count and the total size</returns>
+        internal async Task<(long Count, long Size)> GetFileCountAndSizeBelowPathAsync(long filesetId, string folderPath, CancellationToken token)
+        {
+            if (filesetId < 0 || string.IsNullOrEmpty(folderPath))
+                return (0, 0);
+
+            // The prefix of every path below the folder starts with the folder path, so the
+            // prefixes are read as a range of the prefix index: from the folder path up to,
+            // but not including, the folder path with its last character incremented.
+            // The joins are CROSS JOINs so the planner starts from that range and probes the
+            // other tables by their keys, instead of scanning the whole fileset for each folder
+            var upperBound = folderPath[..^1] + (char)(folderPath[^1] + 1);
+
+            await using var cmd = m_connection.CreateCommand(m_rtr);
+            await using var reader = await cmd.SetCommandAndParameters(@"
+                SELECT COUNT(*), IFNULL(SUM(""Blockset"".""Length""), 0)
+                FROM ""PathPrefix""
+                CROSS JOIN ""FileLookup""
+                    ON ""FileLookup"".""PrefixID"" = ""PathPrefix"".""ID""
+                CROSS JOIN ""FilesetEntry""
+                    ON ""FilesetEntry"".""FileID"" = ""FileLookup"".""ID""
+                CROSS JOIN ""Blockset""
+                    ON ""Blockset"".""ID"" = ""FileLookup"".""BlocksetID""
+                WHERE
+                    ""PathPrefix"".""Prefix"" >= @Prefix
+                    AND ""PathPrefix"".""Prefix"" < @UpperBound
+                    AND ""FilesetEntry"".""FilesetID"" = @FilesetId
+            ")
+                .SetParameterValue("@Prefix", folderPath)
+                .SetParameterValue("@UpperBound", upperBound)
+                .SetParameterValue("@FilesetId", filesetId)
+                .ExecuteReaderAsync(m_logQueries, token)
+                .ConfigureAwait(false);
+
+            if (!await reader.ReadAsync(token).ConfigureAwait(false))
+                return (0, 0);
+
+            return (reader.ConvertValueToInt64(0), reader.ConvertValueToInt64(1));
+        }
+
+        /// <summary>
         /// Updates the change statistics for the current fileset based on the results of a backup operation.
         /// </summary>
         /// <param name="results">The results of the backup operation.</param>

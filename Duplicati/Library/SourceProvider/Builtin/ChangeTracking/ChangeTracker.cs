@@ -25,6 +25,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.SourceProvider.ChangeTracking;
@@ -177,10 +178,25 @@ public sealed class ChangeTracker
     private readonly ConcurrentDictionary<string, byte> _invalidatedKeys = new(StringComparer.Ordinal);
 
     /// <summary>
+    /// The observer told how the folders are walked, if one is registered
+    /// </summary>
+    private volatile Action<string, FolderWalkMode>? _folderWalkObserver;
+
+    /// <summary>
     /// Whether the provider is used for a backup that stores state. Listing for the user
     /// interface and restores never load state, and then no tokens are requested or kept.
     /// </summary>
     public bool IsActive { get; private set; }
+
+    /// <summary>
+    /// Registers the observer told when a folder is first marked as walked with a delta token,
+    /// and when such a folder is later marked as examined in full after all. The backup uses
+    /// the reports to estimate how much of the previous fileset is carried forward. A mark
+    /// that does not change how the paths below the folder are judged is not reported.
+    /// </summary>
+    /// <param name="observer">The observer, called with the folder path and how it is walked</param>
+    public void SetFolderWalkObserver(Action<string, FolderWalkMode> observer)
+        => _folderWalkObserver = observer;
 
     /// <summary>
     /// Hands the state stored by the previous backup to the tracker
@@ -445,7 +461,26 @@ public sealed class ChangeTracker
     /// <param name="path">The path</param>
     /// <param name="mark">The mark to add</param>
     private void AddMark(string path, Mark mark)
-        => _marks.AddOrUpdate(path, mark, (_, existing) => existing | mark);
+    {
+        var previous = default(Mark);
+        _marks.AddOrUpdate(path, mark, (_, existing) =>
+        {
+            previous = existing;
+            return existing | mark;
+        });
+
+        var observer = _folderWalkObserver;
+        if (observer == null)
+            return;
+
+        // A folder marked as examined in full is judged by that mark whatever else it carries,
+        // so an incremental mark is only news without one, and a full mark only when it
+        // overrides an incremental one
+        if (mark == Mark.Incremental && (previous & (Mark.Incremental | Mark.ExaminedSubtree)) == 0)
+            observer(path, FolderWalkMode.Incremental);
+        else if (mark == Mark.ExaminedSubtree && (previous & Mark.Incremental) != 0 && (previous & Mark.ExaminedSubtree) == 0)
+            observer(path, FolderWalkMode.Full);
+    }
 
     /// <summary>
     /// Whether a path from the previous fileset was examined in this run
