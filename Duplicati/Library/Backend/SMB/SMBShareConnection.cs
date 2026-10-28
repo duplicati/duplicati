@@ -368,6 +368,15 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                     return fileList;
                 }).ConfigureAwait(false);
 
+                var handle = directoryHandle;
+                directoryHandle = null;
+                if (handle != null)
+                {
+                    var closeStatus = _smbFileStore.CloseFile(handle);
+                    if (closeStatus != NTStatus.STATUS_SUCCESS)
+                        throw new UserInformationException($"{LC.L("Failed to close directory handle on ListAsync")} with status {closeStatus.ToString()}", "HandleCloseError");
+                }
+
                 return
                 [
                     ..fileList
@@ -384,14 +393,14 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                         .ToList()
                 ];
             }
-            finally
+            catch
             {
+                // Closing can fail for the same reason the listing did, and must not hide that reason.
+                // A broken connection has already been closed, and the handle with it
                 if (directoryHandle != null && !_broken)
-                {
-                    var status = _smbFileStore.CloseFile(directoryHandle);
-                    if (status != NTStatus.STATUS_SUCCESS)
-                        throw new UserInformationException($"{LC.L("Failed to close directory handle on ListAsync")} with status {status.ToString()}", "HandleCloseError");
-                }
+                    try { _smbFileStore.CloseFile(directoryHandle); }
+                    catch { }
+                throw;
             }
         }
         finally
