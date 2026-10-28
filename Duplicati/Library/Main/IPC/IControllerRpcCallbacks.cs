@@ -22,13 +22,18 @@
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.IPC.Dto;
+using PolyType;
+using StreamJsonRpc;
 
 namespace Duplicati.Library.Main.IPC;
 
 /// <summary>
-/// Callback interface for server to call client (events)
+/// Callback interface for server to call client (events).
+/// The attributes let StreamJsonRpc generate the proxy and the type shape at compile time.
 /// </summary>
-public interface IControllerRpcCallbacks
+[JsonRpcContract]
+[GenerateShape(IncludeMethods = MethodShapeFlags.PublicInstance)]
+public partial interface IControllerRpcCallbacks
 {
     // Log message forwarding
     Task OnLogMessageAsync(LogEntryDto entry);

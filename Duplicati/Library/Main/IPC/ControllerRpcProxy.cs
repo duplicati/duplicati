@@ -46,6 +46,29 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
 
     private Process? _process;
     private JsonRpc? _rpc;
+    private NamedPipeServerStream? _pipe;
+    private TraceListener? _traceListener;
+
+    /// <summary>
+    /// Set once an abort has been requested, so a connection lost to the killed
+    /// process is reported as a cancellation rather than a failure
+    /// </summary>
+    private volatile bool _aborted;
+
+    /// <summary>
+    /// The number of console output lines from the controller process kept for error reports
+    /// </summary>
+    private const int OUTPUT_TAIL_LINES = 20;
+
+    /// <summary>
+    /// The last console output lines from the controller process
+    /// </summary>
+    private readonly ConcurrentQueue<string> _outputTail = new();
+
+    /// <summary>
+    /// The time a control call (stop, pause, resume, throttle) may take
+    /// </summary>
+    private static readonly TimeSpan ControlCallTimeout = TimeSpan.FromSeconds(10);
 
     /// <summary>
     /// The process IDs of the controller processes that are currently running
@@ -75,15 +98,15 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
 
     /// <inheritdoc />
     public Task SetLastCompactAsync(DateTime lastCompact)
-        => Rpc.InvokeAsync(nameof(IController.SetLastCompactAsync), lastCompact).WaitAsync(TimeSpan.FromSeconds(5));
+        => InvokeAsync(nameof(IController.SetLastCompactAsync), lastCompact).WaitAsync(TimeSpan.FromSeconds(5));
 
     /// <inheritdoc />
     public Task SetLastVacuumAsync(DateTime lastVacuum)
-        => Rpc.InvokeAsync(nameof(IController.SetLastVacuumAsync), lastVacuum).WaitAsync(TimeSpan.FromSeconds(5));
+        => InvokeAsync(nameof(IController.SetLastVacuumAsync), lastVacuum).WaitAsync(TimeSpan.FromSeconds(5));
 
     /// <inheritdoc />
     public Task SetLastRestoreTestAsync(DateTime lastRestoreTest)
-        => Rpc.InvokeAsync(nameof(IController.SetLastRestoreTestAsync), lastRestoreTest).WaitAsync(TimeSpan.FromSeconds(5));
+        => InvokeAsync(nameof(IController.SetLastRestoreTestAsync), lastRestoreTest).WaitAsync(TimeSpan.FromSeconds(5));
 
     /// <summary>
     /// Creates a new controller proxy
@@ -182,7 +205,18 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         if (!File.Exists(exePath))
             throw new FileNotFoundException($"Controller executable not found: {exePath}");
 
-        var psi = new ProcessStartInfo(exePath, "controller-server")
+        // The RPC channel is a named pipe (a Unix domain socket on Linux and macOS) that only
+        // the two processes hold. The controller's stdout and stderr are plain log streams, so
+        // output from the engine or from tools it starts cannot corrupt the RPC stream, and a
+        // lingering grandchild that inherited the console cannot keep the channel open after
+        // the controller has died. The pipe name and a one-time token go to the controller on
+        // its stdin, and the controller must present the token as the first line on the pipe.
+        var pipeName = ControllerPipeHandshake.CreatePipeName();
+        var token = ControllerPipeHandshake.CreateToken();
+        var pipe = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+        _pipe = pipe;
+
+        var psi = new ProcessStartInfo(exePath, ControllerPipeHandshake.COMMAND)
         {
             UseShellExecute = false,
             RedirectStandardInput = true,
@@ -200,25 +234,157 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         var serverDatafolderEnvName = $"{Library.AutoUpdater.AutoUpdateSettings.AppName}__{Library.AutoUpdater.DataFolderManager.SERVER_DATAFOLDER_OPTION.Replace('-', '_')}".ToUpperInvariant();
         psi.Environment[serverDatafolderEnvName] = Library.AutoUpdater.DataFolderManager.GetDataFolder(Library.AutoUpdater.DataFolderManager.AccessMode.ProbeOnly);
 
-        _process = Process.Start(psi)
-            ?? throw new InvalidOperationException("Failed to start controller process");
-        _activeProcessIds.TryAdd(_process.Id, 0);
+        var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
+        process.Exited += OnProcessExited;
+        if (!process.Start())
+            throw new InvalidOperationException("Failed to start controller process");
+        _process = process;
+        _activeProcessIds.TryAdd(process.Id, 0);
 
-        // Setup StreamJsonRpc over stdio
+        // Forward the controller's console output to the log
+        _ = Task.Run(() => ForwardOutputAsync(process.StandardOutput, "ControllerStdout"));
+        _ = Task.Run(() => ForwardOutputAsync(process.StandardError, "ControllerStderr"));
+
+        ControllerPipeHandshake.WriteHandshake(process.StandardInput, pipeName, token);
+        process.StandardInput.Close();
+
+        using var timeout = new CancellationTokenSource(ControllerPipeHandshake.ConnectTimeout);
+        var connectTask = pipe.WaitForConnectionAsync(timeout.Token);
+        var exitTask = process.WaitForExitAsync(timeout.Token);
+        var first = await Task.WhenAny(connectTask, exitTask).ConfigureAwait(false);
+        if (first == exitTask && exitTask.IsCompletedSuccessfully && !connectTask.IsCompletedSuccessfully)
+            throw new UserInformationException($"The controller process exited with code {process.ExitCode} before connecting to the server.{OutputTail()}", "ControllerProcessExited");
+
+        try
+        {
+            await connectTask.ConfigureAwait(false);
+            var received = await ControllerPipeHandshake.ReadTokenAsync(pipe, timeout.Token).ConfigureAwait(false);
+            if (!ControllerPipeHandshake.TokensMatch(token, received))
+                throw new UserInformationException("The process that connected to the controller pipe did not present the expected token", "ControllerPipeTokenMismatch");
+        }
+        catch (OperationCanceledException) when (timeout.IsCancellationRequested)
+        {
+            throw new UserInformationException($"The controller process did not connect to the server within {ControllerPipeHandshake.ConnectTimeout.TotalSeconds} seconds.{OutputTail()}", "ControllerProcessConnectTimeout");
+        }
+
         var formatter = new SystemTextJsonFormatter { JsonSerializerOptions = RpcJsonOptions.Options };
-        var handler = new NewLineDelimitedMessageHandler(
-            _process.StandardInput.BaseStream,
-            _process.StandardOutput.BaseStream,
-            formatter);
+        var handler = new NewLineDelimitedMessageHandler(pipe, pipe, formatter);
 
         _rpc = new JsonRpc(handler, this);
+        _traceListener = RpcTracing.AttachServerListener(_rpc, $"controller process {process.Id} ({exePath})");
         _rpc.StartListening();
 
-        // Start stderr reader for logging
-        _ = Task.Run(ReadStderrAsync);
-
         // Initialize the remote controller
-        await _rpc.InvokeAsync("InitializeAsync", _backendUrl, _options).ConfigureAwait(false);
+        await InvokeAsync(nameof(ControllerRpcServer.InitializeAsync), _backendUrl, _options).WaitAsync(ControllerPipeHandshake.ConnectTimeout).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Called when the controller process exits. The connection cannot outlive the
+    /// process, so any pending call is failed now instead of waiting for the pipe
+    /// to report end of stream.
+    /// </summary>
+    private void OnProcessExited(object? sender, EventArgs e)
+    {
+        try { _rpc?.Dispose(); }
+        catch { }
+    }
+
+    /// <summary>
+    /// Invokes a method on the controller process, reporting a lost connection
+    /// with the reason for it
+    /// </summary>
+    /// <typeparam name="T">The result type</typeparam>
+    /// <param name="method">The method to invoke</param>
+    /// <param name="arguments">The arguments to pass</param>
+    /// <returns>The result</returns>
+    private async Task<T> InvokeAsync<T>(string method, params object?[] arguments)
+    {
+        try
+        {
+            return await Rpc.InvokeAsync<T>(method, arguments).ConfigureAwait(false);
+        }
+        catch (ConnectionLostException ex)
+        {
+            throw ConnectionLost(method, ex);
+        }
+    }
+
+    /// <summary>
+    /// Invokes a method on the controller process, reporting a lost connection
+    /// with the reason for it
+    /// </summary>
+    /// <param name="method">The method to invoke</param>
+    /// <param name="arguments">The arguments to pass</param>
+    /// <returns>An awaitable task</returns>
+    private async Task InvokeAsync(string method, params object?[] arguments)
+    {
+        try
+        {
+            await Rpc.InvokeAsync(method, arguments).ConfigureAwait(false);
+        }
+        catch (ConnectionLostException ex)
+        {
+            throw ConnectionLost(method, ex);
+        }
+    }
+
+    /// <summary>
+    /// Creates the exception that reports a lost connection to the controller process
+    /// </summary>
+    /// <param name="method">The method that was being invoked</param>
+    /// <param name="ex">The exception reported by the connection</param>
+    private Exception ConnectionLost(string method, ConnectionLostException ex)
+    {
+        if (_aborted)
+            return new OperationCanceledException($"The operation {method} was aborted", ex);
+
+        var process = _process;
+        var exitInfo = process != null && process.HasExited
+            ? $" The controller process exited with code {process.ExitCode}."
+            : "";
+
+        return new UserInformationException($"Lost the connection to the controller process while running {method}.{exitInfo}{OutputTail()}", "ControllerConnectionLost", ex);
+    }
+
+    /// <summary>
+    /// Forwards console output from the controller process to the log,
+    /// keeping the last lines for error reports
+    /// </summary>
+    /// <param name="reader">The stdout or stderr of the controller process</param>
+    /// <param name="id">The log message id to use</param>
+    private async Task ForwardOutputAsync(StreamReader reader, string id)
+    {
+        try
+        {
+            string? line;
+            while ((line = await reader.ReadLineAsync().ConfigureAwait(false)) != null)
+            {
+                _outputTail.Enqueue(line);
+                while (_outputTail.Count > OUTPUT_TAIL_LINES && _outputTail.TryDequeue(out _))
+                { }
+
+                Library.Logging.Log.WriteInformationMessage(LOGTAG, id, "{0}", line);
+            }
+        }
+        catch (ObjectDisposedException)
+        {
+            // The process was disposed while the reader was waiting
+        }
+        catch (Exception ex)
+        {
+            Library.Logging.Log.WriteWarningMessage(LOGTAG, "OutputReadError", ex, "Error reading controller output");
+        }
+    }
+
+    /// <summary>
+    /// Returns the last console output lines from the controller process, for error reports
+    /// </summary>
+    private string OutputTail()
+    {
+        var lines = _outputTail.ToArray();
+        return lines.Length == 0
+            ? ""
+            : $" Last output from the controller process:{Environment.NewLine}{string.Join(Environment.NewLine, lines)}";
     }
 
 #if DEBUG
@@ -281,24 +447,6 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         await _rpc.InvokeAsync(nameof(ControllerRpcServer.InitializeAsync), _backendUrl, _options).ConfigureAwait(false);
     }
 #endif
-    private async Task ReadStderrAsync()
-    {
-        try
-        {
-            if (_process?.StandardError == null) return;
-
-            string? line;
-            while ((line = await _process.StandardError.ReadLineAsync()) != null)
-            {
-                Library.Logging.Log.WriteInformationMessage(LOGTAG, "ControllerStderr", line);
-            }
-        }
-        catch (Exception ex)
-        {
-            Library.Logging.Log.WriteWarningMessage(LOGTAG, "StderrReadError", ex, "Error reading controller stderr");
-        }
-    }
-
 #if DEBUG
     private static string? GetControllerExecutablePath()
     {
@@ -428,11 +576,11 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
 
     /// <inheritdoc />
     public async Task<IBackupResults> BackupAsync(string[] inputsources, IFilter? filter = null)
-        => await Rpc.InvokeAsync<IBackupResults>(nameof(IController.BackupAsync), inputsources, filter).ConfigureAwait(false);
+        => await InvokeAsync<IBackupResults>(nameof(IController.BackupAsync), inputsources, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IRestoreResults> RestoreAsync(string[]? paths, IFilter? filter = null)
-        => await Rpc.InvokeAsync<IRestoreResults>(nameof(IController.RestoreAsync), paths, filter).ConfigureAwait(false);
+        => await InvokeAsync<IRestoreResults>(nameof(IController.RestoreAsync), paths, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public Task<IListResults> ListAsync()
@@ -444,126 +592,128 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
 
     /// <inheritdoc />
     public async Task<IListResults> ListAsync(IEnumerable<string>? filterstrings, IFilter? filter)
-        => await Rpc.InvokeAsync<IListResults>(nameof(IController.ListAsync), filterstrings, filter).ConfigureAwait(false);
+        => await InvokeAsync<IListResults>(nameof(IController.ListAsync), filterstrings, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IDeleteResults> DeleteAsync()
-        => await Rpc.InvokeAsync<IDeleteResults>(nameof(IController.DeleteAsync)).ConfigureAwait(false);
+        => await InvokeAsync<IDeleteResults>(nameof(IController.DeleteAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IRepairResults> RepairAsync(IFilter? filter = null)
-        => await Rpc.InvokeAsync<IRepairResults>(nameof(IController.RepairAsync), filter).ConfigureAwait(false);
+        => await InvokeAsync<IRepairResults>(nameof(IController.RepairAsync), filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ICompactResults> CompactAsync()
-        => await Rpc.InvokeAsync<ICompactResults>(nameof(IController.CompactAsync)).ConfigureAwait(false);
+        => await InvokeAsync<ICompactResults>(nameof(IController.CompactAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IVacuumResults> VacuumAsync()
-        => await Rpc.InvokeAsync<IVacuumResults>(nameof(IController.VacuumAsync)).ConfigureAwait(false);
+        => await InvokeAsync<IVacuumResults>(nameof(IController.VacuumAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ISyncResults> SyncAsync(string[] sources, IFilter? filter)
-        => await Rpc.InvokeAsync<ISyncResults>(nameof(IController.SyncAsync), sources, filter).ConfigureAwait(false);
+        => await InvokeAsync<ISyncResults>(nameof(IController.SyncAsync), sources, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ITestResults> TestAsync(long samples = 1)
-        => await Rpc.InvokeAsync<ITestResults>(nameof(IController.TestAsync), samples).ConfigureAwait(false);
+        => await InvokeAsync<ITestResults>(nameof(IController.TestAsync), samples).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IRestoreTestResults> RestoreTestAsync(IFilter? filter = null)
-        => await Rpc.InvokeAsync<IRestoreTestResults>(nameof(IController.RestoreTestAsync), filter).ConfigureAwait(false);
+        => await InvokeAsync<IRestoreTestResults>(nameof(IController.RestoreTestAsync), filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListFilesetResults> ListFilesetsAsync()
-        => await Rpc.InvokeAsync<IListFilesetResults>(nameof(IController.ListFilesetsAsync)).ConfigureAwait(false);
+        => await InvokeAsync<IListFilesetResults>(nameof(IController.ListFilesetsAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListFolderResults> ListFolderAsync(string[]? folders, long offset, long limit, bool extendedData)
-        => await Rpc.InvokeAsync<IListFolderResults>(nameof(IController.ListFolderAsync), folders, offset, limit, extendedData).ConfigureAwait(false);
+        => await InvokeAsync<IListFolderResults>(nameof(IController.ListFolderAsync), folders, offset, limit, extendedData).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListFileVersionsResults> ListFileVersionsAsync(string[]? files, long offset, long limit)
-        => await Rpc.InvokeAsync<IListFileVersionsResults>(nameof(IController.ListFileVersionsAsync), files, offset, limit).ConfigureAwait(false);
+        => await InvokeAsync<IListFileVersionsResults>(nameof(IController.ListFileVersionsAsync), files, offset, limit).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ISearchFilesResults> SearchEntriesAsync(string[]? pathprefixes, IFilter? filter, bool caseSensitive, long offset, long limit, bool returnExtendedData, bool searchMetadata)
-        => await Rpc.InvokeAsync<ISearchFilesResults>(nameof(IController.SearchEntriesAsync), pathprefixes, filter, caseSensitive, offset, limit, returnExtendedData, searchMetadata).ConfigureAwait(false);
+        => await InvokeAsync<ISearchFilesResults>(nameof(IController.SearchEntriesAsync), pathprefixes, filter, caseSensitive, offset, limit, returnExtendedData, searchMetadata).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ICreateLogDatabaseResults> CreateLogDatabaseAsync(string targetpath)
-        => await Rpc.InvokeAsync<ICreateLogDatabaseResults>(nameof(IController.CreateLogDatabaseAsync), targetpath).ConfigureAwait(false);
+        => await InvokeAsync<ICreateLogDatabaseResults>(nameof(IController.CreateLogDatabaseAsync), targetpath).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListRemoteResults> ListRemoteAsync()
-        => await Rpc.InvokeAsync<IListRemoteResults>(nameof(IController.ListRemoteAsync)).ConfigureAwait(false);
+        => await InvokeAsync<IListRemoteResults>(nameof(IController.ListRemoteAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListRemoteResults> DeleteAllRemoteFilesAsync()
-        => await Rpc.InvokeAsync<IListRemoteResults>(nameof(IController.DeleteAllRemoteFilesAsync)).ConfigureAwait(false);
+        => await InvokeAsync<IListRemoteResults>(nameof(IController.DeleteAllRemoteFilesAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ISetLockResults> SetLocksAsync()
-        => await Rpc.InvokeAsync<ISetLockResults>(nameof(IController.SetLocksAsync)).ConfigureAwait(false);
+        => await InvokeAsync<ISetLockResults>(nameof(IController.SetLocksAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ISetVersionLabelResults> SetVersionLabelAsync()
-        => await Rpc.InvokeAsync<ISetVersionLabelResults>(nameof(IController.SetVersionLabelAsync)).ConfigureAwait(false);
+        => await InvokeAsync<ISetVersionLabelResults>(nameof(IController.SetVersionLabelAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IReadLockInfoResults> ReadLockInfoAsync()
-        => await Rpc.InvokeAsync<IReadLockInfoResults>(nameof(IController.ReadLockInfoAsync)).ConfigureAwait(false);
+        => await InvokeAsync<IReadLockInfoResults>(nameof(IController.ReadLockInfoAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IRecreateDatabaseResults> UpdateDatabaseWithVersionsAsync(IFilter? filter = null)
-        => await Rpc.InvokeAsync<IRecreateDatabaseResults>(nameof(IController.UpdateDatabaseWithVersionsAsync), filter).ConfigureAwait(false);
+        => await InvokeAsync<IRecreateDatabaseResults>(nameof(IController.UpdateDatabaseWithVersionsAsync), filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IPurgeFilesResults> PurgeFilesAsync(IFilter? filter)
-        => await Rpc.InvokeAsync<IPurgeFilesResults>(nameof(IController.PurgeFilesAsync), filter).ConfigureAwait(false);
+        => await InvokeAsync<IPurgeFilesResults>(nameof(IController.PurgeFilesAsync), filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListBrokenFilesResults> ListBrokenFilesAsync(IFilter? filter, Func<long, DateTime, long, string, long, bool>? callbackhandler = null)
     {
         // Note: callbacks for progress are not supported in the RPC model
-        return await Rpc.InvokeAsync<IListBrokenFilesResults>(nameof(IController.ListBrokenFilesAsync), filter).ConfigureAwait(false);
+        return await InvokeAsync<IListBrokenFilesResults>(nameof(IController.ListBrokenFilesAsync), filter).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public async Task<IPurgeBrokenFilesResults> PurgeBrokenFilesAsync(IFilter? filter)
-        => await Rpc.InvokeAsync<IPurgeBrokenFilesResults>(nameof(IController.PurgeBrokenFilesAsync), filter).ConfigureAwait(false);
+        => await InvokeAsync<IPurgeBrokenFilesResults>(nameof(IController.PurgeBrokenFilesAsync), filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ISendMailResults> SendMailAsync()
-        => await Rpc.InvokeAsync<ISendMailResults>(nameof(IController.SendMailAsync)).ConfigureAwait(false);
+        => await InvokeAsync<ISendMailResults>(nameof(IController.SendMailAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ISystemInfoResults> SystemInfoAsync()
-        => await Rpc.InvokeAsync<ISystemInfoResults>(nameof(IController.SystemInfoAsync)).ConfigureAwait(false);
+        => await InvokeAsync<ISystemInfoResults>(nameof(IController.SystemInfoAsync)).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<ITestFilterResults> TestFilterAsync(string[] paths, IFilter? filter = null)
-        => await Rpc.InvokeAsync<ITestFilterResults>(nameof(IController.TestFilterAsync), paths, filter).ConfigureAwait(false);
+        => await InvokeAsync<ITestFilterResults>(nameof(IController.TestFilterAsync), paths, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListChangesResults> ListChangesAsync(string baseVersion, string targetVersion, IEnumerable<string>? filterstrings = null, IFilter? filter = null, Action<IListChangesResults, IEnumerable<Tuple<ListChangesChangeType, ListChangesElementType, string>>>? callback = null)
-        => await Rpc.InvokeAsync<IListChangesResults>(nameof(IController.ListChangesAsync), baseVersion, targetVersion, filterstrings, filter).ConfigureAwait(false);
+        => await InvokeAsync<IListChangesResults>(nameof(IController.ListChangesAsync), baseVersion, targetVersion, filterstrings, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListAffectedResults> ListAffectedAsync(List<string>? args, Action<IListAffectedResults>? callback = null)
-        => await Rpc.InvokeAsync<IListAffectedResults>(nameof(IController.ListAffectedAsync), args).ConfigureAwait(false);
+        => await InvokeAsync<IListAffectedResults>(nameof(IController.ListAffectedAsync), args).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IRestoreControlFilesResults> RestoreControlFilesAsync(IEnumerable<string>? files = null, IFilter? filter = null)
-        => await Rpc.InvokeAsync<IRestoreControlFilesResults>(nameof(IController.RestoreControlFilesAsync), files, filter).ConfigureAwait(false);
+        => await InvokeAsync<IRestoreControlFilesResults>(nameof(IController.RestoreControlFilesAsync), files, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task<IListResults> ListControlFilesAsync(IEnumerable<string>? filterstrings, IFilter? filter)
-        => await Rpc.InvokeAsync<IListResults>(nameof(IController.ListControlFilesAsync), filterstrings, filter).ConfigureAwait(false);
+        => await InvokeAsync<IListResults>(nameof(IController.ListControlFilesAsync), filterstrings, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async Task AbortAsync()
     {
+        _aborted = true;
+
         if (_rpc != null)
         {
             try
@@ -589,41 +739,46 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         {
             // Process may already be dead
         }
+
+        // The connection cannot outlive the process; fail any pending call now
+        // instead of waiting for the pipe to report end of stream
+        try { _rpc?.Dispose(); }
+        catch { }
     }
 
     /// <inheritdoc />
     public async Task StopAsync()
     {
         if (_rpc != null)
-            await _rpc.InvokeAsync(nameof(IController.StopAsync)).ConfigureAwait(false);
+            await InvokeAsync(nameof(IController.StopAsync)).WaitAsync(ControlCallTimeout).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public async Task PauseAsync(bool alsoTransfers)
     {
         if (_rpc != null)
-            await _rpc.InvokeAsync(nameof(IController.PauseAsync), alsoTransfers).ConfigureAwait(false);
+            await InvokeAsync(nameof(IController.PauseAsync), alsoTransfers).WaitAsync(ControlCallTimeout).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public async Task ResumeAsync()
     {
         if (_rpc != null)
-            await _rpc.InvokeAsync(nameof(IController.ResumeAsync)).ConfigureAwait(false);
+            await InvokeAsync(nameof(IController.ResumeAsync)).WaitAsync(ControlCallTimeout).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public async Task SetThrottleSpeedsAsync(long maxUploadPrSecond, long maxDownloadPrSecond)
     {
         if (_rpc != null)
-            await _rpc.InvokeAsync(nameof(IController.SetThrottleSpeedsAsync), maxUploadPrSecond, maxDownloadPrSecond).ConfigureAwait(false);
+            await InvokeAsync(nameof(IController.SetThrottleSpeedsAsync), maxUploadPrSecond, maxDownloadPrSecond).WaitAsync(ControlCallTimeout).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
     public async Task SetSecretProviderAsync(ISecretProvider? secretProvider)
     {
         if (_rpc != null)
-            await _rpc.InvokeAsync(nameof(IController.SetSecretProviderAsync), secretProvider).ConfigureAwait(false);
+            await InvokeAsync(nameof(IController.SetSecretProviderAsync), secretProvider).WaitAsync(ControlCallTimeout).ConfigureAwait(false);
     }
 
     /// <inheritdoc />
@@ -645,6 +800,13 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         try { _progressPollCancellation.Cancel(); }
         catch { }
 
+        var process = _process;
+        if (process != null)
+        {
+            try { process.Exited -= OnProcessExited; }
+            catch { }
+        }
+
         try
         {
             if (_rpc != null)
@@ -664,21 +826,37 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
 
         try
         {
-            if (_process != null && !_process.HasExited)
+            _traceListener?.Flush();
+            _traceListener?.Dispose();
+            _traceListener = null;
+        }
+        catch { }
+
+        try
+        {
+            _pipe?.Dispose();
+            _pipe = null;
+        }
+        catch { }
+
+        // Closing the connection makes the controller exit; kill it if it does not
+        try
+        {
+            if (process != null && !process.WaitForExit(2000))
             {
-                _process.Kill();
-                _process.WaitForExit(5000);
+                process.Kill();
+                process.WaitForExit(5000);
             }
         }
         catch { }
 
-        if (_process != null)
+        if (process != null)
         {
-            try { _activeProcessIds.TryRemove(_process.Id, out _); }
+            try { _activeProcessIds.TryRemove(process.Id, out _); }
             catch { }
         }
 
-        _process?.Dispose();
+        process?.Dispose();
         _progressPollCancellation.Dispose();
     }
 
