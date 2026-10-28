@@ -2034,11 +2034,11 @@ namespace Duplicati.Library.Utility
             {
                 await Task.Run(() => func(cts.Token), cts.Token).ConfigureAwait(false);
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException) when (cts.IsCancellationRequested && !token.IsCancellationRequested)
             {
-                if (cts.IsCancellationRequested)
-                    throw new TimeoutException();
-                throw;
+                // Only our own timeout is a timeout; a cancellation by the caller stays a cancellation,
+                // and a call may report either as an OperationCanceledException of any kind
+                throw new TimeoutException();
             }
         }
 
@@ -2057,11 +2057,11 @@ namespace Duplicati.Library.Utility
             {
                 return await Task.Run(() => func(cts.Token), cts.Token).ConfigureAwait(false);
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException) when (cts.IsCancellationRequested && !token.IsCancellationRequested)
             {
-                if (cts.IsCancellationRequested)
-                    throw new TimeoutException();
-                throw;
+                // Only our own timeout is a timeout; a cancellation by the caller stays a cancellation,
+                // and a call may report either as an OperationCanceledException of any kind
+                throw new TimeoutException();
             }
         }
 
@@ -2080,11 +2080,11 @@ namespace Duplicati.Library.Utility
             {
                 await func(cts.Token);
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException) when (cts.IsCancellationRequested && !token.IsCancellationRequested)
             {
-                if (cts.IsCancellationRequested)
-                    throw new TimeoutException();
-                throw;
+                // Only our own timeout is a timeout; a cancellation by the caller stays a cancellation,
+                // and a call may report either as an OperationCanceledException of any kind
+                throw new TimeoutException();
             }
         }
 
@@ -2104,11 +2104,11 @@ namespace Duplicati.Library.Utility
             {
                 return await func(cts.Token);
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException) when (cts.IsCancellationRequested && !token.IsCancellationRequested)
             {
-                if (cts.IsCancellationRequested)
-                    throw new TimeoutException();
-                throw;
+                // Only our own timeout is a timeout; a cancellation by the caller stays a cancellation,
+                // and a call may report either as an OperationCanceledException of any kind
+                throw new TimeoutException();
             }
         }
 
