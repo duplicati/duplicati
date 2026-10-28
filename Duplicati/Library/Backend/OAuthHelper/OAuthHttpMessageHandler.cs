@@ -40,6 +40,15 @@ namespace Duplicati.Library
             this.m_oauth = new OAuthHelperHttpClient(authid, protocolKey, oauthurl);
         }
 
+        /// <summary>
+        /// Creates the handler with the given token client, so tests do not depend on the shared http client factory
+        /// </summary>
+        /// <param name="oauth">The client that fetches the access tokens</param>
+        protected OAuthHttpMessageHandler(OAuthHelperHttpClient oauth)
+        {
+            this.m_oauth = oauth;
+        }
+
         private static readonly HttpRequestOptionsKey<bool> PreventAuthenticationOption = new HttpRequestOptionsKey<bool>("PreventAuthentication");
 
         /// <summary>

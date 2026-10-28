@@ -111,7 +111,7 @@ namespace Duplicati.Library.Backend
         private string[]? dnsNames = null;
 
         private readonly Lazy<string> rootPathFromURL;
-        private string RootPath => this.rootPathFromURL.Value;
+        protected string RootPath => this.rootPathFromURL.Value;
         private string TokenUrl => AuthIdOptionsHelper.GetOAuthLoginUrl(ProtocolKey, null);
 
         protected MicrosoftGraphBackend()
@@ -124,6 +124,15 @@ namespace Duplicati.Library.Backend
         }
 
         protected MicrosoftGraphBackend(string url, string protocolKey, Dictionary<string, string?> options)
+            : this(url, protocolKey, options, null)
+        {
+        }
+
+        /// <summary>
+        /// Creates the backend with the given message handler in place of the authenticating one,
+        /// so tests can answer the requests without a network
+        /// </summary>
+        private protected MicrosoftGraphBackend(string url, string protocolKey, Dictionary<string, string?> options, OAuthHttpMessageHandler? handler)
         {
             var authId = AuthIdOptionsHelper.Parse(options)
                 .RequireCredentials(TokenUrl);
@@ -148,7 +157,9 @@ namespace Duplicati.Library.Backend
             if (!(options.TryGetValue(UPLOAD_SESSION_FRAGMENT_RETRY_DELAY_OPTION, out var fragmentRetryDelayStr) && int.TryParse(fragmentRetryDelayStr, out this.fragmentRetryDelay)))
                 this.fragmentRetryDelay = UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_DELAY;
 
-            this.m_client = new OAuthHttpClient(authId.AuthId!, protocolKey, authId.OAuthUrl);
+            this.m_client = handler == null
+                ? new OAuthHttpClient(authId.AuthId!, protocolKey, authId.OAuthUrl)
+                : new OAuthHttpClient(handler);
             this.m_client.BaseAddress = new System.Uri(BASE_ADDRESS);
 
             this.m_retryAfter = RetryAfterHelper.CreateOrGetRetryAfterHelper(url);
