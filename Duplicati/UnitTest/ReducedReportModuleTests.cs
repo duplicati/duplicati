@@ -66,6 +66,7 @@ namespace Duplicati.UnitTest
             protected override string BodyOptionName => "test-body";
             protected override string ActionLevelOptionName => "test-level";
             protected override string ActionOnAnyOperationOptionName => "test-any-operation";
+            protected override string ActionOnOperationsOptionName => "test-operations";
             protected override string LogLevelOptionName => "test-log-level";
             protected override string LogFilterOptionName => "test-log-filter";
             protected override string LogLinesOptionName => "test-max-log-lines";
