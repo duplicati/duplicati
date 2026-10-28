@@ -289,10 +289,9 @@ namespace Duplicati.Library.Main.Volumes
             if (increment == default)
                 increment = TimeSpan.FromSeconds(1);
 
-            var s = 1;
             var time = start;
 
-            while (s < maxTries)
+            for (var s = 0; s < maxTries; s++)
             {
                 var id = await ProbeForId(GenerateFilename(RemoteVolumeType.Files, options, null, time), cancellationToken).ConfigureAwait(false);
                 if (id < 0)
