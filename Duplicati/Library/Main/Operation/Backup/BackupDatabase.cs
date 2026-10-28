@@ -458,6 +458,15 @@ namespace Duplicati.Library.Main.Operation.Backup
             );
         }
 
+        public Task<(long Count, long Size)> GetFileCountAndSizeBelowPathAsync(long filesetId, string folderPath, CancellationToken cancellationToken)
+        {
+            return RunOnMainAsync(async () =>
+                await m_database
+                    .GetFileCountAndSizeBelowPathAsync(filesetId, folderPath, cancellationToken)
+                    .ConfigureAwait(false)
+            );
+        }
+
         public Task MoveSourceProviderStateToPreviousFilesetAsync(long filesetid, CancellationToken cancellationToken)
         {
             return RunOnMainAsync(async () =>

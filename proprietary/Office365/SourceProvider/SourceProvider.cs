@@ -361,6 +361,10 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     public bool IsIncrementallyEnumeratedFolder(string folderPath)
         => _changeTracker.IsIncrementallyEnumeratedFolder(folderPath);
 
+    /// <inheritdoc />
+    public void SetFolderWalkObserver(Action<string, FolderWalkMode> observer)
+        => _changeTracker.SetFolderWalkObserver(observer);
+
     /// <summary>
     /// Opens a content stream and reports a failure to open or read it to the change tracker,
     /// so the token of the folder or drive the content belongs to is not advanced and the item

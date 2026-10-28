@@ -191,6 +191,10 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     public bool IsIncrementallyEnumeratedFolder(string folderPath)
         => _changeTracker.IsIncrementallyEnumeratedFolder(folderPath);
 
+    /// <inheritdoc />
+    public void SetFolderWalkObserver(Action<string, FolderWalkMode> observer)
+        => _changeTracker.SetFolderWalkObserver(observer);
+
     /// <summary>
     /// Whether mailboxes are walked from the Gmail history in this enumeration: the option is
     /// on and the provider was handed state by a backup

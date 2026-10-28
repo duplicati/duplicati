@@ -22,6 +22,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 
 namespace Duplicati.Library.Interface;
@@ -79,4 +80,18 @@ public interface IChangeTrackingSourceProvider : ISourceProvider
     /// <param name="folderPath">The folder path</param>
     /// <returns><c>true</c> if the folder was enumerated incrementally</returns>
     bool IsIncrementallyEnumeratedFolder(string folderPath);
+
+    /// <summary>
+    /// Registers the observer that is told how each folder is walked, as the enumeration
+    /// reaches it. The backup uses it to estimate how much of the previous fileset the
+    /// enumeration produces again: the entries below a folder reported as
+    /// <see cref="FolderWalkMode.Incremental"/> are expected to be carried forward, and a
+    /// later <see cref="FolderWalkMode.Full"/> report for the same folder takes that back.
+    /// Only a change in how a folder is walked is reported, and a folder below one that was
+    /// reported may be reported too. The observer is registered after the state is loaded
+    /// and before the enumeration starts; it is called from the enumeration, possibly from
+    /// several threads at once, and must return quickly.
+    /// </summary>
+    /// <param name="observer">The observer, called with the folder path and how it is walked</param>
+    void SetFolderWalkObserver(Action<string, FolderWalkMode> observer);
 }
