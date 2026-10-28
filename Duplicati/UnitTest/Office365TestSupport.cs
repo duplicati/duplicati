@@ -53,7 +53,7 @@ internal static class Office365TestSupport
         // The handler is shared between the helpers of every provider instance a test creates, so it is not disposed with the client
         var httpClient = new HttpClient(handler, disposeHandler: false);
         httpClient.Timeout = Timeout.InfiniteTimeSpan;
-        var authOptions = AuthOptionsHelper.ParseWithAlias(new Dictionary<string, string?>(), "test", "test", "test-user", "test-pass");
+        var authOptions = AuthOptionsHelper.ParseWithAlias(new Dictionary<string, string?>(), new Duplicati.Library.Utility.Uri("https://test:test@localhost/"), "test-user", "test-pass");
         return new APIHelper(httpClient, authOptions, "test-tenant", graphBaseUrl, timeouts, null, null, "https://graph.microsoft.com/.default", ACCESS_TOKEN);
     }
 

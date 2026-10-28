@@ -26,6 +26,8 @@ using Duplicati.Library.Utility.Options;
 using System.Net;
 using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend
 {
     public class WEBDAV : IStreamingBackend, IRenameEnabledBackend
@@ -156,6 +158,16 @@ namespace Duplicati.Library.Backend
             m_baseUri = null!;
             m_propfindPathPrefixes = null!;
         }
+
+        /// <summary>
+        /// Constructor used by the tests, so the requests can be observed without a server.
+        /// </summary>
+        /// <param name="url">The destination url</param>
+        /// <param name="options">The options to use</param>
+        /// <param name="handler">The handler that answers the requests</param>
+        internal WEBDAV(string url, Dictionary<string, string?> options, HttpMessageHandler handler)
+            : this(url, options)
+            => m_httpClient = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
 
         public WEBDAV(string url, Dictionary<string, string?> options)
         {
