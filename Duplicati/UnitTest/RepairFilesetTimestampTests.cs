@@ -99,10 +99,8 @@ public class RepairFilesetTimestampTests : BasicSetupHelper
         Assert.That(after.Select(x => x.IsFull).ToArray(), Is.EqualTo(before.Select(x => x.IsFull).ToArray()),
             "Each version must still describe the same backup");
 
-        // The replacement files do get a new name, because the old one is still
-        // registered. That is expected; only the fileset time has to stay put.
-        Assert.That(DlistFiles.Length, Is.EqualTo(2));
-        Assert.That(DlistFiles, Is.Not.EqualTo(namesBefore));
+        // The replacement files are uploaded under the names of the missing ones
+        Assert.That(DlistFiles, Is.EqualTo(namesBefore));
     }
 
     [Test]
