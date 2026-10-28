@@ -70,6 +70,14 @@ namespace Duplicati.Library.Common.IO
             /// </summary>
             public const uint OPEN_EXISTING = 3;
             /// <summary>
+            /// Needed by CreateFile to open a folder
+            /// </summary>
+            public const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
+            /// <summary>
+            /// Makes CreateFile open a reparse point itself, not what it points to
+            /// </summary>
+            public const uint FILE_FLAG_OPEN_REPARSE_POINT = 0x00200000;
+            /// <summary>
             /// The share mode for CreateFile to allow read access
             /// </summary>
             public const uint FILE_SHARE_READ = 0x00000001;
