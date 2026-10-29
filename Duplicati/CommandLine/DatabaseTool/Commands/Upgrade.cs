@@ -102,9 +102,12 @@ public static class Upgrade
                 return;
             }
 
-            var serverVersions = ExtractScriptsFromAssembly(typeof(Library.RestAPI.Database.DatabaseSchemaMarker));
-            var localVersions = ExtractScriptsFromAssembly(typeof(Library.Main.Database.Local.DatabaseSchemaMarker));
-            var syncVersions = ExtractScriptsFromAssembly(typeof(Library.Main.Database.Sync.DatabaseSchemaMarker));
+            var serverScripts = DatabaseUpgrader.GetSchemaScripts(typeof(Library.RestAPI.Database.DatabaseSchemaMarker));
+            var localScripts = DatabaseUpgrader.GetSchemaScripts(typeof(Library.Main.Database.Local.DatabaseSchemaMarker));
+            var syncScripts = DatabaseUpgrader.GetSchemaScripts(typeof(Library.Main.Database.Sync.DatabaseSchemaMarker));
+            var serverVersions = serverScripts.Upgrades;
+            var localVersions = localScripts.Upgrades;
+            var syncVersions = syncScripts.Upgrades;
 
             if (serverversion <= 0)
                 serverversion = serverVersions.Max(x => x.Version);
@@ -152,9 +155,9 @@ public static class Upgrade
 
                 var scripts = type switch
                 {
-                    DatabaseType.Server => serverVersions,
-                    DatabaseType.Sync => syncVersions,
-                    DatabaseType.Backup => localVersions,
+                    DatabaseType.Server => serverScripts,
+                    DatabaseType.Sync => syncScripts,
+                    DatabaseType.Backup => localScripts,
                     _ => throw new Exception($"Unknown database type: {type}")
                 };
 
@@ -167,53 +170,17 @@ public static class Upgrade
     }
 
     /// <summary>
-    /// Finds all upgrade scripts in the assembly
-    /// </summary>
-    /// <param name="markerType">The type to use as a marker for the assembly</param>
-    /// <returns>The list of upgrade scripts</returns>
-    private static IEnumerable<UpgradeScript> ExtractScriptsFromAssembly(Type markerType)
-    {
-        string ReadStream(string path)
-        {
-            using var reader = new StreamReader(markerType.Assembly.GetManifestResourceStream(path) ?? throw new InvalidOperationException());
-            return reader.ReadToEnd();
-        }
-
-        static string? ResourceNameToPath(string nsprefix, string resourcename)
-        {
-            if (resourcename.StartsWith(nsprefix))
-                return resourcename.Substring(nsprefix.Length);
-
-            return null;
-        }
-
-        return markerType.Assembly.GetManifestResourceNames()
-            .Select(x => (ResourceName: x, Filename: ResourceNameToPath(markerType.Namespace + ".Database_schema.", x)))
-            .Where(x => x.Filename != null && x.Filename.EndsWith(".sql"))
-            .Where(x => x.Filename != "Schema.sql")
-            .Select(x => new UpgradeScript(Version: int.Parse(x.Filename!.Split('.').First()), Filename: x.Filename!, Content: ReadStream(x.ResourceName)))
-            .ToList();
-    }
-
-    /// <summary>
-    /// The upgrade script
-    /// </summary>
-    /// <param name="Filename">The path to the assembly resource</param>
-    /// <param name="Version">The script version</param>
-    /// <param name="Content">The script contents</param>
-    private sealed record UpgradeScript(string Filename, int Version, string Content);
-
-    /// <summary>
     /// Applies the upgrade scripts to the database
     /// </summary>
     /// <param name="db">The database path</param>
     /// <param name="dbversion">The current database version</param>
     /// <param name="targetversion">The target database version</param>
-    /// <param name="scripts">The upgrade scripts</param>
+    /// <param name="schemaScripts">The scripts bundled with this release</param>
     /// <param name="nobackups">Flag to disable backups</param>
     /// <returns>A task that completes when the upgrade is done.</returns>
-    private static async Task ApplyUpgradeAsync(string db, int dbversion, int targetversion, IEnumerable<UpgradeScript> scripts, bool nobackups)
+    private static async Task ApplyUpgradeAsync(string db, int dbversion, int targetversion, SchemaScriptSet schemaScripts, bool nobackups)
     {
+        var scripts = schemaScripts.Upgrades;
         if (targetversion > dbversion)
         {
             var requiredVersions = Enumerable.Range(dbversion + 1, targetversion - dbversion)
@@ -264,6 +231,9 @@ public static class Upgrade
                     throw new UserInformationException($"Failed applying upgrade script {script.Filename}: {ex.Message}", "DowngradeScriptFailure", ex);
                 }
             }
+
+            // Record the scripts so an older release can downgrade the database again
+            DatabaseUpgrader.WriteSchemaScriptTable(con, tr, schemaScripts, targetversion);
 
             tr.Commit();
             Console.WriteLine($"Upgraded {db} to version {targetversion}");
