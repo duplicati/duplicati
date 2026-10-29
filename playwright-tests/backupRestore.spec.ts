@@ -43,9 +43,10 @@ async function clickThreeDotMenu(page: Page, action: string) {
     })
     .click();
 
+  // Match the name exactly: "Delete" would also match "Delete versions"
   await backupElement
-    .locator("div.options button")
-    .filter({ hasText: action })
+    .locator("div.options")
+    .getByRole("button", { name: action, exact: true })
     .click();
 }
 
