@@ -288,8 +288,8 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(0, await Program.MainAsync(["upgrade", dbfile, "--no-backups"]));
             Assert.AreEqual(SYNC_SCHEMA_VERSION, await ReadSyncVersionAsync(dbfile));
 
-            // The default --sync-version is 0, the version before the LogData table was
-            // added, so downgrade removes the table and records version 0.
+            // The default --sync-version is the version before the latest, which is 0, the
+            // version before the LogData table was added, so downgrade removes the table and records version 0.
             Assert.AreEqual(0, await Program.MainAsync(["downgrade", dbfile, "--no-backups"]));
             Assert.AreEqual(0, await ReadSyncVersionAsync(dbfile));
             Assert.IsFalse(await SyncTableExistsAsync(dbfile, "LogData"));

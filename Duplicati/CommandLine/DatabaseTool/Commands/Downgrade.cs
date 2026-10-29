@@ -50,18 +50,18 @@ public static class Downgrade
         };
         var serverVersionOption = new Option<int>("--server-version")
         {
-            Description = "The version to downgrade the server database to",
-            DefaultValueFactory = _ => 9
+            Description = "The version to downgrade the server database to; a negative value means the version before the latest",
+            DefaultValueFactory = _ => -1
         };
         var localVersionOption = new Option<int>("--local-version")
         {
-            Description = "The version to downgrade local databases to",
-            DefaultValueFactory = _ => 14
+            Description = "The version to downgrade local databases to; a negative value means the version before the latest",
+            DefaultValueFactory = _ => -1
         };
         var syncVersionOption = new Option<int>("--sync-version")
         {
-            Description = "The version to downgrade sync databases to",
-            DefaultValueFactory = _ => 0
+            Description = "The version to downgrade sync databases to; a negative value means the version before the latest",
+            DefaultValueFactory = _ => -1
         };
         var noBackupsOption = new Option<bool>("--no-backups")
         {
@@ -137,6 +137,15 @@ public static class Downgrade
                 .Where(x => x.Contains(".Scripts.Sync."))
                 .Select(x => new DowngradeScript(Version: int.Parse(ResourceNameToPath(x).Split('.').First()), Filename: ResourceNameToPath(x), Content: ReadStream(x)))
                 .ToList();
+
+            // Downgrade script N takes a database from version N to N - 1,
+            // so the newest script number is the latest version
+            if (serverversion < 0)
+                serverversion = serverVersions.Max(x => x.Version) - 1;
+            if (localversion < 0)
+                localversion = localVersions.Max(x => x.Version) - 1;
+            if (syncversion < 0)
+                syncversion = syncVersions.Max(x => x.Version) - 1;
 
             foreach (var db in databases)
             {
