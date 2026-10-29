@@ -35,6 +35,7 @@ namespace Duplicati.UnitTest;
 /// <summary>
 /// A restore of only a symbolic link makes the link, and the restore results should say so.
 /// The legacy engine did not count the links it made, and warned that nothing was restored.
+/// A link is counted as a file, and also in RestoredSymlinks, which neither engine counted.
 /// </summary>
 public class RestoreSymlinkCountTests : BasicSetupHelper
 {
@@ -68,11 +69,20 @@ public class RestoreSymlinkCountTests : BasicSetupHelper
     /// </summary>
     /// <param name="legacy">The value of --restore-legacy</param>
     /// <returns>The results of the restore.</returns>
-    private async Task<IRestoreResults> RestoreLinkAsync(bool legacy)
+    private Task<IRestoreResults> RestoreLinkAsync(bool legacy)
+        => RestoreAsync(legacy, LinkPath);
+
+    /// <summary>
+    /// Restores the given paths to their original location
+    /// </summary>
+    /// <param name="legacy">The value of --restore-legacy</param>
+    /// <param name="paths">The paths to restore</param>
+    /// <returns>The results of the restore.</returns>
+    private async Task<IRestoreResults> RestoreAsync(bool legacy, params string[] paths)
     {
         var options = new Dictionary<string, string>(this.TestOptions) { ["restore-legacy"] = legacy ? "true" : "false" };
         using var c = new Controller("file://" + this.TARGETFOLDER, options, null);
-        var r = await c.RestoreAsync([LinkPath]);
+        var r = await c.RestoreAsync(paths);
         Assert.That(r.Errors, Is.Empty, "the restore should not fail");
         return r;
     }
@@ -92,6 +102,26 @@ public class RestoreSymlinkCountTests : BasicSetupHelper
         Assert.That(new FileInfo(LinkPath).LinkTarget, Is.EqualTo(TargetFile), "the link should have been restored");
         Assert.That(r.Warnings, Has.None.Contains("NoFilesOrFoldersRestored"), $"got: {string.Join(" | ", r.Warnings)}");
         Assert.That(r.RestoredFiles, Is.EqualTo(1), "the link should be counted as restored");
+        Assert.That(r.RestoredSymlinks, Is.EqualTo(1), "the link should be counted as a restored link");
+    }
+
+    /// <summary>
+    /// The file and the link are both missing, so the restore makes both, and only the link is a restored link
+    /// </summary>
+    [Test]
+    [Category("RestoreHandler")]
+    public async Task OnlyTheLinkIsCountedAsALink([Values] bool legacy)
+    {
+        await MakeLinkAndBackupAsync();
+        File.Delete(LinkPath);
+        File.Delete(TargetFile);
+
+        var r = await RestoreAsync(legacy, LinkPath, TargetFile);
+
+        Assert.That(File.ReadAllText(TargetFile), Is.EqualTo("target"), "the file should have been restored");
+        Assert.That(new FileInfo(LinkPath).LinkTarget, Is.EqualTo(TargetFile), "the link should have been restored");
+        Assert.That(r.RestoredFiles, Is.EqualTo(2), "the file and the link should be counted as restored");
+        Assert.That(r.RestoredSymlinks, Is.EqualTo(1), "only the link should be counted as a restored link");
     }
 
     /// <summary>
@@ -109,5 +139,6 @@ public class RestoreSymlinkCountTests : BasicSetupHelper
         Assert.That(r.Warnings, Has.None.Contains("NoFilesOrFoldersRestored"), $"got: {string.Join(" | ", r.Warnings)}");
         Assert.That(r.RestoredFiles, Is.EqualTo(0), "the link should not be counted as restored");
         Assert.That(r.UnmodifiedFiles, Is.EqualTo(1), "the link should be counted as unmodified");
+        Assert.That(r.RestoredSymlinks, Is.EqualTo(0), "the link should not be counted as a restored link");
     }
 }
