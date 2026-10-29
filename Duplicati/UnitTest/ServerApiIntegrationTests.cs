@@ -722,6 +722,55 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// The server stores the task configuration in the backup when --store-task-config is set,
+    /// and takes the option out before running the backup. It was left in for the other
+    /// operations, so a restore of such a backup warned that the option is not supported
+    /// (forum topic 22816).
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task StoreTaskConfigIsNotPassedToOtherOperations_Async()
+    {
+        var backupPassphrase = "integration-passphrase";
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sample content");
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var backupId = await CreateBackupAsync(httpClient, backupPassphrase,
+                extraSettings: [new BackupAndScheduleInputDto.SettingInputDto { Name = "store-task-config", Value = "Self" }]).ConfigureAwait(false);
+            var connection = (Duplicati.Server.Database.Connection)ServerProgram.DuplicatiWebserver.Provider.GetService(typeof(Duplicati.Server.Database.Connection))!;
+
+            void AssertNoWarningForTheOption(string operation)
+            {
+                var notifications = connection.GetNotifications().Where(n => n.BackupID == backupId).ToList();
+                Assert.That(notifications.Where(n => n.Message?.Contains("store-task-config") ?? false), Is.Empty,
+                    $"The {operation} warned about the option: {string.Join(" | ", notifications.Select(n => $"{n.Type} {n.Title}: {n.Message}"))}");
+            }
+
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+            AssertNoWarningForTheOption("backup");
+
+            await DirectoryDeleteSafeAsync(this.RESTOREFOLDER).ConfigureAwait(false);
+            Directory.CreateDirectory(this.RESTOREFOLDER);
+            await RestoreAndVerifyAsync(httpClient, backupId, backupPassphrase, this.RESTOREFOLDER, "Sample content").ConfigureAwait(false);
+            AssertNoWarningForTheOption("restore");
+
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/verify").ConfigureAwait(false);
+            AssertNoWarningForTheOption("verify");
+
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/compact").ConfigureAwait(false);
+            AssertNoWarningForTheOption("compact");
+
+            // The backup still stores the task configuration
+            var configResponse = await httpClient.PostAsync($"/api/v1/backup/{backupId}/restore-task-config", null).ConfigureAwait(false);
+            configResponse.EnsureSuccessStatusCode();
+            var storedConfig = await configResponse.Content.ReadFromJsonAsync<JsonElement>(JsonOptions).ConfigureAwait(false);
+            Assert.That(storedConfig.ValueKind == JsonValueKind.Array ? storedConfig.GetArrayLength() : -1, Is.EqualTo(1),
+                $"The backup did not store its task configuration: {storedConfig}");
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Waits until the task is no longer current, so its result has been stored.
     /// </summary>
     private static async Task WaitForTaskResultAsync(long taskId)
