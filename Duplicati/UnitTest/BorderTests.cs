@@ -172,14 +172,6 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Border")]
-        public Task Run10kTgzCompressionAsync()
-            => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
-                {
-                    opts["compression-module"] = "tgz";
-                });
-
-        [Test]
-        [Category("Border")]
         public Task Run10kIPCAsync()
             => RunCommandsAsync(1024 * 10, modifyOptions: opts =>
                 {

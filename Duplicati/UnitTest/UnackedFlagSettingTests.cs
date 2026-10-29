@@ -90,7 +90,8 @@ public class UnackedFlagSettingTests
     public void Setup()
     {
         dataFolder = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        Directory.CreateDirectory(dataFolder);
+        // Not created here: the server creates the folder and locks it down,
+        // whereas a folder that already exists is rejected for its inherited permissions
 
         var options = new Dictionary<string, string>
         {
