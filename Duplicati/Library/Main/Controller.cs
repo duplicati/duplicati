@@ -1689,15 +1689,27 @@ namespace Duplicati.Library.Main
 
                         if (!fi.Exists)
                         {
-                            // If the directory exists, but is empty, and we are not allowed to have empty sources, throw an error
+                            // Listing the folder also shows that it can be read. One that cannot, as on a
+                            // failed drive, would be backed up without any of its files, and that version
+                            // would push out the previous ones. A missing source is only skipped when allowed,
+                            // and an unreadable one is treated the same way.
                             try
                             {
-                                if (options.PreventEmptySource && di.Exists && !di.EnumerateFileSystemInfos().Any())
-                                    throw new UserInformationException(Strings.Controller.SourceFolderEmptyError(inputsource), "SourceFolderEmpty");
+                                if (di.Exists && (options.PreventEmptySource || !options.AllowMissingSource))
+                                {
+                                    // If the directory exists, but is empty, and we are not allowed to have empty sources, throw an error
+                                    var isEmpty = !di.EnumerateFileSystemInfos().Any();
+                                    if (options.PreventEmptySource && isEmpty)
+                                        throw new UserInformationException(Strings.Controller.SourceFolderEmptyError(inputsource), "SourceFolderEmpty");
+                                }
                             }
                             catch (UnauthorizedAccessException ex)
                             {
                                 throw new UserInformationException(Strings.Controller.SourceUnauthorizedError(inputsource), "SourceUnauthorized", ex);
+                            }
+                            catch (IOException ex)
+                            {
+                                throw new UserInformationException(Strings.Controller.SourceUnreadableError(inputsource, ex.Message), "SourceUnreadable", ex);
                             }
 
                             source = Util.AppendDirSeparator(source);
