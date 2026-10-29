@@ -1,3 +1,210 @@
+2026-10-29 - 2.4.1.0_stable_2026-10-29
+==========
+# About this release
+
+This release builds on version 2.4.0.1 with a large number of bug fixes, and adds three new features: incremental (delta) backups of Microsoft 365 and Google Workspace, and restore tests that can run after backups and be switched on remotely from the console.
+
+The local database format is updated by this release. See "Downgrading" below before going back to an earlier version.
+
+## Delta walk for Microsoft 365 and Google Workspace
+
+Microsoft 365 and Google Workspace backups no longer need to list every item on every run. The providers now store a delta token with each backup and use the Microsoft Graph and Google change APIs, so later backups list only what was created, changed, moved or removed since the previous backup and carry the rest forward from it.
+
+For Microsoft 365 this covers mail folders, SharePoint and group document libraries. For Google Workspace it covers Gmail, Drive, Calendar and Contacts. Delta tracking is enabled by default. The first backup, the first backup after the local database is recreated, and the backup after one that was stopped still list everything in full.
+
+Delta tracking can be turned off per service with `--office365-disable-mail-delta`, `--office365-disable-drive-delta`, `--google-disable-gmail-delta`, `--google-disable-drive-delta`, `--google-disable-calendar-delta` and `--google-disable-contacts-delta`. If a document library reports more changes than `--office365-drive-delta-max-items` or `--google-drive-delta-max-items`, the library is listed in full instead.
+
+A backup that combines a Microsoft 365 or Google Workspace source with the USN change journal or `--changed-files` is now refused with an error, as the two mechanisms cannot be combined.
+
+## Restore tests
+
+A new restore test operation restores a sample of a backup from the remote destination into a temporary folder and verifies it, so the backup is regularly proven to be restorable. It is available as the `restore-test` command in the command line and in ServerUtil, and through the server API.
+
+The sample is chosen with `--restore-test-mode`: a number of random files, a percentage of the backup size, every file, or a rolling mode that prefers files that have not been verified recently. The test can be limited with `--restore-test-max-download-size` and `--restore-test-max-runtime`, can rebuild a temporary database from the destination with `--restore-test-recreate-database`, and can compare the restored files with the source files with `--restore-test-compare-source`.
+
+Set `--perform-restore-test-after` to run a restore test as the last step of a backup whenever the previous test is older than the given interval. When the machine is connected to the Duplicati console, the console can set this interval for its backups, so restore tests can be switched on remotely. A restore test after a backup does not change the result of the backup, but a failed test is reported with its own notification.
+
+## Improved support for Sync jobs
+
+With this version, Sync jobs now store their logs so the logs can be viewed after the job has completed. Several places where the Sync job was showing options that were only relevant to restores are now updated.
+
+## Other new features
+
+- Backup versions can be given a label with the `set-version-label` command. The labels are also stored on the destination, so a database recreate keeps them.
+- Point-in-time access to a destination: with `--remote-point-in-time`, the S3 and Duplicati Storage destinations read the destination as it was at the given time, using bucket versioning. The destination is read-only in this mode.
+- Report modules can send reports for other operations than backups, chosen with `--send-http-operations`, `--send-mail-operations`, `--send-xmpp-operations` and `--send-telegram-operations`. Backup reports remain the default.
+- A restore on an existing backup can now carry additional advanced options.
+- The new `--disable-secret-provider` option disables the default secret provider, the configured secret provider, or both. `--disable-default-secret-provider` still works but is deprecated. The server now also reports which secret provider is active.
+- Duplicati Storage can be used as a secondary target, and supports object locking.
+- Uploads to Google Cloud Storage now carry a CRC32 checksum.
+- SMB servers that require SMB 3.1.1 can be used with `--enable-smb311`.
+- Neon Object Storage has been added to the list of S3 providers.
+
+## Changed behavior
+
+- A backup that asks for object locks on a bucket or container that does not have locking enabled now completes with a warning that no locks were applied, instead of failing. This applies to S3, B2, Azure, Google Cloud Storage and Duplicati Storage.
+- Options in source and destination urls are now validated, so an option that no module supports is reported with a warning.
+- The Microsoft 365 site classifications "Classic" and "Communication" have been removed, as they never matched any site.
+- When a restore does not specify overwrite, restore permissions or skip metadata, the settings of the backup and the server defaults now apply instead of turning them off.
+
+## Downgrading
+
+This release updates the local database from version 19 to version 22 and the sync database to version 1. Version 2.4.0.1 cannot open the newer databases. To go back to 2.4.0.1, downgrade the databases with the DatabaseTool `downgrade` command first. Its default target versions now match 2.4.0.1, so no version options are needed.
+
+## Fixes
+
+Aborting a backup no longer waits for a stuck source listing, file open, size or metadata read, and a stop or abort that arrives before the operation is ready is kept.
+
+Restores keep an appended file when restoring without `--overwrite`, do not read through a link when restoring a symbolic link to a file, keep the drive letter folder when restoring Windows paths in place, and stop when `--restore-path` has no value. A partial restore no longer warns about the folders it has to create. Repair keeps the time and order of the versions when it replaces missing dlist files, and a later database recreate keeps them too.
+
+On Windows, a local folder destination whose url contains `@` or carries options in its query string is now read correctly, and symbolic links created by WSL are backed up as links. Backups leave the write-ahead log files of their own database out.
+
+The server and tray icon have fixes to notifications, task state, pause and resume events, preload settings, update checks, the login token cookie behind a reverse proxy, and the Agent. Control file restores are protected against path traversal, and the recovery tool and the Agent pre-shared key have been hardened.
+
+Backend fixes include Jottacloud timeouts and parallel downloads, Storj uploads, WebDAV listings on Windows and Linux, the S3 list API version option, HashiCorp Vault JSON secrets, GnuPG on slow systems, and the User-Agent header sent by WebDAV, pCloud and the updater.
+
+SQLite has been updated to 3.54.0, built for older Linux distributions, and StreamJsonRpc and MimeKit have been updated for security advisories.
+
+## Detailed list of changes:
+
+- Delta walk for Microsoft 365
+- Add delta-tracking for Google Workspace
+- Add restore test command
+- Added support for server-side restore tests
+- Move restore-test API to v2
+- Allow "Reason" in test restore reports
+- Add labels to backup versions
+- Added point-in-time-restore support
+- Improve object lock support
+- Support locking with Duplicati storage
+- Support Duplicati Storage as secondary target
+- Add support for choosing report operations
+- Add support for advanced options in restore
+- Let configured defaults apply when restore options are not specified
+- Add secret-provider disable switches
+- Added support for reporting the current secret provider
+- Add CRC32 to uploads to GCS
+- Fixed a bug in GCS resume handling, where a 308 response was treated as a failure
+- Add an option to connect to SMB servers that require SMB 3.1.1
+- Add Neon Object Storage to the S3 provider list
+- Improve MS365 enumeration and warning noise
+- Fix MS365 group classifications
+- Better retry backoff for Google Workspace
+- Fix incorrect permission check for Google Workspace
+- Store BackendSourceProvider metadata
+- Fix BackendSourceProvider listing
+- Add logs to sync operation
+- Reduced logging for multi-destination
+- Stop waiting for a stuck source listing when the backup is aborted
+- Stop waiting for a stuck source file open when the backup is aborted
+- Stop waiting for a stuck size or metadata read when the backup is aborted
+- Keep a stop or abort that comes before the operation is ready
+- Wait a second before a backup that starts in the same second as the previous version
+- Keep the messages of the file count pass out of the backup log
+- Show the totals of the previous backup when the file scanner is disabled
+- Do not show a negative number of files to go in the old UI
+- Show 100% for an empty file in the old UI progress
+- Leave the write-ahead log files of the backup's own database out of it
+- Keep a source file that the USN journal reports as changed
+- Read symlinks made by WSL as symlinks on Windows
+- Read xattr values of followed symlinks from the target
+- Read owner and permissions of followed symlinks from the target
+- Fix corrupted target URL for local paths containing @
+- Keep the query string of Windows file urls
+- Keep an appended file when restoring without --overwrite
+- Do not read through a link when restoring a symbolic link to a file
+- Do not chmod the target when restoring symlink metadata
+- Keep the drive letter folder when restoring Windows paths in place
+- Stop a restore when --restore-path has no value
+- Do not warn about the folders a partial restore has to make
+- Report an empty file that cannot be created as not restored
+- Release the files waiting for a priority file that is given up
+- Skip restored file verification in a legacy dry run
+- Drop the entries below a root the old UI restore picker selects
+- Keep version order when repair replaces missing dlist files
+- Keep the fileset time when replacing a missing dlist file
+- Record the fileset time in the dlist so a recreate keeps it
+- Fix control files path traversal
+- Harden recovery tool
+- Harden Agent PSK
+- Set the refresh token cookie for the host the browser asked
+- Reject an invalid retention policy when a backup is saved
+- Add an endpoint that dismisses all notifications at once
+- Read single notifications by ID instead of loading all of them
+- Only save the unacknowledged notification flags when they change
+- Replace a backup's notification on every run, not only on success
+- Report a finished task as running until its result is stored
+- Send pause and resume events in the order the state changed
+- Do not keep the pause for a suspend over a restart
+- Fix VACUUM startup race
+- Downgrade the status message errors
+- Log information messages that were passed a null exception
+- Fix Template report output rendering the fallback with empty values
+- Fix issue with loading base64 encoded key
+- Keep the newest server state in the tray icon
+- Let the tray icon log in once for requests running together
+- Show the preload debug output in the tray icon, and let 0 turn it off
+- Fixed a startup crash after Avalonia update
+- Read the preload settings in AutoUpdater and Snapshots
+- Read the preload settings in SyncTool and AutoTuneTool
+- Give DatabaseTool, SourceTool and SecretTool their own preload keys
+- Stop update checks when AUTOUPDATER_Duplicati_SKIP_UPDATE is set
+- Avoid checking for updates in Debug builds
+- Pass --ping-pong-keepalive from the Agent to the hosted server
+- Stop the Agent server loop once the server has exited
+- Keep the server database out of DatabaseTool cleanup
+- Keep server-schema databases out of DatabaseTool cleanup
+- Keep sqlite files of other applications out of DatabaseTool cleanup
+- Let the DatabaseTool downgrade to the versions of 2.4.0.1 by default
+- Read the HashiCorp Vault secret values that arrive as JSON elements
+- Upload to Storj without an expiry time
+- Collect every Jottacloud chunk before ending a parallel download
+- Observe read-write-timeout on Jottacloud downloads and listings
+- Strip trailing nulls from WebDAV directory listings on Windows
+- Read WebDAV hrefs that are only a path relative to the server on Linux
+- Send the WEBDAV and pCloud User-Agent under its real header name
+- Send the updater User-Agent under its real header name
+- Read --s3-list-api-version in the AWS S3 client
+- Wait for GnuPG to finish instead of giving up after five seconds
+- Fix incorrect help texts
+- Bump SQLite to 3.54.0
+- Update StreamJsonRpc to 2.26.150 for the MessagePack advisory
+- Update MimeKit to 4.18.2 for the Pkcs advisories
+
+## Updates to ngclient
+
+Updated ngclient from 0.0.238 to 0.0.244:
+
+- Added a search field to the start page, shown when there are more than 3 backups
+- Added tooltips with the exact time to the times on the start page
+- Added support for advanced options when restoring
+- Added support for showing the logs of sync jobs
+- Added Neon Object Storage as an S3 provider
+- Improved the display of sync jobs on the start page
+- Improved the display of hidden and excluded files in the file tree
+- Improved search results to show display names for the folders above a match
+- Sync jobs are no longer offered as a source for restores
+- Deleting a sync job no longer offers to delete the remote files
+- Dismissing all notifications now uses a single request
+- Backup progress no longer exceeds the estimated totals
+- Fixed new schedules starting at a time that has already passed
+- Fixed default schedule dates not using the local date
+- Fixed weekly schedules skipping the current day when the preset time had not passed yet
+- Fixed a single wildcard being lost in expression filters
+- Fixed browsing a remote source for a saved destination
+- Fixed remote sources calling the wrong API endpoint when browsing
+- Fixed a leading `/` being added to Windows paths when creating a folder
+- Fixed encoded question marks in file destination paths being lost
+- Fixed the log buttons not showing correctly, and the suppress buttons not capturing all log tags
+- Fixed the size of the export commandline text box
+- Fixed dismissing a notification while the list is filtered
+- Fixed notifications being removed when the deletion failed
+- Fixed invalid progress percentages for empty files
+- Fixed dialogs opened from another dialog
+- Fixed the UI starting before the translations were loaded
+- Fixed cancelled task waits, restore progress and custom remote dialogs not cleaning up
+- Updated npm dependencies
+
 2026-10-07 - 2.4.0.1_stable_2026-10-07
 ==========
 # About this release
