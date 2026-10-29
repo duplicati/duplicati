@@ -165,7 +165,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         if (ex.IsAbortException() && taskreader.ProgressToken.IsCancellationRequested)
                             continue;
 
-                        LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "FileProcessingFailed", e.Entry.Path);
+                        LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "FileProcessingFailed", e.Entry.Path, e.Entry.Attributes, "Failed to process path: {0}");
                     }
                 }
             });
