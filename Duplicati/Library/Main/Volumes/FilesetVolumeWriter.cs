@@ -223,13 +223,15 @@ namespace Duplicati.Library.Main.Volumes
         /// <param name="filesetTime">
         /// The time of the fileset, when it differs from the time in this volume's filename.
         /// Only needed when replacing a dlist file, which has to be given a new name and
-        /// therefore a new time. Leave it out to keep using the filename.
+        /// therefore a new time. Leave it out when the fileset has the time of the filename.
         /// </param>
         public void CreateFilesetFile(bool isFullBackup, DateTime? filesetTime = null)
         {
+            // The time is recorded even when it is the time in the filename: a failed upload
+            // is retried under a later name, and a recreate would otherwise take that time.
             using (var sr = new StreamWriter(this.m_compression.CreateFile(FILESET_FILENAME, CompressionHint.Compressible, DateTime.UtcNow), ENCODING))
             {
-                sr.Write(FilesetData.GetFilesetInstance(isFullBackup, filesetTime));
+                sr.Write(FilesetData.GetFilesetInstance(isFullBackup, filesetTime ?? ParseFilename(RemoteFilename).Time));
             }
         }
 
