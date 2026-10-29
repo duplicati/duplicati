@@ -192,5 +192,34 @@ namespace Duplicati.UnitTest
             var encoded = new Library.Utility.Uri("file://c:\\%40folder\\");
             Assert.AreEqual(a.Path, encoded.Path);
         }
+
+        [Test]
+        [Category("UriUtility")]
+        public static void TestWindowsFileUrlKeepsTheQueryString()
+        {
+            // A file:// url with an encoded Windows path can still carry a query
+            // string, e.g. the file backend option "use-move-for-put". The query
+            // must be mapped to Query/QueryParameters and not swallowed into the
+            // local path.
+            var uri = new Library.Utility.Uri("file:///C%3A%5CDownloads%5C?use-move-for-put=true");
+
+            Assert.AreEqual("file", uri.Scheme);
+            Assert.IsNull(uri.Host, "Host should be null for a local path");
+            Assert.AreEqual("use-move-for-put=true", uri.Query);
+            Assert.AreEqual("true", uri.QueryParameters["use-move-for-put"]);
+            Assert.IsFalse(uri.Path.Contains("?"), "The query delimiter must not be part of the path");
+            Assert.IsFalse(uri.Path.Contains("use-move-for-put"), "The query must not be part of the path");
+
+            // The query survives being written out and parsed again
+            var roundtrip = new Library.Utility.Uri(uri.ToString());
+            Assert.AreEqual("use-move-for-put=true", roundtrip.Query);
+            Assert.AreEqual(uri.Path, roundtrip.Path);
+
+            // An encoded %3F is not a query delimiter; following standard query
+            // string logic it stays part of the path and no query is mapped
+            var encoded = new Library.Utility.Uri("file:///C%3A%5CDownloads%5%3Fuse-move-for-put%3Dtrue");
+            Assert.IsNull(encoded.Query, "An encoded %3F must not start a query string");
+            Assert.IsNull(encoded.QueryParameters["use-move-for-put"]);
+        }
     }
 }
