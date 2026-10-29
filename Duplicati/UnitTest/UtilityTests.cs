@@ -730,6 +730,31 @@ namespace Duplicati.UnitTest
             var hostEx = Assert.Throws<ArgumentException>(() => new RelaxedUri("ftp://user:hunter2@/path").RequireHost());
             StringAssert.DoesNotContain("hunter2", hostEx.Message);
         }
+
+        [Test]
+        [Category("Utility")]
+        public static async Task TimeoutWrappersLeaveTheCallersStreamOpen()
+        {
+            // Backends wrap the caller's stream without taking ownership of it, and callers
+            // keep using the stream afterwards, for example to rewind it for a retry
+            var wrappers = new Func<Stream, Stream>[] {
+                s => s.ObserveReadTimeout(TimeSpan.FromSeconds(30), false),
+                s => s.ObserveWriteTimeout(TimeSpan.FromSeconds(30), false)
+            };
+            var disposers = new Func<Stream, Task>[] {
+                s => { s.Dispose(); return Task.CompletedTask; },
+                s => { s.Close(); return Task.CompletedTask; },
+                s => s.DisposeAsync().AsTask()
+            };
+
+            foreach (var wrap in wrappers)
+                foreach (var dispose in disposers)
+                {
+                    using var stream = new MemoryStream();
+                    await dispose(wrap(stream));
+                    Assert.IsTrue(stream.CanRead, "The wrapped stream was closed when the wrapper was disposed");
+                }
+        }
     }
 
     /// <summary>

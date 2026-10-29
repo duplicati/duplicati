@@ -182,6 +182,11 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                     if (status != NTStatus.STATUS_SUCCESS)
                         throw new UserInformationException($"{LC.L("Failed to close file on DeleteAsync")} with status {status}", "CloseFileError");
                 }
+                else
+                {
+                    // The file could not be opened, so it was not deleted
+                    throw new UserInformationException($"{LC.L("Failed to open file on DeleteAsync")} {fileName} with status {status}", "DeleteFileError");
+                }
             }).ConfigureAwait(false);
         }
         finally
@@ -620,6 +625,11 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                     status = _smbFileStore.CloseFile(fileHandle);
                     if (status != NTStatus.STATUS_SUCCESS)
                         throw new UserInformationException($"{LC.L("Failed to close file on RenameAsync")} with status {status}", "CloseFileError");
+                }
+                else
+                {
+                    // The file could not be opened, so it was not renamed
+                    throw new UserInformationException($"{LC.L("Failed to open file on RenameAsync")} {oldname} with status {status}", "RenameFileError");
                 }
             }).ConfigureAwait(false);
         }

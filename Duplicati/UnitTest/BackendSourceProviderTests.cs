@@ -30,6 +30,7 @@ using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.SourceProvider;
+using Duplicati.Library.Utility;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest;
@@ -121,6 +122,62 @@ public class BackendSourceProviderTests
 
         public Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
             => stream.WriteAsync(new byte[deliveredSize], 0, deliveredSize, cancelToken);
+
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
+        public Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+            => Task.FromResult<IFileEntry?>(new FileEntry("folder", 0, TIMESTAMP, TIMESTAMP, true, false) { Created = TIMESTAMP });
+        public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken) => throw new NotImplementedException();
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken) => throw new NotImplementedException();
+        public Task GetAsync(string remotename, string filename, CancellationToken cancelToken) => throw new NotImplementedException();
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken) => throw new NotImplementedException();
+        public Task TestAsync(bool alsoWrite, CancellationToken cancelToken) => Task.CompletedTask;
+        public Task CreateFolderAsync(CancellationToken cancelToken) => Task.CompletedTask;
+        public void Dispose() { }
+    }
+
+    /// <summary>
+    /// A streaming backend that downloads through a write timeout without owning the target stream,
+    /// as the SMB, SSH and WebDAV backends do, so a stalled reader makes the download time out
+    /// </summary>
+    private sealed class StallingBackend : IFolderEnabledBackend, IStreamingBackend
+    {
+        /// <summary>
+        /// The size of each write
+        /// </summary>
+        public const int ChunkSize = 1024 * 1024;
+
+        /// <summary>
+        /// The size reported when listing the file
+        /// </summary>
+        public const int ListedSize = 8 * ChunkSize;
+
+        /// <summary>
+        /// The time a single write may take before the download times out
+        /// </summary>
+        public static readonly TimeSpan WriteTimeout = TimeSpan.FromSeconds(1);
+
+        public string DisplayName => "Stalling Backend";
+        public string ProtocolKey => "stalling";
+        public string Description => "A testing backend";
+        public IList<ICommandLineArgument> SupportedCommands => [];
+        public bool SupportsStreaming => true;
+
+        public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            await Task.CompletedTask.ConfigureAwait(false);
+            yield return new FileEntry("file.txt", ListedSize, TIMESTAMP, TIMESTAMP, false, false) { Created = TIMESTAMP };
+        }
+
+        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken)
+            => ListAsync("", cancellationToken);
+
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
+        {
+            using var timeoutStream = stream.ObserveWriteTimeout(WriteTimeout, false);
+            var chunk = new byte[ChunkSize];
+            for (var written = 0; written < ListedSize; written += ChunkSize)
+                await timeoutStream.WriteAsync(chunk, 0, chunk.Length, cancelToken).ConfigureAwait(false);
+        }
 
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
         public Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
@@ -326,5 +383,24 @@ public class BackendSourceProviderTests
     public void EmptyStreamedReadOfNonEmptyFileThrows()
     {
         Assert.ThrowsAsync<IOException>(() => ReadTruncatingFileAsync(0));
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public async Task TimedOutStreamedReadReportsTheTimeoutAsync()
+    {
+        using var provider = new BackendSourceProvider(new StallingBackend(), "/mnt/stub/", "stalling://host/path");
+        var root = await provider.EnumerateAsync(CancellationToken.None).SingleAsync();
+        var child = await root.Enumerate(CancellationToken.None).SingleAsync();
+        using var stream = await child.OpenRead(CancellationToken.None);
+
+        // Stall the reader past the write timeout while the download is still in progress.
+        // Disposing the timeout wrapper must not complete the pipe, or the reader sees the
+        // end of the stream instead of the timeout and only the truncation is reported.
+        var buffer = new byte[StallingBackend.ChunkSize];
+        await stream.ReadAtLeastAsync(buffer, buffer.Length);
+        await Task.Delay(StallingBackend.WriteTimeout * 2);
+
+        Assert.ThrowsAsync<TimeoutException>(() => stream.CopyToAsync(Stream.Null));
     }
 }
