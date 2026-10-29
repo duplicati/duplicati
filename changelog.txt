@@ -1237,7 +1237,7 @@ This release extends the full disk backup feature to include NTFS support on Win
 
 # New Auto-Tune tool
 
-This release also introduces a new AutoTune tool (`Duplicati.CommandLine.AutoTuneTool` / `duplicati-autotune`), designed to help evaluate and optimize performance-related settings automatically based on the system.
+This release also introduces a new AutoTune tool (`Duplicati.CommandLine.AutoTuneTool` / `duplicati-autotune-tool`), designed to help evaluate and optimize performance-related settings automatically based on the system.
 
 # Read-only testing of backends
 
