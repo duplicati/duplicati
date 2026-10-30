@@ -761,6 +761,10 @@ namespace Duplicati.CommandLine
                         if (output.FullResults)
                             Library.Utility.Utility.PrintSerializeObject(res, outwriter);
 
+                        // Files that could not be restored are reported as errors, while the other files are restored
+                        if (res.ParsedResult == Library.Interface.ParsedResultType.Error)
+                            return 3;
+
                         if (res.Warnings.Any())
                             return 2;
                     }
