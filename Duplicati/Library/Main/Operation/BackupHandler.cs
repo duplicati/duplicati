@@ -752,6 +752,8 @@ namespace Duplicati.Library.Main.Operation
                 using (var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
                 {
                     long filesetid;
+                    // A stop before the files are processed leaves the fileset without any of them
+                    var stoppedBeforeProcessing = false;
                     using var counterToken = CancellationTokenSource.CreateLinkedTokenSource(m_taskReader.ProgressToken);
                     using (var source = await GetSourceProviderAsync(sources, m_options, m_taskReader.ProgressToken).ConfigureAwait(false))
                     {
@@ -832,6 +834,10 @@ namespace Duplicati.Library.Main.Operation
                                 var stats = new Backup.BackupStatsCollector(m_result);
                                 await RunMainOperationAsync(channels, source, journalService, changeTracking, db, backendManager, stats, m_options, m_filter, m_result, m_result.TaskControl, filesetid, lastfilesetid).ConfigureAwait(false);
                             }
+                            else
+                            {
+                                stoppedBeforeProcessing = true;
+                            }
                         }
                         finally
                         {
@@ -886,7 +892,7 @@ namespace Duplicati.Library.Main.Operation
                         .ConfigureAwait(false);
 
                     // Send the actual filelist
-                    var uploadedNewFileset = await Backup.UploadRealFilelist.RunAsync(m_result, db, backendManager, m_options, filesetvolume, filesetid, m_result.TaskControl, lastTempVolumeIncomplete)
+                    var uploadedNewFileset = await Backup.UploadRealFilelist.RunAsync(m_result, db, backendManager, m_options, filesetvolume, filesetid, m_result.TaskControl, lastTempVolumeIncomplete, stoppedBeforeProcessing)
                         .ConfigureAwait(false);
 
                     // Warn if the backup examined only folders and/or symlinks but no actual files,
