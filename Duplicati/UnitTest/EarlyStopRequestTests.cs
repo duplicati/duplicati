@@ -24,6 +24,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Duplicati.Library.Main;
@@ -76,6 +77,49 @@ public class EarlyStopRequestTests : BasicSetupHelper
         var result = await c.BackupAsync(new[] { DATAFOLDER });
 
         Assert.That(result.Interrupted, Is.True, "A stop asked for before the backup started should stop it");
+    }
+
+    /// <summary>
+    /// A backup stopped before it processed any files has nothing to store. It must not upload an
+    /// empty version, which would be the latest one and count every file as deleted, nor warn
+    /// that the source looks misconfigured (#7628).
+    /// </summary>
+    [Test]
+    [Category("Targeted")]
+    public async Task AStopBeforeAnyFileIsProcessedCreatesNoVersion()
+    {
+        WriteSourceFiles();
+        using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
+            Assert.That((await c.BackupAsync(new[] { DATAFOLDER })).ExaminedFiles, Is.EqualTo(20));
+
+        using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
+        {
+            await c.StopAsync();
+            var result = await c.BackupAsync(new[] { DATAFOLDER });
+
+            Assert.That(result.Interrupted, Is.True);
+            Assert.That(result.Warnings, Has.None.Contains("NoFilesInBackup"));
+            Assert.That(result.DeletedFiles, Is.Zero, "Files that were not looked at were reported as deleted");
+        }
+
+        Assert.That(Directory.GetFiles(TARGETFOLDER, "*.dlist.*"), Has.Length.EqualTo(1), "The stopped backup uploaded a version");
+        using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
+        {
+            var filesets = (await c.ListAsync()).Filesets.ToList();
+            Assert.That(filesets, Has.Count.EqualTo(1));
+            Assert.That(filesets[0].FileCount, Is.EqualTo(20));
+        }
+
+        // The next backup is not affected
+        using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
+        {
+            File.WriteAllText(Path.Combine(DATAFOLDER, "later"), "later");
+            var result = await c.BackupAsync(new[] { DATAFOLDER });
+            Assert.That(result.Errors, Is.Empty);
+            Assert.That(result.Warnings, Is.Empty);
+            Assert.That(result.AddedFiles, Is.EqualTo(1));
+            Assert.That(result.DeletedFiles, Is.Zero);
+        }
     }
 
     [Test]
