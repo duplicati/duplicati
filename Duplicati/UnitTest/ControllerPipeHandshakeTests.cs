@@ -95,11 +95,17 @@ public class ControllerPipeHandshakeTests
         await client.ConnectAsync(timeout.Token);
         await accept;
 
-        // The token line is followed by the first RPC message, which must stay in the stream
-        ControllerPipeHandshake.WriteToken(client, token);
+        // The token line is followed by the first RPC message, which must stay in the stream.
+        // On Windows the pipe has no buffer, so a write only returns once the other end has read
+        // it, and writing before reading in one sequence never returns. The client writes alongside
+        // the reads, as the controller process does.
         var nextMessage = Encoding.ASCII.GetBytes("{\"jsonrpc\":\"2.0\"}\n");
-        await client.WriteAsync(nextMessage, timeout.Token);
-        await client.FlushAsync(timeout.Token);
+        var write = Task.Run(async () =>
+        {
+            ControllerPipeHandshake.WriteToken(client, token);
+            await client.WriteAsync(nextMessage, timeout.Token);
+            await client.FlushAsync(timeout.Token);
+        });
 
         var received = await ControllerPipeHandshake.ReadTokenAsync(server, timeout.Token);
         Assert.IsTrue(ControllerPipeHandshake.TokensMatch(token, received));
@@ -116,6 +122,7 @@ public class ControllerPipeHandshakeTests
             read += n;
         }
         Assert.AreEqual(nextMessage, rest);
+        await write;
     }
 
     [Test]
