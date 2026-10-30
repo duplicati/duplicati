@@ -34,7 +34,8 @@ namespace Duplicati.UnitTest
 {
     /// <summary>
     /// Runs a backup that sends its report to a local HTTP receiver, and checks that
-    /// values containing regex substitution sequences ($&amp;, $1, $$, ...) arrive literally.
+    /// values containing regex substitution sequences ($&amp;, $1, $$, ...) arrive literally,
+    /// and that template keys and values containing '%' or regex characters are not expanded again.
     /// </summary>
     [TestFixture]
     [Category("ReportHelper")]
@@ -105,10 +106,10 @@ namespace Duplicati.UnitTest
         /// <summary>
         /// Runs a backup of <see cref="SourceFolder"/> and returns the single report body received
         /// </summary>
-        private async Task<string> BackupAndReceiveAsync(Dictionary<string, string> reportOptions, bool form)
+        private async Task<string> BackupAndReceiveAsync(Dictionary<string, string> reportOptions, bool form, string fileName = DOLLAR_TEXT + ".txt")
         {
             Directory.CreateDirectory(SourceFolder);
-            File.WriteAllText(Path.Combine(SourceFolder, DOLLAR_TEXT + ".txt"), "content");
+            File.WriteAllText(Path.Combine(SourceFolder, fileName), "content");
 
             using var receiver = new Receiver();
             var options = new Dictionary<string, string>(TestOptions)
@@ -174,6 +175,31 @@ namespace Duplicati.UnitTest
             }, form: true);
 
             Assert.That(body, Does.Contain(DOLLAR_TEXT + ".txt"), "The log line with the file name should arrive literally");
+        }
+
+        [Test]
+        public async Task ResultKeepsPercentSequences()
+        {
+            // A template key and a '%...%' pair inside a log line of the result
+            const string fileName = "percent-%backup-name%-50%-x%-end.txt";
+            var body = await BackupAndReceiveAsync(new Dictionary<string, string>
+            {
+                ["backup-name"] = "expanded",
+            }, form: true, fileName: fileName);
+
+            Assert.That(body, Does.Contain(fileName), "The log line with the file name should arrive literally");
+        }
+
+        [Test]
+        public async Task TemplateKeysWithRegexCharactersMatchLiterally()
+        {
+            var body = await BackupAndReceiveAsync(new Dictionary<string, string>
+            {
+                ["send-http-message"] = "paren=[%a(b%] dot=[%a.c%] other=[%abc%]",
+                ["send-http-extra-parameters"] = "{\"a(b\": \"paren\", \"a.c\": \"dot\"}",
+            }, form: true);
+
+            Assert.That(body, Is.EqualTo("paren=[paren] dot=[dot] other=[]"));
         }
 
         [Test]
