@@ -246,7 +246,7 @@ namespace Duplicati.Library.Backend
                 await m_client.GetObjectAsync(new GetObjectArgs().WithBucket(bucketName).WithObject(keyName).WithCallbackStream(
                     (stream) =>
                     {
-                        using var t = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true, TimeoutMode.Call);
+                        using var t = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call);
                         Utility.Utility.CopyStream(t, target);
                     })).ConfigureAwait(false);
             }

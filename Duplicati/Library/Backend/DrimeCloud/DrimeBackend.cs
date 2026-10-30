@@ -374,7 +374,7 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
 
         // Fallback to form data for small files and streams where we can't read the length
         var content = new MultipartFormDataContent();
-        using var fileContent = new StreamContent(stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, true, TimeoutMode.Gap));
+        using var fileContent = new StreamContent(stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap));
         content.Add(fileContent, "file", remotename);
         content.Add(new StringContent(_workspaceId.ToString()), "workspaceId");
 

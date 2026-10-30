@@ -295,7 +295,7 @@ public class TahoeBackend : IStreamingBackend, IRenameEnabledBackend
         resp.EnsureSuccessStatusCode();
 
         await using var s = await resp.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
-        await using var t = s.ObserveReadTimeout(_timeouts.ReadWriteTimeout, true, TimeoutMode.Call);
+        await using var t = s.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Call);
         await Utility.Utility.CopyStreamAsync(t, stream, true, cancelToken).ConfigureAwait(false);
     }
 

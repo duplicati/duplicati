@@ -503,7 +503,7 @@ namespace Duplicati.Library.Backend
                     response.Content.ReadAsStreamAsync(ct)
                 ).ConfigureAwait(false);
 
-                using var timeoutStream = sourceStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true, TimeoutMode.Call);
+                using var timeoutStream = sourceStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call);
                 if (!string.IsNullOrWhiteSpace(m_debugPropfindFile))
                 {
                     // Write the response to a file for debugging purposes

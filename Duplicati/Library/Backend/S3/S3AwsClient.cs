@@ -249,7 +249,7 @@ namespace Duplicati.Library.Backend
 
                 using (var objectGetResponse = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_client.GetObjectAsync(objectGetRequest, ct)).ConfigureAwait(false))
                 using (var s = objectGetResponse.ResponseStream)
-                using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true, TimeoutMode.Call))
+                using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call))
                     await Utility.Utility.CopyStreamAsync(t, target, cancelToken).ConfigureAwait(false);
             }
             catch (AmazonS3Exception s3Ex)

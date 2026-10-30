@@ -394,7 +394,7 @@ namespace Duplicati.Library.Backend
                 string targetFilePath = GetRemoteName(targetFilename);
                 long copiedBytes = 0;
                 using (var targetStream = systemIO.FileCreate(targetFilePath))
-                using (var timeoutStream = targetStream.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout, true, TimeoutMode.Call))
+                using (var timeoutStream = targetStream.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call))
                     copiedBytes = await Utility.Utility.CopyStreamAsync(sourceStream, timeoutStream, true, cancelToken).ConfigureAwait(false);
 
                 VerifyMatchingSize(targetFilePath, sourceStream, copiedBytes);
@@ -415,7 +415,7 @@ namespace Duplicati.Library.Backend
             {
                 // FileOpenRead has flags System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read
                 using (var readstream = systemIO.FileOpenRead(GetRemoteName(remotename)))
-                using (var timeoutStream = readstream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true, TimeoutMode.Call))
+                using (var timeoutStream = readstream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call))
                     await Utility.Utility.CopyStreamAsync(timeoutStream, stream, true, cancelToken).ConfigureAwait(false);
             }
             catch (Exception ex)

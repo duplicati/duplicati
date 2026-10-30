@@ -275,7 +275,7 @@ namespace Duplicati.Library.Backend
             await DeleteAsync(remotename, token);
 
             var content = new MultipartFormDataContent();
-            using var timeoutStream = stream.ObserveReadTimeout(m_timeoutOptions.ReadWriteTimeout, true, TimeoutMode.Gap);
+            using var timeoutStream = stream.ObserveReadTimeout(m_timeoutOptions.ReadWriteTimeout, false, TimeoutMode.Gap);
             var fileContent = new StreamContent(timeoutStream);
             content.Add(fileContent, "file", remotename);
             if (folderId.HasValue)

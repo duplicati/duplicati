@@ -358,7 +358,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
             var req = await m_oauth.CreateRequestAsync(WebApi.GoogleDrive.GetUrl(fileId), HttpMethod.Get, cancelToken).ConfigureAwait(false);
             using var resp = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct)).ConfigureAwait(false);
             using var rs = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => resp.Content.ReadAsStreamAsync(ct)).ConfigureAwait(false);
-            using (var ts = rs.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true, TimeoutMode.Call))
+            using (var ts = rs.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call))
                 await Utility.Utility.CopyStreamAsync(ts, stream, cancelToken);
         }
 

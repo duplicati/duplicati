@@ -193,7 +193,7 @@ namespace Duplicati.Library.Backend.Mega
             var client = await GetClient(cancelToken).ConfigureAwait(false);
             var node = await GetFileNodeAsync(remotename, cancelToken).ConfigureAwait(false);
             using (var s = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ => client.Download(node)).ConfigureAwait(false))
-            using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true, TimeoutMode.Call))
+            using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call))
                 await Utility.Utility.CopyStreamAsync(t, stream, cancelToken).ConfigureAwait(false);
         }
 

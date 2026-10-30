@@ -367,7 +367,7 @@ public class OpenStackStorage : IStreamingBackend, IRenameEnabledBackend
             using var req = m_helper.CreateRequest(url);
             using var resp = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => m_helper.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct)).ConfigureAwait(false);
             await using var rs = await resp.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
-            await using var ts = rs.ObserveReadTimeout(_timeouts.ReadWriteTimeout, true, TimeoutMode.Call);
+            await using var ts = rs.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Call);
             await Utility.Utility.CopyStreamAsync(ts, stream, cancelToken).ConfigureAwait(false);
         }
         catch (HttpRequestException wex)

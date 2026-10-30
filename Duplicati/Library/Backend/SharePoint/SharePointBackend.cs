@@ -570,7 +570,7 @@ namespace Duplicati.Library.Backend
 
             using (var fileInfo = SP.File.OpenBinaryDirect(ctx, fileurl))
             using (var s = fileInfo.Stream)
-            using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true, TimeoutMode.Call))
+            using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call))
                 await Utility.Utility.CopyStreamAsync(t, stream, true, cancelToken).ConfigureAwait(false);
         }
 
@@ -644,7 +644,7 @@ namespace Duplicati.Library.Backend
                     bufCnt += lastreadsize;
 
                 using (var contentChunk = new MemoryStream(buf, 0, bufCnt, false))
-                using (var timeoutStream = contentChunk.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true, TimeoutMode.Gap))
+                using (var timeoutStream = contentChunk.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap))
                 {
                     ClientResult<long>? bytesUploaded = null;
                     if (uploadFile == null)

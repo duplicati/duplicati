@@ -776,7 +776,7 @@ namespace Duplicati.Library.Backend
         {
             CheckResponse(response);
             using (var responseStream = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => response.Content.ReadAsStreamAsync(ct)).ConfigureAwait(false))
-            using (var timeoutStream = responseStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true, TimeoutMode.Call))
+            using (var timeoutStream = responseStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call))
             using (var reader = new StreamReader(timeoutStream))
             {
                 var content = await reader.ReadToEndAsync().ConfigureAwait(false);
