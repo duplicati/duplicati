@@ -305,5 +305,37 @@ namespace Duplicati.Library.Main.Volumes
             throw new UserInformationException($"Failed to find an unused filename, tried {increment} * {maxTries} from {start}", "FailedToFindUnusedFilename");
 
         }
+
+        /// <summary>
+        /// Finds a time for a fileset that replaces an existing one, so its filelist gets a name of its own
+        /// while the fileset stays between its neighbours. The seconds after the original time are tried
+        /// first, then the seconds before it.
+        /// </summary>
+        /// <remarks>
+        /// Every rewrite moves a fileset by at least a second, and the replaced name stays registered, so
+        /// trying only the later seconds runs into the next fileset after a few rewrites.
+        /// </remarks>
+        /// <param name="isUsed">Tells whether a filelist name is taken</param>
+        /// <param name="options">The options to use for the filename</param>
+        /// <param name="original">The time of the fileset that is replaced</param>
+        /// <param name="previous">The time of the fileset before it, or <c>null</c> if it is the oldest</param>
+        /// <param name="next">The time of the fileset after it, or <c>null</c> if it is the newest</param>
+        /// <param name="cancellationToken">The cancellation token to use for the operation</param>
+        /// <param name="maxTries">The maximum number of seconds to try in each direction</param>
+        /// <returns>The time to use, or <c>null</c> if no second between the neighbours is free</returns>
+        internal static async Task<DateTime?> FindUnusedReplacementTimeAsync(Func<string, CancellationToken, Task<bool>> isUsed, Options options, DateTime original, DateTime? previous, DateTime? next, CancellationToken cancellationToken, int maxTries = 60)
+        {
+            var increment = TimeSpan.FromSeconds(1);
+
+            for (var (time, s) = (original + increment, 0); s < maxTries && (next == null || time < next); time += increment, s++)
+                if (!await isUsed(GenerateFilename(RemoteVolumeType.Files, options, null, time), cancellationToken).ConfigureAwait(false))
+                    return time;
+
+            for (var (time, s) = (original - increment, 0); s < maxTries && (previous == null || time > previous); time -= increment, s++)
+                if (!await isUsed(GenerateFilename(RemoteVolumeType.Files, options, null, time), cancellationToken).ConfigureAwait(false))
+                    return time;
+
+            return null;
+        }
     }
 }

@@ -173,6 +173,8 @@ namespace Duplicati.Library.Main.Operation
                 if (fully_emptied.Length == await db.FilesetTimesAsync(m_result.TaskControl.ProgressToken).CountAsync(cancellationToken: m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     throw new UserInformationException("All filesets are fully broken and needs to be removed. To avoid unexpected deletions, you must manually remove the remote files and delete the database.", "AllFilesetsBroken");
 
+                await EnsureReplacementTimesAsync(db, to_purge.Select(x => x.FilesetID), fully_emptied.Select(x => x.FilesetID)).ConfigureAwait(false);
+
                 if (!m_options.Dryrun)
                     await db.Transaction.CommitAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
@@ -321,6 +323,46 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException(Strings.Common.InvalidHashAlgorithm(m_options.BlockHashAlgorithm), "BlockHashAlgorithmNotSupported");
 
             return Convert.ToBase64String(blockhasher.ComputeHash(data));
+        }
+
+        /// <summary>
+        /// Checks, without changing anything, that every fileset that is rewritten can get a new filelist
+        /// name between the filesets next to it, in the order the filesets are rewritten.
+        /// </summary>
+        /// <remarks>
+        /// The blocks of the missing volumes are already gone from the tables when this runs. If a rewrite
+        /// stopped halfway, the broken files of the remaining filesets would be left without their blocks,
+        /// and every later operation would stop with an inconsistency that repair cannot fix.
+        /// </remarks>
+        /// <param name="db">The database to query.</param>
+        /// <param name="rewritten">The filesets that get a new filelist, in the order they are rewritten.</param>
+        /// <param name="removed">The filesets that are deleted before the rewrites.</param>
+        /// <returns>A task that completes when the check is done.</returns>
+        private async Task EnsureReplacementTimesAsync(LocalListBrokenFilesDatabase db, IEnumerable<long> rewritten, IEnumerable<long> removed)
+        {
+            var token = m_result.TaskControl.ProgressToken;
+            var removedIds = removed.ToHashSet();
+            var filesets = (await db.FilesetTimesAsync(token).ToListAsync(token).ConfigureAwait(false))
+                .Where(x => !removedIds.Contains(x.Key))
+                .OrderByDescending(x => x.Value)
+                .ToList();
+            var reserved = new HashSet<string>();
+
+            foreach (var id in rewritten)
+            {
+                var ix = filesets.FindIndex(x => x.Key == id);
+                if (ix < 0)
+                    continue;
+
+                var previous = ix + 1 < filesets.Count ? filesets[ix + 1].Value : (DateTime?)null;
+                var next = ix != 0 ? filesets[ix - 1].Value : (DateTime?)null;
+                var ts = await PurgeFilesHandler.FindReplacementTimeAsync(db, m_options, filesets[ix].Value, previous, next, token, reserved).ConfigureAwait(false);
+                if (ts == null)
+                    throw new UserInformationException(string.Format("Unable to purge the broken files, because the fileset from {0} cannot get a new timestamp between the previous fileset at {1} and the next fileset at {2}. Nothing was changed.", filesets[ix].Value.ToLocalTime(), previous?.ToLocalTime().ToString() ?? "-", next?.ToLocalTime().ToString() ?? "-"), "NoUnusedFilesetTimestamp");
+
+                reserved.Add(Volumes.VolumeBase.GenerateFilename(RemoteVolumeType.Files, m_options, null, ts.Value));
+                filesets[ix] = new KeyValuePair<long, DateTime>(id, ts.Value);
+            }
         }
 
         /// <summary>

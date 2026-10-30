@@ -20,7 +20,9 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Volumes;
@@ -43,6 +45,22 @@ namespace Duplicati.Library.Main.Operation
             m_options = options;
             m_result = result;
         }
+
+        /// <summary>
+        /// Finds the time for a fileset that replaces an existing one, between the filesets next to it
+        /// </summary>
+        /// <param name="db">The database with the registered filelist names</param>
+        /// <param name="options">The options to use for the filename</param>
+        /// <param name="original">The time of the fileset that is replaced</param>
+        /// <param name="previous">The time of the fileset before it, or <c>null</c> if it is the oldest</param>
+        /// <param name="next">The time of the fileset after it, or <c>null</c> if it is the newest</param>
+        /// <param name="token">The cancellation token</param>
+        /// <param name="reserved">Filelist names that are taken but not registered yet</param>
+        /// <returns>The time to use, or <c>null</c> if there is none</returns>
+        internal static Task<DateTime?> FindReplacementTimeAsync(Database.Local.LocalDatabase db, Options options, DateTime original, DateTime? previous, DateTime? next, CancellationToken token, ISet<string> reserved = null)
+            => FilesetVolumeWriter.FindUnusedReplacementTimeAsync(
+                async (name, ct) => (reserved != null && reserved.Contains(name)) || await db.GetRemoteVolumeIDAsync(name, ct).ConfigureAwait(false) >= 0,
+                options, original, previous, next, token);
 
         public async Task RunAsync(IBackendManager backendManager, IFilter filter)
         {
@@ -131,13 +149,12 @@ namespace Duplicati.Library.Main.Operation
                 if (ix < 0 || tsOriginal.Ticks == 0)
                     throw new InvalidProgramException(string.Format("Fileset was reported with id {0}, but could not be found?", versionid));
 
-                var ts = await FilesetVolumeWriter.ProbeUnusedFilenameNameAsync(db, m_options, tsOriginal, m_result.TaskControl.ProgressToken)
-                    .ConfigureAwait(false);
                 var prevfilename = await db.GetRemoteVolumeNameForFilesetAsync(filesets[ix].Key, m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
-
-                if (ix != 0 && filesets[ix - 1].Value <= ts)
-                    throw new Exception(string.Format("Unable to create a new fileset for {0} because the resulting timestamp {1} is larger than the next timestamp {2}", prevfilename, ts, filesets[ix - 1].Value));
+                var tsPrevious = ix + 1 < filesets.Length ? filesets[ix + 1].Value : (DateTime?)null;
+                var tsNext = ix != 0 ? filesets[ix - 1].Value : (DateTime?)null;
+                var ts = await FindReplacementTimeAsync(db, m_options, tsOriginal, tsPrevious, tsNext, m_result.TaskControl.ProgressToken).ConfigureAwait(false)
+                    ?? throw new UserInformationException(string.Format("Unable to create a new fileset for {0} because there is no unused timestamp between the previous fileset at {1} and the next fileset at {2}", prevfilename, tsPrevious?.ToLocalTime().ToString() ?? "-", tsNext?.ToLocalTime().ToString() ?? "-"), "NoUnusedFilesetTimestamp");
 
                 await using (var tempset = await db.CreateTemporaryFilesetAsync(versionid, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 {
@@ -169,6 +186,8 @@ namespace Duplicati.Library.Main.Operation
                                 .ConvertToPermanentFilesetAsync(vol.RemoteFilename, ts, isOriginalFilesetFullBackup, m_result.TaskControl.ProgressToken)
                                 .ConfigureAwait(false);
                             vol.VolumeID = newids.Item1;
+                            // A later version is placed between its neighbours, so they must have their new times
+                            filesets[ix] = new KeyValuePair<long, DateTime>(newids.Item2, ts);
                             vol.CreateFilesetFile(isOriginalFilesetFullBackup);
 
                             Logging.Log.WriteInformationMessage(LOGTAG, "ReplacingFileset", "Replacing fileset {0} with {1} which has with {2} fewer file(s) ({3} reduction)", prevfilename, vol.RemoteFilename, tempset.RemovedFileCount, Library.Utility.Utility.FormatSizeString(tempset.RemovedFileSize));
