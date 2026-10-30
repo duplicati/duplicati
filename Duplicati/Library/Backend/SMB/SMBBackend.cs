@@ -29,6 +29,8 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Utility.Options;
 using Duplicati.Library.Utility;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend;
 
 /// <summary>

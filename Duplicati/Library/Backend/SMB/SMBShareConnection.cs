@@ -74,7 +74,7 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
     /// </summary>
     /// <param name="connectionParameters">Connection Parameters</param>
     /// <param name="timeouts">Timeouts to use for operations</param>
-    private SMBShareConnection(SMB2Client client, ISMBFileStore fileStore, SMBConnectionParameters connectionParameters, TimeoutOptionsHelper.Timeouts timeouts)
+    internal SMBShareConnection(SMB2Client client, ISMBFileStore fileStore, SMBConnectionParameters connectionParameters, TimeoutOptionsHelper.Timeouts timeouts)
     {
         _connectionParameters = connectionParameters;
         _timeouts = timeouts;
@@ -156,6 +156,11 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                     status = _smbFileStore.CloseFile(fileHandle);
                     if (status != NTStatus.STATUS_SUCCESS)
                         throw new UserInformationException($"{LC.L("Failed to close file on DeleteAsync")} with status {status}", "CloseFileError");
+                }
+                else
+                {
+                    // The file could not be opened, so it was not deleted
+                    throw new UserInformationException($"{LC.L("Failed to open file on DeleteAsync")} {fileName} with status {status}", "DeleteFileError");
                 }
             }).ConfigureAwait(false);
         }
@@ -566,6 +571,11 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                     status = _smbFileStore.CloseFile(fileHandle);
                     if (status != NTStatus.STATUS_SUCCESS)
                         throw new UserInformationException($"{LC.L("Failed to close file on RenameAsync")} with status {status}", "CloseFileError");
+                }
+                else
+                {
+                    // The file could not be opened, so it was not renamed
+                    throw new UserInformationException($"{LC.L("Failed to open file on RenameAsync")} {oldname} with status {status}", "RenameFileError");
                 }
             }).ConfigureAwait(false);
         }
