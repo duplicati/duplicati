@@ -173,8 +173,14 @@ public class BackendSourceProviderTests
         public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken)
             => ListAsync("", cancellationToken);
 
+        /// <summary>
+        /// The number of times a download was started
+        /// </summary>
+        public int Downloads { get; private set; }
+
         public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
+            Downloads++;
             using var timeoutStream = stream.ObserveWriteTimeout(WriteTimeout, false, mode);
             var chunk = new byte[ChunkSize];
             for (var written = 0; written < ListedSize; written += ChunkSize)
@@ -194,13 +200,168 @@ public class BackendSourceProviderTests
     }
 
     /// <summary>
+    /// What a <see cref="ScriptedBackend"/> does on one download
+    /// </summary>
+    /// <param name="DeliverBytes">The number of bytes delivered before the download ends</param>
+    /// <param name="ThenThrow">The exception thrown after the bytes are delivered, or null to end the stream silently</param>
+    /// <param name="Content">The content delivered instead of the listed content, or null to deliver the listed content</param>
+    private sealed record Attempt(int DeliverBytes, Exception? ThenThrow, byte[]? Content);
+
+    /// <summary>
+    /// A streaming backend that lists a single file with the given content and follows a script
+    /// for its first downloads. Downloads beyond the script deliver the whole file.
+    /// </summary>
+    /// <param name="content">The content of the file</param>
+    /// <param name="attempts">The script for the first downloads</param>
+    private class ScriptedBackend(byte[] content, params Attempt[] attempts) : IFolderEnabledBackend, IStreamingBackend
+    {
+        /// <summary>
+        /// The size of each write
+        /// </summary>
+        public const int ChunkSize = 4096;
+
+        public string DisplayName => "Scripted Backend";
+        public string ProtocolKey => "scripted";
+        public string Description => "A testing backend";
+        public IList<ICommandLineArgument> SupportedCommands => [];
+        public bool SupportsStreaming => true;
+
+        /// <summary>
+        /// The number of times a download was started
+        /// </summary>
+        public int Downloads { get; private set; }
+
+        /// <summary>
+        /// The content of the file
+        /// </summary>
+        protected byte[] Content => content;
+
+        public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            await Task.CompletedTask.ConfigureAwait(false);
+            yield return new FileEntry("file.bin", content.Length, TIMESTAMP, TIMESTAMP, false, false) { Created = TIMESTAMP };
+        }
+
+        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken)
+            => ListAsync("", cancellationToken);
+
+        /// <summary>
+        /// Takes the next step of the script, or a complete download once the script is used up
+        /// </summary>
+        /// <returns>The step to perform</returns>
+        protected Attempt NextAttempt()
+        {
+            var attempt = Downloads < attempts.Length ? attempts[Downloads] : new Attempt(content.Length, null, null);
+            Downloads++;
+            return attempt;
+        }
+
+        public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
+        {
+            var attempt = NextAttempt();
+            var data = attempt.Content ?? content;
+            for (var written = 0; written < attempt.DeliverBytes; written += ChunkSize)
+                await stream.WriteAsync(data, written, Math.Min(ChunkSize, attempt.DeliverBytes - written), cancelToken).ConfigureAwait(false);
+            if (attempt.ThenThrow != null)
+                throw attempt.ThenThrow;
+        }
+
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());
+        public Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
+            => Task.FromResult<IFileEntry?>(new FileEntry("folder", 0, TIMESTAMP, TIMESTAMP, true, false) { Created = TIMESTAMP });
+        public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken) => throw new NotImplementedException();
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken) => throw new NotImplementedException();
+        public Task GetAsync(string remotename, string filename, CancellationToken cancelToken) => throw new NotImplementedException();
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken) => throw new NotImplementedException();
+        public Task TestAsync(bool alsoWrite, CancellationToken cancelToken) => Task.CompletedTask;
+        public Task CreateFolderAsync(CancellationToken cancelToken) => Task.CompletedTask;
+        public void Dispose() { }
+    }
+
+    /// <summary>
+    /// A stream that delivers the start of a buffer and then throws or ends,
+    /// as a response stream does when the connection is lost
+    /// </summary>
+    /// <param name="data">The buffer to deliver from</param>
+    /// <param name="offset">The position in the buffer to start from</param>
+    /// <param name="deliverBytes">The number of bytes to deliver before the stream ends</param>
+    /// <param name="thenThrow">The exception thrown after the bytes are delivered, or null to end the stream silently</param>
+    private sealed class InterruptedStream(byte[] data, int offset, int deliverBytes, Exception? thenThrow) : MemoryStream(data, offset, deliverBytes, false)
+    {
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            var read = await base.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
+            if (read == 0 && thenThrow != null)
+                throw thenThrow;
+            return read;
+        }
+    }
+
+    /// <summary>
+    /// A <see cref="ScriptedBackend"/> that can continue a download from an offset,
+    /// recording the offsets and version tokens it is asked for
+    /// </summary>
+    /// <param name="content">The content of the file</param>
+    /// <param name="attempts">The script for the first downloads</param>
+    private sealed class ResumableScriptedBackend(byte[] content, params Attempt[] attempts) : ScriptedBackend(content, attempts), IResumeEnabledBackend
+    {
+        /// <summary>
+        /// The version token handed out for the file
+        /// </summary>
+        public const string ETag = "version-1";
+
+        /// <summary>
+        /// The offsets and version tokens passed to <see cref="GetResumableStreamAsync"/>
+        /// </summary>
+        public List<(long Offset, string? ETag)> Opens { get; } = [];
+
+        public Task<(Stream Stream, string ETag)> GetResumableStreamAsync(string remotename, long offset, string? etag, CancellationToken cancelToken)
+        {
+            Opens.Add((offset, etag));
+            if (etag != null && etag != ETag)
+                throw new RemoteFileChangedException("The file has changed");
+
+            var attempt = NextAttempt();
+            return Task.FromResult<(Stream, string)>((new InterruptedStream(Content, (int)offset, Math.Min(attempt.DeliverBytes, Content.Length - (int)offset), attempt.ThenThrow), ETag));
+        }
+    }
+
+    /// <summary>
+    /// Creates content that differs from one byte to the next, so a misplaced resume is detected
+    /// </summary>
+    /// <param name="size">The number of bytes</param>
+    /// <returns>The content</returns>
+    private static byte[] MakeContent(int size)
+    {
+        var content = new byte[size];
+        new Random(size).NextBytes(content);
+        return content;
+    }
+
+    /// <summary>
+    /// Reads the single file listed by a backend through the source provider, with no delay between resumes
+    /// </summary>
+    /// <param name="backend">The backend to read from</param>
+    /// <returns>The bytes read</returns>
+    private static async Task<byte[]> ReadSingleFileAsync(IFolderEnabledBackend backend)
+    {
+        using var provider = new BackendSourceProvider(backend, "/mnt/stub/", "scripted://host/path") { ResumeDelay = TimeSpan.Zero };
+        var root = await provider.EnumerateAsync(CancellationToken.None).SingleAsync();
+        var child = await root.Enumerate(CancellationToken.None).SingleAsync();
+        using var stream = await child.OpenRead(CancellationToken.None);
+        using var target = new MemoryStream();
+        await stream.CopyToAsync(target);
+        return target.ToArray();
+    }
+
+    /// <summary>
     /// Reads the single file listed by a <see cref="TruncatingBackend"/>
     /// </summary>
     /// <param name="deliveredSize">The number of bytes the backend delivers</param>
     /// <returns>The number of bytes read</returns>
     private static async Task<long> ReadTruncatingFileAsync(int deliveredSize)
     {
-        using var provider = new BackendSourceProvider(new TruncatingBackend(deliveredSize), "/mnt/stub/", "truncating://host/path");
+        using var provider = new BackendSourceProvider(new TruncatingBackend(deliveredSize), "/mnt/stub/", "truncating://host/path") { ResumeDelay = TimeSpan.Zero };
         var root = await provider.EnumerateAsync(CancellationToken.None).SingleAsync();
         var child = await root.Enumerate(CancellationToken.None).SingleAsync();
         using var stream = await child.OpenRead(CancellationToken.None);
@@ -389,21 +550,25 @@ public class BackendSourceProviderTests
 
     [Test]
     [Category("SourceProvider")]
-    public async Task TimedOutStreamedReadReportsTheTimeoutAsync()
+    public async Task TimedOutStreamedReadIsResumedAsync()
     {
-        using var provider = new BackendSourceProvider(new StallingBackend(TimeoutMode.CallAndGap), "/mnt/stub/", "stalling://host/path");
+        var backend = new StallingBackend(TimeoutMode.CallAndGap);
+        using var provider = new BackendSourceProvider(backend, "/mnt/stub/", "stalling://host/path") { ResumeDelay = TimeSpan.Zero };
         var root = await provider.EnumerateAsync(CancellationToken.None).SingleAsync();
         var child = await root.Enumerate(CancellationToken.None).SingleAsync();
         using var stream = await child.OpenRead(CancellationToken.None);
 
         // Stall the reader past the write timeout while the download is still in progress.
-        // Disposing the timeout wrapper must not complete the pipe, or the reader sees the
-        // end of the stream instead of the timeout and only the truncation is reported.
+        // The download fails with a timeout, and the stream must start it again and
+        // continue from the bytes already read, so the whole file still arrives.
         var buffer = new byte[StallingBackend.ChunkSize];
         await stream.ReadAtLeastAsync(buffer, buffer.Length);
         await Task.Delay(StallingBackend.WriteTimeout * 2);
 
-        Assert.ThrowsAsync<TimeoutException>(() => stream.CopyToAsync(Stream.Null));
+        var remaining = new MemoryStream();
+        await stream.CopyToAsync(remaining);
+        Assert.That(buffer.Length + remaining.Length, Is.EqualTo(StallingBackend.ListedSize));
+        Assert.That(backend.Downloads, Is.EqualTo(2));
     }
 
     [Test]
@@ -425,5 +590,111 @@ public class BackendSourceProviderTests
         var remaining = new MemoryStream();
         await stream.CopyToAsync(remaining);
         Assert.That(buffer.Length + remaining.Length, Is.EqualTo(StallingBackend.ListedSize));
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public async Task FailedStreamedReadResumesFromThePositionReachedAsync()
+    {
+        var content = MakeContent(50 * ScriptedBackend.ChunkSize);
+        var backend = new ScriptedBackend(content, new Attempt(20 * ScriptedBackend.ChunkSize, new IOException("Connection closed"), null));
+
+        Assert.That(await ReadSingleFileAsync(backend), Is.EqualTo(content));
+        Assert.That(backend.Downloads, Is.EqualTo(2));
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public async Task SilentlyTruncatedStreamedReadIsResumedAsync()
+    {
+        var content = MakeContent(50 * ScriptedBackend.ChunkSize);
+        var backend = new ScriptedBackend(content,
+            new Attempt(20 * ScriptedBackend.ChunkSize, null, null),
+            new Attempt(35 * ScriptedBackend.ChunkSize, null, null));
+
+        Assert.That(await ReadSingleFileAsync(backend), Is.EqualTo(content));
+        Assert.That(backend.Downloads, Is.EqualTo(3));
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public void ChangedContentFailsTheResumeWithoutAnotherAttempt()
+    {
+        var content = MakeContent(50 * ScriptedBackend.ChunkSize);
+        var changed = MakeContent(50 * ScriptedBackend.ChunkSize + 1);
+        var backend = new ScriptedBackend(content,
+            new Attempt(20 * ScriptedBackend.ChunkSize, new IOException("Connection closed"), null),
+            new Attempt(50 * ScriptedBackend.ChunkSize, null, changed));
+
+        Assert.ThrowsAsync<RemoteFileChangedException>(() => ReadSingleFileAsync(backend));
+        Assert.That(backend.Downloads, Is.EqualTo(2));
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public void ExhaustedResumesReportTheLastFailure()
+    {
+        var content = MakeContent(10 * ScriptedBackend.ChunkSize);
+        var attempts = Enumerable.Range(0, 10).Select(_ => new Attempt(ScriptedBackend.ChunkSize, new IOException("Connection closed"), null)).ToArray();
+        var backend = new ScriptedBackend(content, attempts);
+        using var provider = new BackendSourceProvider(backend, "/mnt/stub/", "scripted://host/path") { ResumeDelay = TimeSpan.Zero, ResumeAttempts = 3 };
+
+        var ex = Assert.ThrowsAsync<IOException>(async () =>
+        {
+            var root = await provider.EnumerateAsync(CancellationToken.None).SingleAsync();
+            var child = await root.Enumerate(CancellationToken.None).SingleAsync();
+            using var stream = await child.OpenRead(CancellationToken.None);
+            await stream.CopyToAsync(Stream.Null);
+        });
+
+        Assert.That(ex!.Message, Is.EqualTo("Connection closed"));
+        Assert.That(backend.Downloads, Is.EqualTo(4));
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public async Task ResumeEnabledBackendIsAskedForTheRemainderUnderItsETagAsync()
+    {
+        var content = MakeContent(50 * ScriptedBackend.ChunkSize);
+        var failAt = 20 * ScriptedBackend.ChunkSize;
+        var backend = new ResumableScriptedBackend(content, new Attempt(failAt, new IOException("Connection closed"), null));
+
+        Assert.That(await ReadSingleFileAsync(backend), Is.EqualTo(content));
+        Assert.That(backend.Downloads, Is.EqualTo(2));
+        Assert.That(backend.Opens, Is.EqualTo(new[] { (0L, (string?)null), ((long)failAt, ResumableScriptedBackend.ETag) }));
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public void ResumeEnabledBackendRejectingTheETagFailsTheRead()
+    {
+        var content = MakeContent(50 * ScriptedBackend.ChunkSize);
+        var backend = new ChangingResumableBackend(content, new Attempt(20 * ScriptedBackend.ChunkSize, new IOException("Connection closed"), null));
+
+        Assert.ThrowsAsync<RemoteFileChangedException>(() => ReadSingleFileAsync(backend));
+        Assert.That(backend.Opens, Has.Count.EqualTo(2));
+    }
+
+    /// <summary>
+    /// A resume-enabled backend whose file changes version after the first download
+    /// </summary>
+    /// <param name="content">The content of the file</param>
+    /// <param name="attempts">The script for the first downloads</param>
+    private sealed class ChangingResumableBackend(byte[] content, params Attempt[] attempts) : ScriptedBackend(content, attempts), IResumeEnabledBackend
+    {
+        /// <summary>
+        /// The offsets and version tokens passed to <see cref="GetResumableStreamAsync"/>
+        /// </summary>
+        public List<(long Offset, string? ETag)> Opens { get; } = [];
+
+        public Task<(Stream Stream, string ETag)> GetResumableStreamAsync(string remotename, long offset, string? etag, CancellationToken cancelToken)
+        {
+            Opens.Add((offset, etag));
+            if (etag != null)
+                throw new RemoteFileChangedException("The file is now version-2");
+
+            var attempt = NextAttempt();
+            return Task.FromResult<(Stream, string)>((new InterruptedStream(Content, 0, attempt.DeliverBytes, attempt.ThenThrow), "version-1"));
+        }
     }
 }
