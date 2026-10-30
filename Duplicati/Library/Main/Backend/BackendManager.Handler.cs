@@ -164,6 +164,10 @@ partial class BackendManager
         /// Whether any files have been downloaded
         /// </summary>
         private bool anyDownloaded;
+        /// <summary>
+        /// Whether a listing has found files, which shows the folder was there
+        /// </summary>
+        private bool anyListed;
 
         /// <summary>
         /// Creates and runs with an instance of the <see cref="Handler"/> class
@@ -503,8 +507,10 @@ partial class BackendManager
                     // Check if we can recover from the error
                     var recovered = false;
 
-                    // Check if this was a folder missing exception and we are allowed to autocreate folders
-                    if (!(anyDownloaded || anyUploaded) && context.Options.AutocreateFolders && Library.Utility.ExceptionExtensions.FlattenException(ex).Any(x => x is FolderMissingException))
+                    // Check if this was a folder missing exception and we are allowed to autocreate folders.
+                    // A folder that held files has gone away, as an unplugged drive does, and creating it again
+                    // would send the backup to a new, empty folder in its place.
+                    if (!(anyDownloaded || anyUploaded || anyListed) && context.Options.AutocreateFolders && Library.Utility.ExceptionExtensions.FlattenException(ex).Any(x => x is FolderMissingException))
                     {
                         if (await TryCreateFolderAsync(op).ConfigureAwait(false))
                             recovered = true;
@@ -567,6 +573,9 @@ partial class BackendManager
                         return;
                     case ListOperation listOp:
                         await ExecuteAsync(listOp, cancellationToken).ConfigureAwait(false);
+                        var listing = listOp.GetResultAsync();
+                        if (listing.IsCompletedSuccessfully && listing.Result.Count > 0)
+                            anyListed = true;
                         return;
                     case QuotaInfoOperation quotaOp:
                         await ExecuteAsync(quotaOp, cancellationToken).ConfigureAwait(false);
