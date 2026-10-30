@@ -138,19 +138,27 @@ namespace Duplicati.Library.Main.Database.Local
             // Resolve the IDs of the filesets being deleted up front, so the
             // cascading deletes can target exactly those rows instead of scanning
             // the full tables for entries that are no longer referenced.
+            // Their dlist volume IDs are read at the same time: one may already be
+            // marked for deletion, and it is still counted against the filesets below.
             var filesetIds = new List<long>(toDelete.Length);
+            var volumeIds = new List<long>(toDelete.Length);
             await using (var tempTable = await TemporaryDbValueList.CreateAsync(this, toDelete.Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds), token).ConfigureAwait(false))
             {
                 var timestamps = await tempTable.GetInClauseAsync(token).ConfigureAwait(false);
                 cmd.SetCommandAndParameters($@"
-                        SELECT ""ID""
+                        SELECT
+                            ""ID"",
+                            ""VolumeID""
                         FROM ""Fileset""
                         WHERE ""Timestamp"" IN ({timestamps})
                     ");
 
                 await using var idReader = await cmd.ExecuteReaderAsync(true, token).ConfigureAwait(false);
                 while (await idReader.ReadAsync(token).ConfigureAwait(false))
+                {
                     filesetIds.Add(idReader.ConvertValueToInt64(0));
+                    volumeIds.Add(idReader.ConvertValueToInt64(1));
+                }
             }
 
             if (filesetIds.Count != toDelete.Length)
@@ -293,28 +301,43 @@ namespace Duplicati.Library.Main.Database.Local
                 ", token)
                 .ConfigureAwait(false);
 
-            //Find all remote filesets that are no longer required, and mark them as deleting
-            var updated = await cmd.SetCommandAndParameters(@"
-                    UPDATE ""RemoteVolume""
-                    SET ""State"" = @NewState
-                    WHERE
-                        ""Type"" = @CurrentType
-                        AND ""State"" IN (@AllowedStates)
-                        AND ""ID"" NOT IN (
-                            SELECT ""VolumeID""
-                            FROM ""Fileset""
-                        )
-                ")
-                .SetParameterValue("@NewState", RemoteVolumeState.Deleting.ToString())
-                .SetParameterValue("@CurrentType", RemoteVolumeType.Files.ToString())
-                .ExpandInClauseParameterMssqlite("@AllowedStates", [
-                    RemoteVolumeState.Uploaded.ToString(),
-                        RemoteVolumeState.Verified.ToString(),
-                        RemoteVolumeState.Temporary.ToString(),
-                        RemoteVolumeState.Deleting.ToString()
-                ])
-                .ExecuteNonQueryAsync(true, token)
-                .ConfigureAwait(false);
+            //Find all remote filesets that are no longer required, and mark them as deleting.
+            // A volume that is already being deleted counts only if it belonged to one of the
+            // deleted filesets. A dlist volume that is being deleted and has no fileset is
+            // already scheduled for removal, whoever left it (a retried upload renames the
+            // failed name into one, and so does a delete interrupted before the remote delete),
+            // so it is not counted, but it is still returned with the volumes to remove.
+            int updated;
+            await using (var volumeTable = await TemporaryDbValueList.CreateAsync(this, volumeIds, token).ConfigureAwait(false))
+            {
+                var deletedVolumes = await volumeTable.GetInClauseAsync(token).ConfigureAwait(false);
+                updated = await cmd.SetCommandAndParameters($@"
+                        UPDATE ""RemoteVolume""
+                        SET ""State"" = @NewState
+                        WHERE
+                            ""Type"" = @CurrentType
+                            AND (
+                                ""State"" IN (@AllowedStates)
+                                OR (
+                                    ""State"" = @NewState
+                                    AND ""ID"" IN ({deletedVolumes})
+                                )
+                            )
+                            AND ""ID"" NOT IN (
+                                SELECT ""VolumeID""
+                                FROM ""Fileset""
+                            )
+                    ")
+                    .SetParameterValue("@NewState", RemoteVolumeState.Deleting.ToString())
+                    .SetParameterValue("@CurrentType", RemoteVolumeType.Files.ToString())
+                    .ExpandInClauseParameterMssqlite("@AllowedStates", [
+                        RemoteVolumeState.Uploaded.ToString(),
+                            RemoteVolumeState.Verified.ToString(),
+                            RemoteVolumeState.Temporary.ToString()
+                    ])
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+            }
 
             if (deleted != updated)
                 throw new Exception($"Unexpected number of remote volumes marked as deleted. Found {deleted} filesets, but {updated} volumes");

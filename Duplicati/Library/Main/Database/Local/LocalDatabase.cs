@@ -3058,17 +3058,14 @@ namespace Duplicati.Library.Main.Database.Local
 
             //Create a fake new entry with the old name and mark as deleting
             // as this ensures we will remove it, if it shows up in some later listing
-            var newvolId =
-                await RegisterRemoteVolumeAsync(oldname, type, RemoteVolumeState.Deleting, token)
-                    .ConfigureAwait(false);
+            await RegisterRemoteVolumeAsync(oldname, type, RemoteVolumeState.Deleting, token)
+                .ConfigureAwait(false);
 
-            // IF needed, also create an empty fileset, so the validation works
+            // A dlist entry gets no fileset: one at time 0 would be listed as a backup version
+            // until the entry is removed. Deleting filesets does not count a dlist volume that
+            // is being deleted and has no fileset, so the entry does not upset that check.
             if (type == RemoteVolumeType.Files)
-            {
-                await CreateFilesetAsync(newvolId, DateTime.UnixEpoch, token)
-                    .ConfigureAwait(false);
                 await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
-            }
         }
 
         /// <summary>
