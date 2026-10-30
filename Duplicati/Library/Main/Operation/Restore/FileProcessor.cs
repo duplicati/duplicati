@@ -72,6 +72,9 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// The barrier is only signaled on the success path, so a priority file that
         /// fails terminally would otherwise leave the other processors waiting for it
         /// forever, stalling the restore instead of failing with the real error.
+        /// The processors waiting on the barrier end the restore with its error, so the
+        /// error says that the restore stopped because of this file, and keeps the file's
+        /// own error as the inner exception.
         /// </summary>
         /// <param name="file">The file that failed.</param>
         /// <param name="ex">The error that caused the failure.</param>
@@ -80,8 +83,13 @@ namespace Duplicati.Library.Main.Operation.Restore
             if (!file.IsPriorityFile)
                 return;
 
+            var error = new UserInformationException(
+                $"The restore was stopped because the file \"{file.TargetPath}\", which has to be restored before the other files, could not be restored: {ex.Message}",
+                "RestorePriorityFileFailed",
+                ex);
+
             lock (priority_files_lock)
-                priority_files_completed.TrySetException(ex);
+                priority_files_completed.TrySetException(error);
         }
         /// <summary>
         /// The current file processor ID. Used for debugging.

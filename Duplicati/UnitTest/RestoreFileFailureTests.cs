@@ -414,10 +414,10 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
-        /// Restores with the named file as a priority file, and checks that the restore ends. How
-        /// it ends is not checked here: the file fails, and the other files wait for it.
+        /// Restores with the named file as a priority file, and checks that the restore ends.
         /// </summary>
-        private async Task AssertTheRestoreEndsWithPriorityFileAsync(string name)
+        /// <returns>The error the restore ended with, or <c>null</c> if it did not fail.</returns>
+        private async Task<Exception?> RestoreWithPriorityFileAsync(string name)
         {
             PriorityFileModule.Names.Clear();
             PriorityFileModule.Names.Add(name);
@@ -434,16 +434,18 @@ namespace Duplicati.UnitTest
                 Assert.Fail("The restore did not finish within two minutes: the other files are still waiting for the priority file");
             }
 
+            Exception? error = null;
             try
             {
                 await restoreTask;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // The failed priority file fails the restore, which is a separate matter
+                error = ex;
             }
 
             Assert.AreEqual(1, PriorityFileModule.PrepareCalls, "The module did not mark the priority file, so the test proves nothing");
+            return error;
         }
 
         // A priority file that is given up has to release the files waiting for it, or they wait
@@ -459,7 +461,7 @@ namespace Duplicati.UnitTest
             // A folder where the empty file should go, so it cannot be created
             Directory.CreateDirectory(Path.Combine(RESTOREFOLDER, "empty"));
 
-            await AssertTheRestoreEndsWithPriorityFileAsync("empty");
+            await RestoreWithPriorityFileAsync("empty");
         }
 
         [Test]
@@ -469,7 +471,36 @@ namespace Duplicati.UnitTest
             await BackupAsync();
             await PlaceTheFailingFileInNoVolumeAsync();
 
-            await AssertTheRestoreEndsWithPriorityFileAsync(FailingFile);
+            await RestoreWithPriorityFileAsync(FailingFile);
         }
+
+        [Test]
+        [Category("RestoreHandler")]
+        public async Task AFailedPriorityFileStopsTheRestoreWithAnExplanation()
+        {
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "empty"), []);
+            await BackupAsync();
+
+            // A folder where the empty file should go, so it cannot be created
+            Directory.CreateDirectory(Path.Combine(RESTOREFOLDER, "empty"));
+
+            var error = await RestoreWithPriorityFileAsync("empty");
+
+            // The restore stops, and says why: the error of the file alone does not tell that
+            // the rest of the restore was stopped because of it
+            Assert.IsInstanceOf<UserInformationException>(error, $"The restore ended with {error}");
+            var info = (UserInformationException)error!;
+            NUnit.Framework.Assert.Multiple(() =>
+            {
+                Assert.AreEqual("RestorePriorityFileFailed", info.HelpID);
+                StringAssertContains(info.Message, Path.Combine(RESTOREFOLDER, "empty"));
+                Assert.IsNotNull(info.InnerException, "The error of the file itself was not kept");
+                if (info.InnerException != null)
+                    StringAssertContains(info.Message, info.InnerException.Message);
+            });
+        }
+
+        private static void StringAssertContains(string actual, string expected)
+            => Assert.IsTrue(actual.Contains(expected, StringComparison.Ordinal), $"Expected \"{actual}\" to contain \"{expected}\"");
     }
 }
