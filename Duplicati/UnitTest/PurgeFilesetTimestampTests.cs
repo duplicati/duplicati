@@ -127,11 +127,35 @@ public class PurgeFilesetTimestampTests : BasicSetupHelper
     /// <returns>The path the volume had in the destination</returns>
     private string MoveAwayLargeFileVolume()
     {
-        // The large file is read first and fills the first volumes; the small files end up in the last one
-        var volume = Directory.GetFiles(TARGETFOLDER, "*.dblock.*")
-            .OrderBy(x => new FileInfo(x).Length)
-            .Last();
-        File.Move(volume, Path.Combine(Path.GetDirectoryName(DBFILE)!, Path.GetFileName(volume)));
+        // Which blocks share a volume depends on the order the files are read in, so the volume is
+        // chosen from the database: one that holds only data blocks of the large file. A volume with
+        // metadata blocks as well would make purge-broken-files replace that metadata, with a warning.
+        string name;
+        using (var db = new SqliteConnection($"Data Source={DBFILE};Pooling=False"))
+        {
+            db.Open();
+            using var cmd = db.CreateCommand();
+            cmd.CommandText = @"
+                SELECT ""Remotevolume"".""Name""
+                FROM ""Remotevolume""
+                WHERE ""Remotevolume"".""Type"" = 'Blocks'
+                AND EXISTS (SELECT 1 FROM ""Block"" WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID"")
+                AND NOT EXISTS (
+                    SELECT 1 FROM ""Block""
+                    WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID""
+                    AND ""Block"".""ID"" NOT IN (
+                        SELECT ""BlocksetEntry"".""BlockID""
+                        FROM ""BlocksetEntry""
+                        JOIN ""File"" ON ""File"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
+                        WHERE ""File"".""Path"" = @Path))
+                ORDER BY ""Remotevolume"".""ID""
+                LIMIT 1";
+            cmd.Parameters.AddWithValue("@Path", Path.Combine(DATAFOLDER, "large.bin"));
+            name = cmd.ExecuteScalar() as string ?? throw new AssertionException("No block volume holds only data blocks of the large file");
+        }
+
+        var volume = Path.Combine(TARGETFOLDER, name);
+        File.Move(volume, Path.Combine(Path.GetDirectoryName(DBFILE)!, name));
         return volume;
     }
 
