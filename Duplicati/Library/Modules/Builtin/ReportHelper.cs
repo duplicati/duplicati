@@ -403,6 +403,14 @@ namespace Duplicati.Library.Modules.Builtin
         protected bool ReducedReporting => m_reducedReporting;
 
         /// <summary>
+        /// Marks the start of a value placeholder while a template is expanded (a private use character)
+        /// </summary>
+        private const char VALUE_MARKER_START = '';
+        /// <summary>
+        /// Marks the end of a value placeholder while a template is expanded (a private use character)
+        /// </summary>
+        private const char VALUE_MARKER_END = '';
+        /// <summary>
         /// The operation name template key
         /// </summary>
         private const string OPERATIONNAME = "OperationName";
@@ -600,17 +608,30 @@ namespace Duplicati.Library.Modules.Builtin
             }
             else
             {
+                // Each key is first replaced by a marker without '%', and the values are put in last,
+                // so a '%' in a value (a log line in the result, an option) is not expanded as a key
+                // by a later pass or removed as an unknown key
+                var values = new List<string>();
+                string Mark(string value)
+                {
+                    values.Add(value ?? "");
+                    return $"{VALUE_MARKER_START}{values.Count - 1}{VALUE_MARKER_END}";
+                }
+
+                // Keys come from options and extra parameters, so they are matched literally
+                string Expand(string text, string key, Func<string> value)
+                    => Regex.Replace(text, "%" + Regex.Escape(key) + "%", _ => Mark(value()), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
                 foreach (var key in OPERATION_TEMPLATE_KEYS)
                 {
                     // Source paths and the remote URL are content; the reduced form leaves them out
                     var reducedOut = m_reducedReporting && (key == LOCALPATH || key == REMOTEURL);
-                    input = Regex.Replace(input, $"%{key}%", _ => reducedOut ? "" : GetDefaultValue(key) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                    input = Expand(input, key, () => reducedOut ? "" : GetDefaultValue(key));
                 }
 
                 if (subjectline)
                 {
-                    input = Regex.Replace(input, "\\%RESULT\\%", _ => m_parsedresultlevel ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                    input = Expand(input, "RESULT", () => m_parsedresultlevel);
                 }
                 else
                 {
@@ -618,7 +639,7 @@ namespace Duplicati.Library.Modules.Builtin
                     {
                         // Values go through an evaluator so a '$' in them is not read as a substitution
                         var serialized = resultFormatSerializer.Serialize(result, exception, LogLines, resultFormatSerializer.Format == ResultExportFormat.Template ? GetTemplateValues() : null);
-                        input = Regex.Replace(input, "\\%RESULT\\%", _ => serialized, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                        input = Expand(input, "RESULT", () => serialized);
                     }
                 }
 
@@ -627,21 +648,25 @@ namespace Duplicati.Library.Modules.Builtin
                     // Reduced reports only expand the environment metadata keys, never arbitrary option values
                     if (m_reducedReporting && !EXTRA_TEMPLATE_KEYS.Contains(kv.Key))
                         continue;
-                    input = Regex.Replace(input, "\\%" + kv.Key + "\\%", _ => kv.Value ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                    input = Expand(input, kv.Key, () => kv.Value);
                 }
 
                 foreach (var key in EXTRA_TEMPLATE_KEYS)
                     if (!m_options.ContainsKey(key))
-                        input = Regex.Replace(input, $"%{key}%", _ => GetDefaultValue(key) ?? "", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                        input = Expand(input, key, () => GetDefaultValue(key));
 
                 if (m_extraValues != null && !m_reducedReporting)
                     foreach (var v in m_extraValues)
-                        input = Regex.Replace(input, $"%{v.Key}%", _ => v.Value, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
+                        input = Expand(input, v.Key, () => v.Value);
 
                 // Remove any remaining template keys
                 input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
-                return input;
+
+                // Text in the template that only looks like a marker is left as it is
+                return Regex.Replace(input, $"{VALUE_MARKER_START}(\\d+){VALUE_MARKER_END}",
+                    m => int.TryParse(m.Groups[1].Value, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var index) && index < values.Count
+                        ? values[index]
+                        : m.Value);
             }
         }
 
