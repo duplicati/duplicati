@@ -41,7 +41,9 @@ namespace Duplicati.Library.Main.Volumes
 
         public int ReadBlock(string hash, byte[] blockbuffer)
         {
-            using (var fs = m_compression.OpenRead(Library.Utility.Utility.Base64PlainToBase64Url(hash)))
+            // A volume that does not hold the block gives no stream, which happens when the database places the block in the wrong volume
+            using (var fs = m_compression.OpenRead(Library.Utility.Utility.Base64PlainToBase64Url(hash))
+                ?? throw new InvalidDataException(string.Format("The block {0} is not in the block volume", hash)))
                 return Library.Utility.Utility.ForceStreamRead(fs, blockbuffer, blockbuffer.Length);
         }
 
