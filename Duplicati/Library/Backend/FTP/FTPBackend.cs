@@ -31,6 +31,7 @@ using FluentFTP;
 using FluentFTP.Client.BaseClient;
 using FluentFTP.Exceptions;
 using CoreUtility = Duplicati.Library.Utility.Utility;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -480,7 +481,7 @@ namespace Duplicati.Library.Backend
                 try { streamLen = input.Length; }
                 catch (NotSupportedException) { }
 
-                using var timeoutStream = input.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+                using var timeoutStream = input.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
                 var status = await client.UploadStream(timeoutStream, clientRemoteName, createRemoteDir: false, token: cancelToken, progress: null).ConfigureAwait(false);
                 if (status != FtpStatus.Success)
                     throw new UserInformationException(Strings.ErrorWriteFile(remotename, $"Status is {status}"), "FtpPutFailure");
@@ -519,8 +520,8 @@ namespace Duplicati.Library.Backend
                 var client = await CreateClient(cancelToken).ConfigureAwait(false);
                 var clientRemoteName = PreparePathForClient(remotename);
                 await using var inputStream = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => client.OpenRead(clientRemoteName, token: ct)).ConfigureAwait(false);
-                await using var timeoutStream = inputStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
-                await CoreUtility.CopyStreamAsync(inputStream, output, false, cancelToken).ConfigureAwait(false);
+                await using var timeoutStream = inputStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, true, TimeoutMode.Call);
+                await CoreUtility.CopyStreamAsync(timeoutStream, output, false, cancelToken).ConfigureAwait(false);
             }
             catch (Exception e)
             {

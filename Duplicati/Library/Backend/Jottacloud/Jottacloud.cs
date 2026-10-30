@@ -27,6 +27,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Localization.Short;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -218,7 +219,7 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
             using var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken,
                 innerCancellationToken => client.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken)).ConfigureAwait(false);
             await using var rs = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
-            await using var ts = rs.ObserveReadTimeout(m_timeouts.ReadWriteTimeout);
+            await using var ts = rs.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true, TimeoutMode.Call);
             doc.Load(ts);
 
         }
@@ -318,7 +319,7 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
                 .ConfigureAwait(false);
 
             await using var rs = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
-            await using var ts = rs.ObserveReadTimeout(m_timeouts.ReadWriteTimeout);
+            await using var ts = rs.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true, TimeoutMode.Call);
             doc.Load(ts);
         }
         catch (HttpRequestException wex)
@@ -466,7 +467,7 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
               client.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, innerCancellationToken)).ConfigureAwait(false);
 
         await using var s = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
-        await using var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout);
+        await using var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true, TimeoutMode.Call);
         await Utility.Utility.CopyStreamAsync(t, stream, true, cancelToken).ConfigureAwait(false);
     }
 
@@ -529,7 +530,7 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
                             throw new InvalidOperationException($"Invalid Content-Range response for chunk {chunk.start}-{chunk.end - 1}");
 
                         await using var responseStream = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
-                        await using var timeoutStream = responseStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout);
+                        await using var timeoutStream = responseStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true, TimeoutMode.Call);
                         using var memoryStream = new MemoryStream();
                         await timeoutStream.CopyToAsync(memoryStream, cancelToken).ConfigureAwait(false);
 
@@ -615,7 +616,7 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
         req.Headers.Add("JMd5", md5Hash); // Not required, but it will make the server verify the content and mark the file as corrupt if there is a mismatch.
         req.Headers.Add("JSize", fileSize.ToString()); // Required, and used to mark file as incomplete if we upload something  be the total size of the original file!
 
-        await using var timeoutStream = stream.ObserveReadTimeout(this.m_timeouts.ReadWriteTimeout, false);
+        await using var timeoutStream = stream.ObserveReadTimeout(this.m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
         req.Content = new StreamContent(timeoutStream);
 
         req.Content.Headers.Add("Content-Type", "application/octet-stream");

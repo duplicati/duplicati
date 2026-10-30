@@ -27,6 +27,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility.Options;
 using Duplicati.Library.Utility;
 using System.Text.Json;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -970,8 +971,8 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 
             await using var responseStream = await response.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
 
-            using (var timeoutStream = destination.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false))
-                await Utility.Utility.CopyStreamAsync(responseStream, timeoutStream, cancelToken).ConfigureAwait(false);
+            using (var timeoutStream = responseStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Call))
+                await Utility.Utility.CopyStreamAsync(timeoutStream, destination, cancelToken).ConfigureAwait(false);
         }
     }
 
@@ -1082,7 +1083,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             using var _ = tmp;
             var md5 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[0]));
             var sha256 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[1]));
-            using var timeoutStream = source.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+            using var timeoutStream = source.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
 
             using var request = new HttpRequestMessage(HttpMethod.Post, $"/put/{remotename}");
             request.Content = new StreamContent(timeoutStream);

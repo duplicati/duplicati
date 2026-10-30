@@ -26,6 +26,7 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using OtpNet;
 using System.Runtime.CompilerServices;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Backend.Mega
 {
@@ -173,7 +174,7 @@ namespace Duplicati.Library.Backend.Mega
 
                 var client = await GetClient(cancelToken).ConfigureAwait(false);
                 var currentFolder = await GetCurrentFolderAsync(cancelToken).ConfigureAwait(false);
-                using var ts = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
+                using var ts = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
                 var el = await client.UploadAsync(ts, remotename, currentFolder, new Progress(), null, cancelToken).ConfigureAwait(false);
                 if (filecache.ContainsKey(remotename))
                     await DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
@@ -192,7 +193,7 @@ namespace Duplicati.Library.Backend.Mega
             var client = await GetClient(cancelToken).ConfigureAwait(false);
             var node = await GetFileNodeAsync(remotename, cancelToken).ConfigureAwait(false);
             using (var s = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, _ => client.Download(node)).ConfigureAwait(false))
-            using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
+            using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true, TimeoutMode.Call))
                 await Utility.Utility.CopyStreamAsync(t, stream, cancelToken).ConfigureAwait(false);
         }
 

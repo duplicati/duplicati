@@ -27,6 +27,7 @@ using System.Runtime.CompilerServices;
 using uplink.NET.Interfaces;
 using uplink.NET.Models;
 using uplink.NET.Services;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -221,7 +222,7 @@ namespace Duplicati.Library.Backend.Storj
             var index = 0;
             var bucket = await GetBucketAsync(cancelToken).ConfigureAwait(false);
             var download = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, _ => _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false)).ConfigureAwait(false);
-            using var ts = stream.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false);
+            using var ts = stream.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
             download.DownloadOperationProgressChanged += (op) =>
             {
                 cancelToken.ThrowIfCancellationRequested();
@@ -266,7 +267,7 @@ namespace Duplicati.Library.Backend.Storj
             var custom = new CustomMetadata();
             custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_ACCESS, Value = DateTime.Now.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture) });
             custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture) });
-            using var ts = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+            using var ts = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
             var upload = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, _ => _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, CreateUploadOptions(), ts, custom, false)).ConfigureAwait(false);
             await WaitForTransferAsync(upload.StartUploadAsync(), () => upload.BytesSent, upload.Cancel, _timeouts.ReadWriteTimeout, cancelToken).ConfigureAwait(false);
             if (upload.Failed)

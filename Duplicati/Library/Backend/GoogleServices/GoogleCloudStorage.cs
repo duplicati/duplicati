@@ -29,6 +29,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Backend.GoogleCloudStorage
 {
@@ -473,7 +474,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 using var resp = await Library.Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct)).ConfigureAwait(false);
                 using var source = await Library.Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => resp.Content.ReadAsStreamAsync(cancelToken)).ConfigureAwait(false);
 
-                using (var ts = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
+                using (var ts = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true, TimeoutMode.Call))
                     await Utility.Utility.CopyStreamAsync(ts, stream, cancelToken).ConfigureAwait(false);
             }
             catch (HttpRequestException hrex)

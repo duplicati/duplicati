@@ -755,6 +755,29 @@ namespace Duplicati.UnitTest
                     Assert.IsTrue(stream.CanRead, "The wrapped stream was closed when the wrapper was disposed");
                 }
         }
+
+        [Test]
+        [Category("Utility")]
+        public static void TimeoutWrappersApplyTheRequestedMode()
+        {
+            var timeout = TimeSpan.FromSeconds(30);
+            foreach (var mode in Enum.GetValues<TimeoutMode>())
+            {
+                using var read = (TimeoutObservingStream)new MemoryStream().ObserveReadTimeout(timeout, true, mode);
+                Assert.AreEqual(mode, read.Mode);
+                Assert.AreEqual((int)timeout.TotalMilliseconds, read.ReadTimeout);
+                Assert.AreEqual(Timeout.Infinite, read.WriteTimeout, "Only the direction in use may have a timeout, or the idle timer fires");
+
+                using var write = (TimeoutObservingStream)new MemoryStream().ObserveWriteTimeout(timeout, true, mode);
+                Assert.AreEqual(mode, write.Mode);
+                Assert.AreEqual((int)timeout.TotalMilliseconds, write.WriteTimeout);
+                Assert.AreEqual(Timeout.Infinite, write.ReadTimeout, "Only the direction in use may have a timeout, or the idle timer fires");
+            }
+
+            // The original helpers keep the original behavior
+            using var legacy = (TimeoutObservingStream)new MemoryStream().ObserveReadTimeout(timeout, true);
+            Assert.AreEqual(TimeoutMode.CallAndGap, legacy.Mode);
+        }
     }
 
     /// <summary>

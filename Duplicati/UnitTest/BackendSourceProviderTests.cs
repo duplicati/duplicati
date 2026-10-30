@@ -31,6 +31,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.SourceProvider;
 using Duplicati.Library.Utility;
+using Duplicati.StreamUtil;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest;
@@ -137,9 +138,10 @@ public class BackendSourceProviderTests
 
     /// <summary>
     /// A streaming backend that downloads through a write timeout without owning the target stream,
-    /// as the SMB, SSH and WebDAV backends do, so a stalled reader makes the download time out
+    /// as the SSH and WebDAV backends do. Whether a stalled reader makes the download time out depends on the mode.
     /// </summary>
-    private sealed class StallingBackend : IFolderEnabledBackend, IStreamingBackend
+    /// <param name="mode">The time the write timeout counts</param>
+    private sealed class StallingBackend(TimeoutMode mode) : IFolderEnabledBackend, IStreamingBackend
     {
         /// <summary>
         /// The size of each write
@@ -173,7 +175,7 @@ public class BackendSourceProviderTests
 
         public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            using var timeoutStream = stream.ObserveWriteTimeout(WriteTimeout, false);
+            using var timeoutStream = stream.ObserveWriteTimeout(WriteTimeout, false, mode);
             var chunk = new byte[ChunkSize];
             for (var written = 0; written < ListedSize; written += ChunkSize)
                 await timeoutStream.WriteAsync(chunk, 0, chunk.Length, cancelToken).ConfigureAwait(false);
@@ -389,7 +391,7 @@ public class BackendSourceProviderTests
     [Category("SourceProvider")]
     public async Task TimedOutStreamedReadReportsTheTimeoutAsync()
     {
-        using var provider = new BackendSourceProvider(new StallingBackend(), "/mnt/stub/", "stalling://host/path");
+        using var provider = new BackendSourceProvider(new StallingBackend(TimeoutMode.CallAndGap), "/mnt/stub/", "stalling://host/path");
         var root = await provider.EnumerateAsync(CancellationToken.None).SingleAsync();
         var child = await root.Enumerate(CancellationToken.None).SingleAsync();
         using var stream = await child.OpenRead(CancellationToken.None);
@@ -402,5 +404,26 @@ public class BackendSourceProviderTests
         await Task.Delay(StallingBackend.WriteTimeout * 2);
 
         Assert.ThrowsAsync<TimeoutException>(() => stream.CopyToAsync(Stream.Null));
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public async Task StalledReaderDoesNotTimeOutAGapModeDownloadAsync()
+    {
+        using var provider = new BackendSourceProvider(new StallingBackend(TimeoutMode.Gap), "/mnt/stub/", "stalling://host/path");
+        var root = await provider.EnumerateAsync(CancellationToken.None).SingleAsync();
+        var child = await root.Enumerate(CancellationToken.None).SingleAsync();
+        using var stream = await child.OpenRead(CancellationToken.None);
+
+        // The reader is held back by the rest of the pipeline for longer than the write timeout.
+        // The backend is blocked inside its write to the pipe, which is this side of the transfer,
+        // so the wait must not count against the timeout and the whole file must arrive.
+        var buffer = new byte[StallingBackend.ChunkSize];
+        await stream.ReadAtLeastAsync(buffer, buffer.Length);
+        await Task.Delay(StallingBackend.WriteTimeout * 2);
+
+        var remaining = new MemoryStream();
+        await stream.CopyToAsync(remaining);
+        Assert.That(buffer.Length + remaining.Length, Is.EqualTo(StallingBackend.ListedSize));
     }
 }

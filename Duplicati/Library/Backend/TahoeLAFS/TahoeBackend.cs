@@ -27,6 +27,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -264,7 +265,7 @@ public class TahoeBackend : IStreamingBackend, IRenameEnabledBackend
         {
             using var request = CreateRequest(remotename, string.Empty, HttpMethod.Put);
 
-            await using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+            await using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
             request.Content = new StreamContent(timeoutStream);
 
             request.Content.Headers.Add("Content-Type", "application/binary");
@@ -294,7 +295,7 @@ public class TahoeBackend : IStreamingBackend, IRenameEnabledBackend
         resp.EnsureSuccessStatusCode();
 
         await using var s = await resp.Content.ReadAsStreamAsync(cancelToken).ConfigureAwait(false);
-        await using var t = s.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
+        await using var t = s.ObserveReadTimeout(_timeouts.ReadWriteTimeout, true, TimeoutMode.Call);
         await Utility.Utility.CopyStreamAsync(t, stream, true, cancelToken).ConfigureAwait(false);
     }
 

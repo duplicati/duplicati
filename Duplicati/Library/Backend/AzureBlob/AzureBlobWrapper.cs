@@ -28,6 +28,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility.Options;
 using Duplicati.Library.Utility;
 using Azure.Core.Pipeline;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -174,7 +175,7 @@ namespace Duplicati.Library.Backend.AzureBlob
         public async Task GetFileStreamAsync(string keyName, Stream target, CancellationToken cancellationToken)
         {
             var blobClient = _container.GetBlobClient(_prefix + keyName);
-            using var timeoutStream = target.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false);
+            using var timeoutStream = target.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
             await blobClient.DownloadToAsync(target, cancellationToken).ConfigureAwait(false);
         }
 
@@ -188,7 +189,7 @@ namespace Duplicati.Library.Backend.AzureBlob
         public async Task AddFileStream(string keyName, Stream source, CancellationToken cancelToken)
         {
             var blobClient = _container.GetBlobClient(_prefix + keyName);
-            using var timeoutStream = source.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+            using var timeoutStream = source.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
             var options = new BlobUploadOptions()
             {
                 Conditions = null, // Overwrite any existing blob

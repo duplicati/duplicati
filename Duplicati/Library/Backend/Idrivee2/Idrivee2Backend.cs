@@ -25,6 +25,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -146,7 +147,7 @@ namespace Duplicati.Library.Backend
                     throw new Exception("Failed to fetch region endpoint");
 
                 await using var s = await resp.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-                await using var t = s.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
+                await using var t = s.ObserveReadTimeout(_timeouts.ReadWriteTimeout, true, TimeoutMode.Call);
                 using var reader = new StreamReader(t);
                 result = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
             }
