@@ -176,7 +176,7 @@ namespace Duplicati.Library.Backend.AzureBlob
         {
             var blobClient = _container.GetBlobClient(_prefix + keyName);
             using var timeoutStream = target.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
-            await blobClient.DownloadToAsync(target, cancellationToken).ConfigureAwait(false);
+            await blobClient.DownloadToAsync(timeoutStream, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>

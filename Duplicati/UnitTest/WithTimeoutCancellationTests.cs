@@ -89,6 +89,29 @@ public class WithTimeoutCancellationTests : BasicSetupHelper
 
     [Test]
     [Category("Utility")]
+    public void SyncCallThatIgnoresTheTokenTimesOut()
+    {
+        // A blocking call that never looks at the token cannot be interrupted, but the wait for it must still end
+        Assert.ThrowsAsync<TimeoutException>(() => Utility.WithTimeout(Short, CancellationToken.None, _ => Thread.Sleep(Long)));
+    }
+
+    [Test]
+    [Category("Utility")]
+    public void SyncCallWithResultThatIgnoresTheTokenTimesOut()
+    {
+        Assert.ThrowsAsync<TimeoutException>(() => Utility.WithTimeout(Short, CancellationToken.None, _ => { Thread.Sleep(Long); return 1; }));
+    }
+
+    [Test]
+    [Category("Utility")]
+    public void CallerCancellationOfASyncCallThatIgnoresTheTokenIsNotATimeout()
+    {
+        using var caller = new CancellationTokenSource(Short);
+        Assert.CatchAsync<OperationCanceledException>(() => Utility.WithTimeout(Long, caller.Token, _ => Thread.Sleep(Long)));
+    }
+
+    [Test]
+    [Category("Utility")]
     public void CallerCancellationOfAnAsyncCallIsNotATimeout()
     {
         using var caller = new CancellationTokenSource(Short);
