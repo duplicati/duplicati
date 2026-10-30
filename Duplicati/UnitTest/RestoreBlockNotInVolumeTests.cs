@@ -21,6 +21,7 @@
 
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -35,6 +36,7 @@ namespace Duplicati.UnitTest;
 /// <summary>
 /// When the database places a block in a volume that does not hold it, reading the block must
 /// say which block is missing, rather than stop with a <see cref="NullReferenceException"/>.
+/// A restore reports the files that use the block as not restored, and restores the others.
 /// </summary>
 public class RestoreBlockNotInVolumeTests : BasicSetupHelper
 {
@@ -46,8 +48,9 @@ public class RestoreBlockNotInVolumeTests : BasicSetupHelper
     });
 
     /// <summary>
-    /// Backs up a file over several block volumes, and moves one of its blocks, in the database,
-    /// to another block volume that does not hold it
+    /// Backs up a file over several block volumes, a copy of it, which shares its blocks, and a file
+    /// of its own, then moves one block of the first file, in the database, to another block volume
+    /// that does not hold it
     /// </summary>
     /// <returns>The hash of the moved block</returns>
     private async Task<string> BackupAndMisplaceABlockAsync()
@@ -55,6 +58,10 @@ public class RestoreBlockNotInVolumeTests : BasicSetupHelper
         var data = new byte[400 * 1024];
         new Random(1).NextBytes(data);
         File.WriteAllBytes(Path.Combine(DATAFOLDER, "a.bin"), data);
+        File.WriteAllBytes(Path.Combine(DATAFOLDER, "a-copy.bin"), data);
+        var other = new byte[50 * 1024];
+        new Random(3).NextBytes(other);
+        File.WriteAllBytes(Path.Combine(DATAFOLDER, "b.bin"), other);
         using (var c = new Controller("file://" + TARGETFOLDER, Options, null))
             TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
@@ -64,21 +71,25 @@ public class RestoreBlockNotInVolumeTests : BasicSetupHelper
         cmd.CommandText = @"
             SELECT ""Block"".""Hash"", ""Other"".""ID""
             FROM ""Block""
+            JOIN ""BlocksetEntry"" ON ""BlocksetEntry"".""BlockID"" = ""Block"".""ID""
+            JOIN ""File"" ON ""File"".""BlocksetID"" = ""BlocksetEntry"".""BlocksetID""
             JOIN ""Remotevolume"" ""Other"" ON ""Other"".""Type"" = 'Blocks' AND ""Other"".""ID"" != ""Block"".""VolumeID""
-            WHERE ""Block"".""Size"" = 10240
+            WHERE ""Block"".""Size"" = 10240 AND ""File"".""Path"" = @Path
             ORDER BY ""Block"".""ID""
             LIMIT 1";
+        cmd.Parameters.AddWithValue("@Path", Path.Combine(DATAFOLDER, "a.bin"));
         string hash;
-        long other;
+        long otherVolume;
         using (var rd = await cmd.ExecuteReaderAsync())
         {
             Assert.That(await rd.ReadAsync(), Is.True, "Expected the file to span several block volumes");
             hash = rd.GetString(0);
-            other = rd.GetInt64(1);
+            otherVolume = rd.GetInt64(1);
         }
 
         cmd.CommandText = @"UPDATE ""Block"" SET ""VolumeID"" = @VolumeID WHERE ""Hash"" = @Hash";
-        cmd.Parameters.AddWithValue("@VolumeID", other);
+        cmd.Parameters.Clear();
+        cmd.Parameters.AddWithValue("@VolumeID", otherVolume);
         cmd.Parameters.AddWithValue("@Hash", hash);
         Assert.That(await cmd.ExecuteNonQueryAsync(), Is.EqualTo(1));
         return hash;
@@ -86,15 +97,44 @@ public class RestoreBlockNotInVolumeTests : BasicSetupHelper
 
     [Test]
     [Category("Targeted")]
-    public async Task RestoreNamesTheBlockThatIsNotInItsVolumeAsync()
+    public async Task RestoreSkipsOnlyTheFilesThatUseTheBlockAsync()
     {
         var hash = await BackupAndMisplaceABlockAsync();
 
-        using var c = new Controller("file://" + TARGETFOLDER, Options.Expand(new { restore_path = RESTOREFOLDER }), null);
-        var ex = Assert.CatchAsync<Exception>(async () => await c.RestoreAsync(["*"]));
+        var errors = new ConcurrentQueue<string>();
+        RestoreResults? results = null;
+        using var c = new Controller("file://" + TARGETFOLDER, Options.Expand(new { restore_path = RESTOREFOLDER, restore_legacy = false }), null);
+        c.OnOperationStarted += r => results = (RestoreResults)r;
+        using (Library.Logging.Log.StartScope(e =>
+        {
+            if (e.Level == Library.Logging.LogMessageType.Error)
+                errors.Enqueue($"{e.Id}: {e.FormattedMessage} {e.Exception?.Message}");
+        }))
+        {
+            // A block that never arrives would leave a file waiting for it, so a hang fails the test
+            var restore = Task.Run(async () => await c.RestoreAsync(["*"]));
+            if (await Task.WhenAny(restore, Task.Delay(TimeSpan.FromMinutes(2))) != restore)
+            {
+                await c.AbortAsync();
+                Assert.Fail("The restore did not finish within two minutes");
+            }
 
-        Assert.That(ex, Is.Not.InstanceOf<NullReferenceException>(), ex?.ToString());
-        Assert.That(ex!.ToString(), Does.Contain(hash), ex.ToString());
+            try
+            {
+                await restore;
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail($"The restore stopped instead of skipping the files: {ex}");
+            }
+        }
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(results!.BrokenLocalFiles, Is.EquivalentTo(new[] { Path.Combine(RESTOREFOLDER, "a.bin"), Path.Combine(RESTOREFOLDER, "a-copy.bin") }), "The files reported as not restored");
+            Assert.That(File.ReadAllBytes(Path.Combine(RESTOREFOLDER, "b.bin")), Is.EqualTo(File.ReadAllBytes(Path.Combine(DATAFOLDER, "b.bin"))), "The file that does not use the block");
+            Assert.That(errors.Any(x => x.StartsWith("UnreadableBlock") && x.Contains(hash)), Is.True, string.Join(Environment.NewLine, errors));
+        });
     }
 
     [Test]
