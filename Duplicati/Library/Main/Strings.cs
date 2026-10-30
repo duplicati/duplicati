@@ -36,6 +36,7 @@ namespace Duplicati.Library.Main.Strings
         public static string SourceIsMissingWarning(string foldername) { return LC.L(@"The source path {0} does not exist, skipping", foldername); }
         public static string NoSourcesError => LC.L(@"No valid source folders found, aborting backup as it would be empty");
         public static string SourceUnauthorizedError(string foldername) { return LC.L(@"Unauthorized to access source folder {0}, aborting backup", foldername); }
+        public static string SourceUnreadableError(string foldername, string message) { return LC.L(@"Backup aborted since the source folder {0} could not be read: {1}. Please verify that the folder and the drive it is on are available, or set the allow-missing-source option to run the backup without it.", foldername, message); }
         public static string UnsupportedOptionDisabledModuleWarning(string optionname, string modulename) { return LC.L(@"The option --{0} is not supported because the module {1} is not currently loaded", optionname, modulename); }
         public static string UnsupportedOptionWarning(string optionname) { return LC.L(@"The supplied option --{0} is not supported and will be ignored", optionname); }
         public static string StartingOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has started", operationname); }
@@ -248,7 +249,7 @@ namespace Duplicati.Library.Main.Strings
         public static string RetentionPolicyLong { get { return LC.L(@"Use this option to reduce the number of versions that are kept with increasing version age by deleting most of the old backups. The expected format is a comma separated list of colon separated time frame and interval pairs. For example the value ""7D:0s,3M:1D,10Y:2M"" means ""For 7 day keep all backups, for 3 months keep one backup every day, for 10 years one backup every 2nd month and delete every backup older than this."". This option also supports using the specifier ""U"" to indicate an unlimited time interval."); } }
         public static string RetentionPolicyShort { get { return LC.L(@"Reduce number of versions by deleting old intermediate backups"); } }
         public static string RetentionPolicyInvalidValue(string value) { return LC.L(@"The retention policy value '{0}' is not valid. Each entry must consist of a timeframe and an interval separated by a single colon, for example '7D:1D'.", value); }
-        public static string AllowmissingsourceLong { get { return LC.L(@"Use this option to continue even if some source entries are missing. When this option is set, no warning is emitted for missing sources."); } }
+        public static string AllowmissingsourceLong { get { return LC.L(@"Use this option to continue even if some source entries are missing or a source folder cannot be read. When this option is set, no warning is emitted for missing sources."); } }
         public static string AllowmissingsourceShort { get { return LC.L(@"Ignore missing source elements"); } }
         public static string AbortifsourcemissingLong { get { return LC.L(@"Use this option to abort the backup if any source path is missing. This overrides the default behavior of logging a warning and continuing."); } }
         public static string AbortifsourcemissingShort { get { return LC.L(@"Abort backup if a source is missing"); } }
