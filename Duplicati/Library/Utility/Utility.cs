@@ -1916,7 +1916,9 @@ namespace Duplicati.Library.Utility
             cts.CancelAfter(timeout);
             try
             {
-                await Task.Run(() => func(cts.Token), cts.Token).ConfigureAwait(false);
+                // A blocking call that ignores the token cannot be interrupted,
+                // so the wait for it is given up instead and it is left to finish on its own
+                await Task.Run(() => func(cts.Token), cts.Token).WaitAsync(timeout, token).ConfigureAwait(false);
             }
             catch (TaskCanceledException)
             {
@@ -1939,7 +1941,9 @@ namespace Duplicati.Library.Utility
             cts.CancelAfter(timeout);
             try
             {
-                return await Task.Run(() => func(cts.Token), cts.Token).ConfigureAwait(false);
+                // A blocking call that ignores the token cannot be interrupted,
+                // so the wait for it is given up instead and it is left to finish on its own
+                return await Task.Run(() => func(cts.Token), cts.Token).WaitAsync(timeout, token).ConfigureAwait(false);
             }
             catch (TaskCanceledException)
             {
