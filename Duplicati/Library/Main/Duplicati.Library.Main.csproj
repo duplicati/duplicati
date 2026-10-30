@@ -41,7 +41,9 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Database\Local\Database schema\*.sql" />
+    <EmbeddedResource Include="Database\Local\Database schema\Downgrade\*.sql" />
     <EmbeddedResource Include="Database\Sync\Database schema\*.sql" />
+    <EmbeddedResource Include="Database\Sync\Database schema\Downgrade\*.sql" />
   </ItemGroup>
 
   <ItemGroup>

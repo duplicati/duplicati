@@ -55,6 +55,15 @@ namespace Duplicati.Library.SQLiteHelper
     ///
     /// Currently no upgrades may contain semicolons, except as the SQL statement
     /// delimiter.
+    ///
+    /// Each upgrade should have a downgrade script with the same number in the
+    /// &quot;Downgrade&quot; subfolder, e.g. &quot;Downgrade/22. Remove table.sql&quot;.
+    /// The upgrader records every version's upgrade and downgrade script in the
+    /// &quot;SchemaScript&quot; table, together with the newest version it knows, so
+    /// an older DatabaseTool can downgrade a database that a newer release upgraded.
+    /// Because older releases run them, downgrade scripts must be plain SQL (no
+    /// {#if} blocks), must not touch the &quot;Version&quot; or &quot;SchemaScript&quot;
+    /// tables, and may refuse a downgrade by returning a single row with a message.
     /// </summary>
     public static class DatabaseUpgrader
     {
@@ -63,6 +72,14 @@ namespace Duplicati.Library.SQLiteHelper
 
         //This is the name of the schema sql
         private const string SCHEMA_NAME = "Schema.sql";
+
+        //This is the subfolder of FOLDER_NAME with the downgrade scripts
+        private const string DOWNGRADE_FOLDER_NAME = "Downgrade";
+
+        /// <summary>
+        /// The log tag for this class
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(DatabaseUpgrader));
 
         /// <summary> Helper func to evaluate a condition like "sqlitever > 3.8.2" </summary>
         private static bool evalCondition(string cond, IDictionary<string, IComparable> vars)
@@ -138,56 +155,194 @@ namespace Duplicati.Library.SQLiteHelper
             return retSql.ToString();
         }
 
-        public static void UpgradeDatabase(IDbConnection connection, string sourcefile, Type eltype)
+        /// <summary>
+        /// Reads the schema, upgrade and downgrade scripts embedded beside the given marker type.
+        /// The resource names look like
+        /// &quot;Duplicati.Library.Main.Database.Local.Database_schema.22. Add table.sql&quot; for upgrades and
+        /// &quot;Duplicati.Library.Main.Database.Local.Database_schema.Downgrade.22. Remove table.sql&quot; for downgrades,
+        /// where the number is the version the upgrade leads to, and the version the downgrade leaves.
+        /// </summary>
+        /// <param name="eltype">A type in the namespace that holds the <c>Database schema</c> folder</param>
+        /// <returns>The embedded scripts</returns>
+        public static SchemaScriptSet GetSchemaScripts(Type eltype)
         {
             var asm = eltype.Assembly;
 
-            string schema;
-            using (var rd = new System.IO.StreamReader(asm.GetManifestResourceStream(eltype, $"{FOLDER_NAME}.{SCHEMA_NAME}")))
-                schema = rd.ReadToEnd();
+            string ReadResource(string name)
+            {
+                using var rd = new System.IO.StreamReader(asm.GetManifestResourceStream(name) ?? throw new InvalidOperationException($"Missing resource {name}"));
+                return rd.ReadToEnd();
+            }
 
+            var prefix = (eltype.Namespace ?? "") + "." + FOLDER_NAME + ".";
+            var downgradePrefix = prefix + DOWNGRADE_FOLDER_NAME + ".";
+            var schema = ReadResource(prefix + SCHEMA_NAME);
+
+            var upgrades = new List<SchemaScriptFile>();
+            var downgrades = new List<SchemaScriptFile>();
+            foreach (var s in asm.GetManifestResourceNames())
+            {
+                if (!s.StartsWith(prefix, StringComparison.Ordinal) || s == prefix + SCHEMA_NAME || !s.EndsWith(".sql", StringComparison.Ordinal))
+                    continue;
+
+                var isDowngrade = s.StartsWith(downgradePrefix, StringComparison.Ordinal);
+                var filename = s.Substring(isDowngrade ? downgradePrefix.Length : prefix.Length);
+                var dot = filename.IndexOf('.');
+                if (dot <= 0 || !int.TryParse(filename.Substring(0, dot), NumberStyles.Integer, CultureInfo.InvariantCulture, out var version))
+                    continue;
+
+                (isDowngrade ? downgrades : upgrades).Add(new SchemaScriptFile(version, filename, ReadResource(s)));
+            }
+
+            // The upgrader numbers the database by script count, so a gap would record the wrong version
+            var upgradeVersions = upgrades.Select(x => x.Version).Distinct().OrderBy(x => x).ToList();
+            if (!upgradeVersions.SequenceEqual(Enumerable.Range(1, upgradeVersions.Count)))
+                throw new InvalidOperationException($"The upgrade scripts in {prefix} must be numbered 1 to {upgradeVersions.Count} without gaps, found: {string.Join(", ", upgradeVersions)}");
+
+            return new SchemaScriptSet(
+                schema,
+                upgrades.OrderBy(x => x.Version).ThenBy(x => x.Filename, StringComparer.Ordinal).ToList(),
+                downgrades.OrderBy(x => x.Version).ThenBy(x => x.Filename, StringComparer.Ordinal).ToList());
+        }
+
+        public static void UpgradeDatabase(IDbConnection connection, string sourcefile, Type eltype)
+        {
             //Get updates, and sort them according to version
             //This enables upgrading through several versions
             //ea, from 1 to 8, by stepping 2->3->4->5->6->7->8
-            SortedDictionary<int, string> upgrades = new SortedDictionary<int, string>();
-            var prefix = (eltype.Namespace ?? "") + "." + FOLDER_NAME + ".";
-            foreach (var s in asm.GetManifestResourceNames())
-            {
-                //The resource name will be "Duplicati.Library.Main.Database.Database_schema.1.Sample upgrade.sql"
-                //The number indicates the version that will be upgraded to
-                //Could be ""Duplicati.Server.Database.Database_schema.1. Add Notifications.sql""
-                if (s.StartsWith(prefix, StringComparison.Ordinal) && !s.EndsWith(prefix + SCHEMA_NAME))
-                {
-                    try
-                    {
-                        string version = s.Substring(s.IndexOf(prefix) + prefix.Length, s.IndexOf(".", s.IndexOf(prefix) + prefix.Length + 1, StringComparison.Ordinal) - s.IndexOf(prefix) - prefix.Length);
-                        int fileversion = int.Parse(version);
+            var scripts = GetSchemaScripts(eltype);
+            var versions = scripts.Upgrades
+                .Select(x => x.Version)
+                .Distinct()
+                .Select(scripts.GetUpgradeScript)
+                .ToList();
 
-                        string prev;
-
-                        if (!upgrades.TryGetValue(fileversion, out prev))
-
-                            prev = "";
-
-                        upgrades[fileversion] = prev + new System.IO.StreamReader(asm.GetManifestResourceStream(s)).ReadToEnd();
-                    }
-                    catch
-                    {
-                    }
-                }
-            }
-
-            UpgradeDatabase(connection, sourcefile, schema, new List<string>(upgrades.Values));
+            UpgradeDatabase(connection, sourcefile, scripts, versions);
         }
 
+        /// <summary>
+        /// Brings the <c>SchemaScript</c> table in line with a database at the given version.
+        /// Every version from 1 to <paramref name="dbversion"/> gets a row with the scripts from
+        /// <paramref name="scripts"/>, unless the row was written by a newer release, and rows
+        /// above <paramref name="dbversion"/> are removed. The table lets an older DatabaseTool
+        /// downgrade a database that a newer release upgraded.
+        /// </summary>
+        /// <param name="connection">The database connection</param>
+        /// <param name="transaction">The transaction to write in</param>
+        /// <param name="scripts">The scripts known by this binary</param>
+        /// <param name="dbversion">The schema version the database is at</param>
+        public static void WriteSchemaScriptTable(IDbConnection connection, IDbTransaction transaction, SchemaScriptSet scripts, int dbversion)
+        {
+            using var cmd = connection.CreateCommand();
+            cmd.Transaction = transaction;
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS ""SchemaScript"" (
+                    ""Version"" INTEGER PRIMARY KEY,
+                    ""UpdateScript"" TEXT NOT NULL,
+                    ""DowngradeScript"" TEXT NULL,
+                    ""WriterVersion"" INTEGER NOT NULL
+                )
+            ";
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = @"
+                INSERT INTO ""SchemaScript"" (""Version"", ""UpdateScript"", ""DowngradeScript"", ""WriterVersion"")
+                VALUES (@Version, @UpdateScript, @DowngradeScript, @WriterVersion)
+                ON CONFLICT (""Version"") DO UPDATE SET
+                    ""UpdateScript"" = excluded.""UpdateScript"",
+                    ""DowngradeScript"" = excluded.""DowngradeScript"",
+                    ""WriterVersion"" = excluded.""WriterVersion""
+                WHERE excluded.""WriterVersion"" >= ""SchemaScript"".""WriterVersion""
+            ";
+
+            var versionParam = AddParameter(cmd, "@Version");
+            var updateParam = AddParameter(cmd, "@UpdateScript");
+            var downgradeParam = AddParameter(cmd, "@DowngradeScript");
+            AddParameter(cmd, "@WriterVersion").Value = scripts.LatestVersion;
+
+            for (var v = 1; v <= dbversion; v++)
+            {
+                versionParam.Value = v;
+                updateParam.Value = scripts.GetUpgradeScript(v);
+                downgradeParam.Value = (object)scripts.GetDowngradeScript(v) ?? DBNull.Value;
+                cmd.ExecuteNonQuery();
+            }
+
+            cmd.Parameters.Clear();
+            cmd.CommandText = @"DELETE FROM ""SchemaScript"" WHERE ""Version"" > @Version";
+            AddParameter(cmd, "@Version").Value = dbversion;
+            cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Adds a named parameter to the command
+        /// </summary>
+        /// <param name="cmd">The command</param>
+        /// <param name="name">The parameter name</param>
+        /// <returns>The parameter</returns>
+        private static IDbDataParameter AddParameter(IDbCommand cmd, string name)
+        {
+            var p = cmd.CreateParameter();
+            p.ParameterName = name;
+            cmd.Parameters.Add(p);
+            return p;
+        }
+
+        /// <summary>
+        /// Writes the <c>SchemaScript</c> rows after an upgrade, or when they are missing or were
+        /// written by an older release. On a database that is already current and has all rows
+        /// from this release or a newer one, nothing is written.
+        /// A failure is logged and does not stop the database from being used.
+        /// </summary>
+        /// <param name="connection">The database connection</param>
+        /// <param name="scripts">The scripts known by this binary</param>
+        /// <param name="applied">Whether this call applied any upgrade</param>
+        private static void SyncSchemaScriptTable(IDbConnection connection, SchemaScriptSet scripts, bool applied)
+        {
+            var latest = scripts.LatestVersion;
+            try
+            {
+                if (!applied)
+                {
+                    using var cmd = connection.CreateCommand();
+                    cmd.CommandText = @"
+                        SELECT COUNT(*)
+                        FROM sqlite_master
+                        WHERE type = 'table' AND name = 'SchemaScript'
+                    ";
+                    if (Convert.ToInt64(cmd.ExecuteScalar()) == 1)
+                    {
+                        cmd.CommandText = @"
+                            SELECT COUNT(*), IFNULL(MAX(""Version""), 0), IFNULL(MIN(""WriterVersion""), 0)
+                            FROM ""SchemaScript""
+                        ";
+                        using var rd = cmd.ExecuteReader();
+                        if (rd.Read() && rd.GetInt64(0) == latest && rd.GetInt64(1) == latest && rd.GetInt64(2) >= latest)
+                            return;
+                    }
+                }
+
+                using var tr = connection.BeginTransaction();
+                WriteSchemaScriptTable(connection, tr, scripts, latest);
+                tr.Commit();
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "SchemaScriptWriteFailed", ex, "Failed to record the schema scripts in the database, an older version may not be able to downgrade it: {0}", ex.Message);
+            }
+        }
 
         /// <summary>
         /// Ensures that the database is up to date
         /// </summary>
         /// <param name="connection">The database connection to use</param>
         /// <param name="sourcefile">The file the database is placed in</param>
-        private static void UpgradeDatabase(IDbConnection connection, string sourcefile, string schema, IList<string> versions)
+        /// <param name="scripts">The embedded scripts</param>
+        /// <param name="versions">The upgrade scripts, one per version, in version order</param>
+        private static void UpgradeDatabase(IDbConnection connection, string sourcefile, SchemaScriptSet scripts, IList<string> versions)
         {
+            var schema = scripts.Schema;
+            var applied = false;
             if (connection.State != ConnectionState.Open)
             {
                 if (string.IsNullOrEmpty(connection.ConnectionString))
@@ -251,7 +406,7 @@ namespace Duplicati.Library.SQLiteHelper
                 {
                     cmd.CommandText = PreparseSQL(schema, preparserVars);
                     cmd.ExecuteNonQuery();
-                    UpgradeDatabase(connection, sourcefile, schema, versions);
+                    UpgradeDatabase(connection, sourcefile, scripts, versions);
                     return;
                 }
                 else if (versions.Count > dbversion)
@@ -317,6 +472,7 @@ namespace Duplicati.Library.SQLiteHelper
                         //Update databaseversion, so we don't run the scripts again
                         cmd.CommandText = "Update version SET Version = " + versions.Count.ToString(CultureInfo.InvariantCulture);
                         cmd.ExecuteNonQuery();
+                        applied = true;
                     }
                     catch (Exception ex)
                     {
@@ -328,6 +484,48 @@ namespace Duplicati.Library.SQLiteHelper
                 }
             }
 
+            SyncSchemaScriptTable(connection, scripts, applied);
+        }
+    }
+
+    /// <summary>
+    /// A numbered script embedded beside a database schema
+    /// </summary>
+    /// <param name="Version">The version the script upgrades to, or downgrades from</param>
+    /// <param name="Filename">The file name of the script</param>
+    /// <param name="Content">The script contents</param>
+    public sealed record SchemaScriptFile(int Version, string Filename, string Content);
+
+    /// <summary>
+    /// The scripts embedded for one database schema
+    /// </summary>
+    /// <param name="Schema">The contents of <c>Schema.sql</c></param>
+    /// <param name="Upgrades">The upgrade scripts, in version order</param>
+    /// <param name="Downgrades">The downgrade scripts, in version order</param>
+    public sealed record SchemaScriptSet(string Schema, IReadOnlyList<SchemaScriptFile> Upgrades, IReadOnlyList<SchemaScriptFile> Downgrades)
+    {
+        /// <summary>
+        /// The newest schema version these scripts lead to
+        /// </summary>
+        public int LatestVersion => Upgrades.Count == 0 ? 0 : Upgrades.Max(x => x.Version);
+
+        /// <summary>
+        /// Gets the upgrade script that leads to the given version
+        /// </summary>
+        /// <param name="version">The version</param>
+        /// <returns>The script, with several files for one version joined in order</returns>
+        public string GetUpgradeScript(int version)
+            => string.Concat(Upgrades.Where(x => x.Version == version).Select(x => x.Content));
+
+        /// <summary>
+        /// Gets the downgrade script that leaves the given version
+        /// </summary>
+        /// <param name="version">The version</param>
+        /// <returns>The script, or <c>null</c> if there is none</returns>
+        public string GetDowngradeScript(int version)
+        {
+            var files = Downgrades.Where(x => x.Version == version).ToList();
+            return files.Count == 0 ? null : string.Concat(files.Select(x => x.Content));
         }
     }
 }
