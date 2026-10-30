@@ -78,5 +78,39 @@ namespace Duplicati.UnitTest
             Assert.AreEqual("CustomId", warnings[0].Id, "Unknown errors should use the caller-supplied id");
             Assert.AreSame(ex, warnings[0].Exception, "Unknown errors must keep the exception for debugging");
         }
+
+        [Test]
+        [Category("Targeted")]
+        public void NonLocalFileReadFailureIsReportedAsNonLocal()
+        {
+            // A cloud placeholder or tiered file opens, but the read fails with a generic error
+            // (ERROR_INVALID_FUNCTION on Windows). The attributes identify the real cause.
+            var ex = new IOException("Incorrect function.");
+            var captured = new List<LogEntry>();
+            using (Log.StartScope(e => captured.Add(e)))
+                LogExceptionHelper.LogCommonWarning(ex, "TestTag", "SomeCallerId", "/some/path", FileAttributes.Offline | FileAttributes.Archive, "Failed to process path: {0}");
+
+            var warnings = captured.Where(e => e.Level == LogMessageType.Warning).ToList();
+            Assert.AreEqual(1, warnings.Count);
+            Assert.AreEqual("NonLocalFile", warnings[0].Id);
+            Assert.IsNull(warnings[0].Exception, "A non-local file is a known problem and must not attach the exception");
+            Assert.That(warnings[0].FormattedMessage, Does.Contain("exclude-non-local-files"));
+        }
+
+        [Test]
+        [Category("Targeted")]
+        public void LocalFileReadFailureIsNotReportedAsNonLocal()
+        {
+            // Without the non-local attributes the same error stays an unknown failure, with the exception kept.
+            var ex = new IOException("Incorrect function.");
+            var captured = new List<LogEntry>();
+            using (Log.StartScope(e => captured.Add(e)))
+                LogExceptionHelper.LogCommonWarning(ex, "TestTag", "SomeCallerId", "/some/path", FileAttributes.Archive, "Failed to process path: {0}");
+
+            var warnings = captured.Where(e => e.Level == LogMessageType.Warning).ToList();
+            Assert.AreEqual(1, warnings.Count);
+            Assert.AreEqual("SomeCallerId", warnings[0].Id);
+            Assert.AreSame(ex, warnings[0].Exception);
+        }
     }
 }
