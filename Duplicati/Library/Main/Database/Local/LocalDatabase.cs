@@ -3062,7 +3062,8 @@ namespace Duplicati.Library.Main.Database.Local
                 .ConfigureAwait(false);
 
             // A dlist entry gets no fileset: one at time 0 would be listed as a backup version
-            // until the entry is removed. Deleting filesets does not count this entry.
+            // until the entry is removed. Deleting filesets does not count a dlist volume that
+            // is being deleted and has no fileset, so the entry does not upset that check.
             if (type == RemoteVolumeType.Files)
                 await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
         }

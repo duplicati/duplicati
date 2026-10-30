@@ -42,7 +42,9 @@ public class RenamePlaceholderFilesetTests : BasicSetupHelper
         => string.Join(" | ", filesets.OrderBy(x => x.Version).Select(x => $"v{x.Version} {x.Time:O} full={x.IsFullBackup} files={x.FileCount}"));
 
     /// <summary>
-    /// Two backups, a.txt and then also b.txt, more than two seconds apart
+    /// Two backups, a.txt and then also b.txt, more than two seconds apart: purge rewrites a
+    /// version under the first free dlist name after its own timestamp, at least a second
+    /// later, and refuses when that reaches the next version.
     /// </summary>
     private async Task SetUpTwoVersionsAsync()
     {

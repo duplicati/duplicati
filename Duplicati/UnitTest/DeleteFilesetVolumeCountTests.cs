@@ -25,8 +25,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database.Local;
-using Duplicati.Library.SQLiteHelper;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
 
@@ -41,40 +41,31 @@ namespace Duplicati.UnitTest;
 public class DeleteFilesetVolumeCountTests
 {
     /// <summary>The timestamp of the fileset that the tests drop</summary>
-    private const long DroppedFilesetTime = 1000;
+    private static readonly DateTime DroppedFilesetTime = DateTime.UnixEpoch.AddSeconds(1000);
+    /// <summary>The timestamp of the fileset that the tests keep</summary>
+    private static readonly DateTime KeptFilesetTime = DateTime.UnixEpoch.AddSeconds(2000);
 
     /// <summary>
     /// Builds a database with two filesets, the dropped one's dlist volume in the given state,
     /// and optionally a third dlist volume that no fileset uses.
     /// </summary>
-    private static async Task<TempFile> CreateDatabaseAsync(string droppedVolumeState, string? extraVolumeState)
+    private static async Task<TempFile> CreateDatabaseAsync(RemoteVolumeState droppedVolumeState, RemoteVolumeState? extraVolumeState)
     {
         var dbfile = new TempFile();
         try
         {
-            using var db = await SQLiteLoader.LoadConnectionAsync(dbfile);
-            DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
-            using var cmd = db.CreateCommand();
+            await using var db = await LocalDeleteDatabase.CreateAsync(dbfile, "Test", null, CancellationToken.None);
 
-            var statements = new List<string>
-            {
-                @"INSERT INTO ""Operation"" (""ID"", ""Description"", ""Timestamp"") VALUES (1, 'Test', 0)",
-                $@"INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""Size"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
-                   VALUES (1, 1, 'dropped.dlist.zip', 'Files', 10, '{droppedVolumeState}', 0, 0, 0, 0)",
-                @"INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""Size"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
-                   VALUES (2, 1, 'kept.dlist.zip', 'Files', 20, 'Verified', 0, 0, 0, 0)",
-                $@"INSERT INTO ""Fileset"" (""ID"", ""OperationID"", ""VolumeID"", ""IsFullBackup"", ""Timestamp"") VALUES (1, 1, 1, 1, {DroppedFilesetTime})",
-                @"INSERT INTO ""Fileset"" (""ID"", ""OperationID"", ""VolumeID"", ""IsFullBackup"", ""Timestamp"") VALUES (2, 1, 2, 1, 2000)",
-            };
+            var dropped = await db.RegisterRemoteVolumeAsync("dropped.dlist.zip", RemoteVolumeType.Files, 10, droppedVolumeState, CancellationToken.None);
+            await db.CreateFilesetAsync(dropped, DroppedFilesetTime, CancellationToken.None);
+
+            var kept = await db.RegisterRemoteVolumeAsync("kept.dlist.zip", RemoteVolumeType.Files, 20, RemoteVolumeState.Verified, CancellationToken.None);
+            await db.CreateFilesetAsync(kept, KeptFilesetTime, CancellationToken.None);
+
             if (extraVolumeState != null)
-                statements.Add($@"INSERT INTO ""Remotevolume"" (""ID"", ""OperationID"", ""Name"", ""Type"", ""Size"", ""State"", ""VerificationCount"", ""DeleteGraceTime"", ""ArchiveTime"", ""LockExpirationTime"")
-                   VALUES (3, 1, 'extra.dlist.zip', 'Files', -1, '{extraVolumeState}', 0, 0, 0, 0)");
+                await db.RegisterRemoteVolumeAsync("extra.dlist.zip", RemoteVolumeType.Files, -1, extraVolumeState.Value, CancellationToken.None);
 
-            foreach (var sql in statements)
-            {
-                cmd.CommandText = sql;
-                await cmd.ExecuteNonQueryAsync();
-            }
+            await db.Transaction.CommitAsync(CancellationToken.None);
 
             return dbfile;
         }
@@ -92,18 +83,18 @@ public class DeleteFilesetVolumeCountTests
     {
         await using var db = await LocalDeleteDatabase.CreateAsync(dbfile, "Test", null, CancellationToken.None);
         var removed = new List<string>();
-        await foreach (var v in db.DropFilesetsFromTableAsync([DateTime.UnixEpoch.AddSeconds(DroppedFilesetTime)], CancellationToken.None))
+        await foreach (var v in db.DropFilesetsFromTableAsync([DroppedFilesetTime], CancellationToken.None))
             removed.Add(v.Key);
         return removed.OrderBy(x => x, StringComparer.Ordinal).ToArray();
     }
 
     [Test]
     [Category("Database")]
-    [TestCase("Verified")]
-    [TestCase("Uploaded")]
+    [TestCase(RemoteVolumeState.Verified)]
+    [TestCase(RemoteVolumeState.Uploaded)]
     // A fileset whose dlist file is already being deleted still has to be deletable
-    [TestCase("Deleting")]
-    public async Task DroppingAFilesetMarksItsVolumeAsync(string droppedVolumeState)
+    [TestCase(RemoteVolumeState.Deleting)]
+    public async Task DroppingAFilesetMarksItsVolumeAsync(RemoteVolumeState droppedVolumeState)
     {
         using var dbfile = await CreateDatabaseAsync(droppedVolumeState, null);
         Assert.That(await DropAsync(dbfile), Is.EqualTo(new[] { "dropped.dlist.zip" }));
@@ -111,24 +102,28 @@ public class DeleteFilesetVolumeCountTests
 
     [Test]
     [Category("Database")]
-    public async Task AnEntryLeftByARenameDoesNotCountAsync()
+    [TestCase(RemoteVolumeState.Verified)]
+    // The dropped fileset's own volume is counted even when it is already being deleted,
+    // while the entry without a fileset is not, so the two must be told apart
+    [TestCase(RemoteVolumeState.Deleting)]
+    public async Task AnEntryLeftByARenameDoesNotCountAsync(RemoteVolumeState droppedVolumeState)
     {
         // A failed upload is retried under a new name, and the old name stays registered as
         // being deleted, with no fileset. It is removed along with the dropped volume.
-        using var dbfile = await CreateDatabaseAsync("Verified", "Deleting");
+        using var dbfile = await CreateDatabaseAsync(droppedVolumeState, RemoteVolumeState.Deleting);
         Assert.That(await DropAsync(dbfile), Is.EqualTo(new[] { "dropped.dlist.zip", "extra.dlist.zip" }));
     }
 
     [Test]
     [Category("Database")]
-    [TestCase("Verified")]
-    [TestCase("Uploaded")]
-    [TestCase("Temporary")]
-    public async Task ADlistVolumeWithoutAFilesetStopsTheDeleteAsync(string extraVolumeState)
+    [TestCase(RemoteVolumeState.Verified)]
+    [TestCase(RemoteVolumeState.Uploaded)]
+    [TestCase(RemoteVolumeState.Temporary)]
+    public async Task ADlistVolumeWithoutAFilesetStopsTheDeleteAsync(RemoteVolumeState extraVolumeState)
     {
         // A dlist volume that is not being deleted and has no fileset means the database does
         // not match what the delete expects, and it must not go on
-        using var dbfile = await CreateDatabaseAsync("Verified", extraVolumeState);
+        using var dbfile = await CreateDatabaseAsync(RemoteVolumeState.Verified, extraVolumeState);
         var ex = Assert.CatchAsync<Exception>(async () => await DropAsync(dbfile));
         Assert.That(ex!.Message, Does.Contain("Unexpected number of remote volumes marked as deleted"));
     }

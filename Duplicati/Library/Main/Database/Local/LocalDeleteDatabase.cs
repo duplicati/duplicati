@@ -138,40 +138,31 @@ namespace Duplicati.Library.Main.Database.Local
             // Resolve the IDs of the filesets being deleted up front, so the
             // cascading deletes can target exactly those rows instead of scanning
             // the full tables for entries that are no longer referenced.
+            // Their dlist volume IDs are read at the same time: one may already be
+            // marked for deletion, and it is still counted against the filesets below.
             var filesetIds = new List<long>(toDelete.Length);
+            var volumeIds = new List<long>(toDelete.Length);
             await using (var tempTable = await TemporaryDbValueList.CreateAsync(this, toDelete.Select(Library.Utility.Utility.NormalizeDateTimeToEpochSeconds), token).ConfigureAwait(false))
             {
                 var timestamps = await tempTable.GetInClauseAsync(token).ConfigureAwait(false);
                 cmd.SetCommandAndParameters($@"
-                        SELECT ""ID""
+                        SELECT
+                            ""ID"",
+                            ""VolumeID""
                         FROM ""Fileset""
                         WHERE ""Timestamp"" IN ({timestamps})
                     ");
 
                 await using var idReader = await cmd.ExecuteReaderAsync(true, token).ConfigureAwait(false);
                 while (await idReader.ReadAsync(token).ConfigureAwait(false))
+                {
                     filesetIds.Add(idReader.ConvertValueToInt64(0));
+                    volumeIds.Add(idReader.ConvertValueToInt64(1));
+                }
             }
 
             if (filesetIds.Count != toDelete.Length)
                 throw new Exception($"Unexpected number of filesets found {filesetIds.Count} vs {toDelete.Length}");
-
-            // The dlist volumes of the filesets being deleted. One may already be marked for
-            // deletion, and it is still one of the volumes counted against them below.
-            var volumeIds = new List<long>(filesetIds.Count);
-            await using (var tempTable = await TemporaryDbValueList.CreateAsync(this, filesetIds, token).ConfigureAwait(false))
-            {
-                var ids = await tempTable.GetInClauseAsync(token).ConfigureAwait(false);
-                cmd.SetCommandAndParameters($@"
-                        SELECT ""VolumeID""
-                        FROM ""Fileset""
-                        WHERE ""ID"" IN ({ids})
-                    ");
-
-                await using var volumeReader = await cmd.ExecuteReaderAsync(true, token).ConfigureAwait(false);
-                while (await volumeReader.ReadAsync(token).ConfigureAwait(false))
-                    volumeIds.Add(volumeReader.ConvertValueToInt64(0));
-            }
 
             // Delete the entries one fileset at a time, using an equality match on
             // the leading primary key column. This lets SQLite delete the rows in a
@@ -312,8 +303,10 @@ namespace Duplicati.Library.Main.Database.Local
 
             //Find all remote filesets that are no longer required, and mark them as deleting.
             // A volume that is already being deleted counts only if it belonged to one of the
-            // deleted filesets: the entry a rename leaves behind for the old name has no
-            // fileset, and is not one of them.
+            // deleted filesets. A dlist volume that is being deleted and has no fileset is
+            // already scheduled for removal, whoever left it (a retried upload renames the
+            // failed name into one, and so does a delete interrupted before the remote delete),
+            // so it is not counted, but it is still returned with the volumes to remove.
             int updated;
             await using (var volumeTable = await TemporaryDbValueList.CreateAsync(this, volumeIds, token).ConfigureAwait(false))
             {
