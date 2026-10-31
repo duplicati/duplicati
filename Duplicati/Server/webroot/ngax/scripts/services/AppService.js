@@ -1,4 +1,4 @@
-backupApp.service('AppService', function ($http, $cookies, $q, $cookies, DialogService, appConfig) {
+backupApp.service('AppService', function ($http, $cookies, $q, DialogService, appConfig) {
     this.apiurl = '../api/v1';
     this.access_token = null;
     this.access_token_promise = null;
