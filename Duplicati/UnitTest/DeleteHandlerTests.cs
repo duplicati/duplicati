@@ -196,6 +196,41 @@ namespace Duplicati.UnitTest
             CollectionAssert.AreEquivalent(expectedFilesetsToRemove, filesetsToRemove);
         }
 
+        /// <summary>
+        /// A weekly scheduled backup can start a few seconds later than the week before, and that
+        /// must not make the retention policy delete it for being too close (issue #3987)
+        /// </summary>
+        [Test]
+        [Category("DeleteHandler")]
+        [TestCase(false)]
+        [TestCase(true)]
+        public void RetentionPolicyAllowsATimeToleranceOnTheInterval(bool disableTimeTolerance)
+        {
+            Options options = new Options(new Dictionary<string, string>
+            {
+                { "retention-policy", "1Y:1W" },
+                { "disable-time-tolerance", disableTimeTolerance ? "true" : "false" }
+            });
+
+            DateTime now = DateTime.Now;
+            IListResultFileset[] filesets =
+            {
+                new Fileset(0, BackupType.FULL_BACKUP, now),
+                new Fileset(1, BackupType.FULL_BACKUP, now.AddDays(-16).AddSeconds(-10)),
+                new Fileset(2, BackupType.FULL_BACKUP, now.AddDays(-23).AddSeconds(-5)), // A week less five seconds after the one before it
+                new Fileset(3, BackupType.FULL_BACKUP, now.AddDays(-30)),
+            };
+
+            IListResultFileset[] expectedFilesetsToRemove = disableTimeTolerance
+                ? new[] { filesets[2] }
+                : Array.Empty<IListResultFileset>();
+
+            RetentionPolicyRemover remover = new RetentionPolicyRemover(options);
+            IListResultFileset[] filesetsToRemove = remover.GetFilesetsToDelete(filesets).ToArray();
+
+            CollectionAssert.AreEquivalent(expectedFilesetsToRemove, filesetsToRemove);
+        }
+
         [Test]
         [Category("DeleteHandler")]
         public void SpecificVersionsRemover()
