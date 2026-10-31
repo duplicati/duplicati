@@ -81,7 +81,8 @@ namespace Duplicati.GUI.TrayIcon
             WebServerLoader.OPTION_WEBSERVICE_PASSWORD,
             WebServerLoader.OPTION_PORT,
             DataFolderManager.SERVER_DATAFOLDER_OPTION,
-            DataFolderManager.PORTABLE_MODE_OPTION
+            DataFolderManager.PORTABLE_MODE_OPTION,
+            Server.Program.FORCE_LOCALE_OPTION
         };
 
 
@@ -137,6 +138,10 @@ namespace Duplicati.GUI.TrayIcon
                 Utility.AttachWindowsConsole();
 
             Console.Write(preloadOutput.ToString());
+
+            // Apply the locale to the tray icon thread as well; the hosted server
+            // applies it again on its own thread, but cannot change this thread
+            Server.Program.ApplyForcedLocale(options, Console.WriteLine);
 
             if (HelpOptionExtensions.IsArgumentAnyHelpString(_args))
             {

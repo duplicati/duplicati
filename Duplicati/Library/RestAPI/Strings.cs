@@ -74,6 +74,9 @@ Error message: {0}", error); }
         public static string ServerencryptionkeyShort { get { return LC.L(@"Set the database encryption key"); } }
         public static string TempdirLong { get { return LC.L(@"Use this option to supply an alternative folder for temporary storage. By default the system default temporary folder is used. Note that also SQLite will put temporary files in this temporary folder."); } }
         public static string TempdirShort { get { return LC.L(@"Temporary storage folder"); } }
+        public static string ForcelocaleLong { get { return LC.L(@"By default, your system locale and culture settings will be used. In some cases you may prefer to run with another locale, for example to get messages in another language. Use this option to set the locale. Supply a blank string to choose the ""Invariant Culture""."); } }
+        public static string ForcelocaleShort { get { return LC.L(@"Force the locale setting"); } }
+        public static string FailedForceLocaleError(string option, string locale, string exMsg) { return LC.L(@"Failed to apply the --{0} setting with the value ""{1}"", using the system locale instead. Exception was: ""{2}""", option, locale, exMsg); }
         public static string WebserverResetJwtConfigDescription { get { return LC.L(@"Reset the JWT configuration, invalidating any issued login tokens"); } }
         public static string WebserverEnableForeverTokenDescription { get { return LC.L(@"Enable the use of long-lived access tokens"); } }
         public static string WebserverApiOnlyDescription { get { return LC.L(@"Disable the web interface and only allow API access"); } }
