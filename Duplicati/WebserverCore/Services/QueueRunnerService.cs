@@ -40,6 +40,10 @@ public class QueueRunnerService(
     IApplicationSettings applicationSettings,
     IDatabaseLockTracker databaseLockTracker) : IQueueRunnerService, IDisposable
 {
+    /// <summary>
+    /// The tag used for logging
+    /// </summary>
+    private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<QueueRunnerService>();
     private readonly object _lock = new();
     /// <summary>
     /// A thread-safe dictionary to store cached task results.
@@ -159,6 +163,13 @@ public class QueueRunnerService(
             AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, task.TaskFinished ?? DateTime.Now, null, GetResultErrorMessage(result)));
             if (task.OnFinished != null)
                 await task.OnFinished(null).ConfigureAwait(false);
+        }
+        catch (Scheduler.RunNoLongerScheduledException ex)
+        {
+            // The run was skipped before it started, which is not an error
+            Library.Logging.Log.WriteInformationMessage(LOGTAG, "ScheduledRunSkipped", ex.Message);
+            completed = true;
+            AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, DateTime.UtcNow, null));
         }
         catch (Exception ex)
         {

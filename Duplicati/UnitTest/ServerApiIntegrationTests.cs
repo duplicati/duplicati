@@ -905,6 +905,75 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// A scheduled run that is due while the server is paused, as it is for a while after a start,
+    /// waits in the queue. If the schedule is removed in the meantime, the run is no longer wanted
+    /// and must not start when the server resumes (#5045). A run whose schedule is kept still starts.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task QueuedScheduledRunStartsOnlyWhileItIsScheduled_Async(bool removeSchedule)
+    {
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sample content");
+        Directory.CreateDirectory(this.TARGETFOLDER);
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var queueRunner = (IQueueRunnerService)ServerProgram.DuplicatiWebserver.Provider.GetService(typeof(IQueueRunnerService))!;
+            (await httpClient.PostAsync("/api/v1/serverstate/pause", null).ConfigureAwait(false)).EnsureSuccessStatusCode();
+
+            var backup = new BackupAndScheduleInputDto.BackupInputDto
+            {
+                Name = $"Scheduled backup {Guid.NewGuid():N}",
+                Description = "Integration test backup",
+                TargetURL = BuildFileBackendUrl(this.TARGETFOLDER),
+                Sources = new[] { this.DATAFOLDER },
+                Settings = new[] { new BackupAndScheduleInputDto.SettingInputDto { Name = "passphrase", Value = "integration-passphrase" } },
+                Filters = Array.Empty<BackupAndScheduleInputDto.FilterInputDto>(),
+                Metadata = new Dictionary<string, string>()
+            };
+            var createResponse = await httpClient.PostAsJsonAsync("/api/v1/backups", new BackupAndScheduleInputDto
+            {
+                Backup = backup,
+                Schedule = new BackupAndScheduleInputDto.ScheduleInputDto { Time = DateTime.UtcNow.AddHours(-1), Repeat = "1D" }
+            }, JsonOptions).ConfigureAwait(false);
+            createResponse.EnsureSuccessStatusCode();
+            var backupId = (await createResponse.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false))!.ID;
+
+            // The run is overdue, so the scheduler queues it while the server is paused
+            var stopwatch = Stopwatch.StartNew();
+            while (!queueRunner.GetCurrentTasks().Any(t => t.BackupID == backupId))
+            {
+                if (stopwatch.Elapsed > TimeSpan.FromSeconds(30))
+                    Assert.Fail("The scheduler did not queue the overdue run");
+                await Task.Delay(100).ConfigureAwait(false);
+            }
+
+            if (removeSchedule)
+            {
+                var updateResponse = await httpClient.PutAsJsonAsync($"/api/v1/backup/{backupId}", new BackupAndScheduleInputDto { Backup = backup }, JsonOptions).ConfigureAwait(false);
+                updateResponse.EnsureSuccessStatusCode();
+            }
+
+            (await httpClient.PostAsync("/api/v1/serverstate/resume", null).ConfigureAwait(false)).EnsureSuccessStatusCode();
+
+            stopwatch.Restart();
+            while (queueRunner.GetCurrentTasks().Count > 0 || queueRunner.GetCurrentTask() != null)
+            {
+                if (stopwatch.Elapsed > TimeSpan.FromMinutes(1))
+                    Assert.Fail("The queue did not empty");
+                await Task.Delay(100).ConfigureAwait(false);
+            }
+
+            if (removeSchedule)
+                Assert.That(Directory.GetFiles(this.TARGETFOLDER), Is.Empty, "The run of the removed schedule backed up");
+            else
+                Assert.That(Directory.GetFiles(this.TARGETFOLDER, "*.dlist.*"), Has.Length.EqualTo(1), "The scheduled run did not back up");
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Waits until the task is no longer current, so its result has been stored.
     /// </summary>
     private static async Task WaitForTaskResultAsync(long taskId)
