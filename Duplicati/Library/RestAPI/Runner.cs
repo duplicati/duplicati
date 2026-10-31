@@ -365,8 +365,9 @@ namespace Duplicati.Server
             var dict = new Dictionary<string, string?>();
             if (onlyPrefix)
                 dict["list-prefix-only"] = "true";
-            if (allVersions)
-                dict["all-versions"] = "true";
+            // Always set, so an all-versions option of the backup or the server does not turn
+            // the list of one version into a list of every version
+            dict["all-versions"] = allVersions ? "true" : "false";
             if (time.Ticks > 0)
                 dict["time"] = Utility.SerializeDateTime(time.ToUniversalTime());
             if (folderContents)
