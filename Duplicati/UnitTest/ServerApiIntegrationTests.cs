@@ -1543,6 +1543,64 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         }).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// The server opened, created or upgraded its database before it checked that no other
+    /// server was running. Two servers started at the same time, such as from two startup
+    /// entries, then upgraded the same database at once, and the one that failed copied its
+    /// copy of the old database back over it (forum 22694: "no such column: OperationType").
+    /// A second server must stop before it touches the database.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task ASecondServerDoesNotTouchTheDatabaseAsync()
+    {
+        // The test holds the instance lock and starts the second server in its own process.
+        // On Linux and macOS the lock is a POSIX record lock (lockf), which belongs to the
+        // process, so a second lock from the same process does not conflict and the server
+        // would start. On Windows the lock is a file opened with FileShare.None, which
+        // conflicts within one process as well. The order checked here is the same everywhere.
+        if (!OperatingSystem.IsWindows())
+            Assert.Ignore("The instance lock does not conflict within one process outside Windows.");
+
+        var serverDataFolder = Path.Combine(BASEFOLDER, $"server-data-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(serverDataFolder);
+        var databasePath = Path.Combine(serverDataFolder, DataFolderManager.SERVER_DATABASE_FILENAME);
+
+        var previousDataFolderEnv = Environment.GetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME);
+        Environment.SetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME, serverDataFolder);
+        var portableModeEnvName = $"{AutoUpdateSettings.AppName}__{DataFolderManager.PORTABLE_MODE_OPTION.Replace('-', '_')}".ToUpperInvariant();
+        var previousPortableModeEnv = Environment.GetEnvironmentVariable(portableModeEnvName);
+        Environment.SetEnvironmentVariable(portableModeEnvName, "false");
+
+        try
+        {
+            // The server that is already running
+            using var running = new SingleInstance(serverDataFolder);
+            Assert.That(running.IsFirstInstance, Is.True);
+
+            // Any origin but the server itself, so that the second server throws instead of exiting the process
+            var applicationSettings = new ApplicationSettings { Origin = "Test" };
+            string[] serverArgs =
+            [
+                $"--{WebServerLoader.OPTION_PORT}={GetFreeTcpPort()}",
+                $"--{WebServerLoader.OPTION_INTERFACE}=127.0.0.1",
+                $"--{DataFolderManager.SERVER_DATAFOLDER_OPTION}={serverDataFolder}",
+                "--webservice-api-only=true"
+            ];
+
+            Assert.ThrowsAsync<SingleInstance.MultipleInstanceException>(
+                () => RunServerInBackgroundAsync(applicationSettings, serverArgs).WaitAsync(TimeSpan.FromSeconds(60)));
+            Assert.That(File.Exists(databasePath), Is.False, "The second server created or opened the database before it found the running one");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME, previousDataFolderEnv);
+            Environment.SetEnvironmentVariable(portableModeEnvName, previousPortableModeEnv);
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            SafeDeleteDirectory(serverDataFolder);
+        }
+    }
+
     private Task WithAuthenticatedServerAsync(Func<HttpClient, Task> testBody, string? ports = null, string listenInterface = "127.0.0.1")
         => WithAuthenticatedServerAsync(testBody, ports, listenInterface, []);
 
