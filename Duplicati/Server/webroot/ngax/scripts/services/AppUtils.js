@@ -506,7 +506,8 @@ backupApp.service('AppUtils', function($rootScope, $timeout, $cookies, AppServic
     };
 
     var URL_REGEXP_FIELDS = ['source_uri', 'backend-type', '--auth-username', '--auth-password', 'server-name', 'server-port', 'server-path', 'querystring'];
-    var URL_REGEXP = /([^:]+)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:([^\/\?\:]*)(?:\:(\d+))?)(?:\/([^\?]*))?(?:\?(.+))?/;
+    // The server is either a name or an IPv6 address in brackets, which contains colons
+    var URL_REGEXP = /([^:]+)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:(\[[^\]\/\?]*\]|[^\/\?\:]*)(?:\:(\d+))?)(?:\/([^\?]*))?(?:\?(.+))?/;
     // Same as URL_REGEXP, but also accepts :\\ as a separator between drive letter (server for legacy reasons) and path
     var FILE_REGEXP = /(file)\:\/\/(?:(?:([^\:]+)(?:\:?:([^@]*))?\@))?(?:([^\/\?\:]*)(?:\:(\d+))?)(?:(?:\/|\:\\)([^\?]*))?(?:\?(.+))?/;
     var QUERY_REGEXP = /(?:^|&)([^&=]*)=?([^&]*)/g;
