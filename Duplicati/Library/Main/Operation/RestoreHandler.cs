@@ -274,10 +274,15 @@ namespace Duplicati.Library.Main.Operation
                 // knows the timestamp (the --restore-all-files path), it is used directly.
                 var (restoreVersion, restoreBackupTimestamp) = await ResolveRestoreVersionAndTimestampAsync(db, versions, time, cancellationToken).ConfigureAwait(false);
 
+                // A temporary database was just built from the remote list, so it can only differ
+                // from the destination by files a concurrent backup has uploaded since. Verifying
+                // would report those as unknown files and fail the restore.
+                var verifyRemoteList = tmpdb == null && !m_options.NoBackendverification;
+
                 if (m_options.RestoreLegacy)
-                    await DoRunAsync(backendManager, db, filter, restoreDestination, restoreVersion, restoreBackupTimestamp, cancellationToken).ConfigureAwait(false);
+                    await DoRunAsync(backendManager, db, filter, restoreDestination, restoreVersion, restoreBackupTimestamp, verifyRemoteList, cancellationToken).ConfigureAwait(false);
                 else
-                    await DoRunNewAsync(backendManager, db, filter, restoreDestination, restoreVersion, restoreBackupTimestamp, cancellationToken).ConfigureAwait(false);
+                    await DoRunNewAsync(backendManager, db, filter, restoreDestination, restoreVersion, restoreBackupTimestamp, verifyRemoteList, cancellationToken).ConfigureAwait(false);
             }
             finally
             {
@@ -879,8 +884,9 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="restoreDestination">The destination to restore to.</param>
         /// <param name="restoreVersion">The forwarded 0-based backup version index being restored (0 = newest), reported to restore callback modules.</param>
         /// <param name="restoreBackupTimestamp">The forwarded backup timestamp (UTC) being restored, reported to restore callback modules.</param>
+        /// <param name="verifyRemoteList">True to verify the remote list against the database before restoring.</param>
         /// <param name="cancellationToken">The cancellation token to monitor for cancellation requests.</param>
-        private async Task DoRunNewAsync(IBackendManager backendManager, LocalRestoreDatabase database, IFilter? filter, IRestoreDestinationProvider restoreDestination, long restoreVersion, DateTime restoreBackupTimestamp, CancellationToken cancellationToken)
+        private async Task DoRunNewAsync(IBackendManager backendManager, LocalRestoreDatabase database, IFilter? filter, IRestoreDestinationProvider restoreDestination, long restoreVersion, DateTime restoreBackupTimestamp, bool verifyRemoteList, CancellationToken cancellationToken)
         {
             // Perform initial setup
             await Utility.UpdateOptionsFromDbAsync(database, m_options, cancellationToken)
@@ -898,7 +904,7 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException("Restore volume downloaders must be greater than 0", "RestoreVolumeDownloadersTooSmall");
 
             // Verify the backend if necessary
-            if (!m_options.NoBackendverification)
+            if (verifyRemoteList)
             {
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);
                 await FilelistProcessor.VerifyRemoteListAsync(backendManager, m_options, database, m_result.BackendWriter, latestVolumesOnly: false, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, cancellationToken).ConfigureAwait(false);
@@ -1091,8 +1097,9 @@ namespace Duplicati.Library.Main.Operation
         /// <param name="database">The database containing information about the restore.</param>
         /// <param name="filter">The filter of which files to restore.</param>
         /// <param name="restoreDestination">The destination to restore to.</param>
+        /// <param name="verifyRemoteList">True to verify the remote list against the database before restoring.</param>
         /// <param name="cancellationToken">The cancellation token to monitor for cancellation requests.</param>
-        private async Task DoRunAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter? filter, IRestoreDestinationProvider restoreDestination, long restoreVersion, DateTime restoreBackupTimestamp, CancellationToken cancellationToken)
+        private async Task DoRunAsync(IBackendManager backendManager, LocalRestoreDatabase database, Library.Utility.IFilter? filter, IRestoreDestinationProvider restoreDestination, long restoreVersion, DateTime restoreBackupTimestamp, bool verifyRemoteList, CancellationToken cancellationToken)
         {
             using (var metadatastorage = new RestoreHandlerMetadataStorage())
             {
@@ -1103,7 +1110,7 @@ namespace Duplicati.Library.Main.Operation
                     .ConfigureAwait(false);
                 m_blockbuffer = new byte[m_options.Blocksize];
 
-                if (!m_options.NoBackendverification)
+                if (verifyRemoteList)
                 {
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_PreRestoreVerify);
                     await FilelistProcessor.VerifyRemoteListAsync(backendManager, m_options, database, m_result.BackendWriter, latestVolumesOnly: false, verifyMode: FilelistProcessor.VerifyMode.VerifyOnly, cancellationToken).ConfigureAwait(false);
