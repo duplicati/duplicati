@@ -1339,7 +1339,19 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 // Open both files, as the target file is still being read to produce the overall file hash, if all the blocks are present across both the target and original files.
                 // Note: The original file is the source file on the local system (not within the restore destination),
-                using var f_original = SystemIO.IO_OS.FileOpenRead(file.OriginalPath);
+                // and only a shortcut, as every block can also come from the backup. Another program may hold it,
+                // as it can while the file is backed up from a snapshot, so a file that cannot be read is skipped.
+                Stream? opened_original;
+                try
+                {
+                    opened_original = SystemIO.IO_OS.FileOpenRead(file.OriginalPath);
+                }
+                catch (Exception ex) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "OriginalFileNotReadable", ex, "Cannot read the original file {0}, its blocks are restored from the backup", file.OriginalPath);
+                    return (0, blocks);
+                }
+                using var f_original = opened_original;
                 using var f_target = options.Dryrun ?
                     (await restoreDestination.FileExists(file.TargetPath, cancellationToken).ConfigureAwait(false) ?
                         await restoreDestination.OpenRead(file.TargetPath, cancellationToken).ConfigureAwait(false) :
@@ -1360,13 +1372,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                             f_original.Seek(i * options.Blocksize, SeekOrigin.Begin);
                             read = await f_original.ReadAsync(buffer, 0, (int)blocks[j].BlockSize, cancellationToken).ConfigureAwait(false);
                         }
-                        catch (Exception) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
+                        catch (Exception ex) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                         {
-                            lock (results)
-                            {
-                                results.BrokenLocalFiles.Add(file.TargetPath);
-                            }
-                            throw;
+                            // Another program may have locked a range of the original, so the rest of
+                            // the blocks are restored from the backup
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "OriginalFileNotReadable", ex, "Cannot read the original file {0}, its remaining blocks are restored from the backup", file.OriginalPath);
+                            missing_blocks.AddRange(blocks.Skip(j));
+                            break;
                         }
 
                         if (read == blocks[j].BlockSize)
