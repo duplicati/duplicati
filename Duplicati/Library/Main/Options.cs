@@ -346,6 +346,10 @@ namespace Duplicati.Library.Main
         public Options(Dictionary<string, string?> options)
         {
             m_options = new Dictionary<string, string?>(options);
+
+            // The WMI provider used to be called Wmic, and jobs saved with that name must keep using it
+            if (string.Equals(m_options.GetValueOrDefault("snapshot-provider")?.Trim(), "Wmic", StringComparison.OrdinalIgnoreCase))
+                m_options["snapshot-provider"] = nameof(WindowsSnapshotProvider.Wmi);
         }
 
         public Dictionary<string, string?> RawOptions => m_options;
