@@ -486,6 +486,11 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
 
         } else {
 
+            // The metadata holds the results of the last run, which the server updates while
+            // this page is open; leaving it out keeps the stored results instead of the copy
+            // that was loaded with the page
+            delete result.Backup.Metadata;
+
             function putDb() {
                 AppService.put('/backup/' + $routeParams.backupid, result).then(function() {
                     $location.path('/');
