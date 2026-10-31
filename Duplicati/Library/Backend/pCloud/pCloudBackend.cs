@@ -27,6 +27,7 @@ using Duplicati.Library.Backend.pCloud;
 using Duplicati.Library.Utility;
 using System.Runtime.CompilerServices;
 using Duplicati.Library.Utility.Options;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -310,7 +311,7 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
         using var request =
             CreateRequest($"/uploadfile?folderid={_CachedFolderID}&filename={encodedPath}&nopartial=1",
                 HttpMethod.Post);
-        using var timeoutStream = input.ObserveReadTimeout(_Timeouts.ReadWriteTimeout, false);
+        using var timeoutStream = input.ObserveReadTimeout(_Timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
         request.Content = new StreamContent(timeoutStream);
         request.Content.Headers.ContentLength = timeoutStream.Length;
         request.Content.Headers.ContentType =
@@ -396,7 +397,7 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
             using var request = CreateRequest(string.Empty, HttpMethod.Get);
             request.RequestUri = new Uri(await GetFileLink(remotename, cancellationToken).ConfigureAwait(false));
 
-            using var timeoutStream = output.ObserveWriteTimeout(_Timeouts.ReadWriteTimeout, false);
+            using var timeoutStream = output.ObserveWriteTimeout(_Timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
             await _HttpClient.DownloadFile(request, timeoutStream, null,
                 cancellationToken).ConfigureAwait(false);
         }

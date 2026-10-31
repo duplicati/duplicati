@@ -26,6 +26,7 @@ using Newtonsoft.Json.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Backend.GoogleServices
 {
@@ -307,7 +308,7 @@ namespace Duplicati.Library.Backend.GoogleServices
                     using var ls = new ReadLimitLengthStream(stream, offset, chunkSize);
                     // The chunk stream is used as the request body and is only read
                     // by the HTTP stack, so the read timeout must be observed here.
-                    using var ts = ls.ObserveReadTimeout(readWriteTimeout);
+                    using var ts = ls.ObserveReadTimeout(readWriteTimeout, false, TimeoutMode.Gap);
                     req.Content = new StreamContent(ts);
                     req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
                     // An empty chunk has no valid byte range ("bytes 0--1/0" is malformed),

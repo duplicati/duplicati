@@ -28,6 +28,7 @@ using Microsoft.SharePoint.Client; // Plain 'using' for extension methods
 using System.Runtime.CompilerServices;
 using System.Text;
 using SP = Microsoft.SharePoint.Client;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -569,7 +570,7 @@ namespace Duplicati.Library.Backend
 
             using (var fileInfo = SP.File.OpenBinaryDirect(ctx, fileurl))
             using (var s = fileInfo.Stream)
-            using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
+            using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call))
                 await Utility.Utility.CopyStreamAsync(t, stream, true, cancelToken).ConfigureAwait(false);
         }
 
@@ -608,7 +609,7 @@ namespace Duplicati.Library.Backend
             }
 
             if (m_useBinaryDirectMode)
-                using (var ts = stream.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout, false))
+                using (var ts = stream.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap))
                     SP.File.SaveBinaryDirect(ctx, fileurl, ts, true);
         }
 
@@ -643,7 +644,7 @@ namespace Duplicati.Library.Backend
                     bufCnt += lastreadsize;
 
                 using (var contentChunk = new MemoryStream(buf, 0, bufCnt, false))
-                using (var timeoutStream = contentChunk.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
+                using (var timeoutStream = contentChunk.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap))
                 {
                     ClientResult<long>? bytesUploaded = null;
                     if (uploadFile == null)

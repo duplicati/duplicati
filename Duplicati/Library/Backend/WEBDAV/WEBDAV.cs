@@ -25,6 +25,7 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using System.Net;
 using System.Runtime.CompilerServices;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -502,7 +503,7 @@ namespace Duplicati.Library.Backend
                     response.Content.ReadAsStreamAsync(ct)
                 ).ConfigureAwait(false);
 
-                using var timeoutStream = sourceStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, true);
+                using var timeoutStream = sourceStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call);
                 if (!string.IsNullOrWhiteSpace(m_debugPropfindFile))
                 {
                     // Write the response to a file for debugging purposes
@@ -708,7 +709,7 @@ namespace Duplicati.Library.Backend
             try
             {
                 using var request = CreateRequest(remotename, HttpMethod.Put);
-                using var timeoutStream = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
+                using var timeoutStream = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
                 request.Content = new StreamContent(timeoutStream);
                 request.Content.Headers.ContentLength = stream.Length;
                 request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
@@ -733,7 +734,7 @@ namespace Duplicati.Library.Backend
             try
             {
                 using var request = CreateRequest(remotename, HttpMethod.Get);
-                using var timeoutStream = stream.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout, false);
+                using var timeoutStream = stream.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
                 await GetHttpClient().DownloadFile(request, timeoutStream, null, cancelToken).ConfigureAwait(false);
             }
             catch (HttpRequestException wex)

@@ -33,6 +33,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -293,7 +294,7 @@ namespace Duplicati.Library.Backend
             await SetWorkingDirectory(con, cancelToken).ConfigureAwait(false);
             try
             {
-                using var ts = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
+                using var ts = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
                 await Task.Factory.FromAsync(
                     (cb, state) => con.BeginUploadFile(ts, remotename, cb, state, _ => cancelToken.ThrowIfCancellationRequested()),
                     con.EndUploadFile,
@@ -312,7 +313,7 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                using var ts = stream.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout, false);
+                using var ts = stream.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
                 await Task.Factory.FromAsync(
                     (cb, state) => con.BeginDownloadFile(remotename, ts, cb, state, _ => cancelToken.ThrowIfCancellationRequested()),
                     con.EndDownloadFile,

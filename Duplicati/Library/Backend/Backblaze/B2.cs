@@ -28,6 +28,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using FileEntry = Duplicati.Library.Common.IO.FileEntry;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Backend.Backblaze;
 
@@ -353,7 +354,7 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, uploadUrlData.UploadUrl);
-            using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+            using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
 
             request.Headers.TryAddWithoutValidation("Authorization", uploadUrlData.AuthorizationToken);
             request.Headers.Add("X-Bz-Content-Sha1", sha1);
@@ -434,7 +435,7 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
                 .ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
             await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-            using var timeoutStream = responseStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+            using var timeoutStream = responseStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Call);
             await timeoutStream.CopyToAsync(stream, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)

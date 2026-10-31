@@ -26,6 +26,7 @@ using System.Text.Json;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -274,7 +275,7 @@ namespace Duplicati.Library.Backend
             await DeleteAsync(remotename, token);
 
             var content = new MultipartFormDataContent();
-            using var timeoutStream = stream.ObserveReadTimeout(m_timeoutOptions.ReadWriteTimeout);
+            using var timeoutStream = stream.ObserveReadTimeout(m_timeoutOptions.ReadWriteTimeout, false, TimeoutMode.Gap);
             var fileContent = new StreamContent(timeoutStream);
             content.Add(fileContent, "file", remotename);
             if (folderId.HasValue)
@@ -320,8 +321,9 @@ namespace Duplicati.Library.Backend
             var response = await Utility.Utility.WithTimeout(m_timeoutOptions.ShortTimeout, token,
                 ct => client.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead, ct));
             response.EnsureSuccessStatusCode();
-            using var timeoutStream = stream.ObserveWriteTimeout(m_timeoutOptions.ReadWriteTimeout);
-            await response.Content.CopyToAsync(timeoutStream, token);
+            await using var responseStream = await response.Content.ReadAsStreamAsync(token);
+            using var timeoutStream = responseStream.ObserveReadTimeout(m_timeoutOptions.ReadWriteTimeout, false, TimeoutMode.Call);
+            await timeoutStream.CopyToAsync(stream, token);
         }
 
         /// <summary>

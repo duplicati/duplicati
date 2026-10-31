@@ -2178,44 +2178,80 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Wraps the stream in a timeout observing stream
+        /// Wraps the stream in a timeout observing stream that counts both the time inside each read and the time between reads
         /// </summary>
         /// <param name="stream">The stream to wrap</param>
         /// <param name="timeout">The timeout to observe</param>
         /// <param name="disposeBaseStream">A flag indicating if the base stream should be disposed</param>
         /// <returns>The wrapped stream</returns>
         public static Stream ObserveReadTimeout(this Stream stream, TimeSpan timeout, bool disposeBaseStream = true)
+            => ObserveReadTimeout(stream, timeout, disposeBaseStream, TimeoutMode.CallAndGap);
+
+        /// <summary>
+        /// Wraps the stream in a timeout observing stream.
+        /// Use <see cref="TimeoutMode.Call"/> when the wrapped stream is the remote side, such as a network response stream that this code reads,
+        /// and <see cref="TimeoutMode.Gap"/> when the stream is handed to a library that does the transfer,
+        /// so that time spent waiting on this side of the transfer does not count against the timeout.
+        /// </summary>
+        /// <param name="stream">The stream to wrap</param>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <param name="disposeBaseStream">A flag indicating if the base stream should be disposed</param>
+        /// <param name="mode">The time that counts against the timeout</param>
+        /// <returns>The wrapped stream</returns>
+        public static Stream ObserveReadTimeout(this Stream stream, TimeSpan timeout, bool disposeBaseStream, TimeoutMode mode)
         {
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
             return new TimeoutObservingStream(stream, disposeBaseStream)
             {
-                ReadTimeout = timeout.Ticks > 0 && timeout != Timeout.InfiniteTimeSpan
-                    ? (int)timeout.TotalMilliseconds
-                    : Timeout.Infinite
+                Mode = mode,
+                ReadTimeout = ToTimeoutMilliseconds(timeout)
             };
         }
 
         /// <summary>
-        /// Wraps the stream in a timeout observing stream
+        /// Wraps the stream in a timeout observing stream that counts both the time inside each write and the time between writes
         /// </summary>
         /// <param name="stream">The stream to wrap</param>
         /// <param name="timeout">The timeout to observe</param>
         /// <param name="disposeBaseStream">A flag indicating if the base stream should be disposed</param>
         /// <returns>The wrapped stream</returns>
         public static Stream ObserveWriteTimeout(this Stream stream, TimeSpan timeout, bool disposeBaseStream = true)
+            => ObserveWriteTimeout(stream, timeout, disposeBaseStream, TimeoutMode.CallAndGap);
+
+        /// <summary>
+        /// Wraps the stream in a timeout observing stream.
+        /// Use <see cref="TimeoutMode.Call"/> when the wrapped stream is the remote side, such as a network stream that this code writes to,
+        /// and <see cref="TimeoutMode.Gap"/> when the stream is handed to a library that does the transfer, or is a destination that may block
+        /// while the rest of the pipeline catches up, so that time spent waiting on this side of the transfer does not count against the timeout.
+        /// </summary>
+        /// <param name="stream">The stream to wrap</param>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <param name="disposeBaseStream">A flag indicating if the base stream should be disposed</param>
+        /// <param name="mode">The time that counts against the timeout</param>
+        /// <returns>The wrapped stream</returns>
+        public static Stream ObserveWriteTimeout(this Stream stream, TimeSpan timeout, bool disposeBaseStream, TimeoutMode mode)
         {
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
             return new TimeoutObservingStream(stream, disposeBaseStream)
             {
-                WriteTimeout = timeout.Ticks > 0 && timeout != Timeout.InfiniteTimeSpan
-                    ? (int)timeout.TotalMilliseconds
-                    : Timeout.Infinite
+                Mode = mode,
+                WriteTimeout = ToTimeoutMilliseconds(timeout)
             };
         }
+
+        /// <summary>
+        /// Converts a timeout to the milliseconds used by a stream timeout, where zero or less and infinite both mean no timeout
+        /// </summary>
+        /// <param name="timeout">The timeout to convert</param>
+        /// <returns>The timeout in milliseconds, or <see cref="Timeout.Infinite"/></returns>
+        private static int ToTimeoutMilliseconds(TimeSpan timeout)
+            => timeout.Ticks > 0 && timeout != Timeout.InfiniteTimeSpan
+                ? (int)timeout.TotalMilliseconds
+                : Timeout.Infinite;
 
         /// <summary>
         /// The types of streams that are considered basic (i.e. not wrapped)

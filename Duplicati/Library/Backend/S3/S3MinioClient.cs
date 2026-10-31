@@ -29,6 +29,7 @@ using Minio;
 using Minio.DataModel.Args;
 using Minio.DataModel.ObjectLock;
 using Minio.Exceptions;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Backend
 {
@@ -245,7 +246,7 @@ namespace Duplicati.Library.Backend
                 await m_client.GetObjectAsync(new GetObjectArgs().WithBucket(bucketName).WithObject(keyName).WithCallbackStream(
                     (stream) =>
                     {
-                        using var t = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout);
+                        using var t = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call);
                         Utility.Utility.CopyStream(t, target);
                     })).ConfigureAwait(false);
             }
@@ -272,7 +273,7 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                using var t = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
+                using var t = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
                 await m_client.PutObjectAsync(new PutObjectArgs()
                     .WithBucket(bucketName)
                     .WithObject(keyName)

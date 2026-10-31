@@ -22,6 +22,7 @@ using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Backend.Filen;
 
@@ -199,7 +200,7 @@ public class FilenBackend : IStreamingBackend, IRenameEnabledBackend
     {
         var client = await GetClientAsync(cancelToken).ConfigureAwait(false);
         var folderId = await GetFolderUuid(client, cancelToken).ConfigureAwait(false);
-        using var timeoutStream = stream.ObserveReadTimeout(_timeout.ReadWriteTimeout, false);
+        using var timeoutStream = stream.ObserveReadTimeout(_timeout.ReadWriteTimeout, false, TimeoutMode.Gap);
         await client.UploadStreamedEncryptedFileAsync(timeoutStream, remotename, folderId, cancelToken).ConfigureAwait(false);
     }
 
@@ -213,7 +214,7 @@ public class FilenBackend : IStreamingBackend, IRenameEnabledBackend
         if (file == null)
             throw new FileMissingException($"File '{remotename}' not found.");
 
-        using var timeoutStream = stream.ObserveWriteTimeout(_timeout.ReadWriteTimeout, false);
+        using var timeoutStream = stream.ObserveWriteTimeout(_timeout.ReadWriteTimeout, false, TimeoutMode.Gap);
         await client.DownloadAndDecryptToStreamAsync(file, timeoutStream, cancelToken).ConfigureAwait(false);
     }
 

@@ -41,6 +41,16 @@ public class BackendSourceProvider(IFolderEnabledBackend backend, string mounted
     /// </summary>
     public string MountedPath => mountedPath;
 
+    /// <summary>
+    /// The number of times a streamed download is started again after it fails or ends early
+    /// </summary>
+    public int ResumeAttempts { get; set; } = 5;
+
+    /// <summary>
+    /// The time to wait before a streamed download is started again
+    /// </summary>
+    public TimeSpan ResumeDelay { get; set; } = TimeSpan.FromSeconds(1);
+
     /// <inheritdoc/>
     public string Key => backend.ProtocolKey;
 
