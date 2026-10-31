@@ -120,6 +120,12 @@ namespace Duplicati.Library.Modules.Builtin.Strings
     }
     internal static class SendMail
     {
+        public static string AcceptAnyCertificateLong(string optionname) { return LC.L(@"Use this option to accept any server certificate, regardless of what errors it may have. Please use --{0} instead, whenever possible.", optionname); }
+        public static string AcceptAnyCertificateShort { get { return LC.L(@"Accept any server certificate"); } }
+        public static string AcceptSpecifiedCertificateLong { get { return LC.L(@"If your server certificate is reported as invalid (e.g. with self-signed certificates), you can supply the certificate hash (SHA1) to approve it anyway. The hash value must be entered in hex format without spaces or colons. You can enter multiple hashes separated by commas."); } }
+        public static string AcceptSpecifiedCertificateShort { get { return LC.L(@"Optionally accept a known SSL certificate"); } }
+        public static string IgnoreRevocationFailureLong { get { return LC.L(@"Use this option to ignore certificate revocation check failures, such as when the revocation server is offline or the revocation status is unknown."); } }
+        public static string IgnoreRevocationFailureShort { get { return LC.L(@"Ignore certificate revocation check failures"); } }
         public static string Description { get { return LC.L(@"This module can send email after an operation completes"); } }
         public static string Displayname { get { return LC.L(@"Send mail"); } }
         public static string FailedToLookupMXServer(string optionname) { return LC.L(@"Unable to find the destination mail server through MX lookup. Please use the option --{0} to specify what SMTP server to use.", optionname); }
