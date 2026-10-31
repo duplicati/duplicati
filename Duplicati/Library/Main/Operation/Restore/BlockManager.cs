@@ -350,6 +350,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                         Task.Delay(timeout, tcs1.Token),
                         new_tcs.Task
                     ).ConfigureAwait(false);
+                    // Disposing the source does not stop the delay, so its timer would stay alive for the
+                    // whole timeout, and a restore of many small files would hold one for every block
+                    // requested in that time
+                    tcs1.Cancel();
                     if (t != new_tcs.Task)
                         Logging.Log.WriteWarningMessage(LOGTAG, "BlockRequestTimeout", null, "Block request for block {0} has been in flight for over {1} milliseconds. This may be a deadlock.", block_request.BlockID, timeout.TotalMilliseconds);
                 }
