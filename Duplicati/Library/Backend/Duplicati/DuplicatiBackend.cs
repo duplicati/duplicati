@@ -76,6 +76,10 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// </summary>
     internal const string UPLOADS_DISABLED_QUOTA_EXCEEDED = "quota-exceeded";
     /// <summary>
+    /// The reason code reported by the server when uploads are disabled because the API key is read-only
+    /// </summary>
+    internal const string UPLOADS_DISABLED_READ_ONLY = "read-only";
+    /// <summary>
     /// The help id used when an operation fails because the account is disabled
     /// </summary>
     internal const string HELP_ID_ACCOUNT_DISABLED = "DuplicatiStorageAccountDisabled";
@@ -83,6 +87,10 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// The help id used when an upload fails because uploads are disabled
     /// </summary>
     internal const string HELP_ID_UPLOADS_DISABLED = "DuplicatiStorageUploadsDisabled";
+    /// <summary>
+    /// The help id used when an operation that changes data fails because the API key is read-only
+    /// </summary>
+    internal const string HELP_ID_READ_ONLY_KEY = "DuplicatiStorageReadOnlyKey";
     /// <summary>
     /// The help id used when a lock operation fails because object locking is not enabled for the account
     /// </summary>
@@ -584,24 +592,43 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     }
 
     /// <summary>
+    /// The kind of storage operation, which decides what part of the account state can explain a failure
+    /// </summary>
+    private enum OperationKind
+    {
+        /// <summary>
+        /// Reads or lists data; only a disabled account explains a failure
+        /// </summary>
+        Read,
+        /// <summary>
+        /// Changes data without uploading any, such as a delete; a read-only key also explains a failure
+        /// </summary>
+        Modify,
+        /// <summary>
+        /// Uploads data; disabled uploads, such as an exceeded quota, also explain a failure
+        /// </summary>
+        Upload
+    }
+
+    /// <summary>
     /// Runs an operation, and explains a failure with the account state reported by the server.
     /// </summary>
-    /// <param name="isUpload">Whether the operation uploads data</param>
+    /// <param name="kind">The kind of operation</param>
     /// <param name="operation">The operation to run</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    private async Task RunAsync(bool isUpload, Func<Task> operation, CancellationToken cancelToken)
-        => await RunAsync(isUpload, async () => { await operation().ConfigureAwait(false); return true; }, cancelToken).ConfigureAwait(false);
+    private async Task RunAsync(OperationKind kind, Func<Task> operation, CancellationToken cancelToken)
+        => await RunAsync(kind, async () => { await operation().ConfigureAwait(false); return true; }, cancelToken).ConfigureAwait(false);
 
     /// <summary>
     /// Runs an operation that produces a result, and explains a failure with the account state reported by the server.
     /// </summary>
     /// <typeparam name="T">The type of the result</typeparam>
-    /// <param name="isUpload">Whether the operation uploads data</param>
+    /// <param name="kind">The kind of operation</param>
     /// <param name="operation">The operation to run</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The result of the operation</returns>
-    private async Task<T> RunAsync<T>(bool isUpload, Func<Task<T>> operation, CancellationToken cancelToken)
+    private async Task<T> RunAsync<T>(OperationKind kind, Func<Task<T>> operation, CancellationToken cancelToken)
     {
         try
         {
@@ -609,7 +636,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         }
         catch (Exception ex) when (CanExplain(ex, cancelToken))
         {
-            var explained = await ExplainFailureAsync(ex, isUpload, cancelToken).ConfigureAwait(false);
+            var explained = await ExplainFailureAsync(ex, kind, cancelToken).ConfigureAwait(false);
             if (explained == null)
                 throw;
             throw explained;
@@ -636,16 +663,16 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// Explains a failure with the account state reported by the server.
     /// </summary>
     /// <param name="ex">The failure</param>
-    /// <param name="isUpload">Whether the failed operation uploads data</param>
+    /// <param name="kind">The kind of operation that failed</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>The exception to report, or <c>null</c> if the account state does not explain the failure</returns>
-    private async Task<Exception?> ExplainFailureAsync(Exception ex, bool isUpload, CancellationToken cancelToken)
+    private async Task<Exception?> ExplainFailureAsync(Exception ex, OperationKind kind, CancellationToken cancelToken)
     {
         var state = _accountState;
 
-        // The account can run out of quota after the state was retrieved,
-        // so a rejected upload is worth asking the server about again
-        if (isUpload && !state.ExplainsFailure(isUpload) && IsRejection(ex)
+        // The account can run out of quota, or the key can become read-only, after the
+        // state was retrieved, so a rejected change is worth asking the server about again
+        if (kind != OperationKind.Read && !state.ExplainsFailure(kind) && IsRejection(ex)
             && DateTime.UtcNow - state.RetrievedAt >= AccountStateRefreshInterval)
         {
             await TryRefreshAccountStateAsync(cancelToken).ConfigureAwait(false);
@@ -660,7 +687,15 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
                 HELP_ID_ACCOUNT_DISABLED,
                 ex);
 
-        if (isUpload && state.UploadsDisabled)
+        // A read-only key is refused on every change, so it is reported before the
+        // generic "uploads disabled" explanation
+        if (kind != OperationKind.Read && state.IsReadOnly)
+            return new UserInformationException(
+                Strings.DuplicatiBackend.ErrorReadOnlyKey(ex.Message),
+                HELP_ID_READ_ONLY_KEY,
+                ex);
+
+        if (kind == OperationKind.Upload && state.UploadsDisabled)
             return new UserInformationException(
                 state.UploadsDisabledReason == UPLOADS_DISABLED_QUOTA_EXCEEDED
                     ? Strings.DuplicatiBackend.ErrorQuotaExceeded(ex.Message)
@@ -748,12 +783,20 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
                 : AccountDisabledReason ?? string.Empty;
 
         /// <summary>
+        /// Whether the API key is read-only, so that no operation that changes data succeeds
+        /// </summary>
+        public bool IsReadOnly
+            => UploadsDisabled && UploadsDisabledReason == UPLOADS_DISABLED_READ_ONLY;
+
+        /// <summary>
         /// Checks if the state explains a failed operation
         /// </summary>
-        /// <param name="isUpload">Whether the failed operation uploads data</param>
+        /// <param name="kind">The kind of operation that failed</param>
         /// <returns><c>true</c> if the state explains the failure; <c>false</c> otherwise</returns>
-        public bool ExplainsFailure(bool isUpload)
-            => AccountDisabled || (isUpload && UploadsDisabled);
+        public bool ExplainsFailure(OperationKind kind)
+            => AccountDisabled
+                || (kind != OperationKind.Read && IsReadOnly)
+                || (kind == OperationKind.Upload && UploadsDisabled);
 
         /// <summary>
         /// Creates the state from a credentials response
@@ -801,7 +844,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 
     /// <inheritdoc />
     public Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancelToken)
-        => RunAsync(false, () => GetObjectLockUntilCoreAsync(remotename, cancelToken), cancelToken);
+        => RunAsync(OperationKind.Read, () => GetObjectLockUntilCoreAsync(remotename, cancelToken), cancelToken);
 
     /// <summary>
     /// Reads the object lock expiration of a file on the destination
@@ -827,7 +870,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 
     /// <inheritdoc />
     public Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancelToken)
-        => RunAsync(false, () => SetObjectLockUntilCoreAsync(remotename, lockUntilUtc, cancelToken), cancelToken);
+        => RunAsync(OperationKind.Modify, () => SetObjectLockUntilCoreAsync(remotename, lockUntilUtc, cancelToken), cancelToken);
 
     /// <summary>
     /// Applies an object lock to a file on the destination
@@ -889,7 +932,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 
     /// <inheritdoc />
     public Task CreateFolderAsync(CancellationToken cancelToken)
-        => RunAsync(false, () => CreateFolderCoreAsync(cancelToken), cancelToken);
+        => RunAsync(OperationKind.Modify, () => CreateFolderCoreAsync(cancelToken), cancelToken);
 
     /// <summary>
     /// Creates the folder on the destination
@@ -916,7 +959,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 
     /// <inheritdoc />
     public Task DeleteAsync(string remotename, CancellationToken cancelToken)
-        => RunAsync(false, () => DeleteCoreAsync(remotename, cancelToken), cancelToken);
+        => RunAsync(OperationKind.Modify, () => DeleteCoreAsync(remotename, cancelToken), cancelToken);
 
     /// <summary>
     /// Deletes a file on the destination
@@ -945,7 +988,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 
     /// <inheritdoc />
     public Task GetAsync(string remotename, Stream destination, CancellationToken cancelToken)
-        => RunAsync(false, () => GetCoreAsync(remotename, destination, cancelToken), cancelToken);
+        => RunAsync(OperationKind.Read, () => GetCoreAsync(remotename, destination, cancelToken), cancelToken);
 
     /// <summary>
     /// Downloads a file from the destination
@@ -1013,7 +1056,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             }
             catch (Exception ex) when (CanExplain(ex, cancelToken))
             {
-                var explained = await ExplainFailureAsync(ex, false, cancelToken).ConfigureAwait(false);
+                var explained = await ExplainFailureAsync(ex, OperationKind.Read, cancelToken).ConfigureAwait(false);
                 if (explained == null)
                     throw;
                 throw explained;
@@ -1060,7 +1103,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 
     /// <inheritdoc />
     public Task PutAsync(string remotename, Stream source, CancellationToken cancelToken)
-        => RunAsync(true, () => PutCoreAsync(remotename, source, cancelToken), cancelToken);
+        => RunAsync(OperationKind.Upload, () => PutCoreAsync(remotename, source, cancelToken), cancelToken);
 
     /// <summary>
     /// Uploads a file to the destination
@@ -1105,7 +1148,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
 
     /// <inheritdoc />
     public Task RenameAsync(string oldname, string newname, CancellationToken cancelToken)
-        => RunAsync(true, () => RenameCoreAsync(oldname, newname, cancelToken), cancelToken);
+        => RunAsync(OperationKind.Upload, () => RenameCoreAsync(oldname, newname, cancelToken), cancelToken);
 
     /// <summary>
     /// Renames a file on the destination
