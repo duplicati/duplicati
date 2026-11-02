@@ -157,6 +157,17 @@ namespace Duplicati.Library.DynamicLoader
         /// <returns>The instanciated backend or null if the key is not supported</returns>
         public static IGenericModule? GetModule(string key) => _loader.Value.GetModule(key);
 
+        /// <summary>
+        /// Adds a module to the loader, for modules that are compiled into the host process rather than found on disk.
+        /// The module must have a parameterless constructor, as a new instance is created for each operation that loads it.
+        /// </summary>
+        /// <param name="module">The module to add</param>
+        public static void AddModule(IGenericModule module)
+        {
+            ArgumentNullException.ThrowIfNull(module);
+            _loader.Value.AddModule(module);
+        }
+
         #endregion
 
     }
