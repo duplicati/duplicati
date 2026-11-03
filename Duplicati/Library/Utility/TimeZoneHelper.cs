@@ -64,6 +64,49 @@ public static class TimeZoneHelper
     /// <returns>The time zone</returns>
     public static TimeZoneInfo? GetTimeZoneById(string id)
     {
+        var tzi = FindSystemTimeZone(id);
+        if (tzi != null)
+            return tzi;
+
+        // Legacy names such as CET, EST or US/Eastern are not installed on all systems
+        // (Ubuntu 26.04 and Debian 13 only have them in tzdata-legacy)
+        if (SystemVZones.TryGetValue(id, out var zoneId))
+            return FindSystemTimeZone(zoneId);
+
+        // Other legacy names are looked up by the Windows id they map to,
+        // which the runtime resolves to an installed zone
+        if (TimeZoneInfo.TryConvertIanaIdToWindowsId(id, out var windowsId) && !string.Equals(windowsId, id, StringComparison.OrdinalIgnoreCase))
+            return FindSystemTimeZone(windowsId);
+
+        return null;
+    }
+
+    /// <summary>
+    /// The System V zone names and the zones tzdata links them to.
+    /// The runtime does not map CET, MET, EET and WET to a Windows id on Windows.
+    /// </summary>
+    private static readonly Dictionary<string, string> SystemVZones = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["CET"] = "Europe/Brussels",
+        ["MET"] = "Europe/Brussels",
+        ["EET"] = "Europe/Athens",
+        ["WET"] = "Europe/Lisbon",
+        ["EST"] = "America/Panama",
+        ["MST"] = "America/Phoenix",
+        ["HST"] = "Pacific/Honolulu",
+        ["EST5EDT"] = "America/New_York",
+        ["CST6CDT"] = "America/Chicago",
+        ["MST7MDT"] = "America/Denver",
+        ["PST8PDT"] = "America/Los_Angeles",
+    };
+
+    /// <summary>
+    /// Get a system time zone by id
+    /// </summary>
+    /// <param name="id">The time zone id</param>
+    /// <returns>The time zone, or null if it is not found</returns>
+    private static TimeZoneInfo? FindSystemTimeZone(string id)
+    {
         try
         {
             return TimeZoneInfo.FindSystemTimeZoneById(id);
@@ -89,6 +132,27 @@ public static class TimeZoneHelper
             return tzi;
 
         return TimeZoneInfo.GetSystemTimeZones()
-                .FirstOrDefault(tz => tz.Id.Equals(search, StringComparison.OrdinalIgnoreCase) || tz.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(tz => tz.Id.Equals(search, StringComparison.OrdinalIgnoreCase) || ContainsWord(tz.DisplayName, search));
+    }
+
+    /// <summary>
+    /// Checks if the text contains the search string as whole words, so that "EST" does not match "Creston"
+    /// </summary>
+    /// <param name="text">The text to search in</param>
+    /// <param name="search">The search string</param>
+    /// <returns>True if the search string is found with no letter or digit on either side</returns>
+    private static bool ContainsWord(string text, string search)
+    {
+        if (string.IsNullOrWhiteSpace(search))
+            return false;
+
+        for (var i = text.IndexOf(search, StringComparison.OrdinalIgnoreCase); i >= 0; i = text.IndexOf(search, i + 1, StringComparison.OrdinalIgnoreCase))
+        {
+            var end = i + search.Length;
+            if ((i == 0 || !char.IsLetterOrDigit(text[i - 1])) && (end == text.Length || !char.IsLetterOrDigit(text[end])))
+                return true;
+        }
+
+        return false;
     }
 }
