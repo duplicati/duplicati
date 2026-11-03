@@ -72,7 +72,9 @@ public class StorjTransferTimeoutTests
         var ex = await WaitGuardedAsync(Storj.WaitForTransferAsync(stalled.Task, () => 0, () => cancelled = true, IdleTimeout, CancellationToken.None));
 
         Assert.That(ex, Is.InstanceOf<TimeoutException>());
-        Assert.That(sw.Elapsed, Is.GreaterThanOrEqualTo(IdleTimeout));
+        // The wait counts time with Environment.TickCount64, which moves in steps of a few
+        // milliseconds (15 on Windows), so it can see the timeout a step before the stopwatch does
+        Assert.That(sw.Elapsed, Is.GreaterThanOrEqualTo(IdleTimeout - TimeSpan.FromMilliseconds(50)));
         Assert.That(cancelled, Is.True, "The transfer was not told to stop");
     }
 

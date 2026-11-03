@@ -87,6 +87,8 @@ namespace Duplicati.Server
         private const string LOG_CONSOLE_OPTION = "log-console";
         /// <summary>The commandline argument name for temp directory.</summary>
         private const string TEMPDIR_OPTION = "tempdir";
+        /// <summary>The commandline argument name for forcing the locale.</summary>
+        public const string FORCE_LOCALE_OPTION = "force-locale";
         /// <summary>The commandline argument name for log retention.</summary>
         private const string LOG_RETENTION_OPTION = "log-retention";
         /// <summary>The commandline argument name for help.</summary>
@@ -221,6 +223,8 @@ namespace Duplicati.Server
             {
                 SystemContextSettings.DefaultTempPath = commandlineOptions["tempdir"];
             }
+
+            ApplyForcedLocale(commandlineOptions, logMessageToConsole);
 
             SystemContextSettings.StartSession();
 
@@ -489,6 +493,33 @@ namespace Duplicati.Server
             connection.ApplicationSettings.LastWebserverPort = server.Port;
 
             return server;
+        }
+
+        /// <summary>
+        /// Applies the forced locale from the commandline options, if any, to the current thread and all threads created later
+        /// </summary>
+        /// <param name="commandlineOptions">The commandline options</param>
+        /// <param name="logMessageToConsole">The method used to report problems before logging is configured</param>
+        public static void ApplyForcedLocale(Dictionary<string, string> commandlineOptions, Action<string> logMessageToConsole)
+        {
+            if (!commandlineOptions.TryGetValue(FORCE_LOCALE_OPTION, out var localestring))
+                return;
+
+            try
+            {
+                var culture = string.IsNullOrWhiteSpace(localestring)
+                    ? System.Globalization.CultureInfo.InvariantCulture
+                    : new System.Globalization.CultureInfo(localestring);
+
+                System.Globalization.CultureInfo.DefaultThreadCurrentCulture = culture;
+                System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = culture;
+                System.Globalization.CultureInfo.CurrentCulture = culture;
+                System.Globalization.CultureInfo.CurrentUICulture = culture;
+            }
+            catch (Exception ex)
+            {
+                logMessageToConsole(Strings.Program.FailedForceLocaleError(FORCE_LOCALE_OPTION, localestring, ex.Message));
+            }
         }
 
         /// <summary>
@@ -1580,6 +1611,7 @@ namespace Duplicati.Server
         [
             .. WindowsOptions,
             new CommandLineArgument(TEMPDIR_OPTION, CommandLineArgument.ArgumentType.Path, Strings.Program.TempdirShort, Strings.Program.TempdirLong, System.IO.Path.GetTempPath()),
+            new CommandLineArgument(FORCE_LOCALE_OPTION, CommandLineArgument.ArgumentType.String, Strings.Program.ForcelocaleShort, Strings.Program.ForcelocaleLong),
             new CommandLineArgument(HELP_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.HelpCommandDescription, Strings.Program.HelpCommandDescription),
             new CommandLineArgument(PARAMETERS_FILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.Program.ParametersFileOptionShort, Strings.Program.ParametersFileOptionLong, "", PARAMETERS_FILE_OPTION_EXTRAS),
             new CommandLineArgument(DataFolderManager.PORTABLE_MODE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.PortablemodeCommandDescription, Strings.Program.PortablemodeCommandDescription, DataFolderManager.PORTABLE_MODE.ToString().ToLowerInvariant()),

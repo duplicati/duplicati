@@ -1,3 +1,225 @@
+2026-10-31 - 2.4.1.100_canary_2026-10-31
+==========
+This release is a canary release intended to be used for testing.
+
+# Timeouts with remote sources and slow destinations
+
+When a backup reads from a remote source, such as an SMB share or a cloud drive, that is faster than the destination, the reads are paused while a volume is uploaded. The timeout kept counting during these pauses and could fail the transfer although the remote service was responding. The timeout for almost all backends now only counts the time spent waiting for the remote service, not the time Duplicati itself is busy. The SMB backend got the same treatment directly, as it controls the flow itself.
+
+A related problem made SMB and some other backends report incomplete data as a successful backup: when a stalled read hit the inactivity timeout, the timeout handler closed the stream, which took the error away. The error is now kept. SMB delete and rename also failed silently on an unexpected return code, which is now reported.
+
+More timeout fixes:
+
+- The Azure Blob backend set up its timeout stream but did not use it, so timeouts were ignored.
+- The SMB client used the library default of 5 seconds when writing chunks to the destination. It now uses `--read-write-timeout`, which defaults to 30 seconds.
+- `--list-timeout` was not applied to SFTP and MinIO listings, thanks @JamBalaya56562.
+- Storj transfers that stopped moving were waited for forever. They now fail when no bytes have moved for `--read-write-timeout`, thanks @JamBalaya56562.
+- A timeout in a synchronous operation did not return when the task was cancelled, which could leave tasks stuck.
+- A cancellation by the caller was reported as a timeout, and a timeout could escape as a cancellation, thanks @JamBalaya56562.
+
+# Resuming remote source reads
+
+A file read from a remote source is now wrapped in a resuming stream. If the connection is lost while reading, the stream reconnects and continues from where it stopped. The data up to that point is read again and hashed, to make sure the file did not change in the meantime. A backend interface for resuming with a range request was added, so backends that support it can resume without re-reading, but no backend implements it yet.
+
+A remote source that dropped or truncated a file used to have the partial file stored as if it was complete. Truncated files are now rejected with a warning and not stored.
+
+# Source folders that cannot be read
+
+A source folder that exists but cannot be listed, for example on a failed drive, only gave a warning. The backup then stored a version without any of its files, and the retention policy could remove the versions that still had them. The backup is now stopped, as for a missing source, unless `--allow-missing-source` is set, thanks @JamBalaya56562.
+
+A backup that was stopped before it started processing files uploaded an empty version as the latest, and warned that the source was likely misconfigured. No version is created now, thanks @JamBalaya56562.
+
+Placeholder files from a sync tool, such as OneDrive, Dropbox or Google Drive, and files moved to offline storage fail to read with a generic error. These errors are now recognized and reported with a message that points to `--exclude-non-local-files`.
+
+# Dry run no longer changes the database
+
+A backup with `--dry-run` did not touch the remote data, but the compact step committed its decision to the local database. On the next real run, the recorded decision was carried out and files were deleted. The dry run no longer updates the database.
+
+# Database downgrade scripts stored in the database
+
+Until now, downgrading a local database required the downgrade script shipped with the newer version, so the downgrade had to be done before uninstalling it. The upgrade and downgrade scripts are now stored in the databases themselves, in a new `SchemaScript` table. From this release on, the bundled `duplicati-database-tool` can downgrade a database written by a newer version by using the scripts stored in the database, even if the tool does not know that schema. Downgrades are still started manually. The schema version is not changed by this release.
+
+The default for `duplicati-database-tool downgrade` is now the newest version the tool itself supports, so a downgrade from the next version needs no explicit version. Downgrading over several versions requires the target version to be given. The tool also no longer mistakes a local database with an index or view named `Schedule` for a server database, thanks @JamBalaya56562.
+
+# Restore fixes
+
+- A block that could not be read from its volume stopped the whole restore. Only the files that use the block are now reported as failed, and the other files are restored, thanks @JamBalaya56562. When the database places a block in a volume that does not hold it, the error now names the block instead of failing with a null reference.
+- A restore that could not restore some files exited with code 0. It now exits with code 3, as a backup that finished with errors does, thanks @JamBalaya56562.
+- When a priority file, such as the disk layout of a disk image, fails, the error now says that the restore was stopped because of it and names the file, thanks @JamBalaya56562.
+- With `--restore-symlink-metadata`, the extended attributes and the read-only attribute of a symbolic link were applied to the file it points to, also when that file is outside the restore folder. The extended attributes are now set on the link itself, and the attributes are skipped for links, thanks @JamBalaya56562.
+- On Linux, restoring the creation time overwrote the last write time that had just been restored, thanks @JamBalaya56562.
+- The legacy restore engine did not count restored symbolic links, so restoring only a link ended with a warning that nothing was restored, thanks @JamBalaya56562.
+
+# Repair and dlist files
+
+Three problems with the names and times of dlist files were fixed, thanks @JamBalaya56562:
+
+- A dlist upload that fails is retried under a name one second later. Backups, synthetic filelists and purges did not record the fileset time in the file, so after a recreate such a version was one second late. The time is now recorded in every dlist file.
+- A retried dlist upload after a repair or purge left a placeholder version dated 1970-01-01 in the version list until the next backup, and restoring that version failed.
+- Repairing a missing dlist file gave the replacement a name at least one second after the original, which could put it after a newer version. The file is now uploaded again under its own name, and the search for a free name stops after the configured number of tries.
+
+# Recovery tool
+
+The recovery tool can now add encryption to a backup that was made without encryption, with the new `--add-encryption` option.
+
+Recompressing to the same format uploaded the new file over the original name, and the following delete removed it, emptying the destination. Files that keep their name are now left in place, and `--reencrypt` warns when the files are not encrypted, thanks @JamBalaya56562.
+
+# Reporting
+
+Thanks @JamBalaya56562 for a series of fixes to the report modules:
+
+- Values put into report templates were used as a regex replacement string, so a file name or option value containing `$` sequences corrupted the report body. The keys were also expanded in several passes over the already inserted values, so text such as `%backup-name%` inside a log line was expanded too, and a key with regex characters stopped the report. Values are now inserted literally and keys are expanded once.
+- A failing HTTP report, status report or XMPP target skipped the remaining targets. Each target is now tried on its own.
+- A report that failed to send made the operation a warning, but the job log did not show why. The stored result now includes the warnings and errors logged after it was written.
+- A failing `--run-script-before` script or an option that failed validation stopped the operation before the report modules were set up, so no report was sent.
+- The command line printed "Backup completed successfully!" also when a script stopped the backup or it ended with errors.
+- A compact that changed something was logged twice in the job log, and the database was vacuumed twice.
+
+The `Reason` field of restore test reports is now passed on in reduced reporting mode.
+
+# Storage providers
+
+- Google Workspace files were read fully into memory before being backed up, which used a lot of memory and failed for files above 2 GB. The data is now streamed in chunks, and the same approach is applied to Microsoft 365. The Google Workspace module also follows the standard timeout options, and chat attachments are stored with their content instead of their metadata.
+- The progress bar during a Microsoft 365 or Google Workspace delta walk often jumped from 0 to 100%. The walk now reports its progress as it goes.
+- Google answers both a missing permission and a rate limit with 403, and the error body that tells them apart was dropped. Google Drive and Google Cloud Storage now report Google's reason, and rate limits are retried with backoff, also for the chunks of a resumable upload, thanks @JamBalaya56562.
+- A Google Drive upload that timed out on the client could still be completed by Drive, leaving a second copy that a delete did not remove. All copies of the name are now deleted, thanks @JamBalaya56562.
+- The B2 retry logic now follows the B2 guidelines, and a bug that could truncate listings was fixed.
+- SMB left file handles open on the server when a get, delete or rename failed, and a failed close replaced the listing error with "Not enough credits", thanks @JamBalaya56562.
+- The SharePoint v2 backend required `--site-id` and never looked the site up from the URL. The site is now found from the URL, and a `--site-id` that names another site is reported as a conflict, thanks @JamBalaya56562.
+
+# Server and user interface
+
+- A system status endpoint was added as a websocket subscription. It reports CPU and memory usage, the transfer rates of the backends and the paths currently being read. The new UI uses it for its status page.
+- The restore test API from the previous canary is now a v2 API and is reported as an API extension.
+- Behind a reverse proxy that sets `X-Forwarded-Prefix`, the refresh cookie is now set on the prefixed path, so logins are persisted.
+- The login and signin pages no longer bundle jQuery 2.0.3, which has known XSS issues, thanks @JamBalaya56562.
+- `--dblock-size`, `--prefix`, `--compression-module` and `--encryption-module` can be changed on an existing backup again. The previous canary stored them in the database and refused the change.
+- Operations other than backup warned that `--store-task-config` is not supported.
+- Two connection tests of the same destination at once, which the UI does when Continue is pressed while the folder-creating test is still running, interfered with each other's test file. Each test now uses its own file name, thanks @JamBalaya56562.
+- Deleting a sync job with "delete remote files" failed and left the job in place. The option is ignored for sync jobs and the synced copy is kept. Restore and the other backup operations are refused on a sync job with a message, instead of failing with a database upgrade error, thanks @JamBalaya56562.
+- The old UI showed the raw `%home%` path instead of "Home" in the source list when the system information arrived late, and the add backup page failed when the backup defaults loaded late, thanks @JamBalaya56562.
+- `--webservice-webroot` was ignored in release builds and in debug builds, thanks @JamBalaya56562.
+- macOS sleep prevention now uses power assertions instead of running `caffeinate`, so the kernel clears them when the process exits.
+- Isolated runners now communicate over a named pipe instead of stdin and stdout, so output from the process cannot interfere, and tracing of this communication can be enabled.
+
+# Other fixes
+
+- Slow query monitoring counted the time callers spent between rows, so a query could be reported as running for an hour during the consistency check, thanks @JamBalaya56562.
+- A backup's notifications are dismissed with one database update after a run, thanks @JamBalaya56562.
+- The tray icon's request queue was shared between connections in the same process, thanks @JamBalaya56562.
+- HTTP clients were created from a stopped server's disposed factory, thanks @JamBalaya56562.
+- A leftover debug line was printed to stderr on Linux when a timestamp was set on a filesystem with coarser precision, thanks @JamBalaya56562.
+- The AutoTune tool shipped as `Duplicati.CommandLine.AutoTuneTool` without a `duplicati-autotune-tool` link on Linux and macOS, thanks @JamBalaya56562.
+- The acknowledgements were updated.
+
+## Detailed list of changes
+
+- Changed the backend timeouts to only count time waiting for the remote service, not pauses in Duplicati
+- Added a resuming stream for remote sources that reconnects and continues after a lost connection
+- Fixed remote source files truncated by the backend being stored as complete
+- Fixed a timed out stream being closed and hiding the error, and SMB delete and rename failing silently
+- Fixed the Azure Blob backend not using its timeout stream
+- Changed the SMB chunk write timeout to follow `--read-write-timeout`, with a default of 30 seconds
+- Fixed a synchronous timeout not returning when the task was cancelled
+- Fixed `--list-timeout` not being applied to SFTP listings, thanks @JamBalaya56562
+- Fixed `--list-timeout` not being applied to MinIO listings, thanks @JamBalaya56562
+- Fixed Storj transfers that stop moving never timing out, thanks @JamBalaya56562
+- Fixed the per-item timeout counting the caller's time and reporting a timeout as a cancellation, thanks @JamBalaya56562
+- Fixed a caller cancellation being reported as a timeout, thanks @JamBalaya56562
+- Fixed a source folder that cannot be read only giving a warning and producing an empty version, thanks @JamBalaya56562
+- Fixed a backup stopped before processing files creating an empty version, thanks @JamBalaya56562
+- Added a specific warning for files that are not stored locally and cannot be read
+- Fixed `--dry-run` committing the compact decision to the database
+- Added the upgrade and downgrade scripts to the databases so the database tool can downgrade databases from newer versions
+- Changed the DatabaseTool downgrade default to the newest version the tool supports
+- Fixed DatabaseTool taking a local database with an index or view named `Schedule` for a server database, thanks @JamBalaya56562
+- Fixed an unreadable block stopping the whole restore instead of only the files that use it, thanks @JamBalaya56562
+- Fixed a restore with failed files exiting with code 0 instead of 3, thanks @JamBalaya56562
+- Improved the error when a failed priority file stops the restore, thanks @JamBalaya56562
+- Fixed the extended attributes of a restored symbolic link being set on its target, thanks @JamBalaya56562
+- Fixed the read-only attribute of a restored symbolic link being set on its target, thanks @JamBalaya56562
+- Fixed restoring the creation time on Linux overwriting the restored last write time, thanks @JamBalaya56562
+- Fixed the legacy restore engine not counting restored symbolic links, thanks @JamBalaya56562
+- Fixed a failed copy of verified blocks updating the list of broken files without the lock, thanks @JamBalaya56562
+- Fixed the fileset time not being recorded in dlist files from backups and purges, thanks @JamBalaya56562
+- Fixed a retried dlist upload leaving a placeholder version in the version list, thanks @JamBalaya56562
+- Fixed repair uploading a missing dlist file under a later name than the original, thanks @JamBalaya56562
+- Fixed the search for a free dlist name not stopping after the given number of tries, thanks @JamBalaya56562
+- Added `--add-encryption` to the recovery tool
+- Fixed the recovery tool recompress deleting the file it had just uploaded under the same name, thanks @JamBalaya56562
+- Fixed report template values being inserted as regex replacement strings, thanks @JamBalaya56562
+- Fixed report template keys being expanded inside inserted values, and keys with regex characters stopping the report, thanks @JamBalaya56562
+- Fixed a failing HTTP report target skipping the remaining targets, thanks @JamBalaya56562
+- Fixed a failing status report URL or XMPP recipient skipping the remaining ones, thanks @JamBalaya56562
+- Fixed report send failures not being shown in the job log, thanks @JamBalaya56562
+- Fixed a compact being logged twice in the job log and vacuuming twice, thanks @JamBalaya56562
+- Fixed no report being sent when a run-script-before script fails the operation, thanks @JamBalaya56562
+- Fixed no report being sent when the option setup fails, thanks @JamBalaya56562
+- Fixed the command line reporting a stopped or failed backup as successful, thanks @JamBalaya56562
+- Added the `Reason` field of restore test reports to reduced reporting
+- Changed Google Workspace and Microsoft 365 to stream file contents, supporting files above 2 GB and reducing memory usage
+- Fixed Google Workspace chat attachments being stored as metadata instead of content
+- Improved the progress reporting during delta walks
+- Fixed Google Drive and Google Cloud Storage dropping the error reason on 403 and not retrying rate limits, thanks @JamBalaya56562
+- Fixed Google Drive chunked uploads not retrying rate limits and not reporting the reason, thanks @JamBalaya56562
+- Fixed Google Drive leaving a duplicate file behind after an interrupted upload, thanks @JamBalaya56562
+- Fixed the B2 retry logic and a bug that could truncate listings
+- Fixed SMB leaving file handles open when get, delete or rename fails, thanks @JamBalaya56562
+- Fixed a failed close replacing the SMB listing error, thanks @JamBalaya56562
+- Fixed the SharePoint v2 backend requiring `--site-id` and mixing it up with the site from the URL, thanks @JamBalaya56562
+- Added a system status websocket subscription with CPU, memory, active paths and backend transfer rates
+- Moved the restore test API to v2 and reported it as an API extension
+- Fixed the refresh cookie path behind a proxy with `X-Forwarded-Prefix`
+- Removed jQuery from the login and signin pages, thanks @JamBalaya56562
+- Fixed `--dblock-size`, `--prefix`, `--compression-module` and `--encryption-module` not being changeable on an existing backup
+- Fixed `--store-task-config` being passed to operations that do not support it
+- Fixed concurrent connection tests of the same destination interfering with each other, thanks @JamBalaya56562
+- Fixed deleting a sync job with delete remote files failing, thanks @JamBalaya56562
+- Changed backup operations on sync jobs to be refused with a message, thanks @JamBalaya56562
+- Fixed the old UI source list showing raw paths when the system information is late, thanks @JamBalaya56562
+- Fixed the old UI source picker failing when the backup defaults load late, thanks @JamBalaya56562
+- Fixed `--webservice-webroot` being ignored in release builds, thanks @JamBalaya56562
+- Fixed `--webservice-webroot` being ignored in debug builds, thanks @JamBalaya56562
+- Changed macOS sleep prevention to use power assertions instead of caffeinate
+- Changed isolated runners to communicate over a named pipe and added IPC tracing
+- Fixed slow query monitoring counting the caller's time between rows, thanks @JamBalaya56562
+- Changed a backup's notifications to be dismissed with one update after a run, thanks @JamBalaya56562
+- Fixed the tray icon's request queue being shared between connections, thanks @JamBalaya56562
+- Fixed HTTP clients being created from a stopped server's factory, thanks @JamBalaya56562
+- Fixed the backend tester not waiting out rate limits, thanks @JamBalaya56562
+- Removed leftover debug output from setting timestamps on Linux, thanks @JamBalaya56562
+- Fixed the AutoTune tool not being renamed to `duplicati-autotune-tool` on Linux and macOS, thanks @JamBalaya56562
+- Fixed the AutoTune tool name in the 2.3.0.104 release notes, thanks @JamBalaya56562
+- Updated the acknowledgements
+- Removed an outdated commented block from the OAuth HTTP client, thanks @JamBalaya56562
+- Improved the upload retries and cleanup in the release builder
+- Updated fast-uri
+- Added Playwright tests for the old UI pages and themes, updated Playwright to 1.64.1 and Node 26, and fixed several flaky tests, thanks @JamBalaya56562
+
+## Updates to ngclient
+
+- Added a status page with CPU and memory usage, the paths being read, and backend transfer rates with throttle information
+- Added a search bar to the restore page
+- Added a button menu for starting restore tests
+- Added a Save changes button on all pages when editing an existing backup, thanks @JamBalaya56562
+- Added keyboard navigation and visible focus to the file tree, thanks @JamBalaya56562
+- Changed new S3 destinations other than AWS to have chunk encoding disabled by default, as most other hosts fail with it; existing setups are not changed
+- Added a dialog suggesting a page reload when a page fails to load, and a dialog for invalid URLs
+- Improved the display of log lines
+- Fixed destination settings being rewritten when a destination is loaded into the editor, thanks @JamBalaya56562
+- Fixed duplicate backup saves and stale responses after navigating away, thanks @JamBalaya56562
+- Fixed a second connection test being started when Continue is pressed during the folder-creating test, thanks @JamBalaya56562
+- Fixed a single job log row that is not JSON hiding the whole job log, thanks @JamBalaya56562
+- Fixed the stored server log being requested twice on first display, thanks @JamBalaya56562
+- Fixed a disabled file drop control still accepting files, thanks @JamBalaya56562
+- Fixed a failed usage statistics save leaving the setting pending, and added a saving indicator, thanks @JamBalaya56562
+- Fixed `%` in URLs being decoded twice
+- Fixed paths outside the sources being highlighted in the source tree
+- Fixed the status display when websockets are not available
+- Reduced the files loaded at startup by only preloading the commonly used pages, thanks @JamBalaya56562
+- Updated all localizations
+- Added a large number of unit and browser tests, thanks @JamBalaya56562
+
 2026-10-24 - 2.4.0.105_canary_2026-10-24
 ==========
 This release is a canary release intended to be used for testing.
