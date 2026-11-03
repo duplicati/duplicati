@@ -234,6 +234,10 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         var serverDatafolderEnvName = $"{Library.AutoUpdater.AutoUpdateSettings.AppName}__{Library.AutoUpdater.DataFolderManager.SERVER_DATAFOLDER_OPTION.Replace('-', '_')}".ToUpperInvariant();
         psi.Environment[serverDatafolderEnvName] = Library.AutoUpdater.DataFolderManager.GetDataFolder(Library.AutoUpdater.DataFolderManager.AccessMode.ProbeOnly);
 
+        // The controller runs the report modules, so it reports the executable
+        // the user started rather than the commandline engine it runs in
+        psi.Environment[Library.AutoUpdater.PackageHelper.ENTRY_ASSEMBLY_ENV_NAME] = Library.AutoUpdater.PackageHelper.EntryAssemblyName;
+
         var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
         process.Exited += OnProcessExited;
         if (!process.Start())

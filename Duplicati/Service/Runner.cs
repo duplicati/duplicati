@@ -141,6 +141,8 @@ namespace Duplicati.Service
                             RedirectStandardError = false,
                             WorkingDirectory = path
                         };
+                        // The child reports the executable the user started, not itself
+                        pr.Environment[PackageHelper.ENTRY_ASSEMBLY_ENV_NAME] = PackageHelper.EntryAssemblyName;
 
                         if (firstRun && m_onBeforeFirstStart != null)
                             m_onBeforeFirstStart(pr);
