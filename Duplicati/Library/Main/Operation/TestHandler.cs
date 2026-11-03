@@ -371,7 +371,9 @@ namespace Duplicati.Library.Main.Operation
 
                         //Select random blocks and verify their hashes match the filename and size
                         var hashsamples = new List<KeyValuePair<string, long>>(rd.Blocks);
-                        var sampleCount = Math.Min(Math.Max(0, (int)(hashsamples.Count * sample_percent)), hashsamples.Count - 1);
+                        // A volume can hold no blocks when it was only made to carry blocklist hashes
+                        // to its index file, and must not get a negative sample count then
+                        var sampleCount = Math.Max(0, Math.Min((int)(hashsamples.Count * sample_percent), hashsamples.Count - 1));
                         var rnd = new Random();
 
                         while (hashsamples.Count > sampleCount)
