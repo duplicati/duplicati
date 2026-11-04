@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 using Duplicati.Library.Interface;
 using System;
+using System.Globalization;
 using System.Linq;
 
 namespace Duplicati.Library.Backend.Storj
@@ -52,7 +53,7 @@ namespace Duplicati.Library.Backend.Storj
             var lastAccess = tardigradeObject.CustomMetadata.Entries.Where(e => e.Key == STORJ_LAST_ACCESS).FirstOrDefault();
             if (lastAccess != null && !string.IsNullOrEmpty(lastAccess.Value))
             {
-                LastAccess = DateTime.Parse(lastAccess.Value);
+                LastAccess = ParseTimestamp(lastAccess.Value);
             }
             else
             {
@@ -62,7 +63,7 @@ namespace Duplicati.Library.Backend.Storj
             var lastMod = tardigradeObject.CustomMetadata.Entries.Where(e => e.Key == STORJ_LAST_MODIFICATION).FirstOrDefault();
             if (lastMod != null && !string.IsNullOrEmpty(lastMod.Value))
             {
-                LastModification = DateTime.Parse(lastMod.Value);
+                LastModification = ParseTimestamp(lastMod.Value);
             }
             else
             {
@@ -72,5 +73,15 @@ namespace Duplicati.Library.Backend.Storj
             Name = tardigradeObject.Key;
             Size = tardigradeObject.SystemMetadata.ContentLength;
         }
+
+        /// <summary>
+        /// Parses a timestamp stored in the custom metadata, written by the backend as a round-trip
+        /// value in UTC such as "2026-07-15T12:00:00.0000000Z". The result is in UTC, so it compares
+        /// correctly against the timestamps of other backends.
+        /// </summary>
+        /// <param name="timestamp">The stored timestamp value.</param>
+        /// <returns>The timestamp in UTC.</returns>
+        private static DateTime ParseTimestamp(string timestamp)
+            => DateTime.Parse(timestamp, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
     }
 }

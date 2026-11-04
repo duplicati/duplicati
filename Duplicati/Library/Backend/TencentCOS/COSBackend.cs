@@ -30,7 +30,10 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
+using System.Globalization;
 using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
 namespace Duplicati.Library.Backend.TencentCOS
 {
@@ -200,7 +203,7 @@ namespace Duplicati.Library.Backend.TencentCOS
 
                 foreach (var item in info.contentsList)
                 {
-                    var last = DateTime.Parse(item.lastModified);
+                    var last = ParseLastModified(item.lastModified);
                     var fileName = item.key;
                     if (!string.IsNullOrWhiteSpace(prefix))
                     {
@@ -214,6 +217,16 @@ namespace Duplicati.Library.Backend.TencentCOS
                 }
             }
         }
+
+        /// <summary>
+        /// Parses the LastModified of a bucket listing entry, an ISO 8601 value such as
+        /// "2017-06-23T12:33:27.000Z". The result is in UTC, so it compares correctly against the
+        /// timestamps of other backends.
+        /// </summary>
+        /// <param name="lastModified">The LastModified value.</param>
+        /// <returns>The modification time in UTC.</returns>
+        internal static DateTime ParseLastModified(string lastModified)
+            => DateTime.Parse(lastModified, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
 
         public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
         {
