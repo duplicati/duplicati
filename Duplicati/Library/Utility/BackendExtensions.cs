@@ -213,11 +213,19 @@ public static class BackendExtensions
             return true;
 
         // A file without a known time may belong to a test that is still running
-        return entry.Name.StartsWith(TEST_FILE_PREFIX, StringComparison.Ordinal)
-            && entry.Name.EndsWith(TEST_FILE_EXTENSION, StringComparison.Ordinal)
+        return IsTestFileName(entry.Name)
             && entry.LastModification != default
             && now - entry.LastModification.ToUniversalTime() > LEFTOVER_TEST_FILE_AGE;
     }
+
+    /// <summary>
+    /// Checks if a file name is one that a test of a destination writes
+    /// </summary>
+    /// <param name="name">The file name</param>
+    /// <returns><c>true</c> if the name is the name of a test file</returns>
+    public static bool IsTestFileName(string name)
+        => name == TEST_FILE_NAME
+            || (name.StartsWith(TEST_FILE_PREFIX, StringComparison.Ordinal) && name.EndsWith(TEST_FILE_EXTENSION, StringComparison.Ordinal));
 
     /// <summary>
     /// Tests a backend by invoking the List() method.

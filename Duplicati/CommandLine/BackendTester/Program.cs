@@ -222,7 +222,7 @@ namespace Duplicati.CommandLine.BackendTester
                 // run is abandoned over what it reported the first time.
                 if (present.Count > 0)
                 {
-                    var leftovers = ListUntilFolderIsEmpty(backend, retries, verificationRetries);
+                    var leftovers = ListAfterRemovingTestFiles(backend, retries, verificationRetries);
                     if (leftovers.Count > 0)
                     {
                         var filenames = leftovers.Take(10).ToList();
@@ -688,6 +688,31 @@ namespace Duplicati.CommandLine.BackendTester
         }
 
         /// <summary>
+        /// Reads the remote folder like <see cref="ListUntilFolderIsEmpty"/>, and removes the
+        /// test files it still holds. Each test of the destination writes a file with a name
+        /// of its own, so a test that failed and was retried leaves the file of the failed try.
+        /// </summary>
+        /// <param name="backend">The backend to read</param>
+        /// <param name="retries">The number of attempts to make per operation</param>
+        /// <param name="verificationRetries">The number of times to read the folder again</param>
+        /// <returns>The names of the files the folder still holds</returns>
+        internal static List<string> ListAfterRemovingTestFiles(IBackend backend, int retries, int verificationRetries)
+        {
+            var leftovers = ListUntilFolderIsEmpty(backend, retries, verificationRetries);
+            var testFiles = leftovers.Where(BackendExtensions.IsTestFileName).ToList();
+            if (testFiles.Count == 0)
+                return leftovers;
+
+            foreach (var name in testFiles)
+            {
+                Console.WriteLine($"{LogTimeStamp}Removing test file left by an earlier attempt: {name}");
+                DeleteListedFileAsync(backend, name, retries).Await();
+            }
+
+            return ListUntilFolderIsEmpty(backend, retries, verificationRetries);
+        }
+
+        /// <summary>
         /// Removes the files the run created, and reports the ones that would not go away
         /// </summary>
         /// <param name="backend">The backend to delete from</param>
@@ -779,7 +804,7 @@ namespace Duplicati.CommandLine.BackendTester
                         throw;
 
                     var delay = GetRetryDelay(ex, total - retries, DateTimeOffset.UtcNow);
-                    Console.WriteLine($"{LogTimeStamp}Operation failed with exception, {retries} retries left, delaying retry for {delay.TotalMilliseconds} ms");
+                    Console.WriteLine($"{LogTimeStamp}Operation failed with exception ({ex.GetType().Name}: {ex.Message}), {retries} retries left, delaying retry for {delay.TotalMilliseconds} ms");
                     await Task.Delay(delay);
 
                     Console.WriteLine($"{LogTimeStamp}Retrying after error, {retries} retries left");
