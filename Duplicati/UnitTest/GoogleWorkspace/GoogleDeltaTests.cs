@@ -532,6 +532,130 @@ public class GoogleDeltaTests
         Assert.That(FolderMap.Deserialize(provider.ExportChangeTrackingState()[MyDriveKey])!.Token, Is.EqualTo("9"), "Nothing fails, so the drive advances");
     }
 
+    private static string DriveFileWithCapabilities(string id, string parent, bool canDownload, bool canReadRevisions)
+        => $"{{\"id\":\"{id}\",\"name\":\"{id}.txt\",\"mimeType\":\"text/plain\",\"size\":\"3\",\"parents\":[\"{parent}\"],\"modifiedTime\":\"2024-01-01T00:00:00Z\",\"capabilities\":{{\"canDownload\":{(canDownload ? "true" : "false")},\"canReadRevisions\":{(canReadRevisions ? "true" : "false")}}}}}";
+    private static string Revision(string id, int size) => $"{{\"id\":\"{id}\",\"mimeType\":\"text/plain\",\"modifiedTime\":\"2024-01-02T00:00:00Z\",\"size\":\"{size}\"}}";
+    private static string RevisionList(string? nextPageToken, params string[] revisions)
+        => $"{{{(nextPageToken == null ? "" : $"\"nextPageToken\":\"{nextPageToken}\",")}\"revisions\":[{string.Join(",", revisions)}]}}";
+
+    /// <summary>
+    /// Answers the requests below file A: no permissions or comments, and the given revisions
+    /// </summary>
+    private static FakeGoogleHandler FileAWithRevisions(FakeGoogleHandler handler, params Func<HttpResponseMessage>[] revisionPages)
+        => handler.Json("/files/A/permissions", "{\"permissions\":[]}").Json("/files/A/comments", "{\"comments\":[]}").Sequence("/files/A/revisions?", revisionPages);
+
+    [Test]
+    [Category("GoogleWorkspace")]
+    public async Task DriveRevisionListingPagesAndCarriesTheSizeAsync()
+    {
+        var handler = FileAWithRevisions(new FakeGoogleHandler()
+            .Json("/changes?", Changes("9", Change(DriveFile("A", "R")))),
+            () => GoogleWorkspaceTestSupport.Json(HttpStatusCode.OK, RevisionList("p2", Revision("r1", 3))),
+            () => GoogleWorkspaceTestSupport.Json(HttpStatusCode.OK, RevisionList(null, Revision("r2", 7))));
+        var provider = CreateProvider(handler, new Dictionary<string, string> { [MyDriveKey] = StoredMap("5", "R") });
+
+        var entries = await CollectAsync(MyDrive(provider), true);
+
+        var revisions = entries.Where(x => !x.IsFolder && x.Path.StartsWith(D(MyDrivePath, "A", "Revisions"), StringComparison.Ordinal)).ToList();
+        Assert.That(revisions.Select(x => x.Path), Is.EquivalentTo(new[] { F(MyDrivePath, "A", "Revisions", "r1"), F(MyDrivePath, "A", "Revisions", "r2") }), "Both pages are listed");
+        Assert.That(revisions.Select(x => x.Size), Is.EquivalentTo(new[] { 3L, 7L }), "The size comes from the listing");
+
+        var requests = handler.Requests.Where(x => x.Contains("/files/A/revisions?", StringComparison.Ordinal)).ToList();
+        Assert.That(requests, Has.Count.EqualTo(2));
+        Assert.That(requests[0], Does.Contain("size").And.Contain("exportLinks").And.Contain("pageSize=1000"), "Drive's default field set has no size, so the fields are asked for");
+        Assert.That(requests[1], Does.Contain("pageToken=p2"));
+        Assert.That(handler.Requests.Single(x => x.Contains("/changes?", StringComparison.Ordinal)), Does.Contain("canReadRevisions"), "The listing asks what the account may read");
+    }
+
+    [Test]
+    [Category("GoogleWorkspace")]
+    public async Task DriveRevisionRefusedToTheAccountIsSkippedAsync()
+    {
+        // Drive lists the revisions of a file to anyone who can read it, but hands their
+        // content only to editors; the revision is left out as information, and the drive
+        // is not held back for it, as asking again would only be refused again
+        var handler = FileAWithRevisions(new FakeGoogleHandler()
+            .Json("/changes?", Changes("9", Change(DriveFile("A", "R"))))
+            .Sequence("/files/A/revisions/r1?", () => GoogleWorkspaceTestSupport.GoogleError(HttpStatusCode.Forbidden, "cannotDownloadRevision", "This revision cannot be downloaded by the authenticated user.")),
+            () => GoogleWorkspaceTestSupport.Json(HttpStatusCode.OK, RevisionList(null, Revision("r1", 3))));
+        var provider = CreateProvider(handler, new Dictionary<string, string> { [MyDriveKey] = StoredMap("5", "R") });
+
+        var entries = await CollectAsync(MyDrive(provider), true);
+        var revision = entries.Single(x => x.Path == F(MyDrivePath, "A", "Revisions", "r1"));
+
+        var ex = Assert.ThrowsAsync<SourceEntrySkippedException>(() => revision.OpenRead(CancellationToken.None));
+        Assert.That(ex!.InnerException, Is.InstanceOf<Google.GoogleApiException>(), "The Google error stays attached");
+        Assert.That(handler.CountRequests("/files/A/revisions/r1?"), Is.EqualTo(1), "A refusal is not retried");
+        var state = provider.ExportChangeTrackingState();
+        Assert.That(FolderMap.Deserialize(state[MyDriveKey])!.Token, Is.EqualTo("9"), "A skipped revision does not hold the drive back");
+        Assert.That(state.Keys, Is.EquivalentTo(new[] { MyDriveKey }), "No failure is recorded");
+    }
+
+    [Test]
+    [Category("GoogleWorkspace")]
+    public async Task DriveRevisionGoneAfterListingIsSkippedAsync()
+    {
+        var handler = FileAWithRevisions(new FakeGoogleHandler()
+            .Json("/changes?", Changes("9", Change(DriveFile("A", "R"))))
+            .Sequence("/files/A/revisions/r1?", () => GoogleWorkspaceTestSupport.GoogleError(HttpStatusCode.NotFound, "notFound", "Revision not found: r1")),
+            () => GoogleWorkspaceTestSupport.Json(HttpStatusCode.OK, RevisionList(null, Revision("r1", 3))));
+        var provider = CreateProvider(handler, new Dictionary<string, string> { [MyDriveKey] = StoredMap("5", "R") });
+
+        var entries = await CollectAsync(MyDrive(provider), true);
+        var revision = entries.Single(x => x.Path == F(MyDrivePath, "A", "Revisions", "r1"));
+
+        var ex = Assert.ThrowsAsync<SourceEntrySkippedException>(() => revision.OpenRead(CancellationToken.None));
+        Assert.That(ex!.InnerException, Is.InstanceOf<Google.GoogleApiException>());
+        Assert.That(FolderMap.Deserialize(provider.ExportChangeTrackingState()[MyDriveKey])!.Token, Is.EqualTo("9"), "A purged revision does not hold the drive back");
+    }
+
+    [Test]
+    [Category("GoogleWorkspace")]
+    public async Task DriveContentRefusedToTheAccountIsAPermissionDeniedAsync()
+    {
+        var handler = FileChildren(new FakeGoogleHandler()
+            .Json("/changes?", Changes("9", Change(DriveFile("A", "R"))))
+            .Sequence("/files/A?", () => GoogleWorkspaceTestSupport.GoogleError(HttpStatusCode.Forbidden, "cannotDownloadFile", "The user does not have permission to download this file.")), "A");
+        var provider = CreateProvider(handler, new Dictionary<string, string> { [MyDriveKey] = StoredMap("5", "R") });
+
+        var entries = await CollectAsync(MyDrive(provider), true);
+        var content = entries.Single(x => x.Path == F(MyDrivePath, "A", "content"));
+
+        var ex = Assert.ThrowsAsync<UnauthorizedAccessException>(() => content.OpenRead(CancellationToken.None));
+        Assert.That(ex!.InnerException, Is.InstanceOf<Google.GoogleApiException>());
+        Assert.That(handler.CountRequests("alt=media"), Is.EqualTo(1), "A refusal is not retried");
+    }
+
+    [Test]
+    [Category("GoogleWorkspace")]
+    public async Task DriveFileTheAccountMayNotDownloadHasNoContentAsync()
+    {
+        var handler = FileChildren(new FakeGoogleHandler()
+            .Json("/changes?", Changes("9", Change(DriveFileWithCapabilities("A", "R", canDownload: false, canReadRevisions: true)))), "A");
+        var provider = CreateProvider(handler, new Dictionary<string, string> { [MyDriveKey] = StoredMap("5", "R") });
+
+        var entries = await CollectAsync(MyDrive(provider), true);
+
+        Assert.That(entries.Select(x => x.Path), Is.EquivalentTo(new[] { D(MyDrivePath, "A"), F(MyDrivePath, "A", "metadata.json"), F(MyDrivePath, "A", "permissions.json"), F(MyDrivePath, "A", "comments.json"), D(MyDrivePath, "A", "Revisions") }), "The content the account may not download is left out, the rest is listed");
+        Assert.That(handler.CountRequests("alt=media"), Is.EqualTo(0));
+        Assert.That(FolderMap.Deserialize(provider.ExportChangeTrackingState()[MyDriveKey])!.Token, Is.EqualTo("9"), "Nothing fails, so the drive advances");
+    }
+
+    [Test]
+    [Category("GoogleWorkspace")]
+    public async Task DriveFileWhoseRevisionsTheAccountMayNotReadHasNoRevisionsAsync()
+    {
+        var handler = FileChildren(new FakeGoogleHandler()
+            .Json("/changes?", Changes("9", Change(DriveFileWithCapabilities("A", "R", canDownload: true, canReadRevisions: false)))), "A");
+        var provider = CreateProvider(handler, new Dictionary<string, string> { [MyDriveKey] = StoredMap("5", "R") });
+
+        var entries = await CollectAsync(MyDrive(provider), true);
+
+        Assert.That(entries.Select(x => x.Path), Is.EquivalentTo(new[] { D(MyDrivePath, "A"), F(MyDrivePath, "A", "metadata.json"), F(MyDrivePath, "A", "permissions.json"), F(MyDrivePath, "A", "content"), F(MyDrivePath, "A", "comments.json") }), "The revisions the account may not read are left out");
+        Assert.That(handler.CountRequests("/revisions"), Is.EqualTo(0));
+        Assert.That(FolderMap.Deserialize(provider.ExportChangeTrackingState()[MyDriveKey])!.Token, Is.EqualTo("9"), "Nothing fails, so the drive advances");
+    }
+
     [Test]
     [Category("GoogleWorkspace")]
     public async Task DriveDeletedFolderDropsItsSubtreeAsync()

@@ -17,9 +17,11 @@ namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 internal class DriveFolderSourceEntry : MetaEntryBase
 {
     /// <summary>
-    /// The fields requested for every listed file
+    /// The fields requested for every listed file. The capabilities say up front whether
+    /// the account may download the content and read the revisions, so what it may not is
+    /// left out of the listing instead of being asked for and refused
     /// </summary>
-    internal const string FILE_FIELDS = "id, name, mimeType, createdTime, modifiedTime, size, description, parents, trashed, driveId";
+    internal const string FILE_FIELDS = "id, name, mimeType, createdTime, modifiedTime, size, description, parents, trashed, driveId, capabilities(canDownload, canReadRevisions)";
 
     private readonly SourceProvider provider;
     private readonly string? stateKey;

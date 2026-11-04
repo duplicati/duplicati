@@ -318,6 +318,43 @@ public class ResumableHttpReadStreamTests
 
     [Test]
     [Category("Utility")]
+    public async Task ResumesWhenTheFirstOpenFails()
+    {
+        // The client's retries are through by the time the open reaches here, so a failure
+        // to get the headers at all is resumed like a failure mid-body
+        var data = Data(100);
+        var server = new Server(data, new Answer(HttpStatusCode.OK, long.MaxValue));
+        var calls = 0;
+        using var stream = new ResumableHttpReadStream(
+            (offset, ct) => ++calls == 1 ? throw new HttpRequestException("no response within 10 seconds", new TimeoutException()) : server.OpenAsync(offset, ct),
+            null, TimeSpan.FromSeconds(5), "the body", resumeDelay: NoDelay);
+
+        await stream.EnsureOpenedAsync(CancellationToken.None);
+
+        Assert.IsTrue(stream.HasKnownLength);
+        Assert.AreEqual(100, stream.Length);
+        Assert.AreEqual(data, await ReadAllAsync(stream));
+        Assert.AreEqual(2, calls);
+        Assert.AreEqual(new[] { 0L }, server.Offsets, "The resumed open asks for the whole body again");
+    }
+
+    [Test]
+    [Category("Utility")]
+    public void GivesUpOpeningWhenTheResumesAreExhausted()
+    {
+        var calls = 0;
+        using var stream = new ResumableHttpReadStream(
+            (offset, ct) => { calls++; throw new IOException("connection reset"); },
+            null, TimeSpan.FromSeconds(5), "the body", maxResumeAttempts: 2, resumeDelay: NoDelay);
+
+        var ex = Assert.ThrowsAsync<IOException>(async () => await stream.EnsureOpenedAsync(CancellationToken.None));
+
+        Assert.IsTrue(ex!.Message.Contains("given up"), ex.Message);
+        Assert.AreEqual(3, calls, "The first open and both resumes");
+    }
+
+    [Test]
+    [Category("Utility")]
     public void FailsWhenAResumeIsRefused()
     {
         var data = Data(100);

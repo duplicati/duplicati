@@ -21,6 +21,7 @@
 
 
 using System.Runtime.CompilerServices;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.SourceProvider.ChangeTracking;
 
@@ -37,7 +38,9 @@ public static class ChangeTrackerExtensions
     /// listing just reported is more likely to be missing transiently than to be gone, and if it
     /// is gone the walk from the held-back token reports it as removed next time, at the cost of
     /// repeating one incremental walk. The failure is recorded against the item, so an item
-    /// that keeps failing is eventually given up on instead of pinning its whole tree.
+    /// that keeps failing is eventually given up on instead of pinning its whole tree. An
+    /// item the provider skips with a <see cref="SourceEntrySkippedException"/> is not a
+    /// failure: the reason is final, so trying again would only skip it again.
     /// </summary>
     /// <param name="tracker">The change tracker</param>
     /// <param name="stateKey">The change tracking key of the folder or drive, or <c>null</c> if changes are not tracked</param>
@@ -55,7 +58,7 @@ public static class ChangeTrackerExtensions
         {
             stream = await factory(cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (Exception ex) when (ex is not OperationCanceledException && ex is not SourceEntrySkippedException)
         {
             tracker.MarkItemFailed(stateKey, item);
             throw;

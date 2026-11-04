@@ -17,11 +17,33 @@ internal class DriveFileRevisionContentSourceEntry(SourceProvider provider, stri
         => provider.ChangeTracker.OpenWithFailureTrackingAsync(stateKey, this.Path, ct => DownloadAsync(ct), cancellationToken);
 
     /// <summary>
-    /// Downloads the revision
+    /// Downloads the revision. Drive lists the revisions of a file to anyone who can read
+    /// the file, but hands their content only to users who can edit it, and purges old
+    /// revisions after listing them; both refusals leave the revision out as information
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The content</returns>
-    private Task<Stream> DownloadAsync(CancellationToken cancellationToken)
+    private async Task<Stream> DownloadAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await OpenAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            var refusal = GoogleServiceErrors.AsRevisionRefusal(ex, $"revision {revision.Id} of file {file.Id}");
+            if (ReferenceEquals(refusal, ex))
+                throw;
+            throw refusal;
+        }
+    }
+
+    /// <summary>
+    /// Opens the content of the revision
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The content</returns>
+    private Task<Stream> OpenAsync(CancellationToken cancellationToken)
     {
         if (GoogleMimeTypes.IsGoogleDoc(file.MimeType))
         {

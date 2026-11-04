@@ -28,7 +28,9 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Proprietary.GoogleWorkspace;
+using Google;
 using Google.Apis.Http;
+using Google.Apis.Requests;
 using Google.Apis.Util;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
@@ -283,5 +285,145 @@ public class GoogleRetryHandlerTests
         Assert.IsFalse(GoogleServiceErrors.IsRetryable(HttpStatusCode.TooManyRequests, ["dailyLimitExceeded"], "Daily Limit Exceeded"));
         Assert.IsFalse(GoogleServiceErrors.IsRetryable(HttpStatusCode.Forbidden, [], "Quota exceeded for quota metric 'Queries' and limit 'Queries per day'"));
         Assert.IsTrue(GoogleServiceErrors.IsRetryable(HttpStatusCode.Forbidden, [], "Quota exceeded for quota metric 'Queries' and limit 'Queries per minute per user'"));
+    }
+
+    /// <summary>
+    /// A handler that lets a number of requests hang until their attempt is cancelled, and
+    /// answers every request after those.
+    /// </summary>
+    private sealed class StallingHandler(int stalls) : HttpMessageHandler
+    {
+        private int _requests;
+
+        public int Requests => _requests;
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            if (Interlocked.Increment(ref _requests) <= stalls)
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            return ScriptedHandler.Response(HttpStatusCode.OK, "{}");
+        }
+    }
+
+    private static ConfigurableHttpClient CreateTimedClient(HttpMessageHandler handler, TimeSpan attemptTimeout)
+    {
+        var client = new ConfigurableHttpClient(new ConfigurableMessageHandler(handler));
+        PerAttemptTimeoutHandler.Install(client, attemptTimeout);
+        client.MessageHandler.NumTries = GoogleRetryHandler.NumTries;
+        var retry = new GoogleRetryHandler(new NoWaitBackOff(GoogleRetryHandler.NumTries));
+        client.MessageHandler.AddUnsuccessfulResponseHandler(retry);
+        client.MessageHandler.AddExceptionHandler(retry);
+        return client;
+    }
+
+    [Test]
+    public void InstallTimeout_SwitchesOffTheClientTimeoutAndTimesEachAttempt()
+    {
+        var client = new ConfigurableHttpClient(new ConfigurableMessageHandler(new ScriptedHandler()));
+
+        PerAttemptTimeoutHandler.Install(client, TimeSpan.FromSeconds(42));
+
+        // The client's own timeout would bound the retries and their pauses as a whole
+        Assert.AreEqual(Timeout.InfiniteTimeSpan, client.Timeout);
+        var handler = client.MessageHandler.InnerHandler as PerAttemptTimeoutHandler;
+        Assert.IsNotNull(handler, "The attempt timeout sits below the message handler, where the retries are decided");
+        Assert.AreEqual(TimeSpan.FromSeconds(42), handler!.AttemptTimeout);
+    }
+
+    [Test]
+    public async Task StalledAttempt_IsRetriedLikeAConnectionFailure()
+    {
+        var stalling = new StallingHandler(2);
+        var client = CreateTimedClient(stalling, TimeSpan.FromMilliseconds(200));
+
+        using var response = await SendAsync(client);
+
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        Assert.AreEqual(3, stalling.Requests);
+    }
+
+    [Test]
+    public void StalledRequest_FailsAsATimeoutAndNeverAsACancellation()
+    {
+        var stalling = new StallingHandler(int.MaxValue);
+        var client = CreateTimedClient(stalling, TimeSpan.FromMilliseconds(50));
+
+        var ex = Assert.CatchAsync<Exception>(async () => await SendAsync(client));
+
+        Assert.IsFalse(ex is OperationCanceledException, $"A timeout of the client is not the caller cancelling, got {ex!.GetType().Name}");
+        Assert.IsInstanceOf<HttpRequestException>(ex);
+        Assert.IsInstanceOf<TimeoutException>(ex!.InnerException);
+        Assert.AreEqual(GoogleRetryHandler.NumTries, stalling.Requests, "The retry policy, not the client's timeout, decides when to give up");
+    }
+
+    [Test]
+    public void StalledRequest_ReportsTheCallersCancellation()
+    {
+        var stalling = new StallingHandler(int.MaxValue);
+        var client = CreateTimedClient(stalling, TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
+
+        Assert.CatchAsync<OperationCanceledException>(async () => await client.GetAsync("https://www.googleapis.com/drive/v3/files/x?alt=media", cts.Token));
+
+        Assert.AreEqual(1, stalling.Requests, "The caller's cancellation is not retried");
+    }
+
+    private static GoogleApiException DriveError(HttpStatusCode status, string? reason, string message)
+        => new("drive", message)
+        {
+            HttpStatusCode = status,
+            Error = reason == null ? null : new RequestError { Code = (int)status, Message = message, Errors = [new SingleError { Reason = reason, Message = message, Domain = "global" }] },
+        };
+
+    [Test]
+    public void IsContentNotDownloadable_RecognisesTheDriveReasons()
+    {
+        Assert.IsTrue(GoogleServiceErrors.IsContentNotDownloadable(DriveError(HttpStatusCode.Forbidden, "cannotDownloadRevision", "This revision cannot be downloaded by the authenticated user.")));
+        Assert.IsTrue(GoogleServiceErrors.IsContentNotDownloadable(DriveError(HttpStatusCode.Forbidden, "cannotDownloadFile", "The user does not have permission to download this file.")));
+        Assert.IsTrue(GoogleServiceErrors.IsContentNotDownloadable(DriveError(HttpStatusCode.Forbidden, "cannotDownloadAbusiveFile", "This file has been identified as malware or spam and cannot be downloaded.")));
+        // The media endpoints wrap the error document in an array, and the reason then only survives in the message
+        Assert.IsTrue(GoogleServiceErrors.IsContentNotDownloadable(DriveError(HttpStatusCode.Forbidden, null, "This revision cannot be downloaded by the authenticated user. (reason: cannotDownloadRevision)")));
+
+        Assert.IsFalse(GoogleServiceErrors.IsContentNotDownloadable(DriveError(HttpStatusCode.Forbidden, "forbidden", "The caller does not have permission")));
+        Assert.IsFalse(GoogleServiceErrors.IsContentNotDownloadable(DriveError(HttpStatusCode.Forbidden, "userRateLimitExceeded", "User rate limit exceeded")));
+        Assert.IsFalse(GoogleServiceErrors.IsContentNotDownloadable(DriveError(HttpStatusCode.NotFound, "cannotDownloadRevision", "mismatched status")));
+        Assert.IsFalse(GoogleServiceErrors.IsContentNotDownloadable(new HttpRequestException("cannotDownloadRevision", null, HttpStatusCode.Forbidden)));
+    }
+
+    [Test]
+    public void AsRevisionRefusal_SkipsTheRevisionAsInformation()
+    {
+        var refused = DriveError(HttpStatusCode.Forbidden, "cannotDownloadRevision", "This revision cannot be downloaded by the authenticated user.");
+        var skipped = GoogleServiceErrors.AsRevisionRefusal(refused, "revision r1 of file A");
+        Assert.IsInstanceOf<Duplicati.Library.Interface.SourceEntrySkippedException>(skipped);
+        Assert.AreSame(refused, skipped.InnerException);
+        StringAssert.Contains("revision r1 of file A", skipped.Message);
+
+        var gone = DriveError(HttpStatusCode.NotFound, "notFound", "Revision not found: r1");
+        Assert.IsInstanceOf<Duplicati.Library.Interface.SourceEntrySkippedException>(GoogleServiceErrors.AsRevisionRefusal(gone, "revision r1 of file A"));
+
+        var other = DriveError(HttpStatusCode.InternalServerError, "backendError", "Backend Error");
+        Assert.AreSame(other, GoogleServiceErrors.AsRevisionRefusal(other, "revision r1 of file A"), "Anything else is reported as it is");
+    }
+
+    [Test]
+    public void AsContentRefusal_MapsToWhatTheEngineClassifies()
+    {
+        var refused = DriveError(HttpStatusCode.Forbidden, "cannotDownloadRevision", "This revision cannot be downloaded by the authenticated user.");
+        var denied = GoogleServiceErrors.AsContentRefusal(refused, "revision r1 of file A");
+        Assert.IsInstanceOf<UnauthorizedAccessException>(denied);
+        Assert.AreSame(refused, denied.InnerException, "The Google error stays attached for the verbose log");
+        StringAssert.Contains("revision r1 of file A", denied.Message);
+
+        var gone = DriveError(HttpStatusCode.NotFound, "notFound", "Revision not found: r1");
+        var notFound = GoogleServiceErrors.AsContentRefusal(gone, "revision r1 of file A");
+        Assert.IsInstanceOf<System.IO.FileNotFoundException>(notFound);
+        Assert.AreSame(gone, notFound.InnerException);
+
+        var other = DriveError(HttpStatusCode.InternalServerError, "backendError", "Backend Error");
+        Assert.AreSame(other, GoogleServiceErrors.AsContentRefusal(other, "revision r1 of file A"), "Anything else is reported as it is");
+
+        var permission = DriveError(HttpStatusCode.Forbidden, "forbidden", "The caller does not have permission");
+        Assert.AreSame(permission, GoogleServiceErrors.AsContentRefusal(permission, "revision r1 of file A"), "A 403 without a download reason is not a download refusal");
     }
 }

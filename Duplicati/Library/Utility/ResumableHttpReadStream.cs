@@ -194,15 +194,27 @@ public sealed class ResumableHttpReadStream : Stream
     /// <summary>
     /// Sends the first request, so a failure to get the body at all is reported here,
     /// where the caller can act on it, instead of on the first read. After this,
-    /// <see cref="HasKnownLength"/> reflects the response headers.
+    /// <see cref="HasKnownLength"/> reflects the response headers. A connection that
+    /// fails or stalls before the headers arrive is resumed like one that fails
+    /// mid-body; a refused request is reported at once.
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
     public async Task EnsureOpenedAsync(CancellationToken cancellationToken)
     {
         ThrowIfDisposed();
-        if (_body == null && !_completed)
-            await OpenAtAsync(_position, cancellationToken).ConfigureAwait(false);
+        while (_body == null && !_completed)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await OpenAtAsync(_position, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (IsTransient(ex, cancellationToken))
+            {
+                await PrepareResumeAsync(ex, "Opening", cancellationToken).ConfigureAwait(false);
+            }
+        }
     }
 
     /// <summary>

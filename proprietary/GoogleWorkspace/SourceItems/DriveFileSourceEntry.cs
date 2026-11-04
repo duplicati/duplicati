@@ -2,6 +2,7 @@
 
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 using Google.Apis.Drive.v3;
 using System.Runtime.CompilerServices;
 using File = Google.Apis.Drive.v3.Data.File;
@@ -21,6 +22,11 @@ namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 internal class DriveFileSourceEntry(SourceProvider provider, string? stateKey, string parentPath, File file, bool userIsInactive, DriveService driveService)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, file.Id)), file.CreatedTimeDateTimeOffset.HasValue ? file.CreatedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch, file.ModifiedTimeDateTimeOffset.HasValue ? file.ModifiedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch)
 {
+    /// <summary>
+    /// The log tag for this class
+    /// </summary>
+    private static readonly string LOGTAG = Log.LogTagFromType<DriveFileSourceEntry>();
+
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested) yield break;
@@ -34,8 +40,17 @@ internal class DriveFileSourceEntry(SourceProvider provider, string? stateKey, s
         // metadata, permissions and comments are all Drive knows about it
         if (!GoogleMimeTypes.IsGoogleSite(file.MimeType))
         {
-            if (cancellationToken.IsCancellationRequested) yield break;
-            yield return new DriveFileContentSourceEntry(provider, stateKey, this.Path, file, driveService);
+            // The owner can turn off download for viewers and commenters, and Drive flags some
+            // files; the listing says so, and asking for the content would only be refused
+            if (file.Capabilities?.CanDownload == false)
+            {
+                Log.WriteVerboseMessage(LOGTAG, "FileNotDownloadable", Strings.FileNotDownloadable(file.Id));
+            }
+            else
+            {
+                if (cancellationToken.IsCancellationRequested) yield break;
+                yield return new DriveFileContentSourceEntry(provider, stateKey, this.Path, file, driveService);
+            }
         }
 
         // A shortcut is a pointer to another file and has no comments of its own; the
@@ -49,8 +64,17 @@ internal class DriveFileSourceEntry(SourceProvider provider, string? stateKey, s
         // Skip revisions for Google Workspace files (Docs, Sheets, Slides, Sites, Shortcuts) as they cannot be exported
         if (!GoogleMimeTypes.IsGoogleSite(file.MimeType) && !GoogleMimeTypes.IsShortcut(file.MimeType) && !GoogleMimeTypes.IsGoogleDoc(file.MimeType))
         {
-            if (cancellationToken.IsCancellationRequested) yield break;
-            yield return new DriveFileRevisionsSourceEntry(provider, stateKey, this.Path, file, driveService);
+            // Drive tells readers of a file that they may not read its revisions; asking would
+            // only be refused, so the revisions folder is left out for them
+            if (file.Capabilities?.CanReadRevisions == false)
+            {
+                Log.WriteVerboseMessage(LOGTAG, "RevisionsNotReadable", Strings.RevisionsNotReadable(file.Id));
+            }
+            else
+            {
+                if (cancellationToken.IsCancellationRequested) yield break;
+                yield return new DriveFileRevisionsSourceEntry(provider, stateKey, this.Path, file, driveService);
+            }
         }
     }
 

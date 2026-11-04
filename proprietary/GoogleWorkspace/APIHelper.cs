@@ -85,12 +85,12 @@ public class APIHelper
 
     private BaseClientService.Initializer GetServiceInitializer(string? userId, IEnumerable<string> scopes)
     {
-        var backoffInitializer = new BackOffInitializer();
+        var policyInitializer = new ClientPolicyInitializer(Timeouts.ListTimeout);
         if (_accessToken != null)
         {
             return new BaseClientService.Initializer()
             {
-                HttpClientInitializer = new CompositeHttpClientInitializer(GoogleCredential.FromAccessToken(_accessToken), backoffInitializer, new TestUserHeaderInitializer(userId)),
+                HttpClientInitializer = new CompositeHttpClientInitializer(GoogleCredential.FromAccessToken(_accessToken), policyInitializer, new TestUserHeaderInitializer(userId)),
                 HttpClientFactory = _httpClientFactory,
                 ApplicationName = "Duplicati",
             };
@@ -113,7 +113,7 @@ public class APIHelper
 
             return new BaseClientService.Initializer()
             {
-                HttpClientInitializer = new CompositeHttpClientInitializer(credential, backoffInitializer),
+                HttpClientInitializer = new CompositeHttpClientInitializer(credential, policyInitializer),
                 ApplicationName = "Duplicati",
             };
         }
@@ -133,7 +133,7 @@ public class APIHelper
 
             return new BaseClientService.Initializer()
             {
-                HttpClientInitializer = new CompositeHttpClientInitializer(credential, backoffInitializer),
+                HttpClientInitializer = new CompositeHttpClientInitializer(credential, policyInitializer),
                 ApplicationName = "Duplicati",
             };
         }
@@ -424,11 +424,19 @@ public class APIHelper
     }
 
     /// <summary>
-    /// Installs the retries of <see cref="GoogleRetryHandler"/> on every service client.
+    /// Installs the retries of <see cref="GoogleRetryHandler"/> and the per-attempt timeout
+    /// of <see cref="PerAttemptTimeoutHandler"/> on every service client. The attempt
+    /// timeout is the list timeout, as every request to Google is a request for a listing
+    /// or for the headers of a download; the body of a download is timed by the stream
+    /// that reads it.
     /// </summary>
-    private class BackOffInitializer : IConfigurableHttpClientInitializer
+    /// <param name="attemptTimeout">How long one attempt of a request may wait for its response headers</param>
+    private class ClientPolicyInitializer(TimeSpan attemptTimeout) : IConfigurableHttpClientInitializer
     {
         public void Initialize(ConfigurableHttpClient httpClient)
-            => GoogleRetryHandler.Install(httpClient);
+        {
+            PerAttemptTimeoutHandler.Install(httpClient, attemptTimeout);
+            GoogleRetryHandler.Install(httpClient);
+        }
     }
 }
