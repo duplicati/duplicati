@@ -34,7 +34,8 @@ public class TimeZoneHelperTests : BasicSetupHelper
         // It has no effect outside the tests, as the string is not
         // present outside the tests
         ? "Central European Standard Time"
-        : "CET";
+        // CET is a legacy name, which Ubuntu 26.04 only has in tzdata-legacy
+        : "Europe/Berlin";
 
     [Test]
     [Category("TimeZoneHelper")]
