@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -28,8 +30,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.IPC;
+using Duplicati.Library.Utility;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using CollectionAssert = NUnit.Framework.Legacy.CollectionAssert;
 
 namespace Duplicati.UnitTest;
 
@@ -81,6 +85,24 @@ public class IPCTests : BasicSetupHelper
         }
     }
 
+    /// <summary>
+    /// The proxy passes the filter as an object argument, so the serializer sees the
+    /// runtime type. The filter must still reach the controller process intact.
+    /// </summary>
+    [Test]
+    [Category("IPC")]
+    public void FilterSurvivesRpcSerializationAsObjectArgument()
+    {
+        var filter = FilterExpression.Combine((IFilter)new FilterExpression("mp4", true), new FilterExpression("*.tmp", false))!;
+        var json = System.Text.Json.JsonSerializer.Serialize(new object?[] { filter }, RpcJsonOptions.Options);
+        var element = System.Text.Json.JsonDocument.Parse(json).RootElement[0];
+        var roundtripped = System.Text.Json.JsonSerializer.Deserialize<IFilter>(element.GetRawText(), RpcJsonOptions.Options);
+
+        Assert.IsNotNull(roundtripped);
+        Assert.IsFalse(roundtripped!.Empty);
+        CollectionAssert.AreEquivalent(FilterExpression.Serialize(filter), FilterExpression.Serialize(roundtripped));
+    }
+
     [Test]
     [Category("IPC")]
     public async Task RunBackupViaIPC_ReceivesCallbacksAsync()
@@ -89,7 +111,7 @@ public class IPCTests : BasicSetupHelper
         var testFile = Path.Combine(DATAFOLDER, "testfile.txt");
         File.WriteAllText(testFile, "Hello IPC callback test");
 
-        var options = new Dictionary<string, string>(TestOptions);
+        var options = new Dictionary<string, string?>(TestOptions);
         options["rpc-controller"] = "1";
         options["console-log-level"] = nameof(Duplicati.Library.Logging.LogMessageType.Information);
         options["machine-id"] = "unittestid";
