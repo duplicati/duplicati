@@ -22,6 +22,10 @@ The beta release will automatically notify you of updates and allows you to upgr
 
 All releases are GPG-signed with the public key [3DAC703D](https://keys.openpgp.org/search?q=0xC20E90473DAC703D). The latest signature file and ASCII signature file are available on [the Duplicati download page](https://github.com/duplicati/duplicati/releases).
 
+# One-Click Deploy
+
+[![Deploy on RepoCloud](https://d16t0pc4846x52.cloudfront.net/deploylobe.svg)](https://repocloud.io/details/Duplicati/)
+
 # Support
 
 Duplicati is supported by an [active community and you can reach them via our forum](https://forum.duplicati.com).
