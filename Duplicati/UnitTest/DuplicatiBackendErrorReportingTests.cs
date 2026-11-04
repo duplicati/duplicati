@@ -175,6 +175,71 @@ public class DuplicatiBackendErrorReportingTests
 
     [Test]
     [Category("Backend")]
+    public void FailedUploadIsExplainedWhenTheKeyIsReadOnly()
+    {
+        var server = new FakeServer()
+            .On("/credentials", HttpStatusCode.OK, ReadOnlyCredentials, "application/json")
+            .On("/put/", HttpStatusCode.Forbidden, "API key is read-only");
+        using var backend = CreateBackend(server);
+
+        var ex = Assert.CatchAsync<UserInformationException>(async () => await PutAsync(backend));
+
+        Assert.AreEqual(DuplicatiBackend.HELP_ID_READ_ONLY_KEY, ex!.HelpID);
+        StringAssert.Contains("read-only", ex.Message);
+        StringAssert.Contains("API key is read-only", ex.Message);
+        Assert.IsInstanceOf<HttpRequestException>(ex.InnerException);
+    }
+
+    [Test]
+    [Category("Backend")]
+    public void FailedDeleteIsExplainedWhenTheKeyIsReadOnly()
+    {
+        // A read-only key blocks every change, not only uploads
+        var server = new FakeServer()
+            .On("/credentials", HttpStatusCode.OK, ReadOnlyCredentials, "application/json")
+            .On("/delete/", HttpStatusCode.Forbidden, "API key is read-only");
+        using var backend = CreateBackend(server);
+
+        var ex = Assert.CatchAsync<UserInformationException>(async () => await backend.DeleteAsync("file.zip", CancellationToken.None));
+
+        Assert.AreEqual(DuplicatiBackend.HELP_ID_READ_ONLY_KEY, ex!.HelpID);
+        StringAssert.Contains("read-only", ex.Message);
+    }
+
+    [Test]
+    [Category("Backend")]
+    public void FailedDownloadIsNotBlamedOnTheReadOnlyKey()
+    {
+        var server = new FakeServer()
+            .On("/credentials", HttpStatusCode.OK, ReadOnlyCredentials, "application/json")
+            .On("/get/", HttpStatusCode.InternalServerError, "Internal server error");
+        using var backend = CreateBackend(server);
+
+        var ex = Assert.CatchAsync<HttpRequestException>(async () => await backend.GetAsync("file.zip", new MemoryStream(), CancellationToken.None));
+
+        StringAssert.Contains("Internal server error", ex!.Message);
+    }
+
+    [Test]
+    [Category("Backend")]
+    public void RejectedDeleteAsksTheServerForTheAccountStateAgain()
+    {
+        // The key became read-only after authenticating, so the first state does not explain the failure
+        var server = new FakeServer()
+            .On("/credentials", HttpStatusCode.OK, GatewayCredentials, "application/json")
+            .On("/credentials", HttpStatusCode.OK, ReadOnlyCredentials, "application/json")
+            .On("/delete/", HttpStatusCode.Forbidden, "API key is read-only");
+        using var backend = CreateBackend(server);
+        backend.AccountStateRefreshInterval = TimeSpan.Zero;
+
+        var ex = Assert.CatchAsync<UserInformationException>(async () => await backend.DeleteAsync("file.zip", CancellationToken.None));
+
+        Assert.AreEqual(DuplicatiBackend.HELP_ID_READ_ONLY_KEY, ex!.HelpID);
+        Assert.AreEqual(2, server.Requests.FindAll(x => x == "/credentials").Count);
+    }
+
+    [Test]
+    [Category("Backend")]
     public void RejectedUploadAsksTheServerForTheAccountStateAgain()
     {
         // The quota ran out after authenticating, so the first state does not explain the failure
