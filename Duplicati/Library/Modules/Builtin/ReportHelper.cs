@@ -455,6 +455,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private const string INSTALLATION_TYPE = "installation-type";
         /// <summary>
+        /// The entry assembly template key
+        /// </summary>
+        private const string ENTRY_ASSEMBLY = "entry-assembly";
+        /// <summary>
         /// The destination type template key
         /// </summary>
         private const string DESTINATION_TYPE = "destination-type";
@@ -483,7 +487,7 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         internal static readonly IReadOnlySet<string> EXTRA_TEMPLATE_KEYS = new HashSet<string>([
             MACHINE_ID, BACKUP_ID, BACKUP_NAME, MACHINE_NAME,
-            OPERATING_SYSTEM, INSTALLATION_TYPE, DESTINATION_TYPE, NEXT_SCHEDULED_RUN,
+            OPERATING_SYSTEM, INSTALLATION_TYPE, ENTRY_ASSEMBLY, DESTINATION_TYPE, NEXT_SCHEDULED_RUN,
             UPDATE_CHANNEL, OPERATING_SYSTEM_DETAILED, DESTINATION_HOST_SUFFIX
         ], StringComparer.OrdinalIgnoreCase);
 
@@ -521,6 +525,8 @@ namespace Duplicati.Library.Modules.Builtin
                     return OSInfoHelper.PlatformString;
                 case INSTALLATION_TYPE:
                     return UpdaterManager.PackageTypeId;
+                case ENTRY_ASSEMBLY:
+                    return PackageHelper.EntryAssemblyName;
                 case DESTINATION_TYPE:
                     // Only return the url scheme, as the rest could contain sensitive information
                     var ix = m_remoteurl?.IndexOf("://", StringComparison.OrdinalIgnoreCase) ?? -1;
