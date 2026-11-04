@@ -125,6 +125,55 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
+        /// A daily schedule keeps its local time of day when daylight saving time ends,
+        /// and the allowed-days check uses the local weekday, when the scheduler is given
+        /// a timezone that observes daylight saving time.
+        /// </summary>
+        [Test]
+        public void DailyScheduleKeepsLocalTimeOfDayAcrossFallBack()
+        {
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+
+            // Daily job at 18:00 Eastern; last run Fri 2026-10-30 18:00 EDT = 22:00Z.
+            // Daylight saving time ends Sun 2026-11-01 02:00 local.
+            var lastRun = new DateTime(2026, 10, 30, 22, 0, 0, DateTimeKind.Utc);
+
+            var next = Scheduler.GetNextValidTime(lastRun, lastRun.AddSeconds(1), "1D", null, tz);
+            Assert.AreEqual(new DateTime(2026, 10, 31, 22, 0, 0, DateTimeKind.Utc), next,
+                "Saturday is still on daylight saving time");
+
+            next = Scheduler.GetNextValidTime(next, next.AddSeconds(1), "1D", null, tz);
+            Assert.AreEqual(new DateTime(2026, 11, 1, 23, 0, 0, DateTimeKind.Utc), next,
+                "Sunday 18:00 EST is 23:00Z; the UTC time moves so the local time stays at 18:00");
+            Assert.AreEqual(18, TimeZoneInfo.ConvertTimeFromUtc(next, tz).Hour);
+
+            // Friday 18:00 EDT is Friday 22:00Z, so the weekday check must use the local day;
+            // a 21:00 Eastern job is already Saturday in UTC
+            var fridayEvening = new DateTime(2026, 10, 31, 1, 0, 0, DateTimeKind.Utc); // Fri 2026-10-30 21:00 EDT
+            var allowed = Scheduler.GetNextValidTime(fridayEvening, fridayEvening, "1D", [DayOfWeek.Friday], tz);
+            Assert.AreEqual(fridayEvening, allowed, "A Friday evening run is allowed on Fridays in the local timezone");
+        }
+
+        /// <summary>
+        /// With UTC as the timezone the same schedule drifts an hour in local time and the
+        /// weekday is evaluated in UTC, which is why an unset timezone must not mean UTC.
+        /// </summary>
+        [Test]
+        public void UtcTimezoneDriftsLocalTimeOfDayAcrossFallBack()
+        {
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+            var lastRun = new DateTime(2026, 10, 31, 22, 0, 0, DateTimeKind.Utc); // Sat 18:00 EDT
+
+            var next = Scheduler.GetNextValidTime(lastRun, lastRun.AddSeconds(1), "1D", null, TimeZoneInfo.Utc);
+            Assert.AreEqual(17, TimeZoneInfo.ConvertTimeFromUtc(next, tz).Hour,
+                "Fixed UTC time means the job runs at 17:00 local after the clocks go back");
+
+            var fridayEvening = new DateTime(2026, 10, 31, 1, 0, 0, DateTimeKind.Utc); // Fri 21:00 EDT, Sat in UTC
+            var allowed = Scheduler.GetNextValidTime(fridayEvening, fridayEvening, "1D", [DayOfWeek.Friday], TimeZoneInfo.Utc);
+            Assert.AreNotEqual(fridayEvening, allowed, "In UTC the Friday evening run is treated as Saturday");
+        }
+
+        /// <summary>
         /// Documents why the cache must be invalidated when the allowed days change:
         /// <see cref="Scheduler.GetNextValidTime"/> can only move a time forward, so a
         /// cached next-run computed under the old day set can never move to an earlier
