@@ -24,6 +24,7 @@
 using System;
 using System.IO;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 
@@ -60,7 +61,11 @@ public static class LogExceptionHelper
         // so the exception (and its stack trace) is not attached: it would only bloat the logs
         // (issue #6426). The fallback below keeps the exception so genuinely unexpected failures
         // remain fully debuggable.
-        if (ex.IsPathNotFoundException())
+        // The provider decided the entry is to be left out, for a reason that is final and
+        // expected, so the user is informed and not warned
+        if (ex is SourceEntrySkippedException)
+            Log.WriteInformationMessage(logtag, "SourceEntrySkipped", null, "Skipping path {0}: {1}", path, ex.Message);
+        else if (ex.IsPathNotFoundException())
             Log.WriteWarningMessage(logtag, "PathNotFound", null, "Excluding path due to path not found: {0}", path);
         // A placeholder from a sync tool (OneDrive, Dropbox, Google Drive, ...) or a file moved to
         // tiered storage opens fine, but the read fails with an unhelpful error such as

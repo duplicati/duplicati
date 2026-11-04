@@ -23,20 +23,45 @@ internal class DriveFileRevisionsSourceEntry(SourceProvider provider, string? st
     }
 
     /// <summary>
-    /// Lists the revisions of the file
+    /// The fields requested for every listed revision. Drive's default set has no size and
+    /// no export links, and the size is what the backup needs before it reads the content
+    /// </summary>
+    internal const string REVISION_FIELDS = "id, mimeType, modifiedTime, size, keepForever, originalFilename, md5Checksum, exportLinks";
+
+    /// <summary>
+    /// The number of revisions asked for per page, the most Drive allows
+    /// </summary>
+    private const int PAGE_SIZE = 1000;
+
+    /// <summary>
+    /// Lists the revisions of the file, all pages of them
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The revisions</returns>
     private async IAsyncEnumerable<Revision> ListRevisionsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var request = driveService.Revisions.List(file.Id);
-        var revisions = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        request.Fields = $"nextPageToken, revisions({REVISION_FIELDS})";
+        request.PageSize = PAGE_SIZE;
 
-        foreach (var revision in revisions.Revisions ?? [])
+        string? nextPageToken = null;
+        do
         {
             if (cancellationToken.IsCancellationRequested) yield break;
-            yield return revision;
-        }
+            request.PageToken = nextPageToken;
+            var revisions = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+
+            foreach (var revision in revisions.Revisions ?? [])
+            {
+                if (cancellationToken.IsCancellationRequested) yield break;
+                if (string.IsNullOrEmpty(revision.Id))
+                    continue;
+
+                yield return revision;
+            }
+
+            nextPageToken = revisions.NextPageToken;
+        } while (!string.IsNullOrEmpty(nextPageToken));
     }
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
