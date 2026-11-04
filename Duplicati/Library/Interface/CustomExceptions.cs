@@ -340,4 +340,20 @@ namespace Duplicati.Library.Interface
             DatabasePath = string.Empty;
         }
     }
+
+    /// <summary>
+    /// Thrown by a source provider when an entry it listed turns out, on reading, to be one
+    /// the backup should leave out: the reason is final and expected, such as content the
+    /// account used for the backup is not allowed, so the backup records it as information
+    /// rather than a warning, and change tracking does not hold the entry back for another
+    /// attempt. The message says what was skipped and why.
+    /// </summary>
+    [Serializable]
+    public class SourceEntrySkippedException : Exception
+    {
+        public SourceEntrySkippedException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
 }
