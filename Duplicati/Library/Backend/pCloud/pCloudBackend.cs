@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Interface;
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -229,11 +230,20 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
             IsFolder = item.isfolder,
             Name = item.name,
             Size = item.size ?? 0,
-            LastAccess = DateTime.Parse(item.created),
-            LastModification = DateTime.Parse(item.modified)
+            LastAccess = ParseTimestamp(item.created),
+            LastModification = ParseTimestamp(item.modified)
         })
             .ToList();
     }
+
+    /// <summary>
+    /// Parses a pCloud timestamp, an RFC 2822 value such as "Thu, 05 Jan 2023 10:34:13 +0000".
+    /// The result is in UTC, so it compares correctly against the timestamps of other backends.
+    /// </summary>
+    /// <param name="timestamp">The timestamp value.</param>
+    /// <returns>The timestamp in UTC.</returns>
+    internal static DateTime ParseTimestamp(string timestamp)
+        => DateTime.Parse(timestamp, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
 
     /// <summary>
     /// Lists folders with pCloud metadata, necessary to obtain the folder IDs

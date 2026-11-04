@@ -571,8 +571,12 @@ namespace Duplicati.Library.Backend
                     if (s != null)
                         try
                         {
-                            //Not important if this succeeds
-                            lastAccess = lastModified = DateTime.Parse(s.InnerText, System.Globalization.CultureInfo.InvariantCulture);
+                            // Not important if this succeeds.
+                            // The value is normally an RFC 1123 date in GMT; a plain parse would convert it to
+                            // local time, which the remote synchronization planner then compares against the
+                            // UTC timestamps of other backends. A value without a zone is taken as UTC.
+                            lastAccess = lastModified = DateTime.Parse(s.InnerText, System.Globalization.CultureInfo.InvariantCulture,
+                                System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal);
                         }
                         catch { }
 

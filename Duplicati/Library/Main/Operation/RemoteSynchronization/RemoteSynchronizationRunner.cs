@@ -808,7 +808,7 @@ public static class RemoteSynchronizationRunner
             {
                 if (lookup_dst.TryGetValue(f_src.Name, out var f_dst))
                 {
-                    if (f_src.Size != f_dst.Size || f_src.LastModification > f_dst.LastModification)
+                    if (f_src.Size != f_dst.Size || IsSourceNewer(f_src.LastModification, f_dst.LastModification))
                     {
                         // The file is different, so we need to copy it
                         to_copy.Add(f_src);
@@ -846,6 +846,31 @@ public static class RemoteSynchronizationRunner
 
         return (to_copy, to_delete_lookedup, to_verify);
     }
+
+    /// <summary>
+    /// Decides whether the source copy of a file is more recent than the destination copy.
+    /// The two timestamps come from different backends, which do not agree on the kind of the
+    /// DateTime they report: the SMB backend and most API backends report UTC, the file backend
+    /// reports local time, and some backends parse a date without a zone and report it as unspecified.
+    /// A plain comparison looks at the ticks alone, so a UTC source compared against a local-time
+    /// destination is off by the zone offset, and west of UTC every destination file looks older
+    /// than its source and is copied again on every run.
+    /// Both values are brought to UTC first. An unspecified kind is taken as UTC, which is what the
+    /// backends that produce it mean by it.
+    /// </summary>
+    /// <param name="source">The modification time reported for the source copy.</param>
+    /// <param name="destination">The modification time reported for the destination copy.</param>
+    /// <returns><c>true</c> if the source copy is more recent; <c>false</c> otherwise.</returns>
+    public static bool IsSourceNewer(DateTime source, DateTime destination)
+        => AsUtc(source) > AsUtc(destination);
+
+    /// <summary>
+    /// Brings a timestamp to UTC; a local-time value is converted, any other is taken as already UTC.
+    /// </summary>
+    /// <param name="value">The timestamp to convert.</param>
+    /// <returns>The timestamp in UTC.</returns>
+    private static DateTime AsUtc(DateTime value)
+        => value.Kind == DateTimeKind.Local ? value.ToUniversalTime() : value;
 
     /// <summary>
     /// Drops the folder entries from a remote listing.
