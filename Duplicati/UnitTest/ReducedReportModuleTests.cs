@@ -46,7 +46,7 @@ namespace Duplicati.UnitTest
         private static readonly HashSet<string> AllowedExtraKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "report-mode", "machine-id", "backup-id", "backup-name", "machine-name", "operating-system", "operating-system-detailed",
-            "installation-type", "destination-type", "destination-host-suffix", "next-scheduled-run", "update-channel"
+            "installation-type", "entry-assembly", "destination-type", "destination-host-suffix", "next-scheduled-run", "update-channel"
         };
 
         /// <summary>

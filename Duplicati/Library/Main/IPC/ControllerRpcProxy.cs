@@ -129,6 +129,10 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
             WorkingDirectory = Path.GetDirectoryName(exePath)
         };
 
+        // The controller runs the report modules, so it reports the executable
+        // the user started rather than the commandline engine it runs in
+        psi.Environment[Library.AutoUpdater.PackageHelper.ENTRY_ASSEMBLY_ENV_NAME] = Library.AutoUpdater.PackageHelper.EntryAssemblyName;
+
         _process = Process.Start(psi)
             ?? throw new InvalidOperationException("Failed to start controller process");
 

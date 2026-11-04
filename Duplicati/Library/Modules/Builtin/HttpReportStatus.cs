@@ -536,6 +536,7 @@ namespace Duplicati.Library.Modules.Builtin
                 DestinationType = Utility.Utility.GuessScheme(m_remoteUrl) ?? "file",
                 DestinationHostSuffix = Utility.Utility.GuessHostSuffixSafe(m_remoteUrl),
                 InstallationType = UpdaterManager.PackageTypeId,
+                EntryAssembly = PackageHelper.EntryAssemblyName,
                 OperatingSystem = UpdaterManager.OperatingSystemName,
                 OperatingSystemDetailed = OSInfoHelper.PlatformString,
             };
@@ -721,6 +722,9 @@ namespace Duplicati.Library.Modules.Builtin
 
             /// <summary>The installation type (e.g. package type id).</summary>
             public string? InstallationType { get; set; }
+
+            /// <summary>The entry assembly name of the top-level executable that runs the operation (e.g. <c>Duplicati.CommandLine</c>, <c>Duplicati.GUI.TrayIcon</c>, <c>Duplicati.Server</c>, <c>Duplicati.Service</c>, <c>Duplicati.WindowsService</c>, <c>Duplicati.Agent</c>).</summary>
+            public string? EntryAssembly { get; set; }
 
             /// <summary>The operating system name (e.g. <c>Windows</c>, <c>Linux</c>, <c>MacOS</c>).</summary>
             public string? OperatingSystem { get; set; }
