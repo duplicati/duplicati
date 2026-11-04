@@ -374,7 +374,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             DefaultUpdateChannel = systeminfo.DefaultUpdateChannel,
             DefaultUsageReportLevel = systeminfo.DefaultUsageReportLevel,
             ServerTime = DateTime.Now,
-            ServerTimeZone = TimeZoneInfo.Local.Id,
+            ServerTimeZone = connection.ApplicationSettings.Timezone.Id,
             OSType = systeminfo.OSType,
             OSVersion = systeminfo.OSVersion,
             DirectorySeparator = systeminfo.DirectorySeparator,
