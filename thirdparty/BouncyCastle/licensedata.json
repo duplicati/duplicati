@@ -1,0 +1,7 @@
+{
+    "name": "BouncyCastle.NET",
+    "description": "A cryptography library for .NET, used by MimeKit and SSH.NET.",
+    "link": "https://www.bouncycastle.org/",
+    "license": "MIT",
+    "notes": ""
+}
