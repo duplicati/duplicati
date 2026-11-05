@@ -157,8 +157,8 @@ public class Filesystem : IEndpointV1
                         systemFile = false,
                         fileSize = -1,
                         resolvedpath = x.resolvedpath,
+                        kind = x.kind,
                         check = false
-
                     })
                     // Add plugins for Hyper-V and MSSQL
                     .Concat(FilesystemPlugins.KnownPlugins.GetPlugins(GetApplicationSettings(connection))
@@ -181,6 +181,7 @@ public class Filesystem : IEndpointV1
                     systemFile = x.systemFile,
                     fileSize = x.fileSize,
                     resolvedpath = x.id,
+                    kind = x.kind,
                     check = false
                 });
             }
@@ -221,6 +222,12 @@ public class Filesystem : IEndpointV1
                         : driveInfo.VolumeLabel + " - " + driveInfo.RootDirectory.FullName.Replace('\\', ' ')
                     ) + "(" + driveInfo.DriveType + ")",
                 iconCls = "x-tree-icon-drive",
+                kind = driveInfo.DriveType switch
+                {
+                    DriveType.Network => "drive:network",
+                    DriveType.Removable => "drive:removable",
+                    _ => "drive"
+                },
                 cls = "folder",
                 leaf = false,
                 hidden = false,
@@ -311,6 +318,8 @@ public class Filesystem : IEndpointV1
                     systemFile = isSystem,
                     fileSize = fileSize,
                     iconCls = isFolder ? (accessible ? (isSymlink ? "x-tree-icon-symlink" : "x-tree-icon-parent") : "x-tree-icon-locked") : "x-tree-icon-leaf",
+                    // Symlinks are flagged by the symlink property instead
+                    kind = accessible ? null : "locked",
                     leaf = isLeaf,
                     cls = isFolder ? "folder" : "file",
                     check = false,

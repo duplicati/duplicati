@@ -75,6 +75,11 @@ namespace Duplicati.Server.Serializable
         /// </summary>
         public bool symlink { get; set; }
         /// <summary>
+        /// The semantic type of the node, used by the UI to pick an icon or marker.
+        /// Null for a plain file or folder.
+        /// </summary>
+        public string kind { get; set; }
+        /// <summary>
         /// Size of the file. -1 if directory or inaccessible
         /// </summary>
         public long fileSize { get; set; }
