@@ -31,10 +31,35 @@ namespace Duplicati.WindowsService
 {
     public class Program
     {
+        /// <summary>
+        /// The commands that only change the registry or the service, so they do not use the preload
+        /// settings. The installer runs some of them as SYSTEM, and secure-datafolder is the way to fix a
+        /// data folder that the preload check refuses, so they must work without the preload settings.
+        /// </summary>
+        private static readonly string[] CommandsWithoutPreload = ["set-init-password", "lock-service-key", "secure-datafolder"];
+
+        /// <summary>
+        /// The other commands, which are run from a console rather than by the service manager
+        /// </summary>
+        private static readonly string[] CommandsWithPreload = ["install", "install-only", "uninstall", "install-agent", "install-only-agent", "uninstall-agent", "reset-password", "install-certs", "remove-certs"];
+
         [STAThread]
         public static int Main(string[] args)
         {
-            PreloadSettingsLoader.ConfigurePreloadSettings(ref args, PackageHelper.NamedExecutable.WindowsService);
+            if (!HasAny(args, CommandsWithoutPreload) && !(args != null && HelpOptionExtensions.IsArgumentAnyHelpString(args)))
+            {
+                try
+                {
+                    PreloadSettingsLoader.ConfigurePreloadSettings(ref args, PackageHelper.NamedExecutable.WindowsService);
+                }
+                catch (Library.Interface.UserInformationException ex) when (HasAny(args, CommandsWithPreload))
+                {
+                    // A command reports the problem and stops. The service itself stops with the
+                    // exception, which Windows records in the event log.
+                    Console.WriteLine(ex.Message);
+                    return 1;
+                }
+            }
 
             if (!OperatingSystem.IsWindows())
                 throw new NotSupportedException("Unsupported Operating System");
@@ -418,5 +443,11 @@ namespace Duplicati.WindowsService
         /// </summary>
         private static string GenerateRandomPassword(int length)
             => System.Security.Cryptography.RandomNumberGenerator.GetString("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", length);
+
+        /// <summary>
+        /// Checks whether any of the arguments is one of the given commands
+        /// </summary>
+        private static bool HasAny(string[] args, string[] commands)
+            => args != null && args.Any(x => commands.Contains(x, StringComparer.OrdinalIgnoreCase));
     }
 }
