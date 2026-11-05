@@ -47,19 +47,75 @@ is_mounted() {
     grep -qs " $1 " /proc/mounts
 }
 
+# Reports whether the mount at the given path, or any mount below it, uses
+# shared propagation (a "shared:N" tag in /proc/self/mountinfo). Unmounting
+# nested mounts of a shared tree would propagate to the host volumes, so
+# such trees are never bound or unmounted recursively (see duplicati.sh)
+has_shared_mounts() {
+    while read -r _id _parent _dev _root mnt _opts rest; do
+        case "$mnt" in
+            "$1"|"$1"/*) ;;
+            *) continue ;;
+        esac
+        case "$rest" in
+            "- "*) tags="" ;;
+            *) tags="${rest%% - *}" ;;
+        esac
+        case " $tags " in
+            *" shared:"*) return 0 ;;
+        esac
+    done </proc/self/mountinfo
+    return 1
+}
+
+# Unmount a mount point and every mount nested below it, deepest first.
+# BusyBox umount has no recursive flag, so the nested mounts are read
+# from /proc/mounts (a reverse sort puts children before their parents)
+umount_recursive() {
+    if has_shared_mounts "$1"; then
+        echo "$QPKG_NAME: $1 uses shared mount propagation, leaving nested mounts alone" >&2
+    else
+        while read -r _dev mnt _rest; do
+            case "$mnt" in
+                "$1"/*) echo "$mnt" ;;
+            esac
+        done </proc/mounts | sort -r | while read -r mnt; do
+            umount "$mnt" 2>/dev/null || true
+        done
+    fi
+
+    if is_mounted "$1"; then
+        umount "$1" 2>/dev/null || true
+    fi
+}
+
+# Bind /share recursively so the volumes mounted beneath it are visible
+# too, unless the host uses shared propagation (see duplicati.sh)
+bind_share() {
+    if has_shared_mounts /share; then
+        echo "$QPKG_NAME: /share uses shared mount propagation, nested volumes will not be visible" >&2
+        mount -o bind /share "$1"
+        return
+    fi
+    mount -o rbind /share "$1"
+}
+
 # Bind the host paths the tools need into the rootfs. Only missing mounts
 # are created, and only those are removed again on exit, so the mounts of
-# a running server are left untouched.
+# a running server are left untouched. /share goes first so the recursive
+# bind does not pick up the other rootfs mounts, which live under /share
 MOUNTED_BY_US=""
 setup_mounts() {
     mkdir -p "$ROOTFS/proc" "$ROOTFS/dev" "$ROOTFS/sys" "$ROOTFS/share" "$ROOTFS/data" "$ROOTFS/local"
     mkdir -p "$DATA_DIR" "$PERSIST_DIR"
 
-    for entry in "proc:/proc" "dev:/dev" "sys:/sys" "share:/share" "data:$PERSIST_DIR" "local:$DATA_DIR"; do
+    for entry in "share:/share" "proc:/proc" "dev:/dev" "sys:/sys" "data:$PERSIST_DIR" "local:$DATA_DIR"; do
         name=${entry%%:*}
         src=${entry#*:}
         if ! is_mounted "$ROOTFS/$name"; then
-            if mount -o bind "$src" "$ROOTFS/$name"; then
+            if [ "$name" = "share" ]; then
+                bind_share "$ROOTFS/$name" && MOUNTED_BY_US="$name $MOUNTED_BY_US"
+            elif mount -o bind "$src" "$ROOTFS/$name"; then
                 MOUNTED_BY_US="$name $MOUNTED_BY_US"
             fi
         fi
@@ -72,7 +128,7 @@ setup_mounts() {
 teardown_mounts() {
     for name in $MOUNTED_BY_US; do
         if is_mounted "$ROOTFS/$name"; then
-            umount "$ROOTFS/$name" 2>/dev/null || true
+            umount_recursive "$ROOTFS/$name"
         fi
     done
     MOUNTED_BY_US=""
