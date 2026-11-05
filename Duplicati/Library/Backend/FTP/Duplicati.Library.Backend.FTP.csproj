@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="FluentFTP" Version="54.2.0" />
+    <PackageReference Include="FluentFTP.BouncyCastle" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
