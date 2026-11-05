@@ -155,6 +155,34 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
+        /// A weekday-only daily schedule skips the weekend, and daylight saving time changes
+        /// on a Sunday, so the skipped days must keep the local time of day as well.
+        /// </summary>
+        [Test]
+        public void WeekdayScheduleKeepsLocalTimeOfDayAcrossFallBackWeekend()
+        {
+            var tz = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+            var weekdays = new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
+
+            // Daily job at 18:00 Eastern on weekdays; last run Fri 2026-10-30 18:00 EDT = 22:00Z.
+            // Daylight saving time ends Sun 2026-11-01 02:00 local.
+            var lastRun = new DateTime(2026, 10, 30, 22, 0, 0, DateTimeKind.Utc);
+
+            var next = Scheduler.GetNextValidTime(lastRun, lastRun.AddSeconds(1), "1D", weekdays, tz);
+            Assert.AreEqual(new DateTime(2026, 11, 2, 23, 0, 0, DateTimeKind.Utc), next,
+                "Monday 18:00 EST is 23:00Z; skipping the weekend must not drop the hour");
+            Assert.AreEqual(18, TimeZoneInfo.ConvertTimeFromUtc(next, tz).Hour);
+
+            // And the other way at the spring transition, Sun 2027-03-14 02:00 local;
+            // last run Fri 2027-03-12 18:00 EST = 23:00Z
+            lastRun = new DateTime(2027, 3, 12, 23, 0, 0, DateTimeKind.Utc);
+            next = Scheduler.GetNextValidTime(lastRun, lastRun.AddSeconds(1), "1D", weekdays, tz);
+            Assert.AreEqual(new DateTime(2027, 3, 15, 22, 0, 0, DateTimeKind.Utc), next,
+                "Monday 18:00 EDT is 22:00Z");
+            Assert.AreEqual(18, TimeZoneInfo.ConvertTimeFromUtc(next, tz).Hour);
+        }
+
+        /// <summary>
         /// With UTC as the timezone the same schedule drifts an hour in local time and the
         /// weekday is evaluated in UTC, which is why an unset timezone must not mean UTC.
         /// </summary>
