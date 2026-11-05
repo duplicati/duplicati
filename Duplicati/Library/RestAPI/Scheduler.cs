@@ -181,12 +181,14 @@ namespace Duplicati.Server
             {
                 if (ts.TotalDays >= 1)
                 {
-                    // We jump in days, so we pick the first valid day after firstdate
+                    // We jump in days, so we pick the first valid day after firstdate.
+                    // The skipped days must keep the local time of day, as daylight saving
+                    // time changes on a Sunday, which a weekday-only schedule skips over
                     for (var n = 0; n < 8; n++)
                         if (IsDateAllowed(res, allowedDays, timeZoneInfo))
                             break;
                         else
-                            res = res.AddDays(1);
+                            res = Timeparser.DSTAwareParseTimeInterval("1D", res, timeZoneInfo);
                 }
                 else
                 {
