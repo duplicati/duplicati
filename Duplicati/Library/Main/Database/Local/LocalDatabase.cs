@@ -1320,6 +1320,19 @@ namespace Duplicati.Library.Main.Database.Local
             ", token)
                 .ConfigureAwait(false);
 
+            // Volume and block ids are reused, so a copy left behind would be claimed by the next
+            // volume or block to get the id, which does not hold it
+            await deletecmd.ExecuteNonQueryAsync($@"
+                DELETE FROM ""DuplicateBlock""
+                WHERE ""VolumeID"" IN ({volIdsSubQuery})
+                OR ""BlockID"" IN (
+                    SELECT ""ID""
+                    FROM ""Block""
+                    WHERE ""VolumeID"" IN ({volIdsSubQuery})
+                )
+            ", token)
+                .ConfigureAwait(false);
+
             await deletecmd.ExecuteNonQueryAsync($@"
                 DELETE FROM ""Block""
                 WHERE ""VolumeID"" IN ({volIdsSubQuery})
