@@ -37,6 +37,8 @@ namespace Duplicati.Library.Main.Backend
 
         private bool _anyDownloaded = false;
         private bool _anyUploaded = false;
+        // A listing that found files shows the folder was there
+        private bool _anyListed = false;
         private readonly bool _autoCreateFolders;
         private readonly string _backendUrl;
         private readonly int _maxRetries;
@@ -234,6 +236,8 @@ namespace Duplicati.Library.Main.Backend
             await RetryWithDelayAsync("List", async () =>
                 {
                     entries = await _streamingBackend!.ListAsync(token).ToListAsync().ConfigureAwait(false);
+                    if (entries.Count > 0)
+                        _anyListed = true;
                 },
                 null,
                 false,
@@ -339,13 +343,14 @@ namespace Duplicati.Library.Main.Backend
 
         /// <summary>
         /// Resets the state of the backend manager.
-        /// This method resets the download and upload flags and resets the retry delay to its initial value.
+        /// This method resets the download, upload and listing flags and resets the retry delay to its initial value.
         /// </summary>
         /// <returns>A task representing the asynchronous reset operation.</returns>
         public async Task ResetAsync()
         {
             _anyDownloaded = false;
             _anyUploaded = false;
+            _anyListed = false;
             _currentRetryDelay = _retryDelay;
         }
 
@@ -465,8 +470,10 @@ namespace Duplicati.Library.Main.Backend
 
             var recovered = false;
 
-            // Check if this was a folder missing exception and we are allowed to autocreate folders
-            if (!(_anyDownloaded || _anyUploaded) && _autoCreateFolders && ExceptionExtensions.FlattenException(ex).Any(x => x is FolderMissingException))
+            // Check if this was a folder missing exception and we are allowed to autocreate folders.
+            // A folder that held files has gone away, as an unplugged drive does, and creating it again
+            // would send the copies to a new, empty folder in its place.
+            if (!(_anyDownloaded || _anyUploaded || _anyListed) && _autoCreateFolders && ExceptionExtensions.FlattenException(ex).Any(x => x is FolderMissingException))
             {
                 if (await TryCreateFolderAsync(token).ConfigureAwait(false))
                     recovered = true;
