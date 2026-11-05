@@ -152,6 +152,17 @@ namespace Duplicati.Server
                 }
 
             }
+            else if (QnapSharedFolders.IsQnapPackage)
+            {
+                // The package runs with the QTS share root as its home folder,
+                // where the user folders of a desktop system have no meaning.
+                // What a NAS user backs up is the shared folders, so those are
+                // the special folders, resolved to the folder on the data volume
+                // rather than the symlink in the share root, which a backup
+                // would store as a bare link
+                foreach (var share in QnapSharedFolders.Enumerate(QnapSharedFolders.DefaultShareRoot))
+                    TryAdd(lst, share.Path, QnapSharedFolders.TokenFor(share.Name), share.Name);
+            }
             else
             {
                 var homedir = Environment.GetEnvironmentVariable("HOME");
