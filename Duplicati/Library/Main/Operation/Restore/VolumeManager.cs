@@ -67,6 +67,16 @@ namespace Duplicati.Library.Main.Operation.Restore
             /// The second task that is reading from the channels.
             /// </summary>
             private Task<object>? t2;
+            /// <summary>
+            /// The token sources of the reads in <see cref="t1"/> and <see cref="t2"/>.
+            /// </summary>
+            /// <remarks>
+            /// A channel read registers a callback on the token it is given, and the registration stays
+            /// when the read completes. Each read therefore gets a token of its own, linked to the token
+            /// of the restore and disposed when the read completes. Otherwise the restore token would hold
+            /// a callback for every volume request, and the memory would grow with the number of blocks.
+            /// </remarks>
+            private CancellationTokenSource? c1, c2;
 
             /// <summary>
             /// Reads from either of the two channels asynchronously.
@@ -78,18 +88,30 @@ namespace Duplicati.Library.Main.Operation.Restore
                 // as we have actually consumed from both channels,
                 // but we only process one of them
                 // This is safe here, because the shutdown only happens on failure termination
-                t1 ??= channel1.ReadAsync(token);
-                t2 ??= channel2.ReadAsync(token);
+                if (t1 == null)
+                {
+                    c1 = CancellationTokenSource.CreateLinkedTokenSource(token);
+                    t1 = channel1.ReadAsync(c1.Token);
+                }
+                if (t2 == null)
+                {
+                    c2 = CancellationTokenSource.CreateLinkedTokenSource(token);
+                    t2 = channel2.ReadAsync(c2.Token);
+                }
 
                 var r = await Task.WhenAny(t1, t2).ConfigureAwait(false);
                 if (r == t1)
                 {
                     t1 = null;
+                    c1?.Dispose();
+                    c1 = null;
                     return await r.ConfigureAwait(false);
                 }
                 else
                 {
                     t2 = null;
+                    c2?.Dispose();
+                    c2 = null;
                     return await r.ConfigureAwait(false);
                 }
             }
