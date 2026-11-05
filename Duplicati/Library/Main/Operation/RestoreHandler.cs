@@ -714,11 +714,14 @@ namespace Duplicati.Library.Main.Operation
                         var written = await ApplyMetadataAsync(targetpath, metadata, options, restoreDestination, false, sourceUsesWindowsSeparators, cancellationToken).ConfigureAwait(false);
 
                         // A symbolic link has no data, so it is made here and nowhere else.
-                        // Count it as the new restore engine does, as a file.
+                        // Count it as the new restore engine does, as a file and as a link.
                         if (metadata != null && metadata.TryGetValue("CoreSymlinkTarget", out var symlinkTarget) && !string.IsNullOrWhiteSpace(symlinkTarget))
                         {
                             if (written)
+                            {
                                 result.RestoredFiles++;
+                                result.RestoredSymlinks++;
+                            }
                             else
                                 result.UnmodifiedFiles++;
                         }

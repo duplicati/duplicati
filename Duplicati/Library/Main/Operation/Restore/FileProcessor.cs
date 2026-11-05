@@ -695,9 +695,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                         }
 
+                        var symlink_restored = false;
                         if (!options.SkipMetadata)
                         {
-                            empty_file_or_symlink |= await RestoreMetadataAsync(db, file, restoreDestination, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp, results.TaskControl.ProgressToken).ConfigureAwait(false);
+                            var metadata_restored = await RestoreMetadataAsync(db, file, restoreDestination, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp, results.TaskControl.ProgressToken).ConfigureAwait(false);
+                            empty_file_or_symlink |= metadata_restored;
+                            symlink_restored = metadata_restored && file.BlocksetID == LocalDatabase.SYMLINK_BLOCKSET_ID;
                             sw_work_meta?.Stop();
                         }
 
@@ -725,6 +728,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                             lock (results)
                             {
                                 results.RestoredFiles++;
+                                if (symlink_restored)
+                                    results.RestoredSymlinks++;
                                 results.SizeOfRestoredFiles += file.Length;
                                 results.SizeOfRestoredData += bytes_written;
                             }
