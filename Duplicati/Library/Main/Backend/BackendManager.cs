@@ -32,6 +32,12 @@ internal partial class BackendManager : IBackendManager
     private readonly IChannel<PendingOperationBase> requestChannel = ChannelManager.CreateChannel<PendingOperationBase>(name: "BackendManager-" + Guid.NewGuid().ToString("N"));
 
     /// <summary>
+    /// How long disposing waits for the queue runner to stop. The runner closes the pooled backends
+    /// before it stops, which can take a few seconds for a backend that disconnects from a server.
+    /// </summary>
+    private static readonly TimeSpan QueueRunnerStopTimeout = TimeSpan.FromSeconds(10);
+
+    /// <summary>
     /// The queue runner task
     /// </summary>
     private readonly Task queueRunner;
@@ -706,7 +712,7 @@ internal partial class BackendManager : IBackendManager
 
         if (!queueRunner.IsCompleted)
         {
-            Task.WhenAny(queueRunner, Task.Delay(1000)).Await();
+            Task.WhenAny(queueRunner, Task.Delay(QueueRunnerStopTimeout)).Await();
 
             if (!queueRunner.IsCompleted)
                 Logging.Log.WriteWarningMessage(LOGTAG, "BackendManagerShutdown", null, "Backend manager queue runner did not stop");
