@@ -234,6 +234,16 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
         // Avoid setting restoring symlink metadata, as that writes the symlink target, not the symlink itself
         if (!restoreSymlinkMetadata && SystemIO.IO_OS.IsSymlink(targetpath))
         {
+            // The owner is set with lchown, which does not follow the link, so it is restored with the permissions alone
+            if (restorePermissions && !OperatingSystem.IsWindows())
+            {
+                var owner = metadata
+                    .Where(x => x.Value != null && (x.Key == "unix:uid-gid-perm" || x.Key == "unix:owner-name" || x.Key == "unix:group-name"))
+                    .ToDictionary(x => x.Key, x => x.Value!);
+                if (owner.Count > 0)
+                    SystemIO.IO_OS.SetMetadata(path, owner, restorePermissions);
+            }
+
             Logging.Log.WriteVerboseMessage(LOGTAG, "no-symlink-metadata-restored", "Not applying metadata to symlink: {0}", targetpath);
             return Task.FromResult(wrote_something);
         }

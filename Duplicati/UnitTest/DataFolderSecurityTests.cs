@@ -386,5 +386,65 @@ namespace Duplicati.UnitTest
                 Assert.IsFalse(Util.AllowInsecureDataFolder(), $"Value '{falsy}' should disable the opt-out");
             }
         }
+
+        /// <summary>
+        /// Creates a canonical folder and a symbolic link to it, and returns the path of the link.
+        /// </summary>
+        private string NewLinkToCanonicalFolder()
+        {
+            var real = NewChild("real");
+            Directory.CreateDirectory(real);
+            SystemIO.IO_OS.DirectorySetPermissionUserRWOnly(real, false);
+            var link = NewChild("link");
+            Directory.CreateSymbolicLink(link, real);
+            return link;
+        }
+
+        [Test]
+        [Category("DataFolderSecurity")]
+        public void SymlinkToCanonicalFolder_FailsVerificationAsALink()
+        {
+            if (OperatingSystem.IsWindows())
+                Assert.Ignore("Symbolic links are rejected on POSIX only");
+
+            var link = NewLinkToCanonicalFolder();
+
+            // The mode of the link itself is 777, which is not what the check should report
+            foreach (var path in new[] { link, link + "/" })
+            {
+                Assert.IsFalse(SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(path, false, out var detail), $"A link must not pass: {path}");
+                Assert.AreEqual("it is a symbolic link", detail, path);
+            }
+        }
+
+        [Test]
+        [Category("DataFolderSecurity")]
+        public void PrepareSecureDataFolder_SymlinkToCanonicalFolder_IsRejectedAsALink()
+        {
+            if (OperatingSystem.IsWindows())
+                Assert.Ignore("Symbolic links are rejected on POSIX only");
+
+            var link = NewLinkToCanonicalFolder();
+            Environment.SetEnvironmentVariable(Util.AllowInsecureDatafolderEnvVar, "false");
+
+            var ex = Assert.Throws<UserInformationException>(() => DataFolderManager.PrepareSecureDataFolder(link, createIfMissing: true));
+            Assert.AreEqual("InsecureDataFolderPermissions", ex!.HelpID);
+            NUnit.Framework.Assert.That(ex.Message, Does.Contain("is a symbolic link"));
+            // Restricting the permissions cannot make a link pass, so that must not be suggested
+            NUnit.Framework.Assert.That(ex.Message, Does.Not.Contain("secure-datafolder' command"));
+        }
+
+        [Test]
+        [Category("DataFolderSecurity")]
+        public void PrepareSecureDataFolder_SymlinkToCanonicalFolder_IsAcceptedWhenOptedIn()
+        {
+            if (OperatingSystem.IsWindows())
+                Assert.Ignore("Symbolic links are rejected on POSIX only");
+
+            var link = NewLinkToCanonicalFolder();
+            Environment.SetEnvironmentVariable(Util.AllowInsecureDatafolderEnvVar, "true");
+
+            Assert.DoesNotThrow(() => DataFolderManager.PrepareSecureDataFolder(link, createIfMissing: true));
+        }
     }
 }

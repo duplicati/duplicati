@@ -227,24 +227,15 @@ async function runBackup(page: Page) {
   await page.goto(HOME_URL);
   await page.waitForLoadState("networkidle");
 
-  const chipLocator = page
-    .locator("div.backup")
-    .filter({ hasText: BACKUP_NAME })
-    .locator("sh-chip");
-
-  var currentText = await chipLocator.allInnerTexts();
-
   const backupElement = page
     .locator("div.backup")
     .filter({ hasText: BACKUP_NAME });
   await backupElement.locator("button").filter({ hasText: "Start" }).click();
 
-  // Wait for the chip to be present (assuming it updates after backup)
-  await chipLocator.first().waitFor();
-
-  // Check that the text has changed
-  const newText = await chipLocator.first().textContent();
-  expect(newText).not.toBe(currentText[0]);
+  // Wait for the backup to finish: the restore page fails while it is still running
+  await expect(
+    backupElement.locator("sh-chip").filter({ hasText: /\d+ Versions?/ }),
+  ).toBeVisible({ timeout: 60000 });
 }
 
 async function directRestoreFromFiles(page: Page) {

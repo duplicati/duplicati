@@ -68,6 +68,27 @@ public class SourceProviderFilesystemPlugin : IFilesystemPlugin
         _module = module;
         _options = options;
         _nameMetadataKey = $"{module.Key}:Name";
+        _typeMetadataKey = $"{module.Key}:Type";
+    }
+
+    /// <summary>
+    /// The metadata key used to look up the entry type, derived from the module key
+    /// </summary>
+    private readonly string _typeMetadataKey;
+
+    /// <summary>
+    /// Gets the node kind for an entry, e.g. <c>hyperv:root</c>, <c>hyperv:virtualmachine</c> or <c>mssql:database</c>
+    /// </summary>
+    /// <param name="metadata">The entry's metadata</param>
+    /// <param name="isRootNode">True if the entry is the provider's root</param>
+    private string GetKind(IReadOnlyDictionary<string, string?> metadata, bool isRootNode)
+    {
+        if (isRootNode)
+            return $"{_module.Key}:root";
+
+        return metadata.TryGetValue(_typeMetadataKey, out var type) && !string.IsNullOrWhiteSpace(type)
+            ? $"{_module.Key}:{type.ToLowerInvariant()}"
+            : _module.Key;
     }
 
     /// <inheritdoc />
@@ -181,6 +202,7 @@ public class SourceProviderFilesystemPlugin : IFilesystemPlugin
             text = displayName ?? entry.Path,
             cls = isLeaf ? "file" : "folder",
             iconCls = isLeaf ? "x-tree-icon-leaf" : "x-tree-icon-parent",
+            kind = GetKind(metadata, isRootNode),
             check = false,
             leaf = isLeaf,
             hidden = false,

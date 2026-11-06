@@ -84,6 +84,16 @@ namespace Duplicati.Library.Snapshots
         public static readonly Guid MS_SOFTWARE_PROVIDER_ID = new Guid("{b5946137-7b9f-4925-af80-51abd60b20d5}");
 
         /// <summary>
+        /// The VSS error for a shadow copy that cannot be created while another one is being created
+        /// </summary>
+        private const int VSS_E_SNAPSHOT_SET_IN_PROGRESS = unchecked((int)0x80042316);
+
+        /// <summary>
+        /// The time to wait before trying again, while another shadow copy is being created
+        /// </summary>
+        internal static TimeSpan SnapshotInProgressRetryDelay = TimeSpan.FromSeconds(10);
+
+        /// <summary>
         /// The tag used for logging messages
         /// </summary>
         public static readonly string LOGTAG = Logging.Log.LogTagFromType<WindowsSnapshot>();
@@ -192,6 +202,48 @@ namespace Duplicati.Library.Snapshots
 
         /// <summary>
         /// Creates a snapshot manager and creates the snapshot.
+        /// Only one shadow copy can be created at a time, so while another program is creating
+        /// one, the snapshot is tried again until the VSS timeout has passed.
+        /// </summary>
+        /// <param name="provider">The snapshot provider implementation</param>
+        /// <param name="vssTimeout">The maximum time to wait for asynchronous VSS operations</param>
+        /// <param name="providerId">The VSS provider to use, or an empty GUID for automatic selection</param>
+        /// <param name="useMapping">Whether to map snapshot volumes to drive letters</param>
+        /// <param name="excludedWriters">The VSS writers to exclude</param>
+        /// <returns>The snapshot manager with an active snapshot</returns>
+        private SnapshotManager CreateSnapshotManager(WindowsSnapshotProvider provider, TimeSpan vssTimeout, Guid providerId, bool useMapping, Guid[] excludedWriters)
+        {
+            var started = DateTime.UtcNow;
+            while (true)
+            {
+                try
+                {
+                    return CreateSnapshotManagerWithFallback(provider, vssTimeout, providerId, useMapping, excludedWriters);
+                }
+                catch (Exception ex) when (IsSnapshotSetInProgress(ex) && DateTime.UtcNow - started + SnapshotInProgressRetryDelay < vssTimeout)
+                {
+                    Logging.Log.WriteInformationMessage(LOGTAG, "VssSnapshotSetInProgress", "Another program is creating a shadow copy, trying again in {0}", SnapshotInProgressRetryDelay);
+                    System.Threading.Thread.Sleep(SnapshotInProgressRetryDelay);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks whether the snapshot failed because another shadow copy was being created
+        /// </summary>
+        /// <param name="ex">The exception from the snapshot provider</param>
+        /// <returns><c>true</c> if another shadow copy was being created</returns>
+        private static bool IsSnapshotSetInProgress(Exception ex)
+        {
+            for (var e = ex; e != null; e = e.InnerException)
+                if (e.HResult == VSS_E_SNAPSHOT_SET_IN_PROGRESS || e is Alphaleonis.Win32.Vss.VssSnapshotSetInProgressException)
+                    return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Creates a snapshot manager and creates the snapshot.
         /// If the snapshot device path cannot be resolved (a provider created the snapshot
         /// but did not expose a browsable shadow copy) and no provider was explicitly
         /// requested, the snapshot is retried once using the Microsoft Software Shadow
@@ -203,7 +255,7 @@ namespace Duplicati.Library.Snapshots
         /// <param name="useMapping">Whether to map snapshot volumes to drive letters</param>
         /// <param name="excludedWriters">The VSS writers to exclude</param>
         /// <returns>The snapshot manager with an active snapshot</returns>
-        private SnapshotManager CreateSnapshotManager(WindowsSnapshotProvider provider, TimeSpan vssTimeout, Guid providerId, bool useMapping, Guid[] excludedWriters)
+        private SnapshotManager CreateSnapshotManagerWithFallback(WindowsSnapshotProvider provider, TimeSpan vssTimeout, Guid providerId, bool useMapping, Guid[] excludedWriters)
         {
             try
             {
