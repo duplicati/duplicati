@@ -272,10 +272,9 @@ public class Connection
 
                     if (!string.IsNullOrWhiteSpace(cfg))
                     {
-                        var signinjwt = new JWTTokenProvider(
-                            JsonSerializer.Deserialize<JWTConfig>(cfg)
-                                ?? throw new InvalidOperationException("Failed to deserialize JWTConfig")
-                        ).CreateSigninToken("server-cli");
+                        var jwtConfig = JsonSerializer.Deserialize<JWTConfig>(cfg)
+                            ?? throw new InvalidOperationException("Failed to deserialize JWTConfig");
+                        var signinjwt = new JWTTokenProvider(() => jwtConfig).CreateSigninToken("server-cli");
 
                         var responseTask = client.PostAsync("auth/signin", JsonContent.Create(new { SigninToken = signinjwt, RememberMe = obtainRefreshToken }));
                         var (accessToken, refreshToken, refreshNonce) = await ParseAuthResponseAsync(responseTask);

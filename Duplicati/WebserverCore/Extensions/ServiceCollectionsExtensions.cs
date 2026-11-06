@@ -59,7 +59,12 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<IWebsocketAccessor, WebsocketAccessor>()
             .AddTransient<ILanguageService, LanguageService>()
             .AddSingleton<ICommandlineRunService, CommandlineRunService>()
-            .AddTransient<IJWTTokenProvider, JWTTokenProvider>()
+            .AddTransient<IJWTTokenProvider>(sp =>
+            {
+                // Singletons hold on to their token provider, so it must read the config on each use
+                var jwtConfigProvider = sp.GetRequiredService<IJWTConfigProvider>();
+                return new JWTTokenProvider(() => jwtConfigProvider.Current);
+            })
             .AddTransient<ITokenFamilyStore, TokenFamilyStore>()
             .AddTransient<ILoginProvider, LoginProvider>()
             .AddSingleton<ILoginAttemptThrottle>(_ => new LoginAttemptThrottle())

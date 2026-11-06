@@ -26,7 +26,7 @@ using Duplicati.WebserverCore.Exceptions;
 
 namespace Duplicati.WebserverCore.Services.Settings;
 
-public class SettingsService(Connection connection) : ISettingsService
+public class SettingsService(Connection connection, IJWTConfigProvider jwtConfigProvider) : ISettingsService
 {
     /// <summary>
     /// Legacy guarded options that are no longer consts, but should be guarded anyway
@@ -101,6 +101,17 @@ public class SettingsService(Connection connection) : ISettingsService
         return dict;
     }
 
+    /// <summary>
+    /// Sets the webserver password and resets the JWT configuration,
+    /// so all tokens issued with the previous password stop working immediately
+    /// </summary>
+    /// <param name="password">The new password</param>
+    private void SetWebserverPassword(string password)
+    {
+        connection.ApplicationSettings.SetWebserverPassword(password);
+        jwtConfigProvider.Reset();
+    }
+
     public void PatchSettingsMasked(Dictionary<string, object?>? values)
     {
         if (values == null)
@@ -120,7 +131,7 @@ public class SettingsService(Connection connection) : ISettingsService
         var globalsettings = values.Where(x => !string.IsNullOrWhiteSpace(x.Key) && x.Key.StartsWith("--", StringComparison.Ordinal));
 
         if (!string.IsNullOrWhiteSpace(passphrase))
-            connection.ApplicationSettings.SetWebserverPassword(passphrase);
+            SetWebserverPassword(passphrase);
         if (serversettings.Any())
             connection.ApplicationSettings.UpdateSettings(serversettings, false);
 
@@ -165,7 +176,7 @@ public class SettingsService(Connection connection) : ISettingsService
     {
         if (key == Server.Database.ServerSettings.CONST.SERVER_PASSPHRASE)
         {
-            connection.ApplicationSettings.SetWebserverPassword(value);
+            SetWebserverPassword(value);
             return;
         }
 
