@@ -563,8 +563,10 @@ namespace Duplicati.GUI.TrayIcon
 
                 var cfg = Program.databaseConnection.ApplicationSettings.JWTConfig;
                 if (!string.IsNullOrWhiteSpace(cfg))
-                    signinjwt =
-                        new JWTTokenProvider(JsonSerializer.Deserialize<JWTConfig>(cfg) ?? throw new JsonException("Failed to deserialize JWT config")).CreateSigninToken("trayicon");
+                {
+                    var jwtConfig = JsonSerializer.Deserialize<JWTConfig>(cfg) ?? throw new JsonException("Failed to deserialize JWT config");
+                    signinjwt = new JWTTokenProvider(() => jwtConfig).CreateSigninToken("trayicon");
+                }
             }
 
             // If we know the password, issue a token from the API

@@ -53,8 +53,17 @@ public record JWTConfig
     };
 }
 
-public class JWTTokenProvider(JWTConfig jWTConfig) : IJWTTokenProvider
+/// <summary>
+/// Issues and reads JWT tokens
+/// </summary>
+/// <param name="getJWTConfig">Returns the JWT configuration to use; called on each use, so a reset configuration is picked up by long-lived instances</param>
+public class JWTTokenProvider(Func<JWTConfig> getJWTConfig) : IJWTTokenProvider
 {
+    /// <summary>
+    /// The current JWT configuration
+    /// </summary>
+    private JWTConfig jWTConfig => getJWTConfig();
+
     private const string TemporaryFamilyId = "temporary";
     private const string ForeverTokenUserId = "forever-token";
     public string CreateSingleOperationToken(string userId, string operation)

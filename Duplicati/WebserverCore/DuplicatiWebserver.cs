@@ -205,18 +205,9 @@ public class DuplicatiWebserver
             opt.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
 
-        // Generate JWTConfig with signing key if not present
-        if (string.IsNullOrWhiteSpace(connection.ApplicationSettings.JWTConfig))
-            connection.ApplicationSettings.JWTConfig = JsonSerializer.Serialize(JWTConfig.Create());
-
-        var jwtConfig = JsonSerializer.Deserialize<JWTConfig>(connection.ApplicationSettings.JWTConfig)
-            ?? throw new Exception("Failed to deserialize JWTConfig");
-
-        if (settings.TokenLifetimeInMinutes > 0)
-            jwtConfig = jwtConfig with { RefreshTokenDurationInMinutes = settings.TokenLifetimeInMinutes };
-
-        if (jwtConfig.PbkdfConfig == null)
-            jwtConfig = jwtConfig with { PbkdfConfig = Server.PbkdfConfig.Default };
+        // Loads the JWTConfig, generating one with a signing key if not present.
+        // The config can be replaced at runtime (e.g. on password change), so consumers must read it through the provider.
+        var jwtConfigProvider = new JWTConfigProvider(connection, settings.TokenLifetimeInMinutes);
 
         if (EnableSwagger)
         {
@@ -249,7 +240,8 @@ public class DuplicatiWebserver
             .AddHttpContextAccessor()
             .AddMemoryCache()
             .AddSingleton<IHostnameValidator>(new HostnameValidator(settings.AllowedHostnames))
-            .AddSingleton(jwtConfig)
+            .AddSingleton<IJWTConfigProvider>(jwtConfigProvider)
+            .AddTransient(sp => sp.GetRequiredService<IJWTConfigProvider>().Current)
             .AddSingleton(new PreAuthTokenConfig(settings.PreAuthTokens))
             .AddAuthorization()
             .AddAuthentication(options => { options.DefaultScheme = "CombinedScheme"; })
@@ -272,10 +264,14 @@ public class DuplicatiWebserver
             })
             .AddJwtBearer("Jwt", options =>
             {
-                options.Authority = jwtConfig.Authority;
-                options.Audience = jwtConfig.Audience;
+                var initialJwtConfig = jwtConfigProvider.Current;
+                options.Authority = initialJwtConfig.Authority;
+                options.Audience = initialJwtConfig.Audience;
                 options.SaveToken = true;
-                options.TokenValidationParameters = JWTTokenProvider.GetTokenValidationParameters(jwtConfig);
+                options.TokenValidationParameters = JWTTokenProvider.GetTokenValidationParameters(initialJwtConfig);
+                // Resolve the key on each validation, so a reset signing key takes effect immediately
+                options.TokenValidationParameters.IssuerSigningKey = null;
+                options.TokenValidationParameters.IssuerSigningKeyResolver = (_, _, _, _) => [jwtConfigProvider.Current.SymmetricSecurityKey()];
                 options.Configuration = new Microsoft.IdentityModel.Protocols.OpenIdConnect.OpenIdConnectConfiguration();
 
                 options.Events = new JwtBearerEvents
