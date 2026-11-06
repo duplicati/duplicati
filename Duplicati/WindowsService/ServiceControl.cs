@@ -179,6 +179,10 @@ namespace Duplicati.WindowsService
                     if (m_verbose_messages)
                         m_eventLog.WriteEntry("Starting runner...");
 
+                    // Lets the in-process server know it is hosted by a service, so updates restart the service
+                    Environment.SetEnvironmentVariable(HostEnvironment.HostKindEnvName, HostEnvironment.HostKindWindowsService);
+                    Environment.SetEnvironmentVariable(HostEnvironment.HostNameEnvName, this.ServiceName);
+
                     m_runner = new Runner(
                         m_executable,
                         startargs,

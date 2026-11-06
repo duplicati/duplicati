@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The update helper replaces the installed files while no Duplicati process
+    runs, so it cannot share the runtime or any assembly with the installation.
+    It must stay free of project and package references, and is published as a
+    self-contained, single-file, trimmed executable by the ReleaseBuilder.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>Duplicati.UpdateHelper.Implementation</AssemblyName>
+    <RootNamespace>Duplicati.UpdateHelper</RootNamespace>
+    <Nullable>enable</Nullable>
+    <Copyright>Copyright © 2026 Team Duplicati, MIT license</Copyright>
+    <IsTrimmable>true</IsTrimmable>
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <EventSourceSupport>false</EventSourceSupport>
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Library\AutoUpdater\UpdateHelperProtocol.cs" Link="UpdateHelperProtocol.cs" />
+    <Compile Include="..\Library\AutoUpdater\ProcessInfo.cs" Link="ProcessInfo.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The keys that sign update manifests; the same file the server embeds -->
+    <EmbeddedResource Include="..\Library\AutoUpdater\AutoUpdateSignKeys.txt" LogicalName="AutoUpdateSignKeys.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Duplicati.UnitTest" />
+  </ItemGroup>
+
+</Project>
