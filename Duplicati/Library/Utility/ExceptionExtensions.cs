@@ -59,6 +59,14 @@ public static class ExceptionExtensions
     }
 
     /// <summary>
+    /// Finds the rate limit that caused a failure, if any
+    /// </summary>
+    /// <param name="ex">The exception to inspect</param>
+    /// <returns>The rate limit, or <c>null</c> if the failure was not caused by one</returns>
+    public static Interface.TooManyRequestException? FindRateLimit(Exception? ex)
+        => FlattenException(ex).OfType<Interface.TooManyRequestException>().FirstOrDefault();
+
+    /// <summary>
     /// Checks if an exception is a stop, cancel or timeout exception
     /// </summary>
     /// <param name="ex">The operation to check</param>

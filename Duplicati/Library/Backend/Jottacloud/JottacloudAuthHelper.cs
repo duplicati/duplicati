@@ -69,6 +69,29 @@ public class JottacloudAuthHelper : OAuthHelperHttpClient, IDisposable
 
     public string Username { get; private set; }
 
+    /// <summary>
+    /// Marks a response that tells the client to slow down with a <see cref="TooManyRequestException"/>
+    /// as the inner exception, so the wait the server asks for can be respected. Jottacloud answers
+    /// with 429 when the number of requests is limited; a 503 counts when it says how long to wait.
+    /// </summary>
+    /// <inheritdoc/>
+    public override Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage? responseContext, CancellationToken cancellationToken)
+    {
+        if (ex is HttpRequestException hex && responseContext != null && IsRateLimited(responseContext))
+            throw new HttpRequestException(hex.HttpRequestError, hex.Message, new TooManyRequestException(responseContext.Headers.RetryAfter!), responseContext.StatusCode);
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Determines whether a response refuses the request because of a rate limit
+    /// </summary>
+    /// <param name="response">The response</param>
+    /// <returns><c>true</c> if the client should wait before sending more requests</returns>
+    private static bool IsRateLimited(HttpResponseMessage response)
+        => response.StatusCode == System.Net.HttpStatusCode.TooManyRequests
+            || (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable && response.Headers.RetryAfter != null);
+
     private class UserInfo
     {
         [JsonProperty("sub")]
