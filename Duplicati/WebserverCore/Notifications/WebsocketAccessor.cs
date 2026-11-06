@@ -72,7 +72,8 @@ public class WebsocketAccessor : IWebsocketAccessor
         IBackupListService backupListService,
         IRemoteController remoteController,
         IRemoteControllerRegistration remoteControllerRegistration,
-        ISystemStatusService systemStatusService)
+        ISystemStatusService systemStatusService,
+        IJWTConfigProvider jwtConfigProvider)
     {
         _jsonSettings = jsonSettings;
         _statusService = statusService;
@@ -84,6 +85,8 @@ public class WebsocketAccessor : IWebsocketAccessor
         _remoteControllerRegistration = remoteControllerRegistration;
         _systemStatusService = systemStatusService;
 
+        // Connections were authenticated with tokens that a reset has revoked, so make the clients authenticate again
+        jwtConfigProvider.ConfigReset += async (_, _) => { await CloseAllConnectionsAsync(); };
         eventPollNotify.NewEvent += async (_, _) => { await SendAsync(SubscriptionService.LegacyStatus); };
         eventPollNotify.ServerSettingsUpdate += async (_, _) => { await SendAsync(SubscriptionService.ServerSettings); };
         eventPollNotify.BackupListUpdate += async (_, _) => { await SendAsync(SubscriptionService.BackupList); };
@@ -171,6 +174,26 @@ public class WebsocketAccessor : IWebsocketAccessor
         foreach (var c in substate)
             if (!openConnections.Contains(c))
                 _subscribers.TryRemove(c, out _);
+    }
+
+    /// <summary>
+    /// Closes all open connections, signalling the clients that they are no longer authenticated
+    /// </summary>
+    private async Task CloseAllConnectionsAsync()
+    {
+        foreach (var connection in GetConnections().ToList())
+        {
+            try
+            {
+                await connection.CloseAsync((WebSocketCloseStatus)4401, "Authentication was revoked", CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                Log.WriteVerboseMessage(LOGTAG, "WebsocketCloseFailed", ex, "Failed to close websocket connection after authentication reset");
+            }
+        }
+
+        ClearClosed();
     }
 
     private IEnumerable<WebSocket> GetConnections()

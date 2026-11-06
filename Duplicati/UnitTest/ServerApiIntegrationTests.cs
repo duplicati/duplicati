@@ -1214,6 +1214,91 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// Changing the password resets the JWT signing key and drops all token families,
+    /// so tokens issued before the change stop working right away, without a restart.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task ChangingThePasswordInvalidatesExistingTokens_Async()
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            using var client = new HttpClient(new HttpClientHandler { UseCookies = false }) { BaseAddress = httpClient.BaseAddress };
+            var connection = (Duplicati.Server.Database.Connection?)ServerProgram.DuplicatiWebserver.Provider.GetService(typeof(Duplicati.Server.Database.Connection))
+                ?? throw new InvalidOperationException("The server has no database connection");
+
+            var login = await client.PostAsJsonAsync("/api/v1/auth/login", new { password = "integration-test-password", rememberMe = true }, JsonOptions).ConfigureAwait(false);
+            login.EnsureSuccessStatusCode();
+            var cookie = login.Headers.GetValues("Set-Cookie").Single(c => c.StartsWith("RefreshToken_", StringComparison.Ordinal) && !c.Contains("expires=Thu, 01 Jan 1970", StringComparison.OrdinalIgnoreCase)).Split(';')[0];
+            var tokens = await login.Content.ReadFromJsonAsync<AccessTokenOutputDto>(JsonOptions).ConfigureAwait(false);
+            var oldJwtConfig = connection.ApplicationSettings.JWTConfig;
+
+            using var oldSocket = await ConnectAuthenticatedWebsocketAsync(httpClient.BaseAddress!, tokens!.AccessToken!).ConfigureAwait(false);
+
+            var change = await httpClient.PatchAsJsonAsync("/api/v1/serversettings", new Dictionary<string, string> { ["server-passphrase"] = "new-integration-test-password" }).ConfigureAwait(false);
+            change.EnsureSuccessStatusCode();
+
+            Assert.That(connection.ApplicationSettings.JWTConfig, Is.Not.Null.And.Not.EqualTo(oldJwtConfig), "The JWT config should be replaced");
+            Assert.That(await ReadUntilClosedAsync(oldSocket).ConfigureAwait(false), Is.EqualTo((System.Net.WebSockets.WebSocketCloseStatus)4401), "A websocket authenticated before the change should be closed");
+
+            using var oldAccess = new HttpRequestMessage(HttpMethod.Get, "/api/v1/serverstate");
+            oldAccess.Headers.Authorization = new AuthenticationHeaderValue("Bearer", tokens!.AccessToken);
+            Assert.That((await client.SendAsync(oldAccess).ConfigureAwait(false)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized), "An access token from before the change should be rejected");
+
+            var callerAccess = await httpClient.GetAsync("/api/v1/serverstate").ConfigureAwait(false);
+            Assert.That(callerAccess.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized), "The token used to change the password should be rejected too");
+
+            using var refresh = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/refresh") { Content = JsonContent.Create(new { nonce = tokens.RefreshNonce }) };
+            refresh.Headers.Add("Cookie", cookie);
+            Assert.That((await client.SendAsync(refresh).ConfigureAwait(false)).StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized), "A refresh token from before the change should be rejected");
+
+            var oldPassword = await client.PostAsJsonAsync("/api/v1/auth/login", new { password = "integration-test-password", rememberMe = true }, JsonOptions).ConfigureAwait(false);
+            Assert.That(oldPassword.IsSuccessStatusCode, Is.False, "The old password should no longer log in");
+
+            await AuthenticateAsync(httpClient, "new-integration-test-password").ConfigureAwait(false);
+            var afterLogin = await httpClient.GetAsync("/api/v1/serverstate").ConfigureAwait(false);
+            Assert.That(afterLogin.StatusCode, Is.EqualTo(HttpStatusCode.OK), "A login with the new password should work");
+
+            // The websocket authenticator is long-lived, so it must also validate with the new key
+            using var newSocket = await ConnectAuthenticatedWebsocketAsync(httpClient.BaseAddress!, httpClient.DefaultRequestHeaders.Authorization!.Parameter!).ConfigureAwait(false);
+            await newSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, null, CancellationToken.None).ConfigureAwait(false);
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Opens a notifications websocket and authenticates it with the token, failing the test if it is rejected
+    /// </summary>
+    private static async Task<System.Net.WebSockets.ClientWebSocket> ConnectAuthenticatedWebsocketAsync(Uri baseAddress, string token)
+    {
+        var socket = new System.Net.WebSockets.ClientWebSocket();
+        await socket.ConnectAsync(new Uri($"ws://{baseAddress.Authority}/notifications"), CancellationToken.None).ConfigureAwait(false);
+        await socket.SendAsync(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { Version = 1, Token = token })), System.Net.WebSockets.WebSocketMessageType.Text, true, CancellationToken.None).ConfigureAwait(false);
+
+        var buffer = new byte[4096];
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var result = await socket.ReceiveAsync(buffer, timeout.Token).ConfigureAwait(false);
+        Assert.That(result.MessageType, Is.EqualTo(System.Net.WebSockets.WebSocketMessageType.Text), $"The websocket was closed: {result.CloseStatus} {result.CloseStatusDescription}");
+        using var reply = JsonDocument.Parse(buffer.AsMemory(0, result.Count));
+        Assert.That(reply.RootElement.GetProperty("Success").GetBoolean(), Is.True, $"The websocket rejected the token: {reply.RootElement}");
+        return socket;
+    }
+
+    /// <summary>
+    /// Reads from the websocket until the server closes it, returning the close status
+    /// </summary>
+    private static async Task<System.Net.WebSockets.WebSocketCloseStatus?> ReadUntilClosedAsync(System.Net.WebSockets.ClientWebSocket socket)
+    {
+        var buffer = new byte[16 * 1024];
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        while (true)
+        {
+            var result = await socket.ReceiveAsync(buffer, timeout.Token).ConfigureAwait(false);
+            if (result.MessageType == System.Net.WebSockets.WebSocketMessageType.Close)
+                return result.CloseStatus;
+        }
+    }
+
+    /// <summary>
     /// The refresh token cookie was set for the domain the request named in its Host header.
     /// Behind a reverse proxy that does not pass the Host header on, that is the address of
     /// the server, not the name the browser uses, so the browser rejected the cookie, every
