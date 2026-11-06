@@ -601,9 +601,11 @@ namespace Duplicati.Library.Backend
 
                 async Task DownloadAsync(AsyncFtpClient downloadClient)
                 {
-                    await using var inputStream = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => downloadClient.OpenRead(clientRemoteName, token: ct)).ConfigureAwait(false);
-                    await using var timeoutStream = inputStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Call);
-                    await CoreUtility.CopyStreamAsync(timeoutStream, output, false, cancelToken).ConfigureAwait(false);
+                    // DownloadStream reads the server's reply after the transfer, which OpenRead
+                    // leaves on the control connection, so a failed transfer is noticed
+                    await using var timeoutStream = output.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
+                    if (!await downloadClient.DownloadStream(timeoutStream, clientRemoteName, token: cancelToken).ConfigureAwait(false))
+                        throw new UserInformationException(Strings.ErrorReadFile(remotename, downloadClient.LastReply.ErrorMessage), "FtpGetFailure");
                 }
 
                 // The server refuses the data connection before any data is sent, so nothing was written yet
