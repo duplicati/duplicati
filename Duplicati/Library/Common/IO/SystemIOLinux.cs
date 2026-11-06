@@ -501,6 +501,15 @@ namespace Duplicati.Library.Common.IO
             detail = string.Empty;
             try
             {
+                // The mode of a link is always 777 and says nothing about the folder it points to,
+                // and the link can be changed to point elsewhere, so a link is not accepted. A
+                // trailing slash would make lstat look at the folder the link points to.
+                if (PosixFile.GetFileType(path.Length > 1 ? path.TrimEnd('/') : path) == PosixFile.FileType.Symlink)
+                {
+                    detail = "it is a symbolic link";
+                    return false;
+                }
+
                 var info = PosixFile.GetUserGroupAndPermissions(path);
                 var expectedModeStr = Convert.ToString(expectedMode, 8);
 

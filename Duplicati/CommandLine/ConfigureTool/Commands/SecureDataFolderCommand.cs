@@ -103,6 +103,15 @@ public static class SecureDataFolderCommand
             return 1;
         }
 
+        // Securing a link would change the folder it points to, and the link would still be rejected
+        if (!OperatingSystem.IsWindows() && new DirectoryInfo(dataFolderPath).LinkTarget != null)
+        {
+            Console.WriteLine($"The data folder is a symbolic link, which is not accepted as the data folder: {dataFolderPath}");
+            if (!quiet)
+                Console.WriteLine("Use the path of the folder it points to as the data folder, then re-run this command.");
+            return 1;
+        }
+
         // Check if the permissions are already set as expected
         var alreadySecure = SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dataFolderPath, forService, out var detail);
 
