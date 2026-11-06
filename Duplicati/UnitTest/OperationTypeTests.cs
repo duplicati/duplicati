@@ -47,6 +47,11 @@ namespace Duplicati.UnitTest;
 [Category("OperationType")]
 public class OperationTypeTests
 {
+    /// <summary>
+    /// The latest server database schema version
+    /// </summary>
+    private const int LATEST_SERVER_SCHEMA_VERSION = 13;
+
     private string _tempDataFolder = null!;
     private string _databasePath = null!;
     private Connection _connection = null!;
@@ -230,11 +235,10 @@ public class OperationTypeTests
     [Test]
     public async Task FreshSchema_HasOperationTypeColumnAndLatestVersionAsync()
     {
-        // The fresh database created in SetUp is at the latest version (12).
-        const int EXPECTED_LATEST = 12;
+        // The fresh database created in SetUp is at the latest version.
         await using var freshConn = await SQLiteLoader.LoadConnectionAsync(_databasePath);
-        Assert.AreEqual(EXPECTED_LATEST, await ReadVersionAsync(freshConn),
-            "A fresh RestAPI database should be created at the latest schema version (12).");
+        Assert.AreEqual(LATEST_SERVER_SCHEMA_VERSION, await ReadVersionAsync(freshConn),
+            "A fresh RestAPI database should be created at the latest schema version.");
 
         Assert.IsTrue(await ColumnExistsAsync(freshConn, "Backup", "OperationType"),
             "The OperationType column should exist on a fresh database.");
@@ -287,11 +291,13 @@ public class OperationTypeTests
             await using (var cmd = db.CreateCommand())
             {
                 DatabaseUpgrader.UpgradeDatabase(db, dbPath, typeof(DatabaseSchemaMarker));
-                Assert.AreEqual(12, await ReadVersionAsync(db));
+                Assert.AreEqual(LATEST_SERVER_SCHEMA_VERSION, await ReadVersionAsync(db));
 
                 // The v12 upgrade script does: ALTER TABLE "Backup" ADD COLUMN "OperationType" ...
-                // Drop it to simulate the pre-upgrade (v11) state.
+                // and the v13 script adds "Enabled". Drop both to simulate the v11 state.
                 cmd.CommandText = @"ALTER TABLE ""Backup"" DROP COLUMN ""OperationType""";
+                await cmd.ExecuteNonQueryAsync();
+                cmd.CommandText = @"ALTER TABLE ""Backup"" DROP COLUMN ""Enabled""";
                 await cmd.ExecuteNonQueryAsync();
 
                 // Insert a legacy backup row that predates the column.
@@ -309,8 +315,8 @@ public class OperationTypeTests
             {
                 DatabaseUpgrader.UpgradeDatabase(db, dbPath, typeof(DatabaseSchemaMarker));
 
-                Assert.AreEqual(12, await ReadVersionAsync(db),
-                    "The upgrader should bump the RestAPI database from 11 to 12.");
+                Assert.AreEqual(LATEST_SERVER_SCHEMA_VERSION, await ReadVersionAsync(db),
+                    "The upgrader should bump the RestAPI database from 11 to the latest version.");
                 Assert.IsTrue(await ColumnExistsAsync(db, "Backup", "OperationType"),
                     "The v12 upgrade script should add the OperationType column.");
 
@@ -346,7 +352,7 @@ public class OperationTypeTests
             await using (var db = await SQLiteLoader.LoadConnectionAsync(dbPath))
             {
                 DatabaseUpgrader.UpgradeDatabase(db, dbPath, typeof(DatabaseSchemaMarker));
-                Assert.AreEqual(12, await ReadVersionAsync(db));
+                Assert.AreEqual(LATEST_SERVER_SCHEMA_VERSION, await ReadVersionAsync(db));
                 Assert.IsTrue(await ColumnExistsAsync(db, "Backup", "OperationType"));
                 await db.CloseAsync();
             }
@@ -359,7 +365,7 @@ public class OperationTypeTests
 
             // Downgrade the server database from 12 to 11 via the DatabaseTool.
             Assert.AreEqual(0, await Duplicati.CommandLine.DatabaseTool.Program.MainAsync(["downgrade", dbPath, "--server-version=11", "--no-backups"]),
-                "The DatabaseTool downgrade from v12 to v11 should succeed.");
+                "The DatabaseTool downgrade to v11 should succeed.");
 
             await using (var db = await SQLiteLoader.LoadConnectionAsync(dbPath))
             {

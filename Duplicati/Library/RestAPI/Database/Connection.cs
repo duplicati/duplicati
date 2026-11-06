@@ -559,8 +559,9 @@ namespace Duplicati.Server.Database
                         TargetURL = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 4), m_key),
                         DBPath = ResolveDbPath(ConvertToString(rd, 5)),
                         OperationType = Library.Utility.Utility.ParseEnum(ConvertToString(rd, 6), Serialization.OperationType.Backup),
+                        Enabled = ConvertToBoolean(rd, 7),
                     },
-                    cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"" FROM ""Backup"" WHERE ID = @Id")
+                    cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"", ""Enabled"" FROM ""Backup"" WHERE ID = @Id")
                         .SetParameterValue("@Id", id))
                     .FirstOrDefault();
 
@@ -827,6 +828,50 @@ namespace Duplicati.Server.Database
             m_eventPollNotifyer?.SignalNewEvent();
         }
 
+        /// <summary>
+        /// Enables or disables a stored backup. A disabled backup keeps its schedule,
+        /// but the scheduler skips it until it is enabled again.
+        /// </summary>
+        /// <param name="item">The backup to change</param>
+        /// <param name="enabled">True to enable the backup, false to disable it</param>
+        public void SetBackupEnabled(IBackup item, bool enabled)
+        {
+            if (item.IsTemporary)
+                throw new InvalidOperationException("Cannot enable or disable a temporary backup");
+
+            lock (m_lock)
+            {
+                using (var tr = m_connection.BeginTransaction())
+                {
+                    using (var cmd = m_connection.CreateCommand(tr, @"UPDATE ""Backup"" SET ""Enabled""= @Enabled WHERE ""ID""= @Id"))
+                    {
+                        cmd.SetParameterValue("@Enabled", enabled ? 1 : 0)
+                            .SetParameterValue("@Id", item.ID)
+                            .ExecuteNonQuery();
+                        tr.Commit();
+                    }
+                }
+            }
+
+            item.Enabled = enabled;
+            m_notificationUpdateService?.IncrementLastDataUpdateId();
+            m_eventPollNotifyer?.SignalNewEvent();
+            m_eventPollNotifyer?.SignalBackupListUpdate();
+        }
+
+        /// <summary>
+        /// Gets the IDs of all stored backups that are disabled
+        /// </summary>
+        /// <returns>The IDs of the disabled backups</returns>
+        public HashSet<string> GetDisabledBackupIDs()
+        {
+            lock (m_lock)
+                return ReadFromDb(
+                    (rd) => ConvertToInt64(rd, 0).ToString(),
+                    cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Backup"" WHERE ""Enabled"" = 0"))
+                    .ToHashSet();
+        }
+
         private void AddOrUpdateBackup(IBackup item, bool updateSchedule, ISchedule? schedule)
         {
             lock (m_lock)
@@ -862,9 +907,9 @@ namespace Duplicati.Server.Database
                         cmd =>
                         {
                             if (update)
-                                cmd.SetCommandAndParameters(@"UPDATE ""Backup"" SET ""Name""=@Name, ""Description""=@Description, ""Tags""=@Tags, ""TargetURL""=@TargetUrl, ""OperationType""=@OperationType WHERE ""ID""=@Id");
+                                cmd.SetCommandAndParameters(@"UPDATE ""Backup"" SET ""Name""=@Name, ""Description""=@Description, ""Tags""=@Tags, ""TargetURL""=@TargetUrl, ""OperationType""=@OperationType, ""Enabled""=@Enabled WHERE ""ID""=@Id");
                             else
-                                cmd.SetCommandAndParameters(@"INSERT INTO ""Backup"" (""Name"", ""ExternalID"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"") VALUES (@Name,@ExternalID,@Description,@Tags,@TargetUrl,@DbPath,@OperationType)");
+                                cmd.SetCommandAndParameters(@"INSERT INTO ""Backup"" (""Name"", ""ExternalID"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"", ""Enabled"") VALUES (@Name,@ExternalID,@Description,@Tags,@TargetUrl,@DbPath,@OperationType,@Enabled)");
                         },
                         (cmd, n) =>
                         {
@@ -877,7 +922,8 @@ namespace Duplicati.Server.Database
                                 .SetParameterValue("@Description", n.Description ?? "")
                                 .SetParameterValue("@Tags", string.Join(",", n.Tags ?? new string[0]))
                                 .SetParameterValue("@TargetUrl", m_encryptSensitiveFields ? EncryptedFieldHelper.Encrypt(n.TargetURL, m_key) : n.TargetURL)
-                                .SetParameterValue("@OperationType", n.OperationType.ToString());
+                                .SetParameterValue("@OperationType", n.OperationType.ToString())
+                                .SetParameterValue("@Enabled", n.Enabled ? 1 : 0);
 
                             if (update)
                                 cmd.SetParameterValue("@Id", item.ID);
@@ -1072,8 +1118,9 @@ namespace Duplicati.Server.Database
                             TargetURL = EncryptedFieldHelper.Decrypt(ConvertToString(rd, 5), m_key),
                             DBPath = ResolveDbPath(ConvertToString(rd, 6)),
                             OperationType = Library.Utility.Utility.ParseEnum(ConvertToString(rd, 7), Serialization.OperationType.Backup),
+                            Enabled = ConvertToBoolean(rd, 8),
                         },
-                        cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""ExternalID"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"" FROM ""Backup"" "))
+                        cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""ExternalID"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"", ""Enabled"" FROM ""Backup"" "))
                         .ToArray();
 
                     foreach (var n in lst)

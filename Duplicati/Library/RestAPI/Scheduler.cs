@@ -104,12 +104,14 @@ namespace Duplicati.Server
 
         public IList<Tuple<string, DateTime>> GetProposedSchedule()
         {
+            // Disabled backups are skipped when their schedule fires, so they have no upcoming run
+            var disabled = m_dataConnection.GetDisabledBackupIDs();
             return (
                 from n in this.Schedule
                 let backupid = (from t in n.Value.Tags
                                 where t != null && t.StartsWith("ID=", StringComparison.Ordinal)
                                 select t.Substring("ID=".Length)).FirstOrDefault()
-                where !string.IsNullOrWhiteSpace(backupid)
+                where !string.IsNullOrWhiteSpace(backupid) && !disabled.Contains(backupid)
                 select new Tuple<string, DateTime>(backupid, n.Key)
             ).ToList();
         }
@@ -347,7 +349,14 @@ namespace Duplicati.Server
                                 if (!tmplst.Any(x => x == id))
                                 {
                                     var entry = m_dataConnection.GetBackup(id);
-                                    if (entry != null)
+                                    if (entry != null && !entry.Enabled)
+                                    {
+                                        // The schedule still advances, so the backup resumes at its next slot once enabled
+                                        Library.Logging.Log.WriteInformationMessage(LOGTAG,
+                                            "BackupDisabled",
+                                            "Skipping scheduled run of backup {0} because it is disabled.", entry.Name);
+                                    }
+                                    else if (entry != null)
                                     {
                                         var options = Server.Runner.GetCommonOptions(m_dataConnection);
                                         Server.Runner.ApplyOptions(m_dataConnection, entry, options, out var _);

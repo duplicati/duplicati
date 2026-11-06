@@ -40,6 +40,14 @@ public class BackupPost : IEndpointV1
             => ExecuteDeleteDb(GetBackup(connection, id)))
             .RequireAuthorization();
 
+        group.MapPost("/backup/{id}/enable", ([FromServices] Connection connection, [FromRoute] string id)
+            => ExecuteSetEnabled(connection, GetBackup(connection, id), true))
+            .RequireAuthorization();
+
+        group.MapPost("/backup/{id}/disable", ([FromServices] Connection connection, [FromRoute] string id)
+            => ExecuteSetEnabled(connection, GetBackup(connection, id), false))
+            .RequireAuthorization();
+
         group.MapPost("/backup/{id}/movedb", ([FromServices] Connection connection, [FromRoute] string id, [FromBody] Dto.UpdateDbPathInputDto input)
             => UpdateDatabasePath(connection, GetBackup(connection, id), input.path, true))
             .RequireAuthorization();
@@ -108,6 +116,14 @@ public class BackupPost : IEndpointV1
         // Delete the effective database (honoring a "--dbpath" advanced option) so the database the
         // backup actually uses is removed, not a stale DBPath that may not exist (see issue #1698).
         => File.Delete(Runner.GetEffectiveDBPath(backup));
+
+    private static void ExecuteSetEnabled(Connection connection, IBackup backup, bool enabled)
+    {
+        if (backup.IsTemporary)
+            throw new BadRequestException("Cannot enable or disable a temporary backup");
+
+        connection.SetBackupEnabled(backup, enabled);
+    }
 
     private static void UpdateDatabasePath(Connection connection, IBackup backup, string targetpath, bool move)
     {

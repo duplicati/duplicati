@@ -15,7 +15,8 @@ CREATE TABLE "Backup" (
     "DBPath" TEXT NOT NULL,
     "ExternalID" TEXT NULL,
     "ConnectionStringID" INTEGER NOT NULL DEFAULT -1,
-    "OperationType" TEXT NOT NULL DEFAULT 'Backup'
+    "OperationType" TEXT NOT NULL DEFAULT 'Backup',
+    "Enabled" INTEGER NOT NULL DEFAULT 1
 );
 
 /*
@@ -202,5 +203,5 @@ CREATE TABLE "BackupTargetUrl" (
 CREATE INDEX "IX_BackupTargetUrl_BackupID" ON "BackupTargetUrl" ("BackupID");
 CREATE UNIQUE INDEX "IX_BackupTargetUrl_TargetUrlKey" ON "BackupTargetUrl" ("TargetUrlKey");
 
-INSERT INTO "Version" ("Version") VALUES (12);
+INSERT INTO "Version" ("Version") VALUES (13);
 

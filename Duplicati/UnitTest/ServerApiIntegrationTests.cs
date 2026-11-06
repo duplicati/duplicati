@@ -341,6 +341,86 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         }).ConfigureAwait(false);
     }
 
+    [Test]
+    [Category("Integration")]
+    public async Task BackupCanBeDisabledAndEnabledThroughTheApi_Async()
+    {
+        const string passphrase = "integration-passphrase";
+        var name = $"Enabled flag backup {Guid.NewGuid():N}";
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            async Task<bool> IsEnabledAsync(string id)
+            {
+                var listed = await AssertBackupListedAsync(httpClient, id).ConfigureAwait(false);
+                var getResponse = await httpClient.GetAsync($"/api/v1/backup/{id}").ConfigureAwait(false);
+                getResponse.EnsureSuccessStatusCode();
+                var single = await getResponse.Content.ReadFromJsonAsync<BackupGet.GetBackupResultDto>(JsonOptions).ConfigureAwait(false)
+                             ?? throw new InvalidOperationException("Backup get response was empty");
+                Assert.That(single.Backup.Enabled, Is.EqualTo(listed.Enabled), "List and single-backup GET should agree on the enabled flag");
+                return listed.Enabled;
+            }
+
+            Assert.That(await GetApiExtensionsAsync(httpClient).ConfigureAwait(false), Does.Contain(SystemInfoProvider.BackupEnableDisableExtension),
+                "System info should advertise that backups can be enabled and disabled");
+
+            var backupId = await CreateBackupAsync(httpClient, passphrase, name).ConfigureAwait(false);
+            Assert.That(await IsEnabledAsync(backupId).ConfigureAwait(false), Is.True, "A new backup should be enabled");
+
+            (await httpClient.PostAsync($"/api/v1/backup/{backupId}/disable", null).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            Assert.That(await IsEnabledAsync(backupId).ConfigureAwait(false), Is.False, "Disabling should be reflected by the API");
+
+            // A client that does not know about the flag must not re-enable the backup when it saves it
+            var update = new BackupAndScheduleInputDto
+            {
+                Backup = new BackupAndScheduleInputDto.BackupInputDto
+                {
+                    Name = name,
+                    Description = "Updated without the enabled flag",
+                    TargetURL = BuildFileBackendUrl(this.TARGETFOLDER),
+                    Sources = new[] { this.DATAFOLDER },
+                    Settings = new[] { new BackupAndScheduleInputDto.SettingInputDto { Name = "passphrase", Value = passphrase } },
+                    Filters = Array.Empty<BackupAndScheduleInputDto.FilterInputDto>(),
+                    Metadata = new Dictionary<string, string>()
+                }
+            };
+            (await httpClient.PutAsJsonAsync($"/api/v1/backup/{backupId}", update, JsonOptions).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            Assert.That(await IsEnabledAsync(backupId).ConfigureAwait(false), Is.False, "Saving without the flag should keep the backup disabled");
+
+            // An exported disabled backup is imported as disabled
+            var exportBytes = await ExportConfigurationAsync(httpClient, backupId).ConfigureAwait(false);
+            var importedId = await ImportConfigurationAsync(httpClient, exportBytes).ConfigureAwait(false);
+            Assert.That(await IsEnabledAsync(importedId).ConfigureAwait(false), Is.False, "Import should keep the disabled flag");
+
+            (await httpClient.PostAsync($"/api/v1/backup/{backupId}/enable", null).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            Assert.That(await IsEnabledAsync(backupId).ConfigureAwait(false), Is.True, "Enabling should be reflected by the API");
+
+            var missing = await httpClient.PostAsync("/api/v1/backup/999999/disable", null).ConfigureAwait(false);
+            Assert.That(missing.StatusCode, Is.EqualTo(HttpStatusCode.NotFound), "Disabling an unknown backup should return 404");
+        }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
+    public async Task BackupEnableDisableExtensionCanBeHidden_Async()
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var extensions = await GetApiExtensionsAsync(httpClient).ConfigureAwait(false);
+            Assert.That(extensions, Does.Not.Contain(SystemInfoProvider.BackupEnableDisableExtension),
+                "A disabled API extension should not be reported by system info");
+            Assert.That(extensions, Is.Not.Empty, "Hiding one extension should keep the others");
+        }, null, "127.0.0.1", [$"--webservice-disable-api-extensions={SystemInfoProvider.BackupEnableDisableExtension}"]).ConfigureAwait(false);
+    }
+
+    private static async Task<string[]> GetApiExtensionsAsync(HttpClient httpClient)
+    {
+        var systemInfo = await httpClient.GetFromJsonAsync<JsonElement>("/api/v1/systeminfo", JsonOptions).ConfigureAwait(false);
+        var found = systemInfo.TryGetProperty("apiExtensions", out var extensions) || systemInfo.TryGetProperty("APIExtensions", out extensions);
+        Assert.That(found, Is.True, "System information should include the API extensions");
+        return extensions.EnumerateArray().Select(x => x.GetString() ?? "").ToArray();
+    }
+
     // The trailing semicolon is the value from issue #7425; the second value has an interval
     // (48 months) bigger than the timeframe it is in (2 years), which the issue ran into next.
     [TestCase("2W:U,2M:60D,4M:16W,2Y:48M;")]
