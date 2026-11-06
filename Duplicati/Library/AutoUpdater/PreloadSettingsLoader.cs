@@ -386,6 +386,13 @@ public static class PreloadSettingsLoader
             if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dir, false, out var dirDetail))
                 return;
 
+            if (!Util.AllowInsecureDataFolder() && !OperatingSystem.IsWindows() && new DirectoryInfo(dir).LinkTarget != null)
+                throw new UserInformationException(
+                    $"The directory '{dir}' holding the preload settings file '{path}' is a symbolic link, which is not accepted, because the link can be changed to point to another directory. " +
+                    $"Replace the link with the directory it points to, " +
+                    $"or run with --{Util.AllowInsecureDatafolderOption} to bypass this check if you understand the risks.",
+                    "InsecurePreloadFilePermissions");
+
             if (!Util.AllowInsecureDataFolder())
                 throw new UserInformationException(
                     $"The directory '{dir}' holding the preload settings file '{path}' is not securely protected ({dirDetail}). " +

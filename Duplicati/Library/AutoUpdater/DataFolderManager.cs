@@ -319,6 +319,14 @@ public static class DataFolderManager
         if (SystemIO.IO_OS.DirectoryHasPermissionUserRWOnly(dataFolder, false, out var detail))
             return;
 
+        // Securing a link would change the folder it points to and still not pass the check
+        if (!OperatingSystem.IsWindows() && new DirectoryInfo(dataFolder).LinkTarget != null)
+            throw new UserInformationException(
+                $"The data folder '{dataFolder}' is a symbolic link, which is not accepted, because the link can be changed to point to another folder. " +
+                $"Use the path of the folder it points to as the data folder, " +
+                $"or run with --{Util.AllowInsecureDatafolderOption} to bypass this check if you understand the risks.",
+                "InsecureDataFolderPermissions");
+
         var configuretoolname = PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.ConfigureTool);
 
         // Tailor the guidance based on whether the folder pre-existed. A pre-existing folder
