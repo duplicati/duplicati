@@ -1715,6 +1715,16 @@ namespace Duplicati.Library.Main.Database.Local
                 .ExecuteNonQueryAsync(true, token)
                 .ConfigureAwait(false);
 
+            // The entries are removed one file at a time below, and without an index every
+            // removal reads the whole table, which makes the removal quadratic in the file count
+            await cmd.SetTransaction(m_rtr)
+                .SetCommandAndParameters($@"
+                    CREATE INDEX ""{tempFileSetTable}-idx""
+                        ON ""{tempFileSetTable}"" (""FileID"")
+                ")
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
+
             // now we need to remove, from the above, any entries that were enumerated by the
             // UNC-driven backup
             cmdDelete.SetTransaction(m_rtr)
