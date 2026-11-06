@@ -51,6 +51,16 @@ internal class WmiShadowCopyManager : IDisposable
     private const string ShadowCopyClassName = "Win32_ShadowCopy";
 
     /// <summary>
+    /// The value Win32_ShadowCopy.Create returns when another shadow copy operation is already in progress
+    /// </summary>
+    private const uint ReturnValueSnapshotSetInProgress = 9;
+
+    /// <summary>
+    /// The VSS error for a shadow copy that cannot be created while another one is being created
+    /// </summary>
+    private const int VSS_E_SNAPSHOT_SET_IN_PROGRESS = unchecked((int)0x80042316);
+
+    /// <summary>
     /// A single shadow copy
     /// </summary>
     /// <param name="shadowId">The shadow ID as a string</param>
@@ -165,6 +175,12 @@ internal class WmiShadowCopyManager : IDisposable
             using var result = session.InvokeMethod(CimNamespace, ShadowCopyClassName, "Create", parameters);
 
             var returnValue = Convert.ToUInt32(result.ReturnValue?.Value);
+
+            // Another shadow copy is being created; the caller waits and tries again, so this is not
+            // logged as an error, and is reported with the VSS error the other providers give
+            if (returnValue == ReturnValueSnapshotSetInProgress)
+                throw new System.Runtime.InteropServices.COMException($"The creation of a shadow copy for {drive} is already in progress", VSS_E_SNAPSHOT_SET_IN_PROGRESS);
+
             if (returnValue != 0)
             {
                 Logging.Log.WriteErrorMessage(LOGTAG, "ShadowCopyFailed", null, "Failed to create shadow copy for {0}: ReturnValue={1}", drive, returnValue);
@@ -180,7 +196,7 @@ internal class WmiShadowCopyManager : IDisposable
 
             return shadowId;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex.HResult != VSS_E_SNAPSHOT_SET_IN_PROGRESS)
         {
             Logging.Log.WriteErrorMessage(LOGTAG, "ShadowCopyFailed", ex, "Failed to create shadow copy for {0}", drive);
             return null;

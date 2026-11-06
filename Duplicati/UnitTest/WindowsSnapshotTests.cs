@@ -111,5 +111,82 @@ namespace Duplicati.UnitTest
 
             Assert.AreEqual(1, providers[1].Provider.DisposeCalls);
         }
+
+        /// <summary>
+        /// The error VSS gives when another program is creating a shadow copy
+        /// </summary>
+        private static Exception SnapshotSetInProgress()
+            => new System.Runtime.InteropServices.COMException("The creation of a shadow copy is already in progress.", unchecked((int)0x80042316));
+
+        /// <summary>
+        /// Runs the test with a short wait between attempts
+        /// </summary>
+        private static void WithShortRetryDelay(Action test)
+        {
+            var delay = WindowsSnapshot.SnapshotInProgressRetryDelay;
+            WindowsSnapshot.SnapshotInProgressRetryDelay = TimeSpan.FromMilliseconds(10);
+            try
+            {
+                test();
+            }
+            finally
+            {
+                WindowsSnapshot.SnapshotInProgressRetryDelay = delay;
+            }
+        }
+
+        /// <summary>
+        /// Only one shadow copy can be created at a time, so a backup that started while another
+        /// program was creating one failed (#5570). It must wait and try again.
+        /// </summary>
+        [Test]
+        public void ASnapshotIsRetriedWhileAnotherIsInProgress()
+        {
+            WithShortRetryDelay(() =>
+            {
+                var providers = new List<FakeSnapshotProvider>();
+                ISnapshotProvider Factory(WindowsSnapshotProvider provider, TimeSpan timeout, Guid providerId)
+                {
+                    var fake = new FakeSnapshotProvider { DoSnapshotSetException = providers.Count < 2 ? SnapshotSetInProgress() : null };
+                    providers.Add(fake);
+                    return fake;
+                }
+
+                using (new WindowsSnapshot(Sources, Array.Empty<string>(), new Dictionary<string, string>(), false, Factory))
+                {
+                    Assert.AreEqual(3, providers.Count);
+                    Assert.AreEqual(1, providers[0].DisposeCalls);
+                    Assert.AreEqual(1, providers[1].DisposeCalls);
+                    Assert.AreEqual(0, providers[2].DisposeCalls);
+                }
+            });
+        }
+
+        /// <summary>
+        /// The retries stop when the VSS timeout has passed, with the error from VSS
+        /// </summary>
+        [Test]
+        public void ASnapshotStillInProgressFailsAfterTheTimeout()
+        {
+            WithShortRetryDelay(() =>
+            {
+                var providers = new List<FakeSnapshotProvider>();
+                ISnapshotProvider Factory(WindowsSnapshotProvider provider, TimeSpan timeout, Guid providerId)
+                {
+                    var fake = new FakeSnapshotProvider { DoSnapshotSetException = SnapshotSetInProgress() };
+                    providers.Add(fake);
+                    return fake;
+                }
+
+                var options = new Dictionary<string, string> { ["vss-timeout"] = "1s" };
+                var ex = Assert.Throws<System.Runtime.InteropServices.COMException>(() =>
+                    new WindowsSnapshot(Sources, Array.Empty<string>(), options, false, Factory));
+
+                Assert.AreEqual(unchecked((int)0x80042316), ex.HResult);
+                Assert.Greater(providers.Count, 1, "the snapshot was not retried");
+                foreach (var provider in providers)
+                    Assert.AreEqual(1, provider.DisposeCalls);
+            });
+        }
     }
 }
