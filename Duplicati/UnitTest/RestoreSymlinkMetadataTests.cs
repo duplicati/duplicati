@@ -33,8 +33,8 @@ using NUnit.Framework;
 namespace Duplicati.UnitTest;
 
 /// <summary>
-/// A symbolic link restored with --restore-symlink-metadata and --restore-permissions should get
-/// the owner it had, and the file it points to should be left as it is (issue #3848).
+/// A symbolic link restored with --restore-permissions should get the owner it had, with or without
+/// --restore-symlink-metadata, and the file it points to should be left as it is (issues #3848 and #7524).
 /// </summary>
 [TestFixture]
 public class RestoreSymlinkMetadataTests : BasicSetupHelper
@@ -110,7 +110,8 @@ public class RestoreSymlinkMetadataTests : BasicSetupHelper
             Assert.That(File.GetLastWriteTimeUtc(target), Is.EqualTo(targetTime), "the timestamp of the link target changed");
         });
 
-        if (restoreSymlinkMetadata && restorePermissions)
+        // The owner is set on the link itself, so --restore-permissions restores it without --restore-symlink-metadata
+        if (restorePermissions)
         {
             Assert.Multiple(() =>
             {
