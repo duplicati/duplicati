@@ -760,32 +760,13 @@ namespace Duplicati.CommandLine.BackendTester
         internal static TimeSpan GetRetryDelay(Exception ex, int attempt, DateTimeOffset now)
         {
             var delay = Utility.GetRetryDelay(TimeSpan.FromSeconds(1), attempt, true);
-            var rateLimit = FindRateLimit(ex);
+            var rateLimit = ExceptionExtensions.FindRateLimit(ex);
             if (rateLimit == null)
                 return delay;
 
-            var retryAfter = rateLimit.RetryAfter;
-            var wait = retryAfter?.Delta
-                ?? (retryAfter?.Date is DateTimeOffset date ? date - now : RateLimitDelay);
+            var wait = Utility.GetRetryAfterDelay(rateLimit.RetryAfter, now) ?? RateLimitDelay;
 
             return wait > delay ? wait : delay;
-        }
-
-        /// <summary>
-        /// Finds the rate limit that caused a failure, if any
-        /// </summary>
-        /// <param name="ex">The exception to inspect</param>
-        /// <returns>The rate limit, or <c>null</c> if the failure was not caused by one</returns>
-        private static TooManyRequestException FindRateLimit(Exception ex)
-        {
-            if (ex == null)
-                return null;
-            if (ex is TooManyRequestException rateLimit)
-                return rateLimit;
-            if (ex is AggregateException aggregate)
-                return aggregate.InnerExceptions.Select(FindRateLimit).FirstOrDefault(x => x != null);
-
-            return FindRateLimit(ex.InnerException);
         }
 
         private static async Task<T> Retry<T>(Func<Task<T>> action, int retries)

@@ -517,9 +517,12 @@ partial class BackendManager
                     }
 
                     // We did not recover, so wait or give up
-                    if (!recovered && retries <= maxRetries && retryDelay.Ticks != 0)
+                    // A server that rate limits the requests may say how long to wait, and retrying sooner only extends the limit
+                    var delay = recovered || retries > maxRetries
+                        ? TimeSpan.Zero
+                        : Library.Utility.Utility.GetRetryDelay(retryDelay, retries, retryWithExponentialBackoff, ex, DateTimeOffset.UtcNow);
+                    if (delay > TimeSpan.Zero)
                     {
-                        var delay = Library.Utility.Utility.GetRetryDelay(retryDelay, retries, retryWithExponentialBackoff);
                         using var ct = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, context.TaskReader.ProgressToken, context.TaskReader.TransferToken, context.TaskReader.StopToken);
                         await Task.Delay(delay, ct.Token).ConfigureAwait(false);
                     }

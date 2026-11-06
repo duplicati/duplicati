@@ -1787,6 +1787,41 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Computes the delay before the next retry of an operation, as <see cref="GetRetryDelay(TimeSpan, int, bool)"/>,
+        /// but waits at least as long as the server asked for if the attempt failed because of a rate limit
+        /// that carried a Retry-After value
+        /// </summary>
+        /// <param name="retryDelay">Value of one delay unit</param>
+        /// <param name="retryAttempt">The attempt number (e.g. 1 for the first retry, 2 for the second retry, etc.)</param>
+        /// <param name="useExponentialBackoff">Whether to use exponential backoff</param>
+        /// <param name="failure">The exception the attempt failed with</param>
+        /// <param name="now">The current time, used for a Retry-After date</param>
+        /// <returns>The computed delay</returns>
+        public static TimeSpan GetRetryDelay(TimeSpan retryDelay, int retryAttempt, bool useExponentialBackoff, Exception failure, DateTimeOffset now)
+        {
+            var delay = GetRetryDelay(retryDelay, retryAttempt, useExponentialBackoff);
+            var retryAfter = GetRetryAfterDelay(ExceptionExtensions.FindRateLimit(failure)?.RetryAfter, now);
+            return retryAfter > delay ? retryAfter.Value : delay;
+        }
+
+        /// <summary>
+        /// Gets the time left until a request may be sent again, as given by a Retry-After value
+        /// </summary>
+        /// <param name="retryAfter">The Retry-After value, if any</param>
+        /// <param name="now">The current time, used for a Retry-After date</param>
+        /// <returns>The delay, never negative, or <c>null</c> if no usable value was given</returns>
+        public static TimeSpan? GetRetryAfterDelay(System.Net.Http.Headers.RetryConditionHeaderValue? retryAfter, DateTimeOffset now)
+        {
+            var delay = retryAfter?.Delta
+                ?? (retryAfter?.Date is DateTimeOffset date ? date - now : null);
+
+            if (delay == null)
+                return null;
+
+            return delay < TimeSpan.Zero ? TimeSpan.Zero : delay;
+        }
+
+        /// <summary>
         /// Loads the pfxcertificate from bytes into an exportable format.
         /// </summary>
         /// <remarks>This method masks a problem with loading certificates with EC based keys by using a temporary file</remarks>
