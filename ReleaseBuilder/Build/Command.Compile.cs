@@ -145,8 +145,10 @@ public static partial class Command
                     if (!sourceProjects.TryGetValue(target.Interface, out var buildProjects))
                         throw new InvalidOperationException($"No projects found for {target.Interface}");
 
+                    var updateHelperProject = buildProjects.FirstOrDefault(IsUpdateHelperProject);
                     var actualBuildProjects = buildProjects
                         .Where(x => target.OS == OSType.Windows || !windowsOnlyProjects.Contains(x))
+                        .Where(x => !IsUpdateHelperProject(x))
                         .ToList();
 
                     var incorrectAssemblyVersions = new Dictionary<string, HashSet<Version>>();
@@ -209,6 +211,9 @@ public static partial class Command
                         Directory.Delete(buildfolder, true);
                     }
 
+                    if (updateHelperProject != null)
+                        await PublishUpdateHelper(updateHelperProject, tmpfolder, buildDir, logFolder, archstring, target, releaseInfo, buildTime);
+
                     // Perform any post-build steps, cleaning and signing as needed
                     await PostCompile.PrepareTargetDirectory(baseDir, tmpfolder, target, rtcfg, keepBuilds);
                     await Verify.VerifyTargetDirectory(tmpfolder, target);
@@ -231,6 +236,62 @@ public static partial class Command
 
                 Console.WriteLine("Completed!");
             }
+        }
+
+        /// <summary>
+        /// Publishes the update helper as a self-contained, trimmed, single-file executable and copies it into the build folder.
+        /// The helper replaces the installed files, so it cannot share the runtime with the installation.
+        /// </summary>
+        /// <param name="project">The helper project file</param>
+        /// <param name="buildFolder">The folder the build is assembled in</param>
+        /// <param name="buildDir">The root build folder, for the scratch output</param>
+        /// <param name="logFolder">The log folder</param>
+        /// <param name="archstring">The .NET RID</param>
+        /// <param name="target">The build target</param>
+        /// <param name="releaseInfo">The release info</param>
+        /// <param name="buildTime">The build time string used for log names</param>
+        private static async Task PublishUpdateHelper(string project, string buildFolder, string buildDir, string logFolder, string archstring, PackageTarget target, ReleaseInfo releaseInfo, string buildTime)
+        {
+            var scratch = Path.Combine(buildDir, target.BuildTargetString + "-helper");
+            if (Directory.Exists(scratch))
+                Directory.Delete(scratch, true);
+
+            string logNameFn(int pid, bool isStdOut)
+                => $"{Path.GetFileNameWithoutExtension(project)}-{target.BuildTargetString}.{buildTime}.{(isStdOut ? "stdout" : "stderr")}.log";
+
+            var command = new string[] {
+                "dotnet", "publish", project,
+                "--configuration", "Release",
+                "--output", scratch,
+                "--runtime", archstring,
+                "--self-contained", "true",
+                "-p:PublishSingleFile=true",
+                "-p:PublishTrimmed=true",
+                "-p:IncludeNativeLibrariesForSelfExtract=true",
+                "-p:EnableCompressionInSingleFile=true",
+                $"-p:AssemblyVersion={releaseInfo.Version}",
+                $"-p:Version={releaseInfo.Version}-{releaseInfo.Channel}-{releaseInfo.Timestamp:yyyyMMdd}",
+            };
+
+            Console.WriteLine($"Publishing update helper for {target.BuildTargetString} ...");
+            await ProcessHelper.ExecuteWithLog(
+                command,
+                workingDirectory: buildFolder,
+                logFolder: logFolder,
+                logFilename: logNameFn).ConfigureAwait(false);
+
+            var exeName = Path.GetFileNameWithoutExtension(project) + (target.OS == OSType.Windows ? ".exe" : "");
+            var published = Path.Combine(scratch, exeName);
+            if (!File.Exists(published))
+                throw new FileNotFoundException($"The published update helper was not found: {published}");
+
+            var size = new FileInfo(published).Length;
+            if (size > UpdateHelperMaxSize)
+                throw new InvalidOperationException($"The update helper for {target.BuildTargetString} is {size / (1024 * 1024)} MB, which exceeds the limit of {UpdateHelperMaxSize / (1024 * 1024)} MB; a dependency has probably crept in");
+
+            Console.WriteLine($"Update helper for {target.BuildTargetString} is {size / 1024} KB");
+            File.Copy(published, Path.Combine(buildFolder, exeName), true);
+            Directory.Delete(scratch, true);
         }
 
         /// <summary>

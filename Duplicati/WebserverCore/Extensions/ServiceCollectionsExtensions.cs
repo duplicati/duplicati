@@ -54,6 +54,7 @@ public static class ServiceCollectionsExtensions
             .AddSingleton<ISettingsService, SettingsService>()
             .AddTransient<IStatusService, StatusService>()
             .AddTransient<IUpdateService, UpdateService>()
+            .AddSingleton<IUpdateInstallService, UpdateInstallService>()
             .AddSingleton<INotificationUpdateService, NotificationUpdateService>()
             .AddSingleton<ISchedulerService, SchedulerService>()
             .AddSingleton<IWebsocketAccessor, WebsocketAccessor>()

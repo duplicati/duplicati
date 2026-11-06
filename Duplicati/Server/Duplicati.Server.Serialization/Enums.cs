@@ -88,7 +88,10 @@ namespace Duplicati.Server.Serialization
     {
         Waiting,
         Checking,
-        Downloading
+        Downloading,
+        Verifying,
+        LaunchingHelper,
+        Installing
     }
 
     public enum NotificationType

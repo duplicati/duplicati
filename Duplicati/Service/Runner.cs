@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Concurrent;
 using System.Linq;
 using Duplicati.Library.AutoUpdater;
 
@@ -37,6 +38,7 @@ namespace Duplicati.Service
         private readonly Action<System.Diagnostics.ProcessStartInfo> m_onBeforeFirstStart;
 
         private readonly object m_writelock = new object();
+        private BlockingCollection<string> m_stdoutLines;
         private readonly string[] m_cmdargs;
         private readonly PackageHelper.NamedExecutable m_executable;
 
@@ -147,8 +149,15 @@ namespace Duplicati.Service
                         if (firstRun && m_onBeforeFirstStart != null)
                             m_onBeforeFirstStart(pr);
 
+                        // Declare ourselves as the host, so the update helper can stop the respawn loop
+                        pr.Environment[HostEnvironment.HostKindEnvName] = HostEnvironment.HostKindServiceWrapper;
+                        pr.Environment[HostEnvironment.HostPidEnvName] = Environment.ProcessId.ToString();
+
                         if (!m_terminate)
+                        {
                             m_process = System.Diagnostics.Process.Start(pr);
+                            StartStdoutReader(m_process);
+                        }
 
                         if (firstRun && m_onStartedAction != null)
                         {
@@ -201,8 +210,49 @@ namespace Duplicati.Service
             }
         }
 
+        /// <summary>
+        /// Reads the server stdout on a thread, so the update-pending line is seen outside of a ping
+        /// </summary>
+        private void StartStdoutReader(System.Diagnostics.Process process)
+        {
+            var lines = m_stdoutLines = new BlockingCollection<string>();
+            var reader = process.StandardOutput;
+            var t = new System.Threading.Thread(() =>
+            {
+                try
+                {
+                    string line;
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        if (string.Equals(line.Trim(), HostEnvironment.ServiceWrapperUpdatePendingLine, StringComparison.OrdinalIgnoreCase))
+                        {
+                            m_reportMessage("The server is being updated, it will not be restarted by this process", true);
+                            m_softstop = true;
+                        }
+                        else
+                        {
+                            lines.Add(line);
+                        }
+                    }
+                }
+                catch
+                {
+                }
+                finally
+                {
+                    lines.CompleteAdding();
+                }
+            })
+            {
+                IsBackground = true,
+                Name = "Server stdout reader"
+            };
+            t.Start();
+        }
+
         private void PingProcess()
         {
+            var lines = m_stdoutLines;
             for (var n = 0; n < 5; n++)
             {
                 lock (m_writelock)
@@ -211,12 +261,15 @@ namespace Duplicati.Service
                     m_process.StandardInput.Flush();
                 }
 
-                using (var t = m_process.StandardOutput.ReadLineAsync())
+                try
                 {
-                    t.Wait(TimeSpan.FromMinutes(1));
-
-                    if (t.IsCompleted && !t.IsFaulted && !t.IsCanceled)
+                    if (lines.TryTake(out _, TimeSpan.FromMinutes(1)))
                         return;
+                }
+                catch (InvalidOperationException)
+                {
+                    // Reader completed, the process is gone
+                    break;
                 }
             }
 

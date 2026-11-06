@@ -37,11 +37,17 @@ namespace Duplicati.Server
         private volatile bool m_terminated = false;
         private volatile bool m_forceCheck = false;
         private readonly object m_lock = new object();
-        private AutoResetEvent m_waitSignal;
+        private readonly AutoResetEvent m_waitSignal = new AutoResetEvent(false);
         private double m_downloadProgress;
         private bool m_disableChecks = false;
+        private volatile bool m_installInProgress = false;
 
         public bool IsUpdateRequested { get; private set; } = false;
+
+        /// <summary>
+        /// True while an install is driven from outside the poll thread; checks are suspended and the state is not reset
+        /// </summary>
+        public bool InstallInProgress => m_installInProgress;
 
         public UpdatePollerStates ThreadState { get; private set; }
         public double DownloadProgess
@@ -60,7 +66,6 @@ namespace Duplicati.Server
         public void Init(bool disableChecks)
         {
             m_disableChecks = disableChecks;
-            m_waitSignal = new AutoResetEvent(false);
             ThreadState = UpdatePollerStates.Waiting;
             m_thread = new Thread(Run)
             {
@@ -74,9 +79,50 @@ namespace Duplicati.Server
         {
             lock (m_lock)
             {
+                if (m_installInProgress)
+                    return;
                 m_forceCheck = true;
                 m_waitSignal.Set();
             }
+        }
+
+        /// <summary>
+        /// Suspends update checks while an install is driven from outside the poll thread
+        /// </summary>
+        public void BeginExternalInstall()
+        {
+            lock (m_lock)
+            {
+                m_installInProgress = true;
+                m_forceCheck = false;
+            }
+        }
+
+        /// <summary>
+        /// Reports the state of an external install
+        /// </summary>
+        /// <param name="state">The state to show</param>
+        /// <param name="progress">The progress, 0 to 1</param>
+        public void SetExternalInstallState(UpdatePollerStates state, double progress)
+        {
+            ThreadState = state;
+            m_downloadProgress = progress;
+            eventPollNotify.SignalNewEvent();
+        }
+
+        /// <summary>
+        /// Resumes update checks after an external install ended without the server exiting
+        /// </summary>
+        public void EndExternalInstall()
+        {
+            lock (m_lock)
+            {
+                m_installInProgress = false;
+                ThreadState = UpdatePollerStates.Waiting;
+                m_downloadProgress = 0;
+                m_waitSignal.Set();
+            }
+            eventPollNotify.SignalNewEvent();
         }
 
         public void Terminate()
@@ -100,6 +146,12 @@ namespace Duplicati.Server
 
             while (!m_terminated)
             {
+                if (m_installInProgress)
+                {
+                    m_waitSignal.WaitOne(TimeSpan.FromSeconds(5), true);
+                    continue;
+                }
+
                 var nextCheck = connection.ApplicationSettings.NextUpdateCheck;
 
                 var maxcheck = TimeSpan.FromDays(7);
@@ -200,12 +252,15 @@ namespace Duplicati.Server
                     }
                 }
 
-                DownloadProgess = 0;
-
-                if (ThreadState != UpdatePollerStates.Waiting)
+                if (!m_installInProgress)
                 {
-                    ThreadState = UpdatePollerStates.Waiting;
-                    eventPollNotify.SignalNewEvent();
+                    DownloadProgess = 0;
+
+                    if (ThreadState != UpdatePollerStates.Waiting)
+                    {
+                        ThreadState = UpdatePollerStates.Waiting;
+                        eventPollNotify.SignalNewEvent();
+                    }
                 }
 
                 var waitTime = nextCheck - DateTime.UtcNow;

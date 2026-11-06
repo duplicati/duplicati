@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Thin executable wrapper around the update helper implementation.
+    No Crashlog reference on purpose: the helper must not depend on any
+    Duplicati assembly, see Duplicati/UpdateHelper/Duplicati.UpdateHelper.csproj.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <Description>Update helper for Duplicati</Description>
+    <Copyright>Copyright © 2026 Team Duplicati, MIT license</Copyright>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <EventSourceSupport>false</EventSourceSupport>
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+    <IsTrimmable>true</IsTrimmable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Duplicati\UpdateHelper\Duplicati.UpdateHelper.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -111,6 +111,16 @@ namespace Duplicati.Library.AutoUpdater
         public static UpdateInfo? LastUpdateCheckVersion { get; private set; }
 
         /// <summary>
+        /// The signed manifest text of <see cref="LastUpdateCheckVersion"/> as downloaded, handed to the update helper so it can verify the package
+        /// </summary>
+        public static string? LastUpdateCheckManifest { get; private set; }
+
+        /// <summary>
+        /// The maximum size of a manifest, which is kept in memory
+        /// </summary>
+        private const long MAX_MANIFEST_SIZE = 1024 * 1024;
+
+        /// <summary>
         /// The default timeout in seconds for download operations
         /// </summary>
         private const int DOWNLOAD_OPERATION_TIMEOUT_SECONDS = 3600;
@@ -233,9 +243,9 @@ namespace Duplicati.Library.AutoUpdater
                     if (SIGN_KEYS.Length == 0)
                         throw new Exception("No signing keys are available, cannot check update");
 
-                    using (var tmpfile = new TempFile())
+                    // The manifest is small and is kept in memory, so the bytes that are verified are the bytes that are used
+                    using (var manifest = new MemoryStream())
                     {
-
                         using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
                         var installId = DataFolderManager.GetInstallID();
@@ -249,50 +259,53 @@ namespace Duplicati.Library.AutoUpdater
                         using (var client = HttpClientHelper.CreateClient())
                         {
                             client.Timeout = Timeout.InfiniteTimeSpan;
-                            client.DownloadFile(request, tmpfile, null, timeoutToken.Token).Await();
+                            client.DownloadFile(request, manifest, bytesRead =>
+                            {
+                                if (bytesRead > MAX_MANIFEST_SIZE)
+                                    throw new Exception($"The manifest exceeds the maximum size of {MAX_MANIFEST_SIZE} bytes");
+                            }, timeoutToken.Token).Await();
                         }
 
-                        using (var fs = File.OpenRead(tmpfile))
-                        {
-                            var verifyOps = SIGN_KEYS.Select(k => new JSONSignature.VerifyOperation(
-                                Algorithm: JSONSignature.RSA_SHA256,
-                                PublicKey: k.ToXmlString(false)
-                            ));
+                        manifest.Position = 0;
+                        var verifyOps = SIGN_KEYS.Select(k => new JSONSignature.VerifyOperation(
+                            Algorithm: JSONSignature.RSA_SHA256,
+                            PublicKey: k.ToXmlString(false)
+                        ));
 
-                            if (!JSONSignature.VerifyAtLeastOne(fs, verifyOps))
-                                throw new Exception("No valid signature found in manifest file");
+                        if (!JSONSignature.VerifyAtLeastOne(manifest, verifyOps))
+                            throw new Exception("No valid signature found in manifest file");
 
-                            var update = JsonSerializer.Deserialize<UpdateInfo>(fs);
-                            if (update == null)
-                                return null;
+                        var update = JsonSerializer.Deserialize<UpdateInfo>(manifest);
+                        if (update == null)
+                            return null;
 
-                            if (TryParseVersion(update.Version) <= TryParseVersion(SelfVersion.Version))
-                                return null;
+                        if (TryParseVersion(update.Version) <= TryParseVersion(SelfVersion.Version))
+                            return null;
 
-                            // Don't install a debug update on a release build and vice versa
-                            if (string.Equals(SelfVersion.ReleaseType, "Debug", StringComparison.OrdinalIgnoreCase) && !string.Equals(update.ReleaseType, SelfVersion.ReleaseType, StringComparison.OrdinalIgnoreCase))
-                                return null;
+                        // Don't install a debug update on a release build and vice versa
+                        if (string.Equals(SelfVersion.ReleaseType, "Debug", StringComparison.OrdinalIgnoreCase) && !string.Equals(update.ReleaseType, SelfVersion.ReleaseType, StringComparison.OrdinalIgnoreCase))
+                            return null;
 
-                            ReleaseType rt;
-                            if (!Enum.TryParse<ReleaseType>(update.ReleaseType, true, out rt))
-                                rt = ReleaseType.Unknown;
+                        ReleaseType rt;
+                        if (!Enum.TryParse<ReleaseType>(update.ReleaseType, true, out rt))
+                            rt = ReleaseType.Unknown;
 
-                            // If the update is too low to be considered, skip it
-                            // Should never happen, but protects against mistakes in deployment
-                            if (rt > channel)
-                                return null;
+                        // If the update is too low to be considered, skip it
+                        // Should never happen, but protects against mistakes in deployment
+                        if (rt > channel)
+                            return null;
 
-                            // In case the manifest does not contain a URL, use the one from this assembly
-                            if (string.IsNullOrWhiteSpace(update.GenericUpdatePageUrl))
-                                update = update with { GenericUpdatePageUrl = SelfVersion.GenericUpdatePageUrl };
+                        // In case the manifest does not contain a URL, use the one from this assembly
+                        if (string.IsNullOrWhiteSpace(update.GenericUpdatePageUrl))
+                            update = update with { GenericUpdatePageUrl = SelfVersion.GenericUpdatePageUrl };
 
-                            // In case there is no url, fall back to the project download page
-                            if (string.IsNullOrWhiteSpace(update.GenericUpdatePageUrl))
-                                update = update with { GenericUpdatePageUrl = "https://duplicati.com/download" };
+                        // In case there is no url, fall back to the project download page
+                        if (string.IsNullOrWhiteSpace(update.GenericUpdatePageUrl))
+                            update = update with { GenericUpdatePageUrl = "https://duplicati.com/download" };
 
-                            LastUpdateCheckVersion = update;
-                            return update;
-                        }
+                        LastUpdateCheckVersion = update;
+                        LastUpdateCheckManifest = System.Text.Encoding.UTF8.GetString(manifest.ToArray());
+                        return update;
                     }
                 }
                 catch (Exception ex)

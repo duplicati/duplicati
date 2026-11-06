@@ -120,6 +120,16 @@ public sealed record SystemInfoDto
     public required string PackageTypeId { get; init; }
 
     /// <summary>
+    /// True if updates can be installed automatically on this installation
+    /// </summary>
+    public required bool UpdateInstallSupported { get; init; }
+
+    /// <summary>
+    /// The reason automatic installation is not available, when it is not
+    /// </summary>
+    public required string? UpdateInstallUnsupportedReason { get; init; }
+
+    /// <summary>
     /// Gets or sets the user name.
     /// </summary>
     public required string UserName { get; init; }

@@ -31,6 +31,14 @@ public class Updates : IEndpointV1
         group.MapPost("/updates/check",
             ([FromServices] UpdatePollThread updatePollThread) => Execute(updatePollThread))
             .RequireAuthorization();
+
+        group.MapPost("/updates/install",
+            ([FromServices] IUpdateInstallService updateInstallService) => updateInstallService.BeginInstall())
+            .RequireAuthorization();
+
+        group.MapPost("/updates/cancel-install",
+            ([FromServices] IUpdateInstallService updateInstallService) => updateInstallService.CancelInstall())
+            .RequireAuthorization();
     }
 
     private static void Execute(UpdatePollThread updatePollThread)

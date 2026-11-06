@@ -45,6 +45,7 @@
     <Project Path="Duplicati/GUI/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj" />
     <Project Path="Duplicati/Server/Duplicati.Server.csproj" />
     <Project Path="Duplicati/Service/Duplicati.Service.csproj" />
+    <Project Path="Duplicati/UpdateHelper/Duplicati.UpdateHelper.csproj" />
     <Project Path="Duplicati/WindowsService/Duplicati.WindowsService.csproj" />
   </Folder>
   <Folder Name="/Executables/">
@@ -66,6 +67,7 @@
     <Project Path="Executables/Duplicati.GUI.TrayIcon/Duplicati.GUI.TrayIcon.csproj" />
     <Project Path="Executables/Duplicati.Server/Duplicati.Server.csproj" />
     <Project Path="Executables/Duplicati.Service/Duplicati.Service.csproj" />
+    <Project Path="Executables/Duplicati.UpdateHelper/Duplicati.UpdateHelper.csproj" />
     <Project Path="Executables/Duplicati.WindowsModulesLoader/Duplicati.WindowsModulesLoader.csproj" />
     <Project Path="Executables/Duplicati.WindowsService/Duplicati.WindowsService.csproj" />
   </Folder>

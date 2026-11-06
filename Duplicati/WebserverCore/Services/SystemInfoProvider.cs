@@ -34,7 +34,7 @@ namespace Duplicati.WebserverCore.Services;
 /// <summary>
 /// Produces system information.
 /// </summary>
-public class SystemInfoProvider(IApplicationSettings applicationSettings, Connection connection) : ISystemInfoProvider
+public class SystemInfoProvider(IApplicationSettings applicationSettings, Connection connection, IUpdateInstallService updateInstallService) : ISystemInfoProvider
 {
     /// <summary>
     /// The API extensions that are available
@@ -384,6 +384,8 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             CaseSensitiveFilesystem = systeminfo.CaseSensitiveFilesystem,
             MachineName = systeminfo.MachineName,
             PackageTypeId = systeminfo.PackageTypeId,
+            UpdateInstallSupported = updateInstallService.Support.Supported,
+            UpdateInstallUnsupportedReason = updateInstallService.Support.Reason,
             UserName = systeminfo.UserName,
             NewLine = systeminfo.NewLine,
             CLRVersion = systeminfo.CLRVersion,

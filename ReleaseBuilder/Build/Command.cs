@@ -91,6 +91,27 @@ public static partial class Command
     };
 
     /// <summary>
+    /// The project that builds the update helper; published separately as a self-contained single file
+    /// </summary>
+    private const string UpdateHelperProject = "Duplicati.UpdateHelper.csproj";
+
+    /// <summary>
+    /// Executables that are support tools, not user-facing commands; no symlinks or launcher entries are made for them
+    /// </summary>
+    private static readonly IReadOnlySet<string> HelperExecutables = new HashSet<string>(StringComparer.InvariantCultureIgnoreCase) { "duplicati-update-helper" };
+
+    /// <summary>
+    /// The largest size the published update helper may have, in bytes
+    /// </summary>
+    private const long UpdateHelperMaxSize = 20 * 1024 * 1024;
+
+    /// <summary>
+    /// Returns true if the project is the update helper project
+    /// </summary>
+    private static bool IsUpdateHelperProject(string projectPath)
+        => string.Equals(Path.GetFileName(projectPath), UpdateHelperProject, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
     /// The packages that require Docker to build
     /// </summary>
     private static readonly IReadOnlySet<PackageType> DockerDependingTargets = new HashSet<PackageType> {
@@ -121,6 +142,7 @@ public static partial class Command
         { "Duplicati.CommandLine.ConfigureTool", "duplicati-configure" },
         { "Duplicati.CommandLine.AutoTuneTool", "duplicati-autotune-tool" },
         { "Duplicati.Service", "duplicati-service" },
+        { "Duplicati.UpdateHelper", "duplicati-update-helper" },
         { "Duplicati.Agent", "duplicati-agent" },
         { "Duplicati.CommandLine", "duplicati-cli" },
         { "Duplicati.Server", "duplicati-server"},

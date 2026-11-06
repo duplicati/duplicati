@@ -334,6 +334,7 @@ public static partial class Command
             await PackageSupport.SetPermissionFlags(appDirLib, rtcfg);
 
             var availableExecutables = ExecutableRenames.Values
+                .Where(x => !HelperExecutables.Contains(x))
                 .Where(x => File.Exists(Path.Combine(appDirLib, x)))
                 .ToList();
 
@@ -1070,7 +1071,7 @@ public static partial class Command
             if (OperatingSystem.IsWindows())
                 throw new PlatformNotSupportedException("Creating unresolved symlinks is not supported on Windows, use WSL or Docker");
 
-            foreach (var e in ExecutableRenames.Values)
+            foreach (var e in ExecutableRenames.Values.Where(x => !HelperExecutables.Contains(x)))
             {
                 var exefile = Path.Combine(pkgroot, "usr", "lib", "duplicati", e);
                 if (File.Exists(exefile))

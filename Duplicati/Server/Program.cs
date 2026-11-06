@@ -310,6 +310,7 @@ namespace Duplicati.Server
                 scheduler = DuplicatiWebserver.Provider.GetRequiredService<ISchedulerService>();
 
                 updatePollThread.Init(Library.Utility.Utility.ParseBoolOption(commandlineOptions, DISABLE_UPDATE_CHECK_OPTION));
+                DuplicatiWebserver.Provider.GetRequiredService<IUpdateInstallService>().CompletePendingInstall();
 
                 SetPurgeTempFilesTimer(connection, commandlineOptions);
                 SetCertificateRenewalTimer(connection);
