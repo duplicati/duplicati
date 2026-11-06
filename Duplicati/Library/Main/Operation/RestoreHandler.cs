@@ -529,7 +529,7 @@ namespace Duplicati.Library.Main.Operation
 
             public string TargetDestination => _targetDestination;
             public Task Initialize(CancellationToken cancel) => _inner.Initialize(cancel);
-            public Task Finalize(Action<double>? progressCallback, CancellationToken cancel) => _inner.Finalize(progressCallback, cancel);
+            public Task Finalize(Action<double>? progressCallback, bool isComplete, CancellationToken cancel) => _inner.Finalize(progressCallback, isComplete, cancel);
             public Task Test(CancellationToken cancellationToken) => _inner.Test(cancellationToken);
             public Task<bool> CreateFolderIfNotExists(string path, CancellationToken cancel) => _inner.CreateFolderIfNotExists(path, cancel);
             public Task<bool> FileExists(string path, CancellationToken cancel) => _inner.FileExists(path, cancel);

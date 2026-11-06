@@ -372,7 +372,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
     public IList<string> GetPriorityFiles() => Array.Empty<string>();
 
     /// <inheritdoc />
-    public async Task Finalize(Action<double>? progressCallback, CancellationToken cancel)
+    public async Task Finalize(Action<double>? progressCallback, bool isComplete, CancellationToken cancel)
     {
         var totalFiles = _metadata.Count;
         try

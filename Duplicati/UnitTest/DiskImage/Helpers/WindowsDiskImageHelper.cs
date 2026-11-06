@@ -828,6 +828,21 @@ internal class WindowsDiskImageHelper : IDiskImageHelper
     }
 
     /// <inheritdoc />
+    public string AttachImage(string imagePath, PartitionTableType tableType, bool readOnly)
+    {
+        if (!DiskImageTestHelpers.IsVirtualDiskFile(imagePath))
+            throw new PlatformNotSupportedException("Windows can only attach VHD, VHDX and ISO images, not raw disk images.");
+
+        RunPowerShell($"Mount-DiskImage -ImagePath '{imagePath}' {(readOnly ? "-Access ReadOnly" : "")} | Out-Null");
+
+        int diskNumber = WaitForDiskAttachment(imagePath, TimeSpan.FromSeconds(5));
+        if (diskNumber < 0)
+            throw new InvalidOperationException($"Failed to attach disk image: {imagePath}");
+
+        return $@"\\.\PhysicalDrive{diskNumber}";
+    }
+
+    /// <inheritdoc />
     public string ReAttach(string imagePath, string diskIdentifier, PartitionTableType tableType, bool readOnly = false)
     {
         // Unmount the disk first to ensure it's in a clean state

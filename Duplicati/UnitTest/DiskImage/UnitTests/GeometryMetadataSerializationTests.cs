@@ -24,7 +24,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
                 DevicePath = "/dev/sda",
                 Size = 100 * MiB,
                 SectorSize = 512,
-                Sectors = (int)(100 * MiB / 512),
+                Sectors = (100 * MiB / 512),
                 TableType = PartitionTableType.GPT
             },
             PartitionTable = new PartitionTableGeometry
@@ -165,7 +165,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
                 DevicePath = null, // Null optional field
                 Size = 50 * MiB,
                 SectorSize = 512,
-                Sectors = (int)(50 * MiB / 512),
+                Sectors = (50 * MiB / 512),
                 TableType = PartitionTableType.MBR
             },
             PartitionTable = new PartitionTableGeometry
@@ -277,7 +277,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
                 DevicePath = "/dev/nvme0n1",
                 Size = 500 * MiB,
                 SectorSize = 4096, // 4K sectors
-                Sectors = (int)(500 * MiB / 4096),
+                Sectors = (500 * MiB / 4096),
                 TableType = PartitionTableType.GPT
             },
             PartitionTable = new PartitionTableGeometry
@@ -400,7 +400,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
                 DevicePath = "/dev/sdb",
                 Size = 200 * MiB,
                 SectorSize = 512,
-                Sectors = (int)(200 * MiB / 512),
+                Sectors = (200 * MiB / 512),
                 TableType = PartitionTableType.MBR
             },
             PartitionTable = new PartitionTableGeometry

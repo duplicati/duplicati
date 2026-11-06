@@ -111,6 +111,17 @@ public interface IDiskImageHelper : IDisposable
     string ReAttach(string imagePath, string diskIdentifier, PartitionTableType tableType, bool readOnly = false);
 
     /// <summary>
+    /// Attaches a disk image file produced by restoring to an image file: a raw
+    /// (dd-style) image on Linux and macOS, or a VHD or VHDX file on Windows.
+    /// </summary>
+    /// <param name="imagePath">The path to the image file.</param>
+    /// <param name="tableType">The type of partition table on the disk.</param>
+    /// <param name="readOnly">Indicates whether the disk should be attached as read-only.</param>
+    /// <returns>The identifier of the attached disk.</returns>
+    /// <exception cref="PlatformNotSupportedException">Thrown if the platform cannot attach image files of this format.</exception>
+    string AttachImage(string imagePath, PartitionTableType tableType, bool readOnly);
+
+    /// <summary>
     /// Checks if a specific file system type is supported on the current platform. This can be used to conditionally run tests that require certain file systems, or to skip tests if the required file system is not available.
     /// It also returns a message indicating the reason if the file system type is not supported.
     /// </summary>

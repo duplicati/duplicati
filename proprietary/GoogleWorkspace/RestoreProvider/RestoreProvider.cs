@@ -293,7 +293,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         => throw new NotImplementedException("File deletion is not supported in Google Workspace RestoreProvider");
 
     /// <inheritdoc />
-    public async Task Finalize(Action<double>? progressCallback, CancellationToken cancel)
+    public async Task Finalize(Action<double>? progressCallback, bool isComplete, CancellationToken cancel)
     {
         var totalFiles = _metadata.Count;
         var completedPhases = 0;

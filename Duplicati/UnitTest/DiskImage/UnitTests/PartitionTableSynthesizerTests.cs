@@ -21,7 +21,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
             {
                 SectorSize = 512,
                 Size = 100 * MiB,
-                Sectors = (int)(100 * MiB / 512)
+                Sectors = (100 * MiB / 512)
             },
             PartitionTable = new PartitionTableGeometry
             {
@@ -72,7 +72,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
             {
                 SectorSize = 512,
                 Size = 100 * MiB,
-                Sectors = (int)(100 * MiB / 512)
+                Sectors = (100 * MiB / 512)
             },
             PartitionTable = new PartitionTableGeometry
             {
@@ -132,7 +132,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
             {
                 SectorSize = sectorSize,
                 Size = 100 * MiB,
-                Sectors = (int)(100 * MiB / sectorSize)
+                Sectors = (100 * MiB / sectorSize)
             },
             PartitionTable = new PartitionTableGeometry
             {
@@ -203,7 +203,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
             {
                 SectorSize = sectorSize,
                 Size = 100 * MiB,
-                Sectors = (int)(100 * MiB / sectorSize)
+                Sectors = (100 * MiB / sectorSize)
             },
             PartitionTable = new PartitionTableGeometry
             {
@@ -298,7 +298,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
     {
         var metadata = new GeometryMetadata
         {
-            Disk = new DiskGeometry { SectorSize = 512, Size = 50 * MiB, Sectors = (int)(50 * MiB / 512) },
+            Disk = new DiskGeometry { SectorSize = 512, Size = 50 * MiB, Sectors = (50 * MiB / 512) },
             PartitionTable = new PartitionTableGeometry { Type = PartitionTableType.GPT },
             Partitions =
             [

@@ -14,6 +14,11 @@ internal static class OptionsHelper
     internal const string ModuleKey = "diskimage";
 
     /// <summary>
+    /// The module key identifier for restoring disk images to image files.
+    /// </summary>
+    internal const string ImageFileModuleKey = "diskimage-file";
+
+    /// <summary>
     /// Option to automatically unmount the target disk before restore operations.
     /// </summary>
     internal const string DISK_RESTORE_AUTO_UNMOUNT_OPTION = "diskimage-restore-auto-unmount";
@@ -27,6 +32,26 @@ internal static class OptionsHelper
     /// Option to skip validation of the target disk size before restoring.
     /// </summary>
     internal const string DISK_RESTORE_SKIP_SIZE_VALIDATION_OPTION = "diskimage-restore-skip-size-validation";
+
+    /// <summary>
+    /// Option to reserve the full size of a restored image file up front instead of creating it sparse.
+    /// </summary>
+    internal const string DISK_RESTORE_IMAGE_PREALLOCATE_OPTION = "diskimage-restore-image-preallocate";
+
+    /// <summary>
+    /// Option to choose the file format of a restored image file.
+    /// </summary>
+    internal const string DISK_RESTORE_IMAGE_FORMAT_OPTION = "diskimage-restore-image-format";
+
+    /// <summary>
+    /// The image format value that chooses the format from the file extension or content.
+    /// </summary>
+    internal const string ImageFormatAuto = "auto";
+
+    /// <summary>
+    /// The values accepted by the image format option.
+    /// </summary>
+    internal static readonly string[] ImageFormatValues = [ImageFormatAuto, "raw", "vhd", "vhdx"];
 
     /// <summary>
     /// Option to treat filesystem as unknown (force raw block-based backup).
@@ -48,5 +73,16 @@ internal static class OptionsHelper
         new CommandLineArgument(DISK_RESTORE_SKIP_SIZE_VALIDATION_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskRestoreSkipSizeValidationShort, Strings.DiskRestoreSkipSizeValidationLong, "false"),
         //new CommandLineArgument(DISK_IMAGE_FILESYSTEM_UNKNOWN_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskImageFilesystemUnknownShort, Strings.DiskImageFilesystemUnknownLong, "false"),
         new CommandLineArgument(DISK_IMAGE_FILESYSTEM_PARSED_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskImageFilesystemParsedShort, Strings.DiskImageFilesystemParsedLong, "false"),
+    ];
+
+    /// <summary>
+    /// Gets the list of supported command-line arguments for restoring to an image file.
+    /// </summary>
+    internal static IList<ICommandLineArgument> ImageFileSupportedCommands =>
+    [
+        new CommandLineArgument(DISK_RESTORE_SKIP_PARTITION_TABLE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskRestoreSkipPartitionTableShort, Strings.DiskRestoreSkipPartitionTableLong, "false"),
+        new CommandLineArgument(DISK_RESTORE_SKIP_SIZE_VALIDATION_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskRestoreSkipSizeValidationShort, Strings.DiskRestoreSkipSizeValidationLong, "false"),
+        new CommandLineArgument(DISK_RESTORE_IMAGE_PREALLOCATE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.DiskRestoreImagePreallocateShort, Strings.DiskRestoreImagePreallocateLong, "false"),
+        new CommandLineArgument(DISK_RESTORE_IMAGE_FORMAT_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.DiskRestoreImageFormatShort, Strings.DiskRestoreImageFormatLong, ImageFormatAuto, null, ImageFormatValues),
     ];
 }

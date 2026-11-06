@@ -62,6 +62,37 @@ internal static class Strings
     public static string DiskRestoreSkipSizeValidationLong => LC.L("If set, the target disk size will not be validated against the source size before restoring.");
 
     /// <summary>
+    /// Short description for the image preallocate option.
+    /// </summary>
+    public static string DiskRestoreImagePreallocateShort => LC.L("Reserve the full size of the image file.");
+
+    /// <summary>
+    /// Long description for the image preallocate option.
+    /// </summary>
+    public static string DiskRestoreImagePreallocateLong => LC.L("By default, a restored image file is created as a sparse file, so regions that contain only zeros do not use disk space. If set, the full size of a raw image is reserved up front instead, where the platform supports it. VHD and VHDX images only store the used parts of the disk.");
+
+    /// <summary>
+    /// Short description for the image format option.
+    /// </summary>
+    public static string DiskRestoreImageFormatShort => LC.L("File format of the image file.");
+
+    /// <summary>
+    /// Long description for the image format option.
+    /// </summary>
+    public static string DiskRestoreImageFormatLong => LC.L("The file format to write the image in: a raw disk image, or a dynamic VHD or VHDX file. With auto, a new image is written as VHD or VHDX when the file name ends in .vhd or .vhdx, and as a raw image otherwise; an existing image keeps its format.");
+
+    /// <summary>
+    /// Display name for the image file restore provider.
+    /// </summary>
+    public static string ImageFileRestoreProviderDisplayName => LC.L("Disk Image File Restore Provider");
+
+    /// <summary>
+    /// Description for the image file restore provider.
+    /// </summary>
+    public static string ImageFileRestoreProviderDescription => LC.L(
+        "Restore disk images to raw, VHD, or VHDX image files.");
+
+    /// <summary>
     /// Error message for when platform is not supported.
     /// </summary>
     public static string PlatformNotSupported => LC.L("Disk image operations are only supported on Windows, macOS, and Linux.");

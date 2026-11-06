@@ -11,6 +11,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Proprietary.DiskImage.Disk;
 using Duplicati.Proprietary.DiskImage.General;
+using static Duplicati.Proprietary.DiskImage.General.Alignment;
 
 namespace Duplicati.Proprietary.DiskImage.Partition;
 
@@ -100,6 +101,19 @@ internal static class PartitionCreator
     }
 
     /// <summary>
+    /// Gets the space a new GPT partition table reserves on a blank disk: the
+    /// protective MBR, primary header and entries at the start, and the secondary
+    /// entries and header at the end.
+    /// </summary>
+    /// <param name="sectorSize">The sector size of the disk.</param>
+    /// <returns>The bytes reserved at the start and at the end of the disk.</returns>
+    public static (long AtStart, long AtEnd) GetNewGptReservedSpace(int sectorSize)
+    {
+        var entriesSectors = (PartitionConstants.GptNumPartitionEntries * PartitionConstants.GptPartitionEntrySize + sectorSize - 1) / sectorSize;
+        return ((2 + entriesSectors) * (long)sectorSize, (entriesSectors + 1) * (long)sectorSize);
+    }
+
+    /// <summary>
     /// Allocates space for a new partition on the target disk by examining the
     /// disk's partition table and finding free space. Disks without a recognizable
     /// partition table are treated as blank and will get a new GPT table.
@@ -157,9 +171,9 @@ internal static class PartitionCreator
             // No recognizable partition table: treat the disk as blank and
             // reserve space for a new GPT table (primary and secondary)
             tableType = PartitionTableType.GPT;
-            var entriesSectors = (PartitionConstants.GptNumPartitionEntries * PartitionConstants.GptPartitionEntrySize + sectorSize - 1) / sectorSize;
-            usableStart = (2 + entriesSectors) * (long)sectorSize;
-            usableEnd = disk.Size - (entriesSectors + 1) * (long)sectorSize;
+            var (reservedStart, reservedEnd) = GetNewGptReservedSpace(sectorSize);
+            usableStart = reservedStart;
+            usableEnd = disk.Size - reservedEnd;
             maxSlots = PartitionConstants.GptNumPartitionEntries;
         }
 
@@ -504,10 +518,4 @@ internal static class PartitionCreator
         Log.WriteInformationMessage(LOGTAG, "PartitionTableCreated",
             $"Wrote a new GPT partition table with {partitions.Count} partition(s) to blank disk {disk.DevicePath}");
     }
-
-    /// <summary>
-    /// Rounds the given value up to the next multiple of the alignment.
-    /// </summary>
-    private static long AlignUp(long value, long alignment)
-        => alignment <= 1 ? value : ((value + alignment - 1) / alignment) * alignment;
 }

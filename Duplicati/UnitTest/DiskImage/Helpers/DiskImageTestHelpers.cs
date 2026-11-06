@@ -40,6 +40,14 @@ internal static class DiskImageTestHelpers
     private const long MiB = 1024 * 1024;
 
     /// <summary>
+    /// Checks whether an image file is a VHD or VHDX file, judged by its extension.
+    /// </summary>
+    /// <param name="imagePath">The path of the image file.</param>
+    /// <returns><c>true</c> for .vhd and .vhdx files.</returns>
+    internal static bool IsVirtualDiskFile(string imagePath)
+        => Path.GetExtension(imagePath).ToLowerInvariant() is ".vhd" or ".vhdx";
+
+    /// <summary>
     /// Creates a raw disk interface for the specified disk identifier based on the current platform.
     /// </summary>
     /// <param name="diskIdentifier">The disk identifier (e.g., \\.\PhysicalDriveN on Windows, /dev/loopN on Linux).</param>

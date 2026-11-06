@@ -455,6 +455,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                             if (missing_blocks.Any(x => x.VolumeID < 0))
                             {
                                 Logging.Log.WriteWarningMessage(LOGTAG, "NegativeVolumeID", null, $"{file.TargetPath} has a negative volume ID, skipping");
+                                // The file is not restored, so it counts as broken like the other skipped files
+                                lock (results)
+                                    results.BrokenLocalFiles.Add(file.TargetPath);
                                 FaultPriorityBarrierIfPriorityFile(file, new InvalidOperationException($"{file.TargetPath} has a negative volume ID"));
                                 await ReleaseUnusedBlocksAsync(db, file, missing_blocks, 0, 0, block_request, block_response, options, results.TaskControl.ProgressToken).ConfigureAwait(false);
                                 continue;
@@ -988,7 +991,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     priority_files_completed.TrySetResult();
                 }
             }
-        }        
+        }
 
         /// <summary>
         /// Waits for all priority files to be processed before allowing non-priority files to be processed.
@@ -1029,7 +1032,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     return false;
                 }
             }
-        
+
             return true;
         }
 

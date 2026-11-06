@@ -37,7 +37,8 @@ public static class RestoreDestinationProviderModules
         new IRestoreDestinationProviderModule?[] {
             LicenseHelper.IsOffice365Enabled ? new Office365.RestoreProvider() : null,
             LicenseHelper.IsGoogleWorkspaceEnabled ? new GoogleWorkspace.RestoreProvider() : null,
-            new DiskImage.RestoreProvider()
+            new DiskImage.RestoreProvider(),
+            new DiskImage.ImageFileRestoreProvider()
         }
         .WhereNotNull()
         .ToList()

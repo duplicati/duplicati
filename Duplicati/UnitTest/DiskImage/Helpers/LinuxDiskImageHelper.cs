@@ -493,6 +493,27 @@ internal class LinuxDiskImageHelper : IDiskImageHelper
     }
 
     /// <inheritdoc />
+    public string AttachImage(string imagePath, PartitionTableType tableType, bool readOnly)
+    {
+        if (DiskImageTestHelpers.IsVirtualDiskFile(imagePath))
+            throw new PlatformNotSupportedException("Linux can only attach raw disk images.");
+
+        var readOnlyArg = readOnly ? "--read-only" : "";
+        var loopDevice = RunProcess("losetup", $"--find --show --partscan {readOnlyArg} \"{imagePath}\"").Trim();
+
+        if (string.IsNullOrEmpty(loopDevice) || !loopDevice.StartsWith("/dev/loop"))
+            throw new InvalidOperationException($"Failed to attach loop device for {imagePath}");
+
+        _trackedLoopDevices.Add(loopDevice);
+        _imageToLoopDevice[imagePath] = loopDevice;
+
+        // Allow time for partition discovery
+        System.Threading.Thread.Sleep(200);
+
+        return loopDevice;
+    }
+
+    /// <inheritdoc />
     public string ReAttach(string imagePath, string diskIdentifier, PartitionTableType tableType, bool readOnly = false)
     {
         // Unmount and detach
