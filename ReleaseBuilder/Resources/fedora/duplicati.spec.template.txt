@@ -105,6 +105,15 @@ install -p -D -m 644 %{_topdir}/SOURCES/%{namer}%SERVICENAME%.default %{buildroo
 #GUI_ONLY#%{_bindir}/gtk-update-icon-cache \
 #GUI_ONLY#  --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
 %systemd_post %{installname}.service
+# The executables are below /usr/lib, which SELinux labels as libraries, so the service would run
+# in the init_t domain and be denied network access. Label them as binaries; without semanage the
+# label is set directly, and a full relabel of the system resets it.
+if command -v semanage >/dev/null 2>&1; then
+  semanage fcontext -a -t bin_t '%{_exec_prefix}/lib/%{installname}/duplicati(-[^/]*)?' 2>/dev/null || :
+  restorecon -R %{_exec_prefix}/lib/%{installname} || :
+elif command -v selinuxenabled >/dev/null 2>&1 && selinuxenabled; then
+  chcon -t bin_t %{_exec_prefix}/lib/%{installname}/duplicati %{_exec_prefix}/lib/%{installname}/duplicati-* 2>/dev/null || :
+fi
 
 %preun
 %systemd_preun %{installname}.service
@@ -114,6 +123,9 @@ install -p -D -m 644 %{_topdir}/SOURCES/%{namer}%SERVICENAME%.default %{buildroo
 #GUI_ONLY#%{_bindir}/gtk-update-icon-cache \
 #GUI_ONLY#  --quiet %{_datadir}/icons/hicolor 2> /dev/null|| :
 %systemd_postun_with_restart %{installname}.service
+if [ $1 -eq 0 ] && command -v semanage >/dev/null 2>&1; then
+  semanage fcontext -d '%{_exec_prefix}/lib/%{installname}/duplicati(-[^/]*)?' 2>/dev/null || :
+fi
 
 %posttrans
 #GUI_ONLY#/usr/bin/gtk-update-icon-cache %{_datadir}/icons/hicolor &>/dev/null || :
