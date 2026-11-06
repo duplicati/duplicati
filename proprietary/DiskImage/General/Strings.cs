@@ -100,12 +100,12 @@ internal static class Strings
     /// <summary>
     /// Error message for when restore target device is not found.
     /// </summary>
-    public static string RestoreTargetNotFound => LC.L("Restore target device not found: {0}");
+    public static string RestoreTargetNotFound(string target) => LC.L("Restore target device not found: {0}", target);
 
     /// <summary>
     /// Error message for when restore target is too small.
     /// </summary>
-    public static string RestoreTargetTooSmall => LC.L("Restore target device is too small. Target: {0} bytes, Source: {1} bytes.");
+    public static string RestoreTargetTooSmall(long targetSize, long sourceSize) => LC.L("Restore target device is too small. Target: {0} bytes, Source: {1} bytes.", targetSize, sourceSize);
 
     /// <summary>
     /// Error message for when overwrite option is not set.
@@ -115,12 +115,12 @@ internal static class Strings
     /// <summary>
     /// Error message for when device cannot be opened for writing.
     /// </summary>
-    public static string RestoreDeviceNotWriteable => LC.L("Failed to open device for write access: {0}, {1}");
+    public static string RestoreDeviceNotWriteable(string devicePath, string reason) => LC.L("Failed to open device for write access: {0}, {1}", devicePath, reason);
 
     /// <summary>
     /// Error message for when restore path is invalid.
     /// </summary>
-    public static string RestoreInvalidPath => LC.L("Invalid restore path: {0}");
+    public static string RestoreInvalidPath(string path) => LC.L("Invalid restore path: {0}", path);
 
     /// <summary>
     /// Display name for the web module.

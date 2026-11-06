@@ -345,7 +345,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         var enableWrite = !(_dryRun && _imageFile != null && !string.IsNullOrEmpty(_subpath));
         var msg = await _targetDisk.InitializeAsync(enableWrite, cancel);
         if (!string.IsNullOrWhiteSpace(msg))
-            throw new UserInformationException(string.Format(Strings.RestoreDeviceNotWriteable, _devicePath, msg), "DiskInitializeFailed");
+            throw new UserInformationException(Strings.RestoreDeviceNotWriteable(_devicePath, msg), "DiskInitializeFailed");
 
         // When the target URL points to a partition within the disk, resolve the
         // target partition from the disk's partition table. This allows restoring
@@ -583,7 +583,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     {
         var segment = _subpath.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
         if (string.IsNullOrEmpty(segment))
-            throw new UserInformationException(string.Format(Strings.RestoreInvalidPath, _restorePath), "DiskRestoreInvalidPath");
+            throw new UserInformationException(Strings.RestoreInvalidPath(_restorePath), "DiskRestoreInvalidPath");
 
         if (!PartitionSegment.TryParse(segment, out var ptType, out var partitionNumber))
             throw new UserInformationException($"The restore target '{_restorePath}' does not point to a partition. Expected format: {PartitionSegment.FormatDescription}", "DiskRestoreInvalidPartitionPath");
@@ -596,7 +596,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             throw new UserInformationException($"The target disk '{_devicePath}' uses a {table.TableType} partition table, which does not match the requested {ptType} partition '{segment}'.", "DiskRestorePartitionTableMismatch");
 
         var partition = await table.GetPartitionAsync(partitionNumber, cancel).ConfigureAwait(false)
-            ?? throw new UserInformationException(string.Format(Strings.RestoreTargetNotFound, $"{_devicePath}/{segment}"), "DiskRestorePartitionNotFound");
+            ?? throw new UserInformationException(Strings.RestoreTargetNotFound($"{_devicePath}/{segment}"), "DiskRestorePartitionNotFound");
 
         _partitions.Add(partition);
 
@@ -905,7 +905,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
             if (_validateSize && info.Partition != null && info.Partition.Size > partition.Size)
                 throw new UserInformationException(
-                    string.Format(Strings.RestoreTargetTooSmall, partition.Size, info.Partition.Size),
+                    Strings.RestoreTargetTooSmall(partition.Size, info.Partition.Size),
                     "RestoreTargetTooSmall");
 
             var blockSize = info.Filesystem is { BlockSize: > 0 } fsGeom
@@ -1471,7 +1471,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
                 // remembers it, and does not present the image as complete
                 _metadataWriteFailed = true;
                 throw new UserInformationException(
-                    string.Format(Strings.RestoreTargetTooSmall, target.Size, sourceSize),
+                    Strings.RestoreTargetTooSmall(target.Size, sourceSize),
                     "RestoreTargetTooSmall");
             }
         }
