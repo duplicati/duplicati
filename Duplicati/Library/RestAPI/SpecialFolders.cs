@@ -81,6 +81,22 @@ namespace Duplicati.Server
             return null;
         }
 
+        /// <summary>
+        /// The node kind prefix for the user's special folders
+        /// </summary>
+        private const string SpecialKindPrefix = "special:";
+
+        /// <summary>
+        /// The node kind for a QNAP shared folder
+        /// </summary>
+        private const string QnapShareKind = "qnap:share";
+
+        /// <summary>
+        /// Gets the node kind for a special folder token, e.g. <c>special:my_documents</c> for <c>%MY_DOCUMENTS%</c>
+        /// </summary>
+        private static string KindForToken(string id)
+            => SpecialKindPrefix + id.Trim('%').ToLowerInvariant();
+
         private static void TryAdd(List<Serializable.TreeNode> lst, System.Environment.SpecialFolder folder, string id, string display)
         {
             try
@@ -93,6 +109,9 @@ namespace Duplicati.Server
         }
 
         private static void TryAdd(List<Serializable.TreeNode> lst, string folder, string id, string display)
+            => TryAdd(lst, folder, id, display, KindForToken(id));
+
+        private static void TryAdd(List<Serializable.TreeNode> lst, string folder, string id, string display, string kind)
         {
             try
             {
@@ -106,6 +125,7 @@ namespace Duplicati.Server
                             text = display,
                             leaf = false,
                             iconCls = "x-tree-icon-special",
+                            kind = kind,
                             resolvedpath = folder
                         });
 
@@ -161,7 +181,7 @@ namespace Duplicati.Server
                 // rather than the symlink in the share root, which a backup
                 // would store as a bare link
                 foreach (var share in QnapSharedFolders.Enumerate(QnapSharedFolders.DefaultShareRoot))
-                    TryAdd(lst, share.Path, QnapSharedFolders.TokenFor(share.Name), share.Name);
+                    TryAdd(lst, share.Path, QnapSharedFolders.TokenFor(share.Name), share.Name, QnapShareKind);
             }
             else
             {

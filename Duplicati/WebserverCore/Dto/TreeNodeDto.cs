@@ -73,6 +73,13 @@ public class TreeNodeDto
     /// Size of the file. -1 if directory or inaccessible
     /// </summary>
     public required long fileSize { get; init; }
+    /// <summary>
+    /// The semantic type of the node, used by the UI to pick an icon or marker,
+    /// e.g. <c>drive</c>, <c>locked</c>, <c>special:home</c>, <c>qnap:share</c>,
+    /// <c>hyperv:virtualmachine</c> or <c>mssql:database</c>.
+    /// Null for a plain file or folder.
+    /// </summary>
+    public string? kind { get; init; }
 
     /// <summary>
     /// Constructs a new TreeNode
