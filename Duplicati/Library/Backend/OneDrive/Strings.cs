@@ -46,9 +46,10 @@ namespace Duplicati.Library.Backend.Strings
     {
         public static string Description(string mssadescription, string mssalink, string msopdescription, string msoplink) { return LC.L(@"Store files in a Microsoft SharePoint site via the Microsoft Graph API. Usage of this backend requires that you agree to the terms in {0} ({1}) and {2} ({3}).", mssadescription, mssalink, msopdescription, msoplink); }
         public static string DisplayName { get { return LC.L(@"Microsoft SharePoint"); } }
-        public static string SiteIdLong { get { return LC.L(@"ID of the site to store data in."); } }
+        public static string SiteIdLong { get { return LC.L(@"ID of the site to store data in. Only needed when the site cannot be found from the URL."); } }
         public static string SiteIdShort { get { return LC.L(@"ID of the site"); } }
-        public static string MissingSiteId { get { return LC.L(@"No site ID was provided"); } }
+        public static string MissingSiteId { get { return LC.L(@"The site could not be found from the URL and no --site-id was provided"); } }
+        public static string ConflictingSiteId(string given, string found) { return LC.L(@"Conflicting site IDs used: given {0} but found {1}", given, found); }
         public static string MissingDriveInfo { get { return LC.L(@"No drive information was returned"); } }
     }
 

@@ -29,34 +29,49 @@ namespace Duplicati.Library.Backend
         private const string SITE_ID_OPTION = "site-id";
         private const string PROTOCOL_KEY = "sharepoint";
 
-        private readonly Task<string> drivePath;
-        private string siteId;
+        private readonly Lazy<string> drivePath;
+        private readonly string? siteIdOption;
+        private string? siteIdFromUrl;
 
         public SharePointV2()
         {
             // Constructor needed for dynamic loading to find it
             drivePath = null!;
-            siteId = null!;
         }
 
         public SharePointV2(string url, Dictionary<string, string?> options)
-            : base(url, PROTOCOL_KEY, options)
+            : this(url, options, null)
+        {
+        }
+
+        internal SharePointV2(string url, Dictionary<string, string?> options, OAuthHttpMessageHandler? handler)
+            : base(url, PROTOCOL_KEY, options, handler)
         {
             // Check to see if a site ID was explicitly provided
             var siteIdOption = options.GetValueOrDefault(SITE_ID_OPTION);
             if (!string.IsNullOrWhiteSpace(siteIdOption))
-                siteId = siteIdOption;
-            else
-                throw new UserInformationException(Strings.SharePointV2.MissingSiteId, "SharePointMissingSiteId");
+                this.siteIdOption = siteIdOption;
 
-            drivePath = Task.FromResult(string.Format("/sites/{0}/drive", siteId));
+            // The site is also looked up from the url along with the root path, and the two must agree
+            drivePath = new Lazy<string>(() =>
+            {
+                _ = RootPath;
+                if (!string.IsNullOrWhiteSpace(this.siteIdOption) && !string.IsNullOrWhiteSpace(siteIdFromUrl) && !string.Equals(this.siteIdOption, siteIdFromUrl, StringComparison.Ordinal))
+                    throw new UserInformationException(Strings.SharePointV2.ConflictingSiteId(this.siteIdOption, siteIdFromUrl), "SharePointConflictingSiteId");
+
+                var siteId = string.IsNullOrWhiteSpace(this.siteIdOption) ? siteIdFromUrl : this.siteIdOption;
+                if (string.IsNullOrWhiteSpace(siteId))
+                    throw new UserInformationException(Strings.SharePointV2.MissingSiteId, "SharePointMissingSiteId");
+
+                return string.Format("/sites/{0}/drive", siteId);
+            });
         }
 
         public override string ProtocolKey => PROTOCOL_KEY;
 
         public override string DisplayName => Strings.SharePointV2.DisplayName;
 
-        protected override Task<string> GetDrivePath(CancellationToken cancelToken) => drivePath;
+        protected override Task<string> GetDrivePath(CancellationToken cancelToken) => Task.FromResult(drivePath.Value);
 
         protected override DescriptionTemplateDelegate DescriptionTemplate => Strings.SharePointV2.Description;
 
@@ -96,7 +111,7 @@ namespace Duplicati.Library.Backend
 
                     if (drive != null && !string.IsNullOrEmpty(drive.WebUrl) && !string.IsNullOrWhiteSpace(site.Id))
                     {
-                        siteId = site.Id;
+                        siteIdFromUrl = site.Id;
                         var driveWebUrl = new Uri(drive.WebUrl);
 
                         // Make sure to replace any "//" in the original path with "/", so the substrings line up.

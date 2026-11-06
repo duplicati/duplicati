@@ -1802,11 +1802,14 @@ namespace Duplicati.Library.Main.Database.Local
 
             cmd.SetCommandAndParameters(fetchSql)
                .SetParameterValues(filterProps)
-               .SetParameterValue("@DefaultBehavior", defaultBehavior)
                .SetParameterValue("@FolderBlocksetId", FOLDER_BLOCKSET_ID)
                .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID)
                .SetParameterValue("@limit", limit)
                .SetParameterValue("@offset", offset);
+
+            // The parameter is only in the query when there are filter parts
+            if (caseWhenParts.Count > 0)
+                cmd.SetParameterValue("@DefaultBehavior", defaultBehavior);
 
             if (filesetIdTable != null)
                 await cmd.ExpandInClauseParameterMssqliteAsync("@FilesetIds", filesetIdTable, token)
@@ -1856,8 +1859,10 @@ namespace Duplicati.Library.Main.Database.Local
                 ";
 
                 cmd.SetCommandAndParameters(countSql)
-                   .SetParameterValues(filterProps)
-                   .SetParameterValue("@DefaultBehavior", defaultBehavior);
+                   .SetParameterValues(filterProps);
+
+                if (caseWhenParts.Count > 0)
+                    cmd.SetParameterValue("@DefaultBehavior", defaultBehavior);
 
                 if (filesetIdTable != null)
                     await cmd.ExpandInClauseParameterMssqliteAsync("@FilesetIds", filesetIdTable, token)

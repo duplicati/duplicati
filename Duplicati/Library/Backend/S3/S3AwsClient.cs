@@ -27,6 +27,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using System.Runtime.CompilerServices;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Backend
 {
@@ -248,7 +249,7 @@ namespace Duplicati.Library.Backend
 
                 using (var objectGetResponse = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_client.GetObjectAsync(objectGetRequest, ct)).ConfigureAwait(false))
                 using (var s = objectGetResponse.ResponseStream)
-                using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
+                using (var t = s.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call))
                     await Utility.Utility.CopyStreamAsync(t, target, cancelToken).ConfigureAwait(false);
             }
             catch (AmazonS3Exception s3Ex)
@@ -290,7 +291,7 @@ namespace Duplicati.Library.Backend
         /// <returns>>A task representing the asynchronous operation</returns>
         public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source, string md5, string sha256, long contentLength, CancellationToken cancelToken)
         {
-            using var ts = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false);
+            using var ts = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
             var objectAddRequest = new PutObjectRequest
             {
                 BucketName = bucketName,

@@ -23,7 +23,7 @@ internal class CalendarEventContentSourceEntry(string parentPath, Event evt)
         {
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.CalendarEventContent.ToString() },
-            { "gsuite:Name", "event.ics" },
+            { "gsuite:Name", "content.json" },
             { "gsuite:Id", evt.Id },
             { "gsuite:HtmlLink", evt.HtmlLink }
         }

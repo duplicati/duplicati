@@ -2032,13 +2032,15 @@ namespace Duplicati.Library.Utility
             cts.CancelAfter(timeout);
             try
             {
-                await Task.Run(() => func(cts.Token), cts.Token).ConfigureAwait(false);
+                // A blocking call that ignores the token cannot be interrupted,
+                // so the wait for it is given up instead and it is left to finish on its own
+                await Task.Run(() => func(cts.Token), cts.Token).WaitAsync(timeout, token).ConfigureAwait(false);
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException) when (cts.IsCancellationRequested && !token.IsCancellationRequested)
             {
-                if (cts.IsCancellationRequested)
-                    throw new TimeoutException();
-                throw;
+                // Only our own timeout is a timeout; a cancellation by the caller stays a cancellation,
+                // and a call may report either as an OperationCanceledException of any kind
+                throw new TimeoutException();
             }
         }
 
@@ -2055,13 +2057,15 @@ namespace Duplicati.Library.Utility
             cts.CancelAfter(timeout);
             try
             {
-                return await Task.Run(() => func(cts.Token), cts.Token).ConfigureAwait(false);
+                // A blocking call that ignores the token cannot be interrupted,
+                // so the wait for it is given up instead and it is left to finish on its own
+                return await Task.Run(() => func(cts.Token), cts.Token).WaitAsync(timeout, token).ConfigureAwait(false);
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException) when (cts.IsCancellationRequested && !token.IsCancellationRequested)
             {
-                if (cts.IsCancellationRequested)
-                    throw new TimeoutException();
-                throw;
+                // Only our own timeout is a timeout; a cancellation by the caller stays a cancellation,
+                // and a call may report either as an OperationCanceledException of any kind
+                throw new TimeoutException();
             }
         }
 
@@ -2080,11 +2084,11 @@ namespace Duplicati.Library.Utility
             {
                 await func(cts.Token);
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException) when (cts.IsCancellationRequested && !token.IsCancellationRequested)
             {
-                if (cts.IsCancellationRequested)
-                    throw new TimeoutException();
-                throw;
+                // Only our own timeout is a timeout; a cancellation by the caller stays a cancellation,
+                // and a call may report either as an OperationCanceledException of any kind
+                throw new TimeoutException();
             }
         }
 
@@ -2104,11 +2108,11 @@ namespace Duplicati.Library.Utility
             {
                 return await func(cts.Token);
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException) when (cts.IsCancellationRequested && !token.IsCancellationRequested)
             {
-                if (cts.IsCancellationRequested)
-                    throw new TimeoutException();
-                throw;
+                // Only our own timeout is a timeout; a cancellation by the caller stays a cancellation,
+                // and a call may report either as an OperationCanceledException of any kind
+                throw new TimeoutException();
             }
         }
 
@@ -2125,73 +2129,129 @@ namespace Duplicati.Library.Utility
             TimeSpan timeoutPerItem,
             [EnumeratorCancellation] CancellationToken outerToken)
         {
-            using var timeoutPolicy = new CancellationTokenSource();
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(timeoutPolicy.Token, outerToken);
+            // Cancelled on a timeout, so the source stops working on the item nobody waits for
+            using var stop = CancellationTokenSource.CreateLinkedTokenSource(outerToken);
 
-            await using var enumerator = await WithTimeout(timeoutPerItem, outerToken, _ => source.GetAsyncEnumerator(linked.Token)).ConfigureAwait(false);
-            while (true)
+            var enumerator = source.GetAsyncEnumerator(stop.Token);
+            Task<bool>? pending = null;
+            try
             {
-                timeoutPolicy.CancelAfter(timeoutPerItem);
-                Task<bool> moveNextTask;
-                try
+                while (true)
                 {
-                    moveNextTask = enumerator.MoveNextAsync().AsTask();
-                    var completed = await Task.WhenAny(moveNextTask, Task.Delay(Timeout.Infinite, timeoutPolicy.Token));
-                    if (completed != moveNextTask || timeoutPolicy.IsCancellationRequested)
-                        throw new TimeoutException($"Timeout while waiting for next item ({timeoutPerItem.TotalSeconds}s)");
+                    // Only the wait for the source is timed; the time the caller spends on an item does not count
+                    bool hasItem;
+                    using (var wait = CancellationTokenSource.CreateLinkedTokenSource(outerToken))
+                    {
+                        wait.CancelAfter(timeoutPerItem);
+                        pending = enumerator.MoveNextAsync().AsTask();
+                        try
+                        {
+                            hasItem = await pending.WaitAsync(wait.Token).ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException) when (wait.IsCancellationRequested && !outerToken.IsCancellationRequested)
+                        {
+                            throw new TimeoutException($"Timeout while waiting for next item ({timeoutPerItem.TotalSeconds}s)");
+                        }
+                        pending = null;
+                    }
 
-                    if (!moveNextTask.Result)
+                    if (!hasItem)
                         break;
 
                     yield return enumerator.Current;
                 }
-                finally
+            }
+            finally
+            {
+                // The source cannot be disposed while it is still working on an item, so stop it
+                // and give it one more item's time to finish; a source that ignores the token is left as is
+                if (pending != null)
                 {
-                    timeoutPolicy.Token.ThrowIfCancellationRequested();
-                    timeoutPolicy.CancelAfter(Timeout.Infinite); // Reset for next item
+                    stop.Cancel();
+                    try { await pending.WaitAsync(timeoutPerItem).ConfigureAwait(false); }
+                    catch { }
                 }
+
+                if (pending == null || pending.IsCompleted)
+                    await enumerator.DisposeAsync().ConfigureAwait(false);
             }
         }
 
         /// <summary>
-        /// Wraps the stream in a timeout observing stream
+        /// Wraps the stream in a timeout observing stream that counts both the time inside each read and the time between reads
         /// </summary>
         /// <param name="stream">The stream to wrap</param>
         /// <param name="timeout">The timeout to observe</param>
         /// <param name="disposeBaseStream">A flag indicating if the base stream should be disposed</param>
         /// <returns>The wrapped stream</returns>
         public static Stream ObserveReadTimeout(this Stream stream, TimeSpan timeout, bool disposeBaseStream = true)
+            => ObserveReadTimeout(stream, timeout, disposeBaseStream, TimeoutMode.CallAndGap);
+
+        /// <summary>
+        /// Wraps the stream in a timeout observing stream.
+        /// Use <see cref="TimeoutMode.Call"/> when the wrapped stream is the remote side, such as a network response stream that this code reads,
+        /// and <see cref="TimeoutMode.Gap"/> when the stream is handed to a library that does the transfer,
+        /// so that time spent waiting on this side of the transfer does not count against the timeout.
+        /// </summary>
+        /// <param name="stream">The stream to wrap</param>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <param name="disposeBaseStream">A flag indicating if the base stream should be disposed</param>
+        /// <param name="mode">The time that counts against the timeout</param>
+        /// <returns>The wrapped stream</returns>
+        public static Stream ObserveReadTimeout(this Stream stream, TimeSpan timeout, bool disposeBaseStream, TimeoutMode mode)
         {
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
             return new TimeoutObservingStream(stream, disposeBaseStream)
             {
-                ReadTimeout = timeout.Ticks > 0 && timeout != Timeout.InfiniteTimeSpan
-                    ? (int)timeout.TotalMilliseconds
-                    : Timeout.Infinite
+                Mode = mode,
+                ReadTimeout = ToTimeoutMilliseconds(timeout)
             };
         }
 
         /// <summary>
-        /// Wraps the stream in a timeout observing stream
+        /// Wraps the stream in a timeout observing stream that counts both the time inside each write and the time between writes
         /// </summary>
         /// <param name="stream">The stream to wrap</param>
         /// <param name="timeout">The timeout to observe</param>
         /// <param name="disposeBaseStream">A flag indicating if the base stream should be disposed</param>
         /// <returns>The wrapped stream</returns>
         public static Stream ObserveWriteTimeout(this Stream stream, TimeSpan timeout, bool disposeBaseStream = true)
+            => ObserveWriteTimeout(stream, timeout, disposeBaseStream, TimeoutMode.CallAndGap);
+
+        /// <summary>
+        /// Wraps the stream in a timeout observing stream.
+        /// Use <see cref="TimeoutMode.Call"/> when the wrapped stream is the remote side, such as a network stream that this code writes to,
+        /// and <see cref="TimeoutMode.Gap"/> when the stream is handed to a library that does the transfer, or is a destination that may block
+        /// while the rest of the pipeline catches up, so that time spent waiting on this side of the transfer does not count against the timeout.
+        /// </summary>
+        /// <param name="stream">The stream to wrap</param>
+        /// <param name="timeout">The timeout to observe</param>
+        /// <param name="disposeBaseStream">A flag indicating if the base stream should be disposed</param>
+        /// <param name="mode">The time that counts against the timeout</param>
+        /// <returns>The wrapped stream</returns>
+        public static Stream ObserveWriteTimeout(this Stream stream, TimeSpan timeout, bool disposeBaseStream, TimeoutMode mode)
         {
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
             return new TimeoutObservingStream(stream, disposeBaseStream)
             {
-                WriteTimeout = timeout.Ticks > 0 && timeout != Timeout.InfiniteTimeSpan
-                    ? (int)timeout.TotalMilliseconds
-                    : Timeout.Infinite
+                Mode = mode,
+                WriteTimeout = ToTimeoutMilliseconds(timeout)
             };
         }
+
+        /// <summary>
+        /// Converts a timeout to the milliseconds used by a stream timeout, where zero or less and infinite both mean no timeout
+        /// </summary>
+        /// <param name="timeout">The timeout to convert</param>
+        /// <returns>The timeout in milliseconds, or <see cref="Timeout.Infinite"/></returns>
+        private static int ToTimeoutMilliseconds(TimeSpan timeout)
+            => timeout.Ticks > 0 && timeout != Timeout.InfiniteTimeSpan
+                ? (int)timeout.TotalMilliseconds
+                : Timeout.Infinite;
 
         /// <summary>
         /// The types of streams that are considered basic (i.e. not wrapped)

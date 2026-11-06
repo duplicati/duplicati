@@ -1186,7 +1186,9 @@ namespace Duplicati.Server
                             {
                                 if (data.ExtraOptions != null)
                                 {
-                                    if (Utility.ParseBoolOption(data.ExtraOptions.AsReadOnly(), "delete-remote-files"))
+                                    // A sync job leaves no backup volumes at the destination, only the
+                                    // copied files, which are kept, even if they look like volumes
+                                    if (backup.OperationType != OperationType.Sync && Utility.ParseBoolOption(data.ExtraOptions.AsReadOnly(), "delete-remote-files"))
                                         await controller.DeleteAllRemoteFilesAsync().ConfigureAwait(false);
 
                                     if (Utility.ParseBoolOption(data.ExtraOptions.AsReadOnly(), "delete-local-db"))

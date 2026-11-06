@@ -25,6 +25,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Backend.MovistarCloud;
 
@@ -464,7 +465,7 @@ internal sealed class MovistarCloudApiClient : IDisposable
         form.Add(new StringContent(JsonSerializer.Serialize(meta), Encoding.UTF8, "application/json"), "data");
 
         await using var fs = File.OpenRead(localFilePath);
-        await using var timeoutStream = fs.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+        await using var timeoutStream = fs.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
         var filePart = new StreamContent(timeoutStream);
         filePart.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
         form.Add(filePart, "file", remoteName);
@@ -546,8 +547,8 @@ internal sealed class MovistarCloudApiClient : IDisposable
         ).ConfigureAwait(false);
 
         await using var fs = File.Create(localFilePath);
-        await using var timeoutWriteStream = fs.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false);
-        await rs.CopyToAsync(timeoutWriteStream, ct).ConfigureAwait(false);
+        await using var timeoutReadStream = rs.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Call);
+        await timeoutReadStream.CopyToAsync(fs, ct).ConfigureAwait(false);
     }
 
     /// <summary>

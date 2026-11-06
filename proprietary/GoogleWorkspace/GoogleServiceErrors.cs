@@ -2,6 +2,8 @@
 
 using System.Net;
 using System.Text.Json;
+using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 using Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 using Google;
 using Google.Apis.Requests;
@@ -28,6 +30,23 @@ namespace Duplicati.Proprietary.GoogleWorkspace;
 /// </remarks>
 internal static class GoogleServiceErrors
 {
+    /// <summary>
+    /// The log tag for this class.
+    /// </summary>
+    private static readonly string LOGTAG = Log.LogTagFromType(typeof(GoogleServiceErrors));
+
+    /// <summary>
+    /// The reasons Drive attaches to a 403 that means the content exists but is not handed
+    /// out to the authenticated user: a revision of a file the user can only read, a file
+    /// whose owner turned off download for viewers, or a file Drive flagged as abusive.
+    /// </summary>
+    private static readonly HashSet<string> CONTENT_NOT_DOWNLOADABLE_REASONS = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "cannotDownloadRevision",
+        "cannotDownloadFile",
+        "cannotDownloadAbusiveFile"
+    };
+
     /// <summary>
     /// The reasons Google attaches to a rate limit that refills within a minute.
     /// </summary>
@@ -135,6 +154,93 @@ internal static class GoogleServiceErrors
         return bodyReasons.Contains("EXPIRED_SYNC_TOKEN", StringComparer.OrdinalIgnoreCase)
             || (gex.Message ?? "").Contains("EXPIRED_SYNC_TOKEN", StringComparison.OrdinalIgnoreCase)
             || (bodyMessage ?? "").Contains("EXPIRED_SYNC_TOKEN", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Whether a download was refused because the authenticated user is not allowed the
+    /// content: Drive answers 403 with one of the <see cref="CONTENT_NOT_DOWNLOADABLE_REASONS"/>.
+    /// The reason is read from the structured errors, from the raw body, and from the
+    /// message, which is where the media endpoints' array-wrapped error document ends up.
+    /// </summary>
+    /// <param name="ex">The exception thrown by the download</param>
+    /// <returns><c>true</c> if the user is not allowed the content</returns>
+    public static bool IsContentNotDownloadable(Exception ex)
+    {
+        if (ex is not GoogleApiException { HttpStatusCode: HttpStatusCode.Forbidden } gex)
+            return false;
+
+        var reasons = (gex.Error?.Errors ?? []).Select(e => e.Reason ?? "")
+            .Concat(ParseErrorBody(gex.Error?.ErrorResponseContent).Reasons);
+        if (reasons.Any(CONTENT_NOT_DOWNLOADABLE_REASONS.Contains))
+            return true;
+
+        var message = gex.Message ?? "";
+        return CONTENT_NOT_DOWNLOADABLE_REASONS.Any(r => message.Contains(r, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Whether a download was refused because Google no longer has the content: a media
+    /// request that answers 404 for an item the listing reported moments before, such as a
+    /// revision Drive purged after listing it.
+    /// </summary>
+    /// <param name="ex">The exception thrown by the download</param>
+    /// <returns><c>true</c> if the content is gone</returns>
+    public static bool IsContentGone(Exception ex)
+        => ex is GoogleApiException { HttpStatusCode: HttpStatusCode.NotFound };
+
+    /// <summary>
+    /// Turns a refusal to hand out content into the exception the backup engine already
+    /// classifies, so the warning names the cause in one line instead of printing Google's
+    /// error document, and the detail goes to the verbose log. A refusal for a user who is
+    /// not allowed the content becomes an <see cref="UnauthorizedAccessException"/>; content
+    /// Google no longer has becomes a <see cref="FileNotFoundException"/>. Any other failure
+    /// is returned as it is.
+    /// </summary>
+    /// <param name="ex">The exception thrown by the download</param>
+    /// <param name="description">What was downloaded, for the messages</param>
+    /// <returns>The exception to throw in place of <paramref name="ex"/></returns>
+    public static Exception AsContentRefusal(Exception ex, string description)
+    {
+        if (IsContentNotDownloadable(ex))
+        {
+            Log.WriteVerboseMessage(LOGTAG, "ContentNotDownloadable", ex, Strings.ContentNotDownloadable(description, ex.Message));
+            return new UnauthorizedAccessException(Strings.ContentNotDownloadable(description, ex.Message), ex);
+        }
+
+        if (IsContentGone(ex))
+        {
+            Log.WriteVerboseMessage(LOGTAG, "ContentGone", ex, Strings.ContentGone(description, ex.Message));
+            return new FileNotFoundException(Strings.ContentGone(description, ex.Message), ex);
+        }
+
+        return ex;
+    }
+
+    /// <summary>
+    /// Turns a refusal to hand out a revision into a <see cref="SourceEntrySkippedException"/>,
+    /// so the backup leaves the revision out with an information message and change tracking
+    /// does not hold the drive back for it. A revision is a copy of the file's past; Drive
+    /// hands it only to editors of the file and purges old ones, and neither is a problem
+    /// of the backup, which still has the file itself. Any other failure is returned as it is.
+    /// </summary>
+    /// <param name="ex">The exception thrown by the download</param>
+    /// <param name="description">What was downloaded, for the messages</param>
+    /// <returns>The exception to throw in place of <paramref name="ex"/></returns>
+    public static Exception AsRevisionRefusal(Exception ex, string description)
+    {
+        if (IsContentNotDownloadable(ex))
+        {
+            Log.WriteVerboseMessage(LOGTAG, "ContentNotDownloadable", ex, Strings.ContentNotDownloadable(description, ex.Message));
+            return new SourceEntrySkippedException(Strings.ContentNotDownloadable(description, ex.Message), ex);
+        }
+
+        if (IsContentGone(ex))
+        {
+            Log.WriteVerboseMessage(LOGTAG, "ContentGone", ex, Strings.ContentGone(description, ex.Message));
+            return new SourceEntrySkippedException(Strings.ContentGone(description, ex.Message), ex);
+        }
+
+        return ex;
     }
 
     /// <summary>

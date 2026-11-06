@@ -86,6 +86,9 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// The barrier is only signaled on the success path, so a priority file that
         /// fails terminally would otherwise leave the other processors waiting for it
         /// forever, stalling the restore instead of failing with the real error.
+        /// The processors waiting on the barrier end the restore with its error, so the
+        /// error says that the restore stopped because of this file, and keeps the file's
+        /// own error as the inner exception.
         /// </summary>
         /// <param name="file">The file that failed.</param>
         /// <param name="ex">The error that caused the failure.</param>
@@ -94,8 +97,13 @@ namespace Duplicati.Library.Main.Operation.Restore
             if (!file.IsPriorityFile)
                 return;
 
+            var error = new UserInformationException(
+                $"The restore was stopped because the file \"{file.TargetPath}\", which has to be restored before the other files, could not be restored: {ex.Message}",
+                "RestorePriorityFileFailed",
+                ex);
+
             lock (priority_files_lock)
-                priority_files_completed.TrySetException(ex);
+                priority_files_completed.TrySetException(error);
         }
         /// <summary>
         /// The current file processor ID. Used for debugging.
@@ -337,7 +345,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         catch (Exception ex) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                                         {
                                             Logging.Log.WriteErrorMessage(LOGTAG, "CopyOldTargetToNew", ex, "Error when trying to copy {0} to {1}", file, new_file);
-                                            results.BrokenLocalFiles.Add(file.TargetPath);
+                                            // The list is shared by the file processors and is not
+                                            // safe for concurrent use, so it takes the same lock as
+                                            // the other places that add to it.
+                                            lock (results)
+                                            {
+                                                results.BrokenLocalFiles.Add(file.TargetPath);
+                                            }
                                         }
                                     }
                                 }
@@ -681,9 +695,12 @@ namespace Duplicati.Library.Main.Operation.Restore
                             }
                         }
 
+                        var symlink_restored = false;
                         if (!options.SkipMetadata)
                         {
-                            empty_file_or_symlink |= await RestoreMetadataAsync(db, file, restoreDestination, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp, results.TaskControl.ProgressToken).ConfigureAwait(false);
+                            var metadata_restored = await RestoreMetadataAsync(db, file, restoreDestination, block_request, block_response, options, sw_meta, sw_work_meta, sw_req, sw_resp, results.TaskControl.ProgressToken).ConfigureAwait(false);
+                            empty_file_or_symlink |= metadata_restored;
+                            symlink_restored = metadata_restored && file.BlocksetID == LocalDatabase.SYMLINK_BLOCKSET_ID;
                             sw_work_meta?.Stop();
                         }
 
@@ -711,6 +728,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                             lock (results)
                             {
                                 results.RestoredFiles++;
+                                if (symlink_restored)
+                                    results.RestoredSymlinks++;
                                 results.SizeOfRestoredFiles += file.Length;
                                 results.SizeOfRestoredData += bytes_written;
                             }
@@ -1325,7 +1344,19 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                 // Open both files, as the target file is still being read to produce the overall file hash, if all the blocks are present across both the target and original files.
                 // Note: The original file is the source file on the local system (not within the restore destination),
-                using var f_original = SystemIO.IO_OS.FileOpenRead(file.OriginalPath);
+                // and only a shortcut, as every block can also come from the backup. Another program may hold it,
+                // as it can while the file is backed up from a snapshot, so a file that cannot be read is skipped.
+                Stream? opened_original;
+                try
+                {
+                    opened_original = SystemIO.IO_OS.FileOpenRead(file.OriginalPath);
+                }
+                catch (Exception ex) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "OriginalFileNotReadable", ex, "Cannot read the original file {0}, its blocks are restored from the backup", file.OriginalPath);
+                    return (0, blocks);
+                }
+                using var f_original = opened_original;
                 using var f_target = options.Dryrun ?
                     (await restoreDestination.FileExists(file.TargetPath, cancellationToken).ConfigureAwait(false) ?
                         await restoreDestination.OpenRead(file.TargetPath, cancellationToken).ConfigureAwait(false) :
@@ -1346,13 +1377,13 @@ namespace Duplicati.Library.Main.Operation.Restore
                             f_original.Seek(i * options.Blocksize, SeekOrigin.Begin);
                             read = await f_original.ReadAsync(buffer, 0, (int)blocks[j].BlockSize, cancellationToken).ConfigureAwait(false);
                         }
-                        catch (Exception) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
+                        catch (Exception ex) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                         {
-                            lock (results)
-                            {
-                                results.BrokenLocalFiles.Add(file.TargetPath);
-                            }
-                            throw;
+                            // Another program may have locked a range of the original, so the rest of
+                            // the blocks are restored from the backup
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "OriginalFileNotReadable", ex, "Cannot read the original file {0}, its remaining blocks are restored from the backup", file.OriginalPath);
+                            missing_blocks.AddRange(blocks.Skip(j));
+                            break;
                         }
 
                         if (read == blocks[j].BlockSize)

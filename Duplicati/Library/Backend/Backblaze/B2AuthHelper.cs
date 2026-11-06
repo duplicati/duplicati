@@ -180,6 +180,12 @@ public class B2AuthHelper(string userid, string password, HttpClient httpClient,
     }
 
     /// <summary>
+    /// Clears the cached authorization, forcing the next call to re-authorize
+    /// </summary>
+    public void InvalidateAuthorization()
+        => _CachedAuthResponse = null;
+
+    /// <summary>
     /// Parses the exception and throws a new exception with the error message
     /// </summary>
     /// <param name="ex">Exception to be parsed</param>
@@ -190,8 +196,11 @@ public class B2AuthHelper(string userid, string password, HttpClient httpClient,
         if (ex is not HttpRequestException || responseContext == null)
             return;
 
-        if (ex is HttpRequestException && responseContext.StatusCode == HttpStatusCode.TooManyRequests)
-            throw new TooManyRequestException(responseContext.Headers.RetryAfter);
+        // B2 reports expired or revoked tokens with 401, so the next call must re-authorize
+        if (responseContext.StatusCode == HttpStatusCode.Unauthorized)
+            InvalidateAuthorization();
+
+        ThrowIfTooManyRequests(responseContext);
 
         var rawData = await Utility.Utility.WithTimeout(timeouts.ShortTimeout, cancelToken, ct =>
         {
@@ -203,6 +212,17 @@ public class B2AuthHelper(string userid, string password, HttpClient httpClient,
         var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(rawData)
             ?? new ErrorResponse { Status = (int)responseContext.StatusCode, Message = responseContext.ReasonPhrase };
         throw new UserInformationException($"Backblaze ErrorResponse: {errorResponse.Status} - {errorResponse.Code}: {errorResponse.Message}", "BackblazeErrorResponse");
+    }
+
+    /// <summary>
+    /// Throws a <see cref="TooManyRequestException"/> if the response asks the client to back off
+    /// </summary>
+    /// <param name="response">The response to check</param>
+    public static void ThrowIfTooManyRequests(HttpResponseMessage response)
+    {
+        // B2 uses both 429 and 503 to signal that the client should back off and retry
+        if (response.StatusCode is HttpStatusCode.TooManyRequests or HttpStatusCode.ServiceUnavailable)
+            throw new TooManyRequestException(response.Headers.RetryAfter);
     }
 
     /// <summary>

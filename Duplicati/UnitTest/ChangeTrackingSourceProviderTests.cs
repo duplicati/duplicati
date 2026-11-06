@@ -32,6 +32,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
+using Duplicati.Library.Logging;
 using Duplicati.Library.Main;
 using Duplicati.Library.SQLiteHelper;
 using NUnit.Framework;
@@ -75,6 +76,21 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
         public int ExportCalls;
         /// <summary>How many times the carry-forward predicate was asked</summary>
         public int EnumeratedCalls;
+        /// <summary>The observer the backup registered for how the folders are walked, if any</summary>
+        public Action<string, FolderWalkMode>? FolderWalkObserver;
+    }
+
+    /// <summary>
+    /// Keeps the progress object the backup reports to, so the totals can be read while it runs
+    /// </summary>
+    private sealed class ProgressSink : IMessageSink
+    {
+        public IOperationProgress? Progress { get; private set; }
+
+        public void BackendEvent(BackendActionType action, BackendEventType type, string path, long size) { }
+        public void SetBackendProgress(IBackendProgress progress) { }
+        public void SetOperationProgress(IOperationProgress progress) => Progress = progress;
+        public void WriteMessage(LogEntry entry) { }
     }
 
     private sealed class FakeEntry : ISourceProviderEntry
@@ -199,6 +215,9 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
 
         public bool IsIncrementallyEnumeratedFolder(string folderPath)
             => Scenario.Current.Incremental(folderPath);
+
+        public void SetFolderWalkObserver(Action<string, FolderWalkMode> observer)
+            => Scenario.Current.FolderWalkObserver = observer;
     }
 
     private string Mount => Util.AppendDirSeparator(Path.GetFullPath(Path.Combine(BASEFOLDER, "tracked")));
@@ -232,6 +251,52 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
         using var c = new Controller("file://" + TARGETFOLDER, options, null);
         var r = await c.BackupAsync([Source], filter);
         TestUtils.AssertResults(r);
+    }
+
+    /// <summary>
+    /// Runs a backup and returns the file count and size the progress showed when the given
+    /// path was enumerated. The total is adjusted in the background as the provider reports
+    /// its folders, so the read waits until the totals satisfy the expectation, or gives up
+    /// after a while and returns what it saw last.
+    /// </summary>
+    /// <param name="options">The backup options</param>
+    /// <param name="atPath">The enumerated path to read the totals at</param>
+    /// <param name="expected">Whether the totals are the ones waited for</param>
+    /// <returns>The totals</returns>
+    private async Task<(long Count, long Size)> RunBackupAndReadTotalsAsync(Dictionary<string, string> options, string atPath, Func<(long Count, long Size), bool> expected)
+    {
+        var sink = new ProgressSink();
+        (long Count, long Size)? totals = null;
+        using (var c = new Controller("file://" + TARGETFOLDER, options, sink))
+        {
+            c.OnOperationStarted = r =>
+            {
+#if DEBUG
+                ((ITaskControlProvider)r).TaskControl.TestMethodCallback = path =>
+                {
+                    if (totals != null || sink.Progress == null || !string.Equals(path, atPath, StringComparison.Ordinal))
+                        return;
+
+                    var deadline = DateTime.UtcNow.AddSeconds(10);
+                    while (true)
+                    {
+                        sink.Progress.UpdateOverall(out _, out _, out _, out _, out var count, out var size, out _);
+                        totals = (count, size);
+                        if (expected(totals.Value) || DateTime.UtcNow > deadline)
+                            break;
+                        Thread.Sleep(20);
+                    }
+                };
+#endif
+            };
+            TestUtils.AssertResults(await c.BackupAsync([Source]));
+        }
+
+#if !DEBUG
+        Assert.Ignore("Reading the progress while the files are processed needs a Debug build");
+#endif
+        Assert.That(totals, Is.Not.Null, "the progress was not read while the files were processed");
+        return totals!.Value;
     }
 
     private async Task<HashSet<string>> ListPathsAsync(Dictionary<string, string> options)
@@ -837,5 +902,51 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
         await RunBackupAsync(options);
         Assert.That(Scenario.Current.Loaded, Is.Empty);
         Assert.That(await ReadStateRowsAsync(options["dbpath"]), Is.Empty);
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
+    public async Task ProgressTotalLeavesOutTheFoldersCarriedForwardAsync()
+    {
+        var options = Prepare();
+
+        // a.txt is 1 byte, "sub" holds 30 bytes in two files and "other" 100 bytes in one
+        FakeEntry[] Tree(string m) =>
+        [
+            File(m, "a.txt", "A"),
+            Folder(m, "sub", File(m, Path.Combine("sub", "b.txt"), new string('b', 10)), File(m, Path.Combine("sub", "c.txt"), new string('c', 20))),
+            Folder(m, "other", File(m, Path.Combine("other", "d.txt"), new string('d', 100))),
+        ];
+
+        Scenario.Current = new Scenario { Children = Tree, Export = { ["k"] = "v1" } };
+        await RunBackupAsync(options);
+        Assert.That(Scenario.Current.FolderWalkObserver, Is.Null, "A provider that was handed no state walks everything, so no observer is registered");
+
+        // The second run lists only a.txt. It reports "other" and "sub" as walked incrementally,
+        // a folder below "sub" that is covered by it, and then lists "other" in full after all
+        Scenario.Current = new Scenario
+        {
+            Children = m => [File(m, "a.txt", "A")],
+            Enumerated = path => !path.StartsWith(D("sub"), StringComparison.Ordinal),
+            Incremental = path => path.StartsWith(D("sub"), StringComparison.Ordinal),
+            Export = { ["k"] = "v2" },
+        };
+        Scenario.Current.OnEnumerate = () =>
+        {
+            var observer = Scenario.Current.FolderWalkObserver;
+            Assert.That(observer, Is.Not.Null, "The backup registers an observer with a provider that was handed state");
+            observer!(D("other"), FolderWalkMode.Incremental);
+            observer(D("sub"), FolderWalkMode.Incremental);
+            observer(D(Path.Combine("sub", "nested")), FolderWalkMode.Incremental);
+            observer(D("other"), FolderWalkMode.Full);
+        };
+
+        var totals = await RunBackupAndReadTotalsAsync(options, P("a.txt"), t => t == (2, 101));
+        Assert.That(totals, Is.EqualTo((2L, 101L)), "The previous backup holds 4 files of 131 bytes; the 2 files of 30 bytes below \"sub\" are carried forward, and \"other\" is listed in full after all");
+
+        var paths = await ListPathsAsync(options);
+        Assert.That(paths, Does.Contain(P("a.txt")));
+        Assert.That(paths, Does.Contain(P(Path.Combine("sub", "b.txt"))), "The folder walked incrementally is carried forward");
+        Assert.That(paths, Does.Not.Contain(P(Path.Combine("other", "d.txt"))), "The folder listed in full is not carried forward");
     }
 }

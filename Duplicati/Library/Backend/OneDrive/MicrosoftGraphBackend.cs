@@ -29,6 +29,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -111,7 +112,7 @@ namespace Duplicati.Library.Backend
         private string[]? dnsNames = null;
 
         private readonly Lazy<string> rootPathFromURL;
-        private string RootPath => this.rootPathFromURL.Value;
+        protected string RootPath => this.rootPathFromURL.Value;
         private string TokenUrl => AuthIdOptionsHelper.GetOAuthLoginUrl(ProtocolKey, null);
 
         protected MicrosoftGraphBackend()
@@ -124,6 +125,15 @@ namespace Duplicati.Library.Backend
         }
 
         protected MicrosoftGraphBackend(string url, string protocolKey, Dictionary<string, string?> options)
+            : this(url, protocolKey, options, null)
+        {
+        }
+
+        /// <summary>
+        /// Creates the backend with the given message handler in place of the authenticating one,
+        /// so tests can answer the requests without a network
+        /// </summary>
+        private protected MicrosoftGraphBackend(string url, string protocolKey, Dictionary<string, string?> options, OAuthHttpMessageHandler? handler)
         {
             var authId = AuthIdOptionsHelper.Parse(options)
                 .RequireCredentials(TokenUrl);
@@ -148,7 +158,9 @@ namespace Duplicati.Library.Backend
             if (!(options.TryGetValue(UPLOAD_SESSION_FRAGMENT_RETRY_DELAY_OPTION, out var fragmentRetryDelayStr) && int.TryParse(fragmentRetryDelayStr, out this.fragmentRetryDelay)))
                 this.fragmentRetryDelay = UPLOAD_SESSION_FRAGMENT_DEFAULT_RETRY_DELAY;
 
-            this.m_client = new OAuthHttpClient(authId.AuthId!, protocolKey, authId.OAuthUrl);
+            this.m_client = handler == null
+                ? new OAuthHttpClient(authId.AuthId!, protocolKey, authId.OAuthUrl)
+                : new OAuthHttpClient(handler);
             this.m_client.BaseAddress = new System.Uri(BASE_ADDRESS);
 
             this.m_retryAfter = RetryAfterHelper.CreateOrGetRetryAfterHelper(url);
@@ -391,8 +403,8 @@ namespace Duplicati.Library.Backend
                     CheckResponse(response);
                     using (var responseStream = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken,
                         ct => response.Content.ReadAsStreamAsync(ct)).ConfigureAwait(false))
-                    using (var timeoutSream = responseStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
-                        await Utility.Utility.CopyStreamAsync(responseStream, stream, cancelToken).ConfigureAwait(false);
+                    using (var timeoutStream = responseStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call))
+                        await Utility.Utility.CopyStreamAsync(timeoutStream, stream, cancelToken).ConfigureAwait(false);
                 }
             }
             catch (DriveItemNotFoundException ex)
@@ -433,7 +445,7 @@ namespace Duplicati.Library.Backend
             {
                 await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
                 string putUrl = RootItemUrl(drivePrefix, remotename, "content");
-                using (var timeoutStream = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false))
+                using (var timeoutStream = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap))
                 using (var streamContent = new StreamContent(timeoutStream))
                 {
                     streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
@@ -491,7 +503,7 @@ namespace Duplicati.Library.Backend
                                     remotename);
 
                                 using (var request = new HttpRequestMessage(HttpMethod.Put, uploadSession.UploadUrl))
-                                using (var timeoutStream = subStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false))
+                                using (var timeoutStream = subStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap))
                                 using (var fragmentContent = new StreamContent(timeoutStream))
                                 {
                                     fragmentContent.Headers.ContentLength = read;
@@ -764,7 +776,7 @@ namespace Duplicati.Library.Backend
         {
             CheckResponse(response);
             using (var responseStream = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => response.Content.ReadAsStreamAsync(ct)).ConfigureAwait(false))
-            using (var timeoutStream = responseStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
+            using (var timeoutStream = responseStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call))
             using (var reader = new StreamReader(timeoutStream))
             {
                 var content = await reader.ReadToEndAsync().ConfigureAwait(false);

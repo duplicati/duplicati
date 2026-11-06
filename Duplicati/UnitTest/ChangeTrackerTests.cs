@@ -29,6 +29,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Interface;
 using Duplicati.Library.SourceProvider.ChangeTracking;
 using NUnit.Framework;
 
@@ -507,5 +508,32 @@ public class ChangeTrackerTests
         Assert.That(map.Contains("G1"), Is.True);
         Assert.That(map.Contains("F2"), Is.False);
         Assert.That(map.Contains("L1"), Is.False);
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
+    public void FolderWalkObserverSeesOnlyChangesInHowAFolderIsWalked()
+    {
+        var tracker = ActiveTracker();
+        var reports = new List<(string Path, FolderWalkMode Mode)>();
+        tracker.SetFolderWalkObserver((path, mode) => reports.Add((path, mode)));
+
+        var drive = D(Mount, "users", "u1", "drive");
+        tracker.MarkIncremental(drive);
+        tracker.MarkIncremental(drive);
+        Assert.That(reports, Is.EqualTo(new[] { (drive, FolderWalkMode.Incremental) }), "A repeated mark is not reported");
+
+        tracker.MarkExaminedSubtree(D(Mount, "users", "u1", "drive", "changed"));
+        Assert.That(reports, Has.Count.EqualTo(1), "A folder listed in full that was never incremental is not reported");
+
+        tracker.MarkExaminedSubtree(drive);
+        Assert.That(reports, Is.EqualTo(new[] { (drive, FolderWalkMode.Incremental), (drive, FolderWalkMode.Full) }), "A full listing overriding the incremental one is reported");
+
+        tracker.MarkIncremental(drive);
+        var mailbox = D(Mount, "users", "u1", "mailbox");
+        tracker.MarkExaminedSubtree(mailbox);
+        tracker.MarkIncremental(mailbox);
+        Assert.That(reports, Has.Count.EqualTo(2), "The full mark wins, so an incremental mark next to it changes nothing and is not reported");
+        Assert.That(tracker.WasPathEnumerated(F(Mount, "users", "u1", "mailbox", "f1", "m1.eml")), Is.True);
     }
 }

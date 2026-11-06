@@ -26,8 +26,11 @@ using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
+
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
 namespace Duplicati.Library.Backend
 {
@@ -226,10 +229,7 @@ namespace Duplicati.Library.Backend
 #if DEBUG
                     Console.Error.WriteLine(item);
 #endif
-                    var modTimeString = item.GetValue("ModTime")?.Value<string>();
-                    var modTime = string.IsNullOrWhiteSpace(modTimeString)
-                        ? new DateTime(0)
-                        : DateTime.Parse(modTimeString);
+                    var modTime = ParseModTime(item.GetValue("ModTime")?.Value<string>());
 
                     var fe = new FileEntry(
                         item.GetValue("Name")?.Value<string>(),
@@ -244,6 +244,18 @@ namespace Duplicati.Library.Backend
                 }
             }
         }
+
+        /// <summary>
+        /// Parses the ModTime of an lsjson entry, an RFC 3339 value such as
+        /// "2017-05-31T16:15:57.034468261+01:00". The result is in UTC, so it compares correctly
+        /// against the timestamps of other backends; a missing value is reported as the epoch.
+        /// </summary>
+        /// <param name="modTime">The ModTime value, or null if the entry has none.</param>
+        /// <returns>The modification time in UTC.</returns>
+        internal static DateTime ParseModTime(string? modTime)
+            => string.IsNullOrWhiteSpace(modTime)
+                ? new DateTime(0, DateTimeKind.Utc)
+                : DateTime.Parse(modTime, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
 
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {

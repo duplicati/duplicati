@@ -338,7 +338,12 @@ namespace Duplicati.Library.Common.IO
         /// <param name="value">The value to set</param>
         public static void SetExtendedAttribute(string path, string key, byte[] value)
         {
-            Mono.Unix.Native.Syscall.setxattr(path, key, value);
+            // The attributes are read with lgetxattr, so they belong to a symbolic link itself.
+            // setxattr follows the link and would write them to the file it points to.
+            if (SUPPORTS_LLISTXATTR)
+                Mono.Unix.Native.Syscall.lsetxattr(path, key, value);
+            else
+                Mono.Unix.Native.Syscall.setxattr(path, key, value);
         }
 
         /// <summary>

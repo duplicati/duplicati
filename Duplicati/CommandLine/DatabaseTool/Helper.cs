@@ -117,8 +117,7 @@ public static class Helper
                 FROM sqlite_master
                 WHERE
                     type='table'
-                    AND name='Backup'
-                    OR name='Schedule'
+                    AND (name='Backup' OR name='Schedule')
             ", CancellationToken.None)
             .ConfigureAwait(false) == 2;
 

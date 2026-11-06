@@ -115,7 +115,10 @@ internal class GoogleRetryHandler : BackOffHandler
         {
             try
             {
-                // Buffered, so the client library can still read the body for its own error report
+                // Buffered first, so the body can be read again afterwards for the error report:
+                // a media request is sent with only the headers read, and its body is a live
+                // stream that reading once would consume
+                await response.Content.LoadIntoBufferAsync(cancellationToken).ConfigureAwait(false);
                 body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

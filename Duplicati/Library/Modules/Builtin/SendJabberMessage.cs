@@ -89,6 +89,18 @@ namespace Duplicati.Library.Modules.Builtin
         /// Option used to set the maximum number of log lines
         /// </summary>
         private const string OPTION_MAX_LOG_LINES = "send-xmpp-max-log-lines";
+        /// <summary>
+        /// Option used to accept any server certificate
+        /// </summary>
+        private const string OPTION_ACCEPT_ANY_CERTIFICATE = "send-xmpp-accept-any-ssl-certificate";
+        /// <summary>
+        /// Option used to accept server certificates with the given hashes
+        /// </summary>
+        private const string OPTION_ACCEPT_SPECIFIED_CERTIFICATE = "send-xmpp-accept-specified-ssl-hash";
+        /// <summary>
+        /// Option used to ignore certificate revocation check failures
+        /// </summary>
+        private const string OPTION_IGNORE_REVOCATION_FAILURE = "send-xmpp-ignore-revocation-failure";
 
         #endregion
 
@@ -116,6 +128,18 @@ namespace Duplicati.Library.Modules.Builtin
         /// The XMPP recipient
         /// </summary>
         private string m_to;
+        /// <summary>
+        /// Whether to accept any server certificate
+        /// </summary>
+        private bool m_acceptAnyCertificate;
+        /// <summary>
+        /// The hashes of the server certificates to accept
+        /// </summary>
+        private string[] m_acceptSpecificCertificates;
+        /// <summary>
+        /// Whether to ignore certificate revocation check failures
+        /// </summary>
+        private bool m_ignoreRevocationFailure;
 
         #endregion
 
@@ -154,6 +178,9 @@ namespace Duplicati.Library.Modules.Builtin
             new CommandLineArgument(OPTION_EXTRA_PARAMETERS, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmppextraparametersShort, Strings.SendJabberMessage.SendxmppextraparametersLong),
             new CommandLineArgument(OPTION_USERNAME, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmppusernameShort, Strings.SendJabberMessage.SendxmppusernameLong),
             new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmpppasswordShort, Strings.SendJabberMessage.SendxmpppasswordLong),
+            new CommandLineArgument(OPTION_ACCEPT_ANY_CERTIFICATE, CommandLineArgument.ArgumentType.Boolean, Strings.SendJabberMessage.AcceptAnyCertificateShort, Strings.SendJabberMessage.AcceptAnyCertificateLong(OPTION_ACCEPT_SPECIFIED_CERTIFICATE), "false"),
+            new CommandLineArgument(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.AcceptSpecifiedCertificateShort, Strings.SendJabberMessage.AcceptSpecifiedCertificateLong),
+            new CommandLineArgument(OPTION_IGNORE_REVOCATION_FAILURE, CommandLineArgument.ArgumentType.Boolean, Strings.SendJabberMessage.IgnoreRevocationFailureShort, Strings.SendJabberMessage.IgnoreRevocationFailureLong, "false"),
             new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmpplevelShort, Strings.SendJabberMessage.SendxmpplevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string[] { "All" } ).ToArray()),
             new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendJabberMessage.SendxmppanyoperationShort, Strings.SendJabberMessage.SendxmppanyoperationLong),
             new CommandLineArgument(OPTION_SEND_OPERATIONS, CommandLineArgument.ArgumentType.Flags, Strings.ReportHelper.OptionOperationsShort, Strings.ReportHelper.OptionOperationsLong, DEFAULT_OPERATIONS, null, ValidOperationNames),
@@ -190,6 +217,12 @@ namespace Duplicati.Library.Modules.Builtin
 
             commandlineOptions.TryGetValue(OPTION_USERNAME, out m_username);
             commandlineOptions.TryGetValue(OPTION_PASSWORD, out m_password);
+
+            m_acceptAnyCertificate = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_ACCEPT_ANY_CERTIFICATE);
+            m_acceptSpecificCertificates = commandlineOptions.TryGetValue(OPTION_ACCEPT_SPECIFIED_CERTIFICATE, out var hashes) && !string.IsNullOrWhiteSpace(hashes)
+                ? hashes.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                : null;
+            m_ignoreRevocationFailure = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_IGNORE_REVOCATION_FAILURE);
 
             return true;
         }
@@ -252,14 +285,15 @@ namespace Duplicati.Library.Modules.Builtin
             var target = ParseXmppTarget(m_username);
             var resource = target.Resource;
 
-            using (ArtalkXmppClient client = new ArtalkXmppClient(target.Host, target.Username, string.IsNullOrWhiteSpace(m_password) ? target.Password : m_password, target.Port))
+            // Without a validation callback, the client accepts any server certificate
+            var validator = new Utility.SslCertificateValidator(m_acceptAnyCertificate, m_acceptSpecificCertificates, m_ignoreRevocationFailure);
+            using (ArtalkXmppClient client = new ArtalkXmppClient(target.Host, target.Username, string.IsNullOrWhiteSpace(m_password) ? target.Password : m_password, target.Port, true, validator.ValidateServerCertificate))
             {
                 client.Connect(resource);
                 try
                 {
-                    foreach (var recipient in m_to.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries))
+                    SendToRecipients(m_to, jid =>
                     {
-                        Artalk.Xmpp.Jid jid = new Artalk.Xmpp.Jid(recipient);
                         client.SendMessage(jid, new Dictionary<string, string>() { { "en", body } });
                         // hack to work around a failure to send the second time
                         // (the xmpp server reports a read failure)
@@ -268,11 +302,7 @@ namespace Duplicati.Library.Modules.Builtin
                             client.Ping(jid);
                         }
                         catch { }
-                    }
-                }
-                catch (Exception e)
-                {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "XMPPSendError", e, "Failed to send to XMPP messages: {0}", e.Message);
+                    });
                 }
                 finally
                 {
@@ -280,6 +310,26 @@ namespace Duplicati.Library.Modules.Builtin
                 }
             }
 
+        }
+
+        /// <summary>
+        /// Sends to each recipient in the comma separated list, so a failure for one does not stop the others
+        /// </summary>
+        /// <param name="recipients">The recipients option value</param>
+        /// <param name="send">Sends the message to one recipient</param>
+        internal static void SendToRecipients(string recipients, Action<Artalk.Xmpp.Jid> send)
+        {
+            foreach (var recipient in recipients.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                try
+                {
+                    send(new Artalk.Xmpp.Jid(recipient));
+                }
+                catch (Exception e)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "XMPPSendError", e, "Failed to send XMPP message to {0}: {1}", recipient, e.Message);
+                }
+            }
         }
     }
 }

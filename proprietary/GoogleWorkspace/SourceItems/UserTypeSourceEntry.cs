@@ -7,7 +7,7 @@ using Duplicati.Library.Logging;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, string userId, bool userIsInactive, string name, SourceItemType type)
+internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, string userId, string userDirectoryId, bool userIsInactive, string name, SourceItemType type)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, type.ToString())), null, null)
 {
     /// <summary>
@@ -186,7 +186,7 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
                 foreach (var note in notes.Notes)
                 {
                     if (cancellationToken.IsCancellationRequested) yield break;
-                    yield return new KeepNoteSourceEntry(this.Path, note, service);
+                    yield return new KeepNoteSourceEntry(provider, this.Path, note, service);
                 }
             }
             nextPageToken = notes.NextPageToken;
@@ -202,7 +202,7 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
         foreach (var spaceType in new[] { "SPACE", "GROUP_CHAT", "DIRECT_MESSAGE" })
         {
             if (cancellationToken.IsCancellationRequested) yield break;
-            yield return new ChatSpaceTypeSourceEntry(this.Path, spaceType, service, driveService);
+            yield return new ChatSpaceTypeSourceEntry(provider, this.Path, spaceType, $"users/{userDirectoryId}", service, driveService);
         }
     }
 

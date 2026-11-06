@@ -535,6 +535,7 @@ namespace Duplicati.Library.Modules.Builtin
                 DestinationType = Utility.Utility.GuessScheme(m_remoteUrl) ?? "file",
                 DestinationHostSuffix = Utility.Utility.GuessHostSuffixSafe(m_remoteUrl),
                 InstallationType = UpdaterManager.PackageTypeId,
+                EntryAssembly = PackageHelper.EntryAssemblyName,
                 OperatingSystem = UpdaterManager.OperatingSystemName,
                 OperatingSystemDetailed = OSInfoHelper.PlatformString,
             };
@@ -597,15 +598,30 @@ namespace Duplicati.Library.Modules.Builtin
             if (report == null)
                 return;
 
+            string json;
             try
             {
-                var json = JsonSerializer.Serialize(report, typeof(StatusReport), SerializerOptions);
-                foreach (var url in m_urls ?? [])
-                    await SendAsync(url, json, cancellationToken).ConfigureAwait(false);
+                json = JsonSerializer.Serialize(report, typeof(StatusReport), SerializerOptions);
             }
             catch (Exception ex)
             {
                 Logging.Log.WriteMessage(Logging.LogMessageType.Information, LOGTAG, "HttpReportStatusSendError", ex, "Failed to post status report to {0}: {1}", string.Join(", ", m_urls ?? []), ex.Message);
+                return;
+            }
+
+            // Post to every URL, so a failing one does not stop the others
+            foreach (var url in m_urls ?? [])
+            {
+                try
+                {
+                    await SendAsync(url, json, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteMessage(Logging.LogMessageType.Information, LOGTAG, "HttpReportStatusSendError", ex, "Failed to post status report to {0}: {1}", url, ex.Message);
+                    if (cancellationToken.IsCancellationRequested)
+                        return;
+                }
             }
         }
 
@@ -722,6 +738,9 @@ namespace Duplicati.Library.Modules.Builtin
 
             /// <summary>The installation type (e.g. package type id).</summary>
             public string? InstallationType { get; set; }
+
+            /// <summary>The entry assembly name of the top-level executable that runs the operation (e.g. <c>Duplicati.CommandLine</c>, <c>Duplicati.GUI.TrayIcon</c>, <c>Duplicati.Server</c>, <c>Duplicati.Service</c>, <c>Duplicati.WindowsService</c>, <c>Duplicati.Agent</c>).</summary>
+            public string? EntryAssembly { get; set; }
 
             /// <summary>The operating system name (e.g. <c>Windows</c>, <c>Linux</c>, <c>MacOS</c>).</summary>
             public string? OperatingSystem { get; set; }

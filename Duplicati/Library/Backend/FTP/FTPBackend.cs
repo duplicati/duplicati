@@ -28,9 +28,11 @@ using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using FluentFTP;
+using FluentFTP.BouncyCastle;
 using FluentFTP.Client.BaseClient;
 using FluentFTP.Exceptions;
 using CoreUtility = Duplicati.Library.Utility.Utility;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -65,7 +67,30 @@ namespace Duplicati.Library.Backend
         /// <summary>
         /// The default SSL protocols
         /// </summary>
-        private static readonly SslProtocols DEFAULT_SSL_PROTOCOLS = SslProtocols.None; // NOTE: None means "use system default"        
+        private static readonly SslProtocols DEFAULT_SSL_PROTOCOLS = SslProtocols.None; // NOTE: None means "use system default"
+        /// <summary>
+        /// The default TLS implementation
+        /// </summary>
+        private const FtpTlsImplementation DEFAULT_TLS_IMPLEMENTATION = FtpTlsImplementation.Auto;
+
+        /// <summary>
+        /// The TLS implementation used for FTPS
+        /// </summary>
+        public enum FtpTlsImplementation
+        {
+            /// <summary>
+            /// The system TLS, switching to Bouncy Castle when the server requires the data connections to resume the TLS session of the control connection
+            /// </summary>
+            Auto,
+            /// <summary>
+            /// The TLS of the system, through .NET
+            /// </summary>
+            System,
+            /// <summary>
+            /// Bouncy Castle, which resumes the TLS session of the control connection on each data connection, with TLS 1.2
+            /// </summary>
+            BouncyCastle
+        }
 
         /// <summary>
         /// Configuration key for the flag to ignore the PureFTPd limit issue, suppressing the exceptions.
@@ -85,6 +110,10 @@ namespace Duplicati.Library.Backend
         /// The configuration key for the FTP SSL protocols
         /// </summary>
         protected virtual string CONFIG_KEY_FTP_SSL_PROTOCOLS => "ftp-ssl-protocols";
+        /// <summary>
+        /// The configuration key for the TLS implementation
+        /// </summary>
+        protected virtual string CONFIG_KEY_FTP_TLS_IMPLEMENTATION => "ftp-tls-implementation";
         /// <summary>
         /// The configuration key for the FTP upload delay
         /// </summary>
@@ -146,6 +175,10 @@ namespace Duplicati.Library.Backend
         /// </summary>
         protected static readonly string DEFAULT_SSL_PROTOCOLS_STRING = DEFAULT_SSL_PROTOCOLS.ToString();
         /// <summary>
+        /// The default TLS implementation as a string
+        /// </summary>
+        protected static readonly string DEFAULT_TLS_IMPLEMENTATION_STRING = DEFAULT_TLS_IMPLEMENTATION.ToString();
+        /// <summary>
         /// The default upload delay as a string
         /// </summary>
         protected static readonly string DEFAULT_UPLOAD_DELAY_STRING = "0s";
@@ -170,6 +203,14 @@ namespace Duplicati.Library.Backend
         /// The FTP configuration
         /// </summary>
         private readonly FtpConfig _ftpConfig;
+        /// <summary>
+        /// The TLS implementation chosen with the option
+        /// </summary>
+        private readonly FtpTlsImplementation _tlsImplementation;
+        /// <summary>
+        /// The flag to indicate if the SSL protocols chosen with the option allow TLS 1.2, which Bouncy Castle uses
+        /// </summary>
+        private readonly bool _sslProtocolsAllowTls12;
         /// <summary>
         /// The wait time after each upload before checking the file size
         /// </summary>
@@ -233,6 +274,7 @@ namespace Duplicati.Library.Backend
                 new CommandLineArgument(CONFIG_KEY_FTP_DATA_CONNECTION_TYPE, CommandLineArgument.ArgumentType.Enumeration, Strings.DescriptionFtpDataConnectionTypeShort, Strings.DescriptionFtpDataConnectionTypeLong, DEFAULT_DATA_CONNECTION_TYPE_STRING, null, Enum.GetNames(typeof(FtpDataConnectionType))),
                 new CommandLineArgument(CONFIG_KEY_FTP_ENCRYPTION_MODE, CommandLineArgument.ArgumentType.Enumeration, Strings.DescriptionFtpEncryptionModeShort, Strings.DescriptionFtpEncryptionModeLong, DEFAULT_ENCRYPTION_MODE_STRING, null, Enum.GetNames(typeof(FtpEncryptionMode))),
                 new CommandLineArgument(CONFIG_KEY_FTP_SSL_PROTOCOLS, CommandLineArgument.ArgumentType.Flags, Strings.DescriptionSslProtocolsShort, Strings.DescriptionSslProtocolsLong, DEFAULT_SSL_PROTOCOLS_STRING, null, Enum.GetNames(typeof(SslProtocols))),
+                new CommandLineArgument(CONFIG_KEY_FTP_TLS_IMPLEMENTATION, CommandLineArgument.ArgumentType.Enumeration, Strings.DescriptionTlsImplementationShort, Strings.DescriptionTlsImplementationLong, DEFAULT_TLS_IMPLEMENTATION_STRING, null, Enum.GetNames(typeof(FtpTlsImplementation))),
                 new CommandLineArgument(CONFIG_KEY_FTP_UPLOAD_DELAY, CommandLineArgument.ArgumentType.Timespan, Strings.DescriptionUploadDelayShort, Strings.DescriptionUploadDelayLong, DEFAULT_UPLOAD_DELAY_STRING),
                 new CommandLineArgument(CONFIG_KEY_FTP_LOGTOCONSOLE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionLogToConsoleShort, Strings.DescriptionLogToConsoleLong),
                 new CommandLineArgument(CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE, CommandLineArgument.ArgumentType.Boolean, Strings.DescriptionLogPrivateInfoToConsoleShort, Strings.DescriptionLogPrivateInfoToConsoleLong, "false"),
@@ -371,6 +413,8 @@ namespace Duplicati.Library.Backend
             _logPrivateInfoToConsole = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE);
             _diagnosticsLog = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_LOGDIAGNOSTICS);
             _timeouts = TimeoutOptionsHelper.Parse(options);
+            _tlsImplementation = CoreUtility.ParseEnumOption(options, CONFIG_KEY_FTP_TLS_IMPLEMENTATION, DEFAULT_TLS_IMPLEMENTATION);
+            _sslProtocolsAllowTls12 = sslProtocols == SslProtocols.None || sslProtocols.HasFlag(SslProtocols.Tls12);
 
             _ftpConfig = new FtpConfig
             {
@@ -381,6 +425,9 @@ namespace Duplicati.Library.Backend
                 ValidateAnyCertificate = _sslOptions.AcceptAllCertificates,
                 Noop = true
             };
+
+            if (_tlsImplementation == FtpTlsImplementation.BouncyCastle)
+                UseBouncyCastle();
 
             _IgnorePureFTPdLimitIssue = CoreUtility.ParseBoolOption(options, CONFIG_KEY_FTP_IGNORE_PUREFTP);
 
@@ -396,9 +443,23 @@ namespace Duplicati.Library.Backend
                 var client = await CreateClient(cancelToken).ConfigureAwait(false);
                 var remotePath = PreparePathForClient(null);
 
-                items = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken, ct =>
-                    client.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size, ct)
-                ).ConfigureAwait(false);
+                try
+                {
+                    items = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken, ct =>
+                        client.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size, ct)
+                    ).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    if (!await CanSwitchToBouncyCastleAsync(cancelToken).ConfigureAwait(false))
+                        throw;
+
+                    SwitchToBouncyCastle();
+                    client = await CreateClient(cancelToken).ConfigureAwait(false);
+                    items = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancelToken, ct =>
+                        client.GetListing(remotePath, FtpListOption.Modify | FtpListOption.Size, ct)
+                    ).ConfigureAwait(false);
+                }
 
                 if (client.ServerType == FtpServer.PureFTPd)
                 {
@@ -480,10 +541,29 @@ namespace Duplicati.Library.Backend
                 try { streamLen = input.Length; }
                 catch (NotSupportedException) { }
 
-                using var timeoutStream = input.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
-                var status = await client.UploadStream(timeoutStream, clientRemoteName, createRemoteDir: false, token: cancelToken, progress: null).ConfigureAwait(false);
-                if (status != FtpStatus.Success)
-                    throw new UserInformationException(Strings.ErrorWriteFile(remotename, $"Status is {status}"), "FtpPutFailure");
+                async Task UploadAsync(AsyncFtpClient uploadClient)
+                {
+                    using var timeoutStream = input.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
+                    var status = await uploadClient.UploadStream(timeoutStream, clientRemoteName, createRemoteDir: false, token: cancelToken, progress: null).ConfigureAwait(false);
+                    if (status != FtpStatus.Success)
+                        throw new UserInformationException(Strings.ErrorWriteFile(remotename, $"Status is {status}, the server replied: {uploadClient.LastReply.Code} {uploadClient.LastReply.Message}"), "FtpPutFailure");
+                }
+
+                var startPosition = input.CanSeek ? input.Position : -1;
+                try
+                {
+                    await UploadAsync(client).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    if (startPosition < 0 || !await CanSwitchToBouncyCastleAsync(cancelToken).ConfigureAwait(false))
+                        throw;
+
+                    SwitchToBouncyCastle();
+                    input.Position = startPosition;
+                    client = await CreateClient(cancelToken).ConfigureAwait(false);
+                    await UploadAsync(client).ConfigureAwait(false);
+                }
 
                 // Wait for the upload, if required
                 if (_uploadWaitTime.Ticks > 0)
@@ -518,9 +598,28 @@ namespace Duplicati.Library.Backend
             {
                 var client = await CreateClient(cancelToken).ConfigureAwait(false);
                 var clientRemoteName = PreparePathForClient(remotename);
-                await using var inputStream = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => client.OpenRead(clientRemoteName, token: ct)).ConfigureAwait(false);
-                await using var timeoutStream = inputStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
-                await CoreUtility.CopyStreamAsync(inputStream, output, false, cancelToken).ConfigureAwait(false);
+
+                async Task DownloadAsync(AsyncFtpClient downloadClient)
+                {
+                    await using var inputStream = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => downloadClient.OpenRead(clientRemoteName, token: ct)).ConfigureAwait(false);
+                    await using var timeoutStream = inputStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Call);
+                    await CoreUtility.CopyStreamAsync(timeoutStream, output, false, cancelToken).ConfigureAwait(false);
+                }
+
+                // The server refuses the data connection before any data is sent, so nothing was written yet
+                try
+                {
+                    await DownloadAsync(client).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    if (!await CanSwitchToBouncyCastleAsync(cancelToken).ConfigureAwait(false))
+                        throw;
+
+                    SwitchToBouncyCastle();
+                    client = await CreateClient(cancelToken).ConfigureAwait(false);
+                    await DownloadAsync(client).ConfigureAwait(false);
+                }
             }
             catch (Exception e)
             {
@@ -697,6 +796,60 @@ namespace Duplicati.Library.Backend
                 }).ConfigureAwait(false);
             }
             return _client;
+        }
+
+        /// <summary>
+        /// Checks if the server refused a data connection because it did not resume the TLS session of the
+        /// control connection. vsftpd with require_ssl_reuse answers 522, and FileZilla Server 425 "TLS session
+        /// of data connection not resumed". .NET does not resume a TLS 1.3 session there, and with several
+        /// connections to the same server it may resume the session of another one, so Bouncy Castle, which
+        /// resumes the session of its own control connection, is used when the TLS implementation is left on auto.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns><c>true</c> if the operation can be tried again with Bouncy Castle</returns>
+        private async Task<bool> CanSwitchToBouncyCastleAsync(CancellationToken cancellationToken)
+        {
+            var client = _client;
+            if (_tlsImplementation != FtpTlsImplementation.Auto || _ftpConfig.CustomStream != null || !_sslProtocolsAllowTls12 || client == null || !client.IsEncrypted)
+                return false;
+
+            var reply = client.LastReply;
+            // The server may accept the transfer and then drop the data connection,
+            // leaving the refusal unread on the control connection
+            if (reply.Code == "125" || reply.Code == "150")
+            {
+                try
+                {
+                    reply = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, ct => client.GetReply(ct)).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    return false;
+                }
+            }
+
+            return reply.Code == "522"
+                || (reply.Code == "425" && reply.Message.Contains("resum", StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Closes the client and makes the next client use Bouncy Castle for TLS
+        /// </summary>
+        private void SwitchToBouncyCastle()
+        {
+            Log.WriteInformationMessage(LogTag, "FtpBouncyCastleFallback", Strings.SwitchToBouncyCastle(_client?.LastReply.Message ?? string.Empty, CONFIG_KEY_FTP_TLS_IMPLEMENTATION));
+            UseBouncyCastle();
+            _client?.Dispose();
+            _client = null;
+        }
+
+        /// <summary>
+        /// Makes new clients use Bouncy Castle for TLS
+        /// </summary>
+        private void UseBouncyCastle()
+        {
+            _ftpConfig.CustomStream = typeof(BouncyCastleFtpStream);
+            _ftpConfig.CustomStreamConfig = new BouncyCastleFtpConfig();
         }
 
         /// <summary>

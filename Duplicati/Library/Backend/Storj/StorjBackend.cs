@@ -27,6 +27,7 @@ using System.Runtime.CompilerServices;
 using uplink.NET.Interfaces;
 using uplink.NET.Models;
 using uplink.NET.Services;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -204,7 +205,7 @@ namespace Duplicati.Library.Backend.Storj
         {
             var bucket = await GetBucketAsync(cancelToken).ConfigureAwait(false);
             var download = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, _ => _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false)).ConfigureAwait(false);
-            await download.StartDownloadAsync().ConfigureAwait(false);
+            await WaitForTransferAsync(download.StartDownloadAsync(), () => download.BytesReceived, download.Cancel, _timeouts.ReadWriteTimeout, cancelToken).ConfigureAwait(false);
 
             if (download.Completed)
             {
@@ -221,7 +222,7 @@ namespace Duplicati.Library.Backend.Storj
             var index = 0;
             var bucket = await GetBucketAsync(cancelToken).ConfigureAwait(false);
             var download = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, _ => _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false)).ConfigureAwait(false);
-            using var ts = stream.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false);
+            using var ts = stream.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
             download.DownloadOperationProgressChanged += (op) =>
             {
                 cancelToken.ThrowIfCancellationRequested();
@@ -233,7 +234,7 @@ namespace Duplicati.Library.Backend.Storj
                 ts.Write(newPart, 0, newPartLength);
                 index = index + newPartLength;
             };
-            await download.StartDownloadAsync().ConfigureAwait(false);
+            await WaitForTransferAsync(download.StartDownloadAsync(), () => download.BytesReceived, download.Cancel, _timeouts.ReadWriteTimeout, cancelToken).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
@@ -266,11 +267,60 @@ namespace Duplicati.Library.Backend.Storj
             var custom = new CustomMetadata();
             custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_ACCESS, Value = DateTime.Now.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture) });
             custom.Entries.Add(new CustomMetadataEntry { Key = StorjFile.STORJ_LAST_MODIFICATION, Value = DateTime.Now.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture) });
-            using var ts = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+            using var ts = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
             var upload = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, _ => _objectService.UploadObjectAsync(bucket, GetBasePath() + remotename, CreateUploadOptions(), ts, custom, false)).ConfigureAwait(false);
-            await upload.StartUploadAsync().ConfigureAwait(false);
+            await WaitForTransferAsync(upload.StartUploadAsync(), () => upload.BytesSent, upload.Cancel, _timeouts.ReadWriteTimeout, cancelToken).ConfigureAwait(false);
             if (upload.Failed)
                 throw new Exception(upload.ErrorMessage);
+        }
+
+        /// <summary>
+        /// Waits for a transfer until it ends, or until it has not moved for the timeout. uplink.NET
+        /// runs the transfer on its own thread and takes no token; only the source and target streams
+        /// are watched otherwise, not the network. A slow transfer is not cut off as long as it moves.
+        /// A transfer that times out or is cancelled is told to stop, which it does after its current
+        /// call into the native library returns, and is not waited for.
+        /// </summary>
+        /// <param name="transfer">The running transfer, or null if it ended before it started</param>
+        /// <param name="progress">Gets the number of bytes moved so far</param>
+        /// <param name="cancel">Tells the transfer to stop</param>
+        /// <param name="idleTimeout">The time the transfer may go without moving</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        internal static async Task WaitForTransferAsync(Task? transfer, Func<long> progress, Action cancel, TimeSpan idleTimeout, CancellationToken cancelToken)
+        {
+            if (transfer == null)
+                return;
+
+            var hasTimeout = idleTimeout > TimeSpan.Zero && idleTimeout != Timeout.InfiniteTimeSpan;
+            var pollInterval = hasTimeout
+                ? TimeSpan.FromMilliseconds(Math.Min(1000, idleTimeout.TotalMilliseconds / 4))
+                : Timeout.InfiniteTimeSpan;
+            var lastProgress = progress();
+            var lastActivity = Environment.TickCount64;
+
+            try
+            {
+                while (await Task.WhenAny(transfer, Task.Delay(pollInterval, cancelToken)).ConfigureAwait(false) != transfer)
+                {
+                    cancelToken.ThrowIfCancellationRequested();
+
+                    var current = progress();
+                    if (current != lastProgress)
+                    {
+                        lastProgress = current;
+                        lastActivity = Environment.TickCount64;
+                    }
+                    else if (hasTimeout && Environment.TickCount64 - lastActivity >= idleTimeout.TotalMilliseconds)
+                        throw new TimeoutException();
+                }
+            }
+            catch
+            {
+                cancel();
+                throw;
+            }
+
+            await transfer.ConfigureAwait(false);
         }
 
         public Task TestAsync(bool alsoWrite, CancellationToken cancelToken)

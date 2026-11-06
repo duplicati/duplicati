@@ -101,16 +101,77 @@ is_mounted() {
     grep -qs " $1 " /proc/mounts
 }
 
+# Reports whether the mount at the given path, or any mount below it, uses
+# shared propagation (a "shared:N" tag in /proc/self/mountinfo). Unmounting
+# nested mounts of a shared tree would propagate to the host volumes, so
+# such trees are never bound or unmounted recursively
+has_shared_mounts() {
+    while read -r _id _parent _dev _root mnt _opts rest; do
+        case "$mnt" in
+            "$1"|"$1"/*) ;;
+            *) continue ;;
+        esac
+        case "$rest" in
+            "- "*) tags="" ;;
+            *) tags="${rest%% - *}" ;;
+        esac
+        case " $tags " in
+            *" shared:"*) return 0 ;;
+        esac
+    done </proc/self/mountinfo
+    return 1
+}
+
+# Unmount a mount point and every mount nested below it, deepest first.
+# BusyBox umount has no recursive flag, so the nested mounts are read
+# from /proc/mounts (a reverse sort puts children before their parents)
+umount_recursive() {
+    if has_shared_mounts "$1"; then
+        echo "$QPKG_NAME: $1 uses shared mount propagation, leaving nested mounts alone" >&2
+    else
+        while read -r _dev mnt _rest; do
+            case "$mnt" in
+                "$1"/*) echo "$mnt" ;;
+            esac
+        done </proc/mounts | sort -r | while read -r mnt; do
+            umount "$mnt" 2>/dev/null || true
+        done
+    fi
+
+    if is_mounted "$1"; then
+        umount "$1"
+    fi
+}
+
+# Bind /share into the rootfs together with every mount nested below it.
+# On QTS /share is a small tmpfs with placeholder folders and each volume
+# (CACHEDEV1_DATA, MD0_DATA, external USB disks, ...) is a separate mount
+# point beneath it, so a plain bind only yields empty folders. A recursive
+# bind carries all of them along without knowing the volume names.
+# The bind copies are private as long as the host mounts are, which is
+# the QTS default; with shared propagation a plain bind is used instead
+bind_share() {
+    if has_shared_mounts /share; then
+        echo "$QPKG_NAME: /share uses shared mount propagation, nested volumes will not be visible" >&2
+        mount -o bind /share "$1"
+        return
+    fi
+    mount -o rbind /share "$1"
+}
+
 setup_mounts() {
     mkdir -p "$ROOTFS/proc" "$ROOTFS/dev" "$ROOTFS/sys" "$ROOTFS/share" "$ROOTFS/data" "$ROOTFS/local"
 
     # Mount host paths into the rootfs so Duplicati can see NAS storage.
     # /data is the persistent server datafolder (survives uninstall),
-    # /local is the ephemeral package data folder used for temp files
+    # /local is the ephemeral package data folder used for temp files.
+    # The rootfs itself lives on a volume under /share, so /share is bound
+    # first; otherwise the recursive bind would also pick up the other
+    # rootfs mounts and nest a copy of them inside /share
+    is_mounted "$ROOTFS/share" || bind_share "$ROOTFS/share"
     is_mounted "$ROOTFS/proc"  || mount -o bind /proc "$ROOTFS/proc"
     is_mounted "$ROOTFS/dev"   || mount -o bind /dev "$ROOTFS/dev"
     is_mounted "$ROOTFS/sys"   || mount -o bind /sys "$ROOTFS/sys"
-    is_mounted "$ROOTFS/share" || mount -o bind /share "$ROOTFS/share"
     is_mounted "$ROOTFS/data"  || mount -o bind "$PERSIST_DIR" "$ROOTFS/data"
     is_mounted "$ROOTFS/local" || mount -o bind "$DATA_DIR" "$ROOTFS/local"
 
@@ -119,9 +180,10 @@ setup_mounts() {
 }
 
 teardown_mounts() {
-    for m in local data share sys dev proc; do
+    # /share holds the nested volume mounts, so it is unmounted recursively
+    for m in local data sys dev proc share; do
         if is_mounted "$ROOTFS/$m"; then
-            umount "$ROOTFS/$m"
+            umount_recursive "$ROOTFS/$m"
         fi
     done
 }
@@ -184,9 +246,10 @@ start_daemon() {
     echo "Starting $QPKG_NAME ..."
     # Secrets are passed via environment so they are not visible
     # in the process command line (/proc/*/cmdline).
-    # HOME points to /share (bound into the rootfs) so the web UI shows
-    # the NAS shares as the "Home" folder; the actual config lives in
-    # /data (the persistent datafolder mount) via XDG_CONFIG_HOME and
+    # HOME points to /share (bound into the rootfs); QNAP_QPKG makes the
+    # server list the QTS shared folders found there as the special folders
+    # of the web UI, resolved to their data volumes. The actual config lives
+    # in /data (the persistent datafolder mount) via XDG_CONFIG_HOME and
     # --server-datafolder.
     HOME=/share \
         XDG_CONFIG_HOME=/data \

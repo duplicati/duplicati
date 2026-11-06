@@ -31,6 +31,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using FileEntry = Duplicati.Library.Common.IO.FileEntry;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -373,7 +374,7 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
 
         // Fallback to form data for small files and streams where we can't read the length
         var content = new MultipartFormDataContent();
-        using var fileContent = new StreamContent(stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout));
+        using var fileContent = new StreamContent(stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap));
         content.Add(fileContent, "file", remotename);
         content.Add(new StringContent(_workspaceId.ToString()), "workspaceId");
 
@@ -432,8 +433,8 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
         await using var responseStream = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct =>
             response.Content.ReadAsStreamAsync(ct)).ConfigureAwait(false);
 
-        using var timeoutStream = stream.ObserveWriteTimeout(_timeouts.ReadWriteTimeout);
-        await responseStream.CopyToAsync(timeoutStream, cancelToken).ConfigureAwait(false);
+        using var timeoutStream = responseStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Call);
+        await timeoutStream.CopyToAsync(stream, cancelToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -1200,7 +1201,7 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
                 var bytesToRead = Math.Min(PART_SIZE, fileSize - stream.Position);
 
                 using var partContent = new StreamContent(new ReadLimitLengthStream(stream, stream.Position, bytesToRead)
-                    .ObserveReadTimeout(_timeouts.ReadWriteTimeout, false));
+                    .ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap));
 
                 // The presigned URL already contains all required signature parameters.
                 // We must NOT add any extra headers (including Content-Type) as they would

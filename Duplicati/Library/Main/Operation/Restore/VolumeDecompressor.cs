@@ -89,18 +89,32 @@ namespace Duplicati.Library.Main.Operation.Restore
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", "Instantiated DataBlock for block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
 
                         sw_decompress_locking?.Start();
+                        var readable = true;
                         lock (volume.Reader!) // The BlockVolumeReader is not thread-safe
                         {
                             sw_decompress_locking?.Stop();
                             sw_decompress_read?.Start();
-                            volume.Reader.ReadBlock(block_request.BlockHash, data);
+                            try
+                            {
+                                volume.Reader.ReadBlock(block_request.BlockHash, data);
+                            }
+                            // The block cannot be had from this volume, for instance because the database places it
+                            // in a volume that does not hold it. Only the files that use the block are affected, so
+                            // they get a block of zeros, which fails their file hash check, as an invalid block does,
+                            // and the restore carries on with the other files.
+                            catch (System.IO.InvalidDataException ex)
+                            {
+                                readable = false;
+                                Logging.Log.WriteErrorMessage(LOGTAG, "UnreadableBlock", ex, "Failed to read block {0} from volume {1}, so the files that use it cannot be restored: {2}", block_request.BlockID, block_request.VolumeID, ex.Message);
+                                Array.Clear(data, 0, (int)block_request.BlockSize);
+                            }
                             sw_decompress_read?.Stop();
                         }
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", "Decompressed block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
 
                         sw_verify?.Start();
-                        var hash = Convert.ToBase64String(block_hasher.ComputeHash(data, 0, (int)block_request.BlockSize));
-                        if (hash != block_request.BlockHash)
+                        var hash = readable ? Convert.ToBase64String(block_hasher.ComputeHash(data, 0, (int)block_request.BlockSize)) : null;
+                        if (readable && hash != block_request.BlockHash)
                         {
                             Logging.Log.WriteErrorMessage(LOGTAG, "InvalidBlock", null, "Invalid block detected for block {0} in volume {1}, expected hash: {2}, actual hash: {3}", block_request.BlockID, block_request.VolumeID, block_request.BlockHash, hash);
                         }

@@ -32,21 +32,30 @@ internal static class UploadRealFilelist
     /// </summary>
     private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(UploadRealFilelist));
 
-    public static async Task<bool> RunAsync(BackupResults result, BackupDatabase db, IBackendManager backendManager, Options options, FilesetVolumeWriter filesetvolume, long filesetid, Common.ITaskReader taskreader, bool lastWasPartial)
+    public static async Task<bool> RunAsync(BackupResults result, BackupDatabase db, IBackendManager backendManager, Options options, FilesetVolumeWriter filesetvolume, long filesetid, Common.ITaskReader taskreader, bool lastWasPartial, bool stoppedBeforeProcessing)
     {
         // We ignore the stop signal, but not the pause and terminate
         await taskreader.ProgressRendevouzAsync().ConfigureAwait(false);
 
-        // Update the reported source and backend changes
-        using (new Logging.Timer(LOGTAG, "UpdateChangeStatistics", "UpdateChangeStatistics"))
-            await db.UpdateChangeStatisticsAsync(result, taskreader.ProgressToken).ConfigureAwait(false);
+        // A backup stopped before it processed any files has an empty fileset, which would
+        // count every file of the previous version as deleted and become a version of its own
+        if (stoppedBeforeProcessing)
+        {
+            Logging.Log.WriteInformationMessage(LOGTAG, "StoppedBeforeProcessing", "The backup was stopped before any files were processed, so no new version is created");
+        }
+        else
+        {
+            // Update the reported source and backend changes
+            using (new Logging.Timer(LOGTAG, "UpdateChangeStatistics", "UpdateChangeStatistics"))
+                await db.UpdateChangeStatisticsAsync(result, taskreader.ProgressToken).ConfigureAwait(false);
+        }
 
         var changeCount =
             result.AddedFiles + result.ModifiedFiles + result.DeletedFiles +
             result.AddedFolders + result.ModifiedFolders + result.DeletedFolders +
             result.AddedSymlinks + result.ModifiedSymlinks + result.DeletedSymlinks;
 
-        var doUpload = options.UploadUnchangedBackups || changeCount > 0 || lastWasPartial;
+        var doUpload = !stoppedBeforeProcessing && (options.UploadUnchangedBackups || changeCount > 0 || lastWasPartial);
 
         //Changes in the filelist triggers a filelist upload
         if (doUpload)

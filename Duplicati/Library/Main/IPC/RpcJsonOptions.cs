@@ -59,6 +59,15 @@ public static class RpcJsonOptions
 /// </summary>
 public class FilterConverter : JsonConverter<IFilter>
 {
+    /// <summary>
+    /// Accepts every filter implementation, not only the interface.
+    /// The RPC arguments are typed as object, so the serializer picks the converter by the
+    /// runtime type (FilterExpression); without this the filter is written as its public
+    /// properties and arrives at the controller process as an empty filter.
+    /// </summary>
+    public override bool CanConvert(Type typeToConvert)
+        => typeof(IFilter).IsAssignableFrom(typeToConvert);
+
     public override IFilter? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var dto = JsonSerializer.Deserialize<FilterDto>(ref reader, options);

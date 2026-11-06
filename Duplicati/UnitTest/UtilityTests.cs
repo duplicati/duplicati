@@ -730,6 +730,54 @@ namespace Duplicati.UnitTest
             var hostEx = Assert.Throws<ArgumentException>(() => new RelaxedUri("ftp://user:hunter2@/path").RequireHost());
             StringAssert.DoesNotContain("hunter2", hostEx.Message);
         }
+
+        [Test]
+        [Category("Utility")]
+        public static async Task TimeoutWrappersLeaveTheCallersStreamOpen()
+        {
+            // Backends wrap the caller's stream without taking ownership of it, and callers
+            // keep using the stream afterwards, for example to rewind it for a retry
+            var wrappers = new Func<Stream, Stream>[] {
+                s => s.ObserveReadTimeout(TimeSpan.FromSeconds(30), false),
+                s => s.ObserveWriteTimeout(TimeSpan.FromSeconds(30), false)
+            };
+            var disposers = new Func<Stream, Task>[] {
+                s => { s.Dispose(); return Task.CompletedTask; },
+                s => { s.Close(); return Task.CompletedTask; },
+                s => s.DisposeAsync().AsTask()
+            };
+
+            foreach (var wrap in wrappers)
+                foreach (var dispose in disposers)
+                {
+                    using var stream = new MemoryStream();
+                    await dispose(wrap(stream));
+                    Assert.IsTrue(stream.CanRead, "The wrapped stream was closed when the wrapper was disposed");
+                }
+        }
+
+        [Test]
+        [Category("Utility")]
+        public static void TimeoutWrappersApplyTheRequestedMode()
+        {
+            var timeout = TimeSpan.FromSeconds(30);
+            foreach (var mode in Enum.GetValues<TimeoutMode>())
+            {
+                using var read = (TimeoutObservingStream)new MemoryStream().ObserveReadTimeout(timeout, true, mode);
+                Assert.AreEqual(mode, read.Mode);
+                Assert.AreEqual((int)timeout.TotalMilliseconds, read.ReadTimeout);
+                Assert.AreEqual(Timeout.Infinite, read.WriteTimeout, "Only the direction in use may have a timeout, or the idle timer fires");
+
+                using var write = (TimeoutObservingStream)new MemoryStream().ObserveWriteTimeout(timeout, true, mode);
+                Assert.AreEqual(mode, write.Mode);
+                Assert.AreEqual((int)timeout.TotalMilliseconds, write.WriteTimeout);
+                Assert.AreEqual(Timeout.Infinite, write.ReadTimeout, "Only the direction in use may have a timeout, or the idle timer fires");
+            }
+
+            // The original helpers keep the original behavior
+            using var legacy = (TimeoutObservingStream)new MemoryStream().ObserveReadTimeout(timeout, true);
+            Assert.AreEqual(TimeoutMode.CallAndGap, legacy.Mode);
+        }
     }
 
     /// <summary>

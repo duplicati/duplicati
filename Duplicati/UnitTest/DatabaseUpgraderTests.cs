@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -271,6 +272,130 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(EXPECTED_HIGHEST_UPGRADE_SCRIPT, highest,
                 "The highest numbered upgrade script must match the version recorded in Schema.sql. " +
                 "If you add a new upgrade script, also bump the version inserted at the end of Schema.sql.");
+        }
+
+        /// <summary>
+        /// A fresh database is built from <c>Schema.sql</c> without running any numbered script,
+        /// yet it must still carry a <c>SchemaScript</c> row for every version, so an older
+        /// DatabaseTool can take it back down.
+        /// </summary>
+        [Test]
+        public async Task UpgradeDatabase_OnFreshDatabase_WritesSchemaScriptRowsAsync()
+        {
+            using var dbfile = new TempFile();
+            using var db = await SQLiteLoader.LoadConnectionAsync(dbfile);
+            DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
+
+            var scripts = DatabaseUpgrader.GetSchemaScripts(typeof(DatabaseSchemaMarker));
+            var rows = await ReadSchemaScriptRowsAsync(db);
+
+            Assert.AreEqual(Enumerable.Range(1, EXPECTED_LATEST_SCHEMA_VERSION).ToList(), rows.Keys.OrderBy(x => x).ToList());
+            foreach (var (version, row) in rows)
+            {
+                Assert.AreEqual(EXPECTED_LATEST_SCHEMA_VERSION, row.WriterVersion, $"WriterVersion for version {version}");
+                Assert.AreEqual(scripts.GetUpgradeScript(version), row.UpdateScript, $"UpdateScript for version {version}");
+                Assert.AreEqual(scripts.GetDowngradeScript(version), row.DowngradeScript, $"DowngradeScript for version {version}");
+            }
+
+            // Versions before the oldest downgrade script have none, the newest one always has one
+            Assert.IsNull(rows[1].DowngradeScript);
+            Assert.IsNotNull(rows[EXPECTED_LATEST_SCHEMA_VERSION].DowngradeScript);
+        }
+
+        /// <summary>
+        /// A database upgraded by a release that did not know the <c>SchemaScript</c> table
+        /// gets the table and all rows on its next upgrade.
+        /// </summary>
+        [Test]
+        public async Task UpgradeDatabase_OnOldVersionWithoutSchemaScriptTable_WritesRowsAsync()
+        {
+            using var dbfile = new TempFile();
+
+            using (var db = await SQLiteLoader.LoadConnectionAsync(dbfile))
+            using (var cmd = db.CreateCommand())
+            {
+                DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
+                cmd.CommandText = @"
+                    DROP TABLE ""SchemaScript"";
+                    DROP TABLE ""SourceProviderState"";
+                    UPDATE ""Version"" SET ""Version"" = @ver;
+                ";
+                cmd.Parameters.AddWithValue("@ver", EXPECTED_LATEST_SCHEMA_VERSION - 1);
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            // The upgrader keeps a backup beside the database before it runs the scripts
+            var backupPattern = "* " + Path.GetFileNameWithoutExtension(dbfile) + " *.sqlite";
+            try
+            {
+                using var db = await SQLiteLoader.LoadConnectionAsync(dbfile);
+                DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
+
+                Assert.AreEqual(EXPECTED_LATEST_SCHEMA_VERSION, await ReadVersionAsync(db));
+                var rows = await ReadSchemaScriptRowsAsync(db);
+                Assert.AreEqual(EXPECTED_LATEST_SCHEMA_VERSION, rows.Count);
+                Assert.IsTrue(rows.Values.All(x => x.WriterVersion == EXPECTED_LATEST_SCHEMA_VERSION));
+            }
+            finally
+            {
+                foreach (var backup in Directory.GetFiles(Path.GetDirectoryName(Path.GetFullPath(dbfile))!, backupPattern))
+                    File.Delete(backup);
+            }
+        }
+
+        /// <summary>
+        /// Opening a current database replaces rows written by an older release, keeps rows
+        /// written by a newer release, and removes rows above the database's version.
+        /// </summary>
+        [Test]
+        public async Task UpgradeDatabase_OnCurrentDatabase_RespectsWriterVersionAsync()
+        {
+            using var dbfile = new TempFile();
+
+            using (var db = await SQLiteLoader.LoadConnectionAsync(dbfile))
+            using (var cmd = db.CreateCommand())
+            {
+                DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
+                cmd.CommandText = @"
+                    UPDATE ""SchemaScript"" SET ""DowngradeScript"" = 'older', ""WriterVersion"" = @older WHERE ""Version"" = 20;
+                    UPDATE ""SchemaScript"" SET ""DowngradeScript"" = 'newer', ""WriterVersion"" = @newer WHERE ""Version"" = 21;
+                    INSERT INTO ""SchemaScript"" (""Version"", ""UpdateScript"", ""DowngradeScript"", ""WriterVersion"") VALUES (@stale, '', 'stale', @newer);
+                ";
+                cmd.Parameters.AddWithValue("@older", EXPECTED_LATEST_SCHEMA_VERSION - 1);
+                cmd.Parameters.AddWithValue("@newer", EXPECTED_LATEST_SCHEMA_VERSION + 5);
+                cmd.Parameters.AddWithValue("@stale", EXPECTED_LATEST_SCHEMA_VERSION + 1);
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            using (var db = await SQLiteLoader.LoadConnectionAsync(dbfile))
+            {
+                DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
+
+                var scripts = DatabaseUpgrader.GetSchemaScripts(typeof(DatabaseSchemaMarker));
+                var rows = await ReadSchemaScriptRowsAsync(db);
+
+                Assert.AreEqual(scripts.GetDowngradeScript(20), rows[20].DowngradeScript, "A row from an older release must be replaced");
+                Assert.AreEqual(EXPECTED_LATEST_SCHEMA_VERSION, rows[20].WriterVersion);
+                Assert.AreEqual("newer", rows[21].DowngradeScript, "A row from a newer release must be kept");
+                Assert.AreEqual(EXPECTED_LATEST_SCHEMA_VERSION + 5, rows[21].WriterVersion);
+                Assert.IsFalse(rows.ContainsKey(EXPECTED_LATEST_SCHEMA_VERSION + 1), "Rows above the database version must be removed");
+            }
+        }
+
+        /// <summary>
+        /// Reads the rows of the <c>SchemaScript</c> table
+        /// </summary>
+        /// <param name="db">The database connection</param>
+        /// <returns>The rows by version</returns>
+        private static async Task<Dictionary<int, (string UpdateScript, string DowngradeScript, int WriterVersion)>> ReadSchemaScriptRowsAsync(SqliteConnection db)
+        {
+            var result = new Dictionary<int, (string UpdateScript, string DowngradeScript, int WriterVersion)>();
+            using var cmd = db.CreateCommand();
+            cmd.CommandText = @"SELECT ""Version"", ""UpdateScript"", ""DowngradeScript"", ""WriterVersion"" FROM ""SchemaScript""";
+            using var rd = await cmd.ExecuteReaderAsync();
+            while (await rd.ReadAsync())
+                result[rd.GetInt32(0)] = (rd.GetString(1), rd.IsDBNull(2) ? null : rd.GetString(2), rd.GetInt32(3));
+            return result;
         }
 
         private static async Task<int> ReadVersionAsync(SqliteConnection db)

@@ -474,6 +474,10 @@ namespace Duplicati.Library.Main.Operation
                 }
                 else if (changeTracking != null)
                 {
+                    // The enumeration is done, so the progress total is not adjusted further;
+                    // wait for the pending lookups so none overwrites the totals set below
+                    await changeTracking.StopProgressEstimateAsync().ConfigureAwait(false);
+
                     // A provider that was handed state may have enumerated only the entries that
                     // changed, so copy everything it did not examine from the previous fileset.
                     // Without loaded state every provider walked everything, and the copy would
@@ -732,6 +736,7 @@ namespace Duplicati.Library.Main.Operation
                     "The filter has an \"exclude all\" rule that appears before any include rules. This is likely a misconfiguration; no files will be backed up. Please check the filter settings.");
 
             Task parallelScanner = null;
+            Backup.ChangeTrackingCoordinator changeTracking = null;
             try
             {
                 // If we crash now, there is a chance we leave behind partial remote files
@@ -747,6 +752,8 @@ namespace Duplicati.Library.Main.Operation
                 using (var filesetvolume = new FilesetVolumeWriter(m_options, m_database.OperationTimestamp))
                 {
                     long filesetid;
+                    // A stop before the files are processed leaves the fileset without any of them
+                    var stoppedBeforeProcessing = false;
                     using var counterToken = CancellationTokenSource.CreateLinkedTokenSource(m_taskReader.ProgressToken);
                     using (var source = await GetSourceProviderAsync(sources, m_options, m_taskReader.ProgressToken).ConfigureAwait(false))
                     {
@@ -792,14 +799,14 @@ namespace Duplicati.Library.Main.Operation
                                     .ConfigureAwait(false);
 
                             var journalService = GetJournalService(source, filter, lastfilesetid);
-                            var changeTracking = await GetChangeTrackingAsync(source, filter, sources, lastfilesetid, journalService != null).ConfigureAwait(false);
+                            changeTracking = await GetChangeTrackingAsync(source, filter, sources, lastfilesetid, journalService != null).ConfigureAwait(false);
 
                             // Start parallel scan, or use the database. A source that tracks its own
                             // changes records what it examined while it is enumerated, so it must be
                             // enumerated once, by the backup; a parallel count would race it for the
                             // state that is stored with the fileset
                             if (changeTracking != null && !m_options.DisableFileScanner)
-                                Log.WriteVerboseMessage(LOGTAG, "FileScannerDisabledForChangeTracking", "The parallel file count is not run because a source tracks its own changes; the count of the previous backup is shown instead");
+                                Log.WriteVerboseMessage(LOGTAG, "FileScannerDisabledForChangeTracking", "The parallel file count is not run because a source tracks its own changes; the count of the previous backup is shown instead, less what the source reports as carried forward");
 
                             if (m_options.DisableFileScanner || changeTracking != null)
                             {
@@ -808,6 +815,13 @@ namespace Duplicati.Library.Main.Operation
                                     .ConfigureAwait(false);
 
                                 m_result.OperationProgressUpdater.UpdatefileCount(d.Item1, d.Item2, true);
+
+                                // A source that was handed state lists only its changes below the
+                                // folders it walks incrementally, and reports them as it reaches
+                                // them; the total follows, leaving out what is carried forward
+                                changeTracking?.StartProgressEstimate(db, lastfilesetid, d.Item1, d.Item2,
+                                    (count, size) => m_result.OperationProgressUpdater.UpdatefileCount(count, size, true),
+                                    m_result.TaskControl.ProgressToken);
                             }
                             else
                             {
@@ -820,11 +834,19 @@ namespace Duplicati.Library.Main.Operation
                                 var stats = new Backup.BackupStatsCollector(m_result);
                                 await RunMainOperationAsync(channels, source, journalService, changeTracking, db, backendManager, stats, m_options, m_filter, m_result, m_result.TaskControl, filesetid, lastfilesetid).ConfigureAwait(false);
                             }
+                            else
+                            {
+                                stoppedBeforeProcessing = true;
+                            }
                         }
                         finally
                         {
                             //If the scanner is still running for some reason, make sure we kill it now
                             await counterToken.CancelAsync();
+
+                            // The estimate is stopped once the files are processed; this covers a failed run
+                            if (changeTracking != null)
+                                await changeTracking.StopProgressEstimateAsync().ConfigureAwait(false);
                         }
 
                         try
@@ -870,7 +892,7 @@ namespace Duplicati.Library.Main.Operation
                         .ConfigureAwait(false);
 
                     // Send the actual filelist
-                    var uploadedNewFileset = await Backup.UploadRealFilelist.RunAsync(m_result, db, backendManager, m_options, filesetvolume, filesetid, m_result.TaskControl, lastTempVolumeIncomplete)
+                    var uploadedNewFileset = await Backup.UploadRealFilelist.RunAsync(m_result, db, backendManager, m_options, filesetvolume, filesetid, m_result.TaskControl, lastTempVolumeIncomplete, stoppedBeforeProcessing)
                         .ConfigureAwait(false);
 
                     // Warn if the backup examined only folders and/or symlinks but no actual files,

@@ -25,6 +25,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Backend
 {
@@ -127,7 +128,7 @@ namespace Duplicati.Library.Backend
             using var ls = new ReadLimitLengthStream(stream, offset, Math.Min(chunksize, stream.Length - offset));
             // The chunk stream is used as the request body and is only read by the
             // HTTP stack, so the read timeout must be observed here.
-            using var ts = ls.ObserveReadTimeout(m_timeouts.ReadWriteTimeout);
+            using var ts = ls.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
 
             req.Content = new StreamContent(ts);
             req.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
@@ -200,7 +201,7 @@ namespace Duplicati.Library.Backend
             using (var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => GetResponseAsync(req, HttpCompletionOption.ResponseHeadersRead, ct)).ConfigureAwait(false))
             {
                 using (var rs = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => response.Content.ReadAsStreamAsync(ct)))
-                using (var ts = rs.ObserveReadTimeout(m_timeouts.ReadWriteTimeout))
+                using (var ts = rs.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Call))
                     await Utility.Utility.CopyStreamAsync(ts, fs, cancelToken).ConfigureAwait(false);
             }
         }

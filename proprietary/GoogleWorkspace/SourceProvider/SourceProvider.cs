@@ -122,6 +122,19 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     public APIHelper ApiHelper => _apiHelper;
     public OptionsHelper.GoogleWorkspaceOptions Options => _options;
 
+    /// <summary>
+    /// The client for downloads that must not carry the Google credentials, such as a
+    /// calendar attachment that is only a link to some site. It is created for this run,
+    /// so it is built with the certificate and proxy settings of the run, and shared by
+    /// every such download in it, so each does not open a connection pool of its own
+    /// </summary>
+    private readonly Lazy<HttpClient> _linkDownloadClient = new(Library.Utility.HttpClientHelper.CreateClient);
+
+    /// <summary>
+    /// The client for downloads that must not carry the Google credentials
+    /// </summary>
+    public HttpClient LinkDownloadClient => _linkDownloadClient.Value;
+
     public SourceProvider()
     {
         _apiHelper = null!;
@@ -178,6 +191,10 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     public bool IsIncrementallyEnumeratedFolder(string folderPath)
         => _changeTracker.IsIncrementallyEnumeratedFolder(folderPath);
 
+    /// <inheritdoc />
+    public void SetFolderWalkObserver(Action<string, FolderWalkMode> observer)
+        => _changeTracker.SetFolderWalkObserver(observer);
+
     /// <summary>
     /// Whether mailboxes are walked from the Gmail history in this enumeration: the option is
     /// on and the provider was handed state by a backup
@@ -201,6 +218,8 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
 
     public void Dispose()
     {
+        if (_linkDownloadClient.IsValueCreated)
+            _linkDownloadClient.Value.Dispose();
     }
 
     /// <inheritdoc />

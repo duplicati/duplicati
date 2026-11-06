@@ -29,6 +29,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using Newtonsoft.Json;
+using Duplicati.StreamUtil;
 
 [assembly: InternalsVisibleTo("Duplicati.UnitTest")]
 
@@ -451,7 +452,7 @@ namespace Duplicati.Library.Backend.Box
                     multipartForm.Add(JsonContent.Create(createreq), "attributes");
                 }
 
-                using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+                using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
                 multipartForm.Add(new StreamContent(timeoutStream), "file", remotename);
 
                 var res = (await _oAuthHelper.PostMultipartAndGetJsonDataAsync<FileList>(url, cancelToken, multipartForm)).Entries?.FirstOrDefault();
@@ -472,7 +473,7 @@ namespace Duplicati.Library.Backend.Box
             using var request = await _oAuthHelper.CreateRequestAsync($"{BOX_API_URL}/files/{fileId}/content", HttpMethod.Get, cancelToken).ConfigureAwait(false);
             using var resp = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => _oAuthHelper.GetResponseAsync(request, HttpCompletionOption.ResponseHeadersRead, ct)).ConfigureAwait(false);
             await using var responseStream = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct => resp.Content.ReadAsStreamAsync(ct)).ConfigureAwait(false);
-            using var ts = responseStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout);
+            using var ts = responseStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Call);
             await Utility.Utility.CopyStreamAsync(ts, stream, cancelToken).ConfigureAwait(false);
         }
 

@@ -722,6 +722,55 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// The server stores the task configuration in the backup when --store-task-config is set,
+    /// and takes the option out before running the backup. It was left in for the other
+    /// operations, so a restore of such a backup warned that the option is not supported
+    /// (forum topic 22816).
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task StoreTaskConfigIsNotPassedToOtherOperations_Async()
+    {
+        var backupPassphrase = "integration-passphrase";
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sample content");
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var backupId = await CreateBackupAsync(httpClient, backupPassphrase,
+                extraSettings: [new BackupAndScheduleInputDto.SettingInputDto { Name = "store-task-config", Value = "Self" }]).ConfigureAwait(false);
+            var connection = (Duplicati.Server.Database.Connection)ServerProgram.DuplicatiWebserver.Provider.GetService(typeof(Duplicati.Server.Database.Connection))!;
+
+            void AssertNoWarningForTheOption(string operation)
+            {
+                var notifications = connection.GetNotifications().Where(n => n.BackupID == backupId).ToList();
+                Assert.That(notifications.Where(n => n.Message?.Contains("store-task-config") ?? false), Is.Empty,
+                    $"The {operation} warned about the option: {string.Join(" | ", notifications.Select(n => $"{n.Type} {n.Title}: {n.Message}"))}");
+            }
+
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+            AssertNoWarningForTheOption("backup");
+
+            await DirectoryDeleteSafeAsync(this.RESTOREFOLDER).ConfigureAwait(false);
+            Directory.CreateDirectory(this.RESTOREFOLDER);
+            await RestoreAndVerifyAsync(httpClient, backupId, backupPassphrase, this.RESTOREFOLDER, "Sample content").ConfigureAwait(false);
+            AssertNoWarningForTheOption("restore");
+
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/verify").ConfigureAwait(false);
+            AssertNoWarningForTheOption("verify");
+
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/compact").ConfigureAwait(false);
+            AssertNoWarningForTheOption("compact");
+
+            // The backup still stores the task configuration
+            var configResponse = await httpClient.PostAsync($"/api/v1/backup/{backupId}/restore-task-config", null).ConfigureAwait(false);
+            configResponse.EnsureSuccessStatusCode();
+            var storedConfig = await configResponse.Content.ReadFromJsonAsync<JsonElement>(JsonOptions).ConfigureAwait(false);
+            Assert.That(storedConfig.ValueKind == JsonValueKind.Array ? storedConfig.GetArrayLength() : -1, Is.EqualTo(1),
+                $"The backup did not store its task configuration: {storedConfig}");
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Waits until the task is no longer current, so its result has been stored.
     /// </summary>
     private static async Task WaitForTaskResultAsync(long taskId)
@@ -1032,6 +1081,66 @@ public class ServerApiIntegrationTests : BasicSetupHelper
 
             // The refused requests did not damage the sync database
             await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Deleting the remote files of a job removes the backup volumes at the destination. A
+    /// sync job has no volumes there, only the copied files, so the option is ignored: the
+    /// job is deleted and the copy is kept, including files that look like backup volumes,
+    /// as when a backup folder is synced (forum topic 22782).
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task SyncJobCanBeDeletedWithItsRemoteFiles_Async()
+    {
+        const string volumeLikeName = "duplicati-20260101T000000Z.dlist.zip";
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sync sample");
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, volumeLikeName), "Synced backup volume");
+        Directory.CreateDirectory(this.TARGETFOLDER);
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var request = new BackupAndScheduleInputDto
+            {
+                Backup = new BackupAndScheduleInputDto.BackupInputDto
+                {
+                    Name = $"API integration sync {Guid.NewGuid():N}",
+                    Description = "Integration test sync",
+                    OperationType = Duplicati.Server.Serialization.OperationType.Sync,
+                    TargetURL = BuildFileBackendUrl(this.TARGETFOLDER),
+                    Sources = new[] { this.DATAFOLDER },
+                    Settings = new[]
+                    {
+                        new BackupAndScheduleInputDto.SettingInputDto { Name = "--no-encryption", Value = "true" },
+                        new BackupAndScheduleInputDto.SettingInputDto { Name = "snapshot-policy", Value = "Off" }
+                    },
+                    Filters = Array.Empty<BackupAndScheduleInputDto.FilterInputDto>(),
+                    Metadata = new Dictionary<string, string>()
+                }
+            };
+
+            var createResponse = await httpClient.PostAsJsonAsync("/api/v1/backups", request, JsonOptions).ConfigureAwait(false);
+            createResponse.EnsureSuccessStatusCode();
+            var backupId = (await createResponse.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false))?.ID
+                ?? throw new InvalidOperationException("Sync job creation did not return an ID");
+
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+            Assert.That(File.Exists(Path.Combine(this.TARGETFOLDER, volumeLikeName)), Is.True, "The sync should have copied the file");
+
+            var deleteResponse = await httpClient.DeleteAsync($"/api/v1/backup/{backupId}?delete-remote-files=true&delete-local-db=true").ConfigureAwait(false);
+            deleteResponse.EnsureSuccessStatusCode();
+            var delete = await deleteResponse.Content.ReadFromJsonAsync<DeleteBackupOutputDto>(JsonOptions).ConfigureAwait(false)
+                         ?? throw new InvalidOperationException("Delete response was empty");
+            Assert.That(delete.ID, Is.Not.Null, $"{delete.Status}: {delete.Reason}");
+
+            var state = await WaitForTaskToFinishAsync(httpClient, delete.ID!.Value).ConfigureAwait(false);
+            Assert.That(state.Status, Is.EqualTo("Completed").IgnoreCase, state.ErrorMessage);
+
+            var backupResponse = await httpClient.GetAsync($"/api/v1/backup/{backupId}").ConfigureAwait(false);
+            Assert.That(backupResponse.StatusCode, Is.EqualTo(HttpStatusCode.NotFound), "The sync job should be deleted");
+            Assert.That(File.Exists(Path.Combine(this.TARGETFOLDER, "sample.txt")), Is.True, "The synced copy should be kept");
+            Assert.That(File.Exists(Path.Combine(this.TARGETFOLDER, volumeLikeName)), Is.True, "The synced copy should be kept");
         }).ConfigureAwait(false);
     }
 

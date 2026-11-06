@@ -40,6 +40,7 @@ public class AlternateFTPBackend : FTP
     protected override string CONFIG_KEY_FTP_ENCRYPTION_MODE => "aftp-encryption-mode";
     protected override string CONFIG_KEY_FTP_DATA_CONNECTION_TYPE => "aftp-data-connection-type";
     protected override string CONFIG_KEY_FTP_SSL_PROTOCOLS => "aftp-ssl-protocols";
+    protected override string CONFIG_KEY_FTP_TLS_IMPLEMENTATION => "aftp-tls-implementation";
     protected override string CONFIG_KEY_FTP_UPLOAD_DELAY => "aftp-upload-delay";
     protected override string CONFIG_KEY_FTP_LOGTOCONSOLE => "aftp-log-to-console";
     protected override string CONFIG_KEY_FTP_LOGPRIVATEINFOTOCONSOLE => "aftp-log-privateinfo-to-console";

@@ -734,7 +734,7 @@ Duplicati reports the following return/exit codes:
   0 - Success
   1 - Successful operation, but no files were changed
   2 - Successful operation, but with warning(s)
-  3 - For backup: finished with error(s), for test: error(s) found on the backend, for restore-test: verification failure(s) or budget exceeded
+  3 - For backup: finished with error(s), for restore: some files could not be restored, for test: error(s) found on the backend, for restore-test: verification failure(s) or budget exceeded
   50 - Backup uploaded some files, but did not finish
   100 - An error occurred
   200 - Invalid commandline arguments found

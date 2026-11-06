@@ -99,6 +99,7 @@ internal static class DuplicatiBackendTestServer
 
     public const string GatewayCredentials = "{\"mode\":\"gateway\",\"uploadsDisabled\":false,\"accountDisabled\":false}";
     public const string QuotaExceededCredentials = "{\"mode\":\"gateway\",\"uploadsDisabled\":true,\"uploadsDisabledReason\":\"quota-exceeded\",\"accountDisabled\":false}";
+    public const string ReadOnlyCredentials = "{\"mode\":\"gateway\",\"uploadsDisabled\":true,\"uploadsDisabledReason\":\"read-only\",\"accountDisabled\":false}";
     public const string DisabledGatewayCredentials = "{\"mode\":\"gateway\",\"uploadsDisabled\":true,\"uploadsDisabledReason\":\"account-disabled\",\"accountDisabled\":true,\"accountDisabledReason\":\"no-quota\",\"accountDisabledMessage\":\"Account subscription does not have access to storage\"}";
     public const string DisabledDirectCredentials = "{\"mode\":\"direct\",\"uploadsDisabled\":true,\"uploadsDisabledReason\":\"account-disabled\",\"accountDisabled\":true,\"accountDisabledReason\":\"provider-account-inactive\",\"accountDisabledMessage\":\"The iDrive storage account for this organization is disabled\"}";
 

@@ -26,6 +26,7 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using System.Net;
 using System.Runtime.CompilerServices;
+using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Backend.AliyunOSS
 {
@@ -200,7 +201,7 @@ namespace Duplicati.Library.Backend.AliyunOSS
                     ContentLength = stream.Length
                 };
 
-                using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false);
+                using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
                 var objectResult = await Task.Factory.FromAsync(
                     (cb, state) => client.BeginPutObject(bucketName, objectName, timeoutStream, metadata, cb, state),
                     client.EndPutObject,
@@ -235,8 +236,8 @@ namespace Duplicati.Library.Backend.AliyunOSS
                     throw new Exception("Get failed");
 
                 using (var requestStream = obj.Content)
-                using (var timeoutStream = stream.ObserveWriteTimeout(_timeouts.ReadWriteTimeout, false))
-                    await Utility.Utility.CopyStreamAsync(requestStream, timeoutStream, cancelToken).ConfigureAwait(false);
+                using (var timeoutStream = requestStream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Call))
+                    await Utility.Utility.CopyStreamAsync(timeoutStream, stream, cancelToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

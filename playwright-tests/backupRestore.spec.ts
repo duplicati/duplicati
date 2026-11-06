@@ -43,9 +43,10 @@ async function clickThreeDotMenu(page: Page, action: string) {
     })
     .click();
 
+  // Match the name exactly: "Delete" would also match "Delete versions"
   await backupElement
-    .locator("div.options button")
-    .filter({ hasText: action })
+    .locator("div.options")
+    .getByRole("button", { name: action, exact: true })
     .click();
 }
 
@@ -143,7 +144,16 @@ async function createBackup(page: Page) {
     .click();
 
   await page.locator("button").filter({ hasText: "Continue" }).click();
+
+  // Wait for the backup to be saved; the next step leaves the page, which would
+  // cut the request short
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/api/v1/backups",
+  );
   await page.locator("button").filter({ hasText: "Submit" }).click();
+  expect((await saved).ok()).toBe(true);
 }
 
 async function deleteBackupIfExists(page: Page) {

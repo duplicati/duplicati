@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 using System.CommandLine;
+using System.Text.RegularExpressions;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
@@ -32,6 +33,11 @@ namespace Duplicati.CommandLine.DatabaseTool.Commands;
 /// </summary>
 public static class Downgrade
 {
+    /// <summary>
+    /// Matches SQL that reaches outside the database, which a script stored in the database may not use
+    /// </summary>
+    private static readonly Regex ForbiddenStoredSql = new(@"\b(ATTACH|DETACH|VACUUM|load_extension)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
     /// <summary>
     /// Creates the downgrade command
     /// </summary>
@@ -50,18 +56,18 @@ public static class Downgrade
         };
         var serverVersionOption = new Option<int>("--server-version")
         {
-            Description = "The version to downgrade the server database to",
-            DefaultValueFactory = _ => 9
+            Description = "The version to downgrade the server database to; negative means the newest version this release supports",
+            DefaultValueFactory = _ => -1
         };
         var localVersionOption = new Option<int>("--local-version")
         {
-            Description = "The version to downgrade local databases to",
-            DefaultValueFactory = _ => 14
+            Description = "The version to downgrade local databases to; negative means the newest version this release supports",
+            DefaultValueFactory = _ => -1
         };
         var syncVersionOption = new Option<int>("--sync-version")
         {
-            Description = "The version to downgrade sync databases to",
-            DefaultValueFactory = _ => 0
+            Description = "The version to downgrade sync databases to; negative means the newest version this release supports",
+            DefaultValueFactory = _ => -1
         };
         var noBackupsOption = new Option<bool>("--no-backups")
         {
@@ -102,41 +108,16 @@ public static class Downgrade
                 return;
             }
 
-            static string ReadStream(string path)
-            {
-                using var reader = new StreamReader(typeof(Downgrade).Assembly.GetManifestResourceStream(path) ?? throw new InvalidOperationException());
-                return reader.ReadToEnd();
-            }
+            var serverScripts = DatabaseUpgrader.GetSchemaScripts(typeof(Library.RestAPI.Database.DatabaseSchemaMarker));
+            var localScripts = DatabaseUpgrader.GetSchemaScripts(typeof(Library.Main.Database.Local.DatabaseSchemaMarker));
+            var syncScripts = DatabaseUpgrader.GetSchemaScripts(typeof(Library.Main.Database.Sync.DatabaseSchemaMarker));
 
-            static string ResourceNameToPath(string resourcename)
-            {
-                var prefixes = new[] {
-                    typeof(Program).Namespace + ".Scripts.Local.",
-                    typeof(Program).Namespace + ".Scripts.Server.",
-                    typeof(Program).Namespace + ".Scripts.Sync."
-                };
-
-                foreach (var prefix in prefixes)
-                    if (resourcename.StartsWith(prefix))
-                        return resourcename.Substring(prefix.Length);
-
-                throw new Exception($"Unexpected resource name: {resourcename}");
-            }
-
-            var serverVersions = typeof(Downgrade).Assembly.GetManifestResourceNames()
-                .Where(x => x.Contains(".Scripts.Server."))
-                .Select(x => new DowngradeScript(Version: int.Parse(ResourceNameToPath(x).Split('.').First()), Filename: ResourceNameToPath(x), Content: ReadStream(x)))
-                .ToList();
-
-            var localVersions = typeof(Downgrade).Assembly.GetManifestResourceNames()
-                .Where(x => x.Contains(".Scripts.Local."))
-                .Select(x => new DowngradeScript(Version: int.Parse(ResourceNameToPath(x).Split('.').First()), Filename: ResourceNameToPath(x), Content: ReadStream(x)))
-                .ToList();
-
-            var syncVersions = typeof(Downgrade).Assembly.GetManifestResourceNames()
-                .Where(x => x.Contains(".Scripts.Sync."))
-                .Select(x => new DowngradeScript(Version: int.Parse(ResourceNameToPath(x).Split('.').First()), Filename: ResourceNameToPath(x), Content: ReadStream(x)))
-                .ToList();
+            if (serverversion < 0)
+                serverversion = serverScripts.LatestVersion;
+            if (localversion < 0)
+                localversion = localScripts.LatestVersion;
+            if (syncversion < 0)
+                syncversion = syncScripts.LatestVersion;
 
             foreach (var db in databases)
             {
@@ -169,9 +150,9 @@ public static class Downgrade
 
                 var scripts = type switch
                 {
-                    DatabaseType.Server => serverVersions,
-                    DatabaseType.Sync => syncVersions,
-                    DatabaseType.Backup => localVersions,
+                    DatabaseType.Server => serverScripts,
+                    DatabaseType.Sync => syncScripts,
+                    DatabaseType.Backup => localScripts,
                     _ => throw new Exception($"Unknown database type: {type}")
                 };
 
@@ -184,43 +165,114 @@ public static class Downgrade
     }
 
     /// <summary>
-    /// The downgrade script
+    /// A downgrade script recorded in the database's <c>SchemaScript</c> table
     /// </summary>
-    /// <param name="Filename">The path to the assembly resource</param>
-    /// <param name="Version">The script version</param>
-    /// <param name="Content">The script contents</param>
-    private sealed record DowngradeScript(string Filename, int Version, string Content);
+    /// <param name="Content">The script contents, or <c>null</c> if the version cannot be downgraded</param>
+    /// <param name="WriterVersion">The newest schema version known by the release that wrote the row</param>
+    private sealed record StoredScript(string? Content, int WriterVersion);
 
     /// <summary>
-    /// Applies the downgrade scripts to the database
+    /// A downgrade script chosen for one version
+    /// </summary>
+    /// <param name="Version">The version the script downgrades from</param>
+    /// <param name="Description">The name shown while the script runs</param>
+    /// <param name="Content">The script contents</param>
+    /// <param name="FromDatabase">Whether the script was read from the database rather than bundled</param>
+    private sealed record DowngradeStep(int Version, string Description, string Content, bool FromDatabase);
+
+    /// <summary>
+    /// Reads the downgrade scripts recorded in the database
+    /// </summary>
+    /// <param name="db">The database path</param>
+    /// <returns>The scripts by version, or <c>null</c> if the database has no <c>SchemaScript</c> table</returns>
+    private static async Task<Dictionary<int, StoredScript>?> ReadStoredScriptsAsync(string db)
+    {
+        await using var con = await SQLiteLoader.LoadConnectionAsync(db)
+            .ConfigureAwait(false);
+        await using var cmd = con.CreateCommand();
+
+        var exists = await cmd.ExecuteScalarInt64Async(@"
+                SELECT COUNT(*)
+                FROM sqlite_master
+                WHERE type = 'table' AND name = 'SchemaScript'
+            ", CancellationToken.None)
+            .ConfigureAwait(false);
+        if (exists != 1)
+            return null;
+
+        var result = new Dictionary<int, StoredScript>();
+        cmd.SetCommandAndParameters(@"
+            SELECT ""Version"", ""DowngradeScript"", ""WriterVersion""
+            FROM ""SchemaScript""
+        ");
+        await using var rd = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
+        while (await rd.ReadAsync().ConfigureAwait(false))
+            result[rd.GetInt32(0)] = new StoredScript(rd.IsDBNull(1) ? null : rd.GetString(1), rd.GetInt32(2));
+
+        return result;
+    }
+
+    /// <summary>
+    /// Applies the downgrade scripts to the database.
+    /// For each version, a script stored in the database by a newer release is preferred,
+    /// then the script bundled with this release, then any script stored in the database.
     /// </summary>
     /// <param name="db">The database path</param>
     /// <param name="dbversion">The current database version</param>
     /// <param name="targetversion">The target database version</param>
-    /// <param name="scripts">The downgrade scripts</param>
+    /// <param name="bundled">The scripts bundled with this release</param>
     /// <param name="nobackups">Flag to disable backups</param>
     /// <returns>A task that completes when the downgrade is done.</returns>
-    private static async Task ApplyDowngradeAsync(string db, int dbversion, int targetversion, IEnumerable<DowngradeScript> scripts, bool nobackups)
+    public static async Task ApplyDowngradeAsync(string db, int dbversion, int targetversion, SchemaScriptSet bundled, bool nobackups)
     {
         if (dbversion > targetversion)
         {
-            var requiredVersions = Enumerable.Range(targetversion + 1, dbversion - targetversion)
-                .Reverse()
-                .ToList();
+            var stored = await ReadStoredScriptsAsync(db).ConfigureAwait(false);
+            var latestBundled = bundled.LatestVersion;
 
-            var missingScripts = requiredVersions
-                .Where(x => !scripts.Any(y => y.Version == x))
-                .ToList();
-
-            if (missingScripts.Count > 0)
+            var steps = new List<DowngradeStep>();
+            var missing = new List<int>();
+            var forbidden = new List<int>();
+            for (var v = dbversion; v > targetversion; v--)
             {
-                Console.WriteLine($"Missing downgrade scripts for versions: {string.Join(", ", missingScripts)}");
+                StoredScript? row = null;
+                stored?.TryGetValue(v, out row);
+                var bundledFile = bundled.Downgrades.FirstOrDefault(x => x.Version == v);
+
+                DowngradeStep? step;
+                if (row != null && row.WriterVersion > latestBundled)
+                {
+                    // A newer release wrote this row; a null script means it cannot be downgraded
+                    step = row.Content == null
+                        ? null
+                        : new DowngradeStep(v, $"for version {v} from the database (written by schema version {row.WriterVersion})", row.Content, true);
+                }
+                else if (bundledFile != null)
+                    step = new DowngradeStep(v, bundledFile.Filename, bundled.GetDowngradeScript(v)!, false);
+                else if (row?.Content != null)
+                    step = new DowngradeStep(v, $"for version {v} from the database (written by schema version {row.WriterVersion})", row.Content, true);
+                else
+                    step = null;
+
+                if (step == null)
+                    missing.Add(v);
+                else if (step.FromDatabase && ForbiddenStoredSql.IsMatch(step.Content))
+                    forbidden.Add(v);
+                else
+                    steps.Add(step);
+            }
+
+            if (missing.Count > 0)
+            {
+                Console.WriteLine($"Missing downgrade scripts for versions: {string.Join(", ", missing)}");
                 return;
             }
 
-            var downgradeScripts = requiredVersions
-                .Select(x => scripts.First(y => y.Version == x))
-                .ToList();
+            if (forbidden.Count > 0)
+            {
+                Console.WriteLine($"The downgrade scripts stored in the database for versions {string.Join(", ", forbidden)} use ATTACH, DETACH, VACUUM or load_extension, which is not allowed");
+                return;
+            }
 
             Console.WriteLine($"Downgrading {db} from version {dbversion} to {targetversion}");
             if (!nobackups)
@@ -230,12 +282,12 @@ public static class Downgrade
                 .ConfigureAwait(false);
             await using var tr = con.BeginTransaction();
             await using var cmd = con.CreateCommand(tr);
-            foreach (var script in downgradeScripts)
+            foreach (var step in steps)
             {
-                Console.WriteLine($"Applying downgrade script {script.Filename} ...");
+                Console.WriteLine($"Applying downgrade script {step.Description} ...");
                 try
                 {
-                    cmd.SetCommandAndParameters(script.Content);
+                    cmd.SetCommandAndParameters(step.Content);
                     var r = await cmd.ExecuteScalarAsync().ConfigureAwait(false);
                     if (r != null)
                         throw new UserInformationException($"{r}", "DowngradeScriptFailure");
@@ -244,13 +296,22 @@ public static class Downgrade
                         UPDATE ""Version""
                         SET ""Version"" = @Version
                     ")
-                        .SetParameterValue("@Version", script.Version - 1)
+                        .SetParameterValue("@Version", step.Version - 1)
                         .ExecuteNonQueryAsync()
                         .ConfigureAwait(false);
+
+                    if (stored != null)
+                        await cmd.SetCommandAndParameters(@"
+                            DELETE FROM ""SchemaScript""
+                            WHERE ""Version"" >= @Version
+                        ")
+                            .SetParameterValue("@Version", step.Version)
+                            .ExecuteNonQueryAsync()
+                            .ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
-                    throw new UserInformationException($"Failed applying downgrade script {script.Filename}: {ex.Message}", "DowngradeScriptFailure", ex);
+                    throw new UserInformationException($"Failed applying downgrade script {step.Description}: {ex.Message}", "DowngradeScriptFailure", ex);
                 }
             }
 

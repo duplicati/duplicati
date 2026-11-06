@@ -115,6 +115,17 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        public async Task EmptyTimezoneSettingResolvesToLocalTimezone()
+        {
+            // A default install never writes the timezone setting: the new web UI has no
+            // field for it and the command line default is not applied. The scheduler
+            // must then use the local timezone, so daylight saving changes are handled
+            using var connection = await MakeConnectionAsync();
+            Assert.AreEqual(TimeZoneInfo.Local.Id, connection.ApplicationSettings.Timezone.Id,
+                "An unset timezone must resolve to the local timezone, not UTC");
+        }
+
+        [Test]
         public void FindTimeZoneReturnsNullForUnknownId()
         {
             Assert.IsNull(TimeZoneHelper.FindTimeZone("No/Such_Zone"),

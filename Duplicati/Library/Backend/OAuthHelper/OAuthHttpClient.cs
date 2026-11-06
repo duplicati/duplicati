@@ -39,7 +39,7 @@ namespace Duplicati.Library
         {
         }
 
-        private OAuthHttpClient(OAuthHttpMessageHandler authenticator)
+        public OAuthHttpClient(OAuthHttpMessageHandler authenticator)
             : base(authenticator, true)
         {
             this.m_authenticator = authenticator;

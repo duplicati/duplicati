@@ -25,6 +25,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Duplicati.CommandLine.DatabaseTool;
+using Duplicati.CommandLine.DatabaseTool.Commands;
 using Duplicati.Library.Main.Database.Sync;
 using Duplicati.Library.SQLiteHelper;
 using Duplicati.Library.Utility;
@@ -48,22 +49,6 @@ namespace Duplicati.UnitTest
             cmd.CommandText = @"SELECT MAX(""Version"") FROM ""Version""";
             return Convert.ToInt32(await cmd.ExecuteScalarAsync());
         }
-
-        /// <summary>
-        /// Lists the version numbers of the numbered scripts among the embedded resources
-        /// with the given prefix, e.g. the <c>21</c> in <c>...Database_schema.21. Add table.sql</c>.
-        /// </summary>
-        /// <param name="assembly">The assembly holding the resources</param>
-        /// <param name="prefix">The resource name prefix of the script folder</param>
-        /// <returns>The version numbers found</returns>
-        private static List<int> GetNumberedScriptVersions(System.Reflection.Assembly assembly, string prefix)
-            => assembly.GetManifestResourceNames()
-                .Where(x => x.StartsWith(prefix, StringComparison.Ordinal))
-                .Select(x => x.Substring(prefix.Length))
-                .Select(x => int.TryParse(x.Split('.').First(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : -1)
-                .Where(x => x > 0)
-                .OrderBy(x => x)
-                .ToList();
 
         /// <summary>
         /// Checks that the downgrade scripts reach the newest upgrade script without gaps.
@@ -92,32 +77,53 @@ namespace Duplicati.UnitTest
 
         /// <summary>
         /// Every numbered upgrade script must have a downgrade script of the same number in
-        /// the database tool, so a database can always be taken back to a prior version. The
-        /// downgrade command treats a missing script as informational and exits with success,
-        /// so nothing else catches a migration that was added without its downgrade.
+        /// the <c>Database schema/Downgrade</c> folder beside it, so a database can always be
+        /// taken back to a prior version. The downgrade command treats a missing script as
+        /// informational and exits with success, so nothing else catches a migration that was
+        /// added without its downgrade.
         /// </summary>
         [Test]
         [Category("DatabaseTool")]
         public void EveryUpgradeScriptHasADowngradeScript()
         {
-            var toolAssembly = typeof(Program).Assembly;
-            var toolNamespace = typeof(Program).Namespace;
-
-            AssertDowngradeScriptsCoverUpgrades("local",
-                GetNumberedScriptVersions(typeof(Library.Main.Database.Local.DatabaseSchemaMarker).Assembly, typeof(Library.Main.Database.Local.DatabaseSchemaMarker).Namespace + ".Database_schema."),
-                GetNumberedScriptVersions(toolAssembly, toolNamespace + ".Scripts.Local."),
-                "Duplicati.CommandLine.DatabaseTool/Scripts/Local");
-
-            AssertDowngradeScriptsCoverUpgrades("server",
-                GetNumberedScriptVersions(typeof(Library.RestAPI.Database.DatabaseSchemaMarker).Assembly, typeof(Library.RestAPI.Database.DatabaseSchemaMarker).Namespace + ".Database_schema."),
-                GetNumberedScriptVersions(toolAssembly, toolNamespace + ".Scripts.Server."),
-                "Duplicati.CommandLine.DatabaseTool/Scripts/Server");
-
-            AssertDowngradeScriptsCoverUpgrades("sync",
-                GetNumberedScriptVersions(typeof(DatabaseSchemaMarker).Assembly, typeof(DatabaseSchemaMarker).Namespace + ".Database_schema."),
-                GetNumberedScriptVersions(toolAssembly, toolNamespace + ".Scripts.Sync."),
-                "Duplicati.CommandLine.DatabaseTool/Scripts/Sync");
+            foreach (var (kind, marker, folder) in SchemaMarkers)
+            {
+                var scripts = DatabaseUpgrader.GetSchemaScripts(marker);
+                AssertDowngradeScriptsCoverUpgrades(kind,
+                    scripts.Upgrades.Select(x => x.Version).Distinct().ToList(),
+                    scripts.Downgrades.Select(x => x.Version).Distinct().ToList(),
+                    folder);
+            }
         }
+
+        /// <summary>
+        /// Downgrade scripts are stored in databases and run by older releases of the tool, so
+        /// they must be plain SQL that the tool can run as is: no preparser blocks, and no
+        /// changes to the <c>Version</c> or <c>SchemaScript</c> tables, which the tool updates itself.
+        /// </summary>
+        [Test]
+        [Category("DatabaseTool")]
+        public void DowngradeScriptsArePlainSql()
+        {
+            foreach (var (kind, marker, folder) in SchemaMarkers)
+                foreach (var script in DatabaseUpgrader.GetSchemaScripts(marker).Downgrades)
+                {
+                    Assert.IsFalse(script.Content.Contains("{#if", StringComparison.OrdinalIgnoreCase),
+                        $"The {kind} downgrade script {folder}/{script.Filename} uses a preparser block");
+                    Assert.IsFalse(System.Text.RegularExpressions.Regex.IsMatch(script.Content, @"\b(SchemaScript|Version)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase),
+                        $"The {kind} downgrade script {folder}/{script.Filename} mentions the Version or SchemaScript table");
+                }
+        }
+
+        /// <summary>
+        /// The three database kinds, with the marker type for their embedded scripts
+        /// </summary>
+        private static readonly (string Kind, Type Marker, string Folder)[] SchemaMarkers =
+        [
+            ("local", typeof(Library.Main.Database.Local.DatabaseSchemaMarker), "Library/Main/Database/Local/Database schema/Downgrade"),
+            ("server", typeof(Library.RestAPI.Database.DatabaseSchemaMarker), "Library/RestAPI/Database/Database schema/Downgrade"),
+            ("sync", typeof(DatabaseSchemaMarker), "Library/Main/Database/Sync/Database schema/Downgrade"),
+        ];
 
         [Test]
         [Category("DatabaseTool")]
@@ -288,9 +294,14 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(0, await Program.MainAsync(["upgrade", dbfile, "--no-backups"]));
             Assert.AreEqual(SYNC_SCHEMA_VERSION, await ReadSyncVersionAsync(dbfile));
 
-            // The default --sync-version is 0, the version before the LogData table was
-            // added, so downgrade removes the table and records version 0.
+            // The default --sync-version is the newest version this release supports, so
+            // downgrade without options leaves the database alone.
             Assert.AreEqual(0, await Program.MainAsync(["downgrade", dbfile, "--no-backups"]));
+            Assert.AreEqual(SYNC_SCHEMA_VERSION, await ReadSyncVersionAsync(dbfile));
+
+            // Version 0 is the version before the LogData table was added, so downgrade
+            // removes the table and records version 0.
+            Assert.AreEqual(0, await Program.MainAsync(["downgrade", dbfile, "--sync-version=0", "--no-backups"]));
             Assert.AreEqual(0, await ReadSyncVersionAsync(dbfile));
             Assert.IsFalse(await SyncTableExistsAsync(dbfile, "LogData"));
 
@@ -616,6 +627,190 @@ INSERT INTO ""Version"" (""Version"") VALUES (12);
             cmd.CommandText = @"SELECT COUNT(*) FROM SQLITE_MASTER WHERE type = 'table' AND Name = @name";
             cmd.Parameters.AddWithValue("@name", tableName);
             return Convert.ToInt32(await cmd.ExecuteScalarAsync()) == 1;
+        }
+
+        /// <summary>
+        /// The marker type for the local database scripts
+        /// </summary>
+        private static readonly Type LocalMarker = typeof(Library.Main.Database.Local.DatabaseSchemaMarker);
+
+        /// <summary>
+        /// Creates a local database at the newest version, with its <c>SchemaScript</c> rows
+        /// </summary>
+        /// <param name="dbfile">The database file</param>
+        private static async Task CreateCurrentLocalDatabaseAsync(string dbfile)
+        {
+            using var db = await SQLiteLoader.LoadConnectionAsync(dbfile);
+            DatabaseUpgrader.UpgradeDatabase(db, dbfile, LocalMarker);
+        }
+
+        /// <summary>
+        /// Gets the local scripts as an older release that only knew versions up to <paramref name="latest"/> would bundle them
+        /// </summary>
+        /// <param name="latest">The newest version the older release knew</param>
+        /// <returns>The truncated scripts</returns>
+        private static SchemaScriptSet LocalScriptsUpTo(int latest)
+        {
+            var scripts = DatabaseUpgrader.GetSchemaScripts(LocalMarker);
+            return new SchemaScriptSet(
+                scripts.Schema,
+                scripts.Upgrades.Where(x => x.Version <= latest).ToList(),
+                scripts.Downgrades.Where(x => x.Version <= latest).ToList());
+        }
+
+        /// <summary>
+        /// Replaces the stored downgrade script for a version
+        /// </summary>
+        /// <param name="dbfile">The database file</param>
+        /// <param name="version">The version of the row</param>
+        /// <param name="script">The script, or <c>null</c> for none</param>
+        /// <param name="writerVersion">The writer version to record</param>
+        private static async Task SetStoredDowngradeScriptAsync(string dbfile, int version, string script, int writerVersion)
+        {
+            using var db = await SQLiteLoader.LoadConnectionAsync(dbfile);
+            using var cmd = db.CreateCommand();
+            cmd.CommandText = @"UPDATE ""SchemaScript"" SET ""DowngradeScript"" = @script, ""WriterVersion"" = @writer WHERE ""Version"" = @version";
+            cmd.Parameters.AddWithValue("@script", (object)script ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@writer", writerVersion);
+            cmd.Parameters.AddWithValue("@version", version);
+            Assert.AreEqual(1, await cmd.ExecuteNonQueryAsync());
+        }
+
+        /// <summary>
+        /// Reads the highest version in the <c>SchemaScript</c> table
+        /// </summary>
+        /// <param name="dbfile">The database file</param>
+        /// <returns>The highest version</returns>
+        private static async Task<int> ReadMaxSchemaScriptVersionAsync(string dbfile)
+        {
+            using var db = await SQLiteLoader.LoadConnectionAsync(dbfile);
+            using var cmd = db.CreateCommand();
+            cmd.CommandText = @"SELECT IFNULL(MAX(""Version""), 0) FROM ""SchemaScript""";
+            return Convert.ToInt32(await cmd.ExecuteScalarAsync());
+        }
+
+        /// <summary>
+        /// A tool that only knows versions up to N - 2 must downgrade a database at N by
+        /// running the scripts the newer release stored in it, and the result must be a
+        /// database the current release can upgrade again.
+        /// </summary>
+        [Test]
+        [Category("DatabaseTool")]
+        public async Task DowngradeUsesStoredScriptsUnknownToTheToolAsync()
+        {
+            using var dbfile = new TempFile();
+            await CreateCurrentLocalDatabaseAsync(dbfile);
+            var latest = DatabaseUpgrader.GetSchemaScripts(LocalMarker).LatestVersion;
+
+            await Downgrade.ApplyDowngradeAsync(dbfile, latest, latest - 3, LocalScriptsUpTo(latest - 2), true);
+
+            Assert.AreEqual(latest - 3, await ReadVersionAsync(dbfile));
+            Assert.AreEqual(latest - 3, await ReadMaxSchemaScriptVersionAsync(dbfile), "Rows above the new version must be removed");
+            Assert.IsFalse(await SyncTableExistsAsync(dbfile, "SourceProviderState"));
+
+            // The upgrader keeps a backup beside the database before it runs the scripts
+            var backupPattern = "* " + Path.GetFileNameWithoutExtension(dbfile) + " *.sqlite";
+            try
+            {
+                await CreateCurrentLocalDatabaseAsync(dbfile);
+                Assert.AreEqual(latest, await ReadVersionAsync(dbfile));
+                Assert.AreEqual(latest, await ReadMaxSchemaScriptVersionAsync(dbfile));
+                Assert.IsTrue(await SyncTableExistsAsync(dbfile, "SourceProviderState"));
+            }
+            finally
+            {
+                foreach (var backup in Directory.GetFiles(Path.GetDirectoryName(Path.GetFullPath(dbfile))!, backupPattern))
+                    File.Delete(backup);
+            }
+        }
+
+        /// <summary>
+        /// A stored script written by a newer release wins over the bundled one; a stored
+        /// script from this release or an older one does not.
+        /// </summary>
+        /// <param name="newerWriter">Whether the stored row was written by a newer release</param>
+        [Test]
+        [Category("DatabaseTool")]
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task DowngradePrefersStoredScriptOnlyFromNewerReleaseAsync(bool newerWriter)
+        {
+            using var dbfile = new TempFile();
+            await CreateCurrentLocalDatabaseAsync(dbfile);
+            var scripts = DatabaseUpgrader.GetSchemaScripts(LocalMarker);
+            var latest = scripts.LatestVersion;
+
+            await SetStoredDowngradeScriptAsync(dbfile, latest,
+                scripts.GetDowngradeScript(latest) + ";\nCREATE TABLE \"FromDatabase\" (\"X\" INTEGER);",
+                newerWriter ? latest + 1 : latest);
+
+            await Downgrade.ApplyDowngradeAsync(dbfile, latest, latest - 1, scripts, true);
+
+            Assert.AreEqual(latest - 1, await ReadVersionAsync(dbfile));
+            Assert.AreEqual(newerWriter, await SyncTableExistsAsync(dbfile, "FromDatabase"));
+        }
+
+        /// <summary>
+        /// A newer release that stored no downgrade script for a version marks it as not
+        /// downgradable, even when the tool bundles a script for it.
+        /// </summary>
+        [Test]
+        [Category("DatabaseTool")]
+        public async Task DowngradeIsBlockedByMissingScriptFromNewerReleaseAsync()
+        {
+            using var dbfile = new TempFile();
+            await CreateCurrentLocalDatabaseAsync(dbfile);
+            var scripts = DatabaseUpgrader.GetSchemaScripts(LocalMarker);
+            var latest = scripts.LatestVersion;
+
+            await SetStoredDowngradeScriptAsync(dbfile, latest, null, latest + 1);
+            await Downgrade.ApplyDowngradeAsync(dbfile, latest, latest - 1, scripts, true);
+
+            Assert.AreEqual(latest, await ReadVersionAsync(dbfile));
+            Assert.IsTrue(await SyncTableExistsAsync(dbfile, "SourceProviderState"));
+        }
+
+        /// <summary>
+        /// A stored script that reaches outside the database is refused, and nothing changes.
+        /// </summary>
+        [Test]
+        [Category("DatabaseTool")]
+        public async Task DowngradeRefusesStoredScriptWithAttachAsync()
+        {
+            using var dbfile = new TempFile();
+            await CreateCurrentLocalDatabaseAsync(dbfile);
+            var latest = DatabaseUpgrader.GetSchemaScripts(LocalMarker).LatestVersion;
+
+            await SetStoredDowngradeScriptAsync(dbfile, latest, "ATTACH DATABASE ':memory:' AS \"Other\"", latest);
+            await Downgrade.ApplyDowngradeAsync(dbfile, latest, latest - 1, LocalScriptsUpTo(latest - 1), true);
+
+            Assert.AreEqual(latest, await ReadVersionAsync(dbfile));
+            Assert.AreEqual(latest, await ReadMaxSchemaScriptVersionAsync(dbfile));
+        }
+
+        /// <summary>
+        /// A version with neither a bundled nor a stored script is reported, and nothing changes.
+        /// </summary>
+        [Test]
+        [Category("DatabaseTool")]
+        public async Task DowngradeStopsWhenNoScriptIsFoundAsync()
+        {
+            using var dbfile = new TempFile();
+            await CreateCurrentLocalDatabaseAsync(dbfile);
+            var latest = DatabaseUpgrader.GetSchemaScripts(LocalMarker).LatestVersion;
+
+            using (var db = await SQLiteLoader.LoadConnectionAsync(dbfile))
+            using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = @"DELETE FROM ""SchemaScript"" WHERE ""Version"" = @version";
+                cmd.Parameters.AddWithValue("@version", latest);
+                await cmd.ExecuteNonQueryAsync();
+            }
+
+            await Downgrade.ApplyDowngradeAsync(dbfile, latest, latest - 2, LocalScriptsUpTo(latest - 1), true);
+
+            Assert.AreEqual(latest, await ReadVersionAsync(dbfile));
+            Assert.IsTrue(await SyncTableExistsAsync(dbfile, "SourceProviderState"));
         }
 
         [Test]
