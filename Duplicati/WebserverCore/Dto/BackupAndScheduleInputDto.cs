@@ -69,6 +69,12 @@ public sealed record BackupAndScheduleInputDto
         /// </summary>
         public Duplicati.Server.Serialization.OperationType OperationType { get; init; } = Duplicati.Server.Serialization.OperationType.Backup;
         /// <summary>
+        /// Whether the scheduler runs this backup. When omitted, a new backup is enabled
+        /// and an updated backup keeps its current value, so clients that do not know
+        /// about this field do not re-enable a disabled backup when saving it.
+        /// </summary>
+        public bool? Enabled { get; init; }
+        /// <summary>
         /// The backup source folders and files
         /// </summary>
         public string[] Sources { get; init; } = [];

@@ -37,6 +37,12 @@ namespace Duplicati.WebserverCore.Services;
 public class SystemInfoProvider(IApplicationSettings applicationSettings, Connection connection) : ISystemInfoProvider
 {
     /// <summary>
+    /// The API extension that signals backups can be enabled and disabled:
+    /// the backup "Enabled" field and the "/backup/{id}/enable" and "/backup/{id}/disable" endpoints
+    /// </summary>
+    public const string BackupEnableDisableExtension = "v1:backup:enable-disable";
+
+    /// <summary>
     /// The API extensions that are available
     /// </summary>
     public static readonly string[] SupportedAPIExtensions = [
@@ -71,6 +77,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v1:backup:restore-options",
         "v2:systemstatus",
         "v2:backup:restore-test",
+        BackupEnableDisableExtension,
 
         // "v1:subscribe:scheduler",
     ];

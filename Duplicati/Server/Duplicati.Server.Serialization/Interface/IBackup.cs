@@ -61,6 +61,12 @@ namespace Duplicati.Server.Serialization.Interface
         /// </summary>
         OperationType OperationType { get; set; }
         /// <summary>
+        /// Gets or sets a value indicating whether the scheduler runs this backup.
+        /// A disabled backup keeps its schedule but is skipped when the schedule fires;
+        /// it can still be run manually.
+        /// </summary>
+        bool Enabled { get; set; }
+        /// <summary>
         /// The path to the local database
         /// </summary>
         string DBPath { get; }

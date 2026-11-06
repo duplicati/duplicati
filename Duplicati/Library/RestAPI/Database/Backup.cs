@@ -97,6 +97,11 @@ namespace Duplicati.Server.Database
         public OperationType OperationType { get; set; } = OperationType.Backup;
 
         /// <summary>
+        /// Gets or sets a value indicating whether the scheduler runs this backup.
+        /// </summary>
+        public bool Enabled { get; set; } = true;
+
+        /// <summary>
         /// The backup source folders and files
         /// </summary>
         public string[] Sources { get; set; }
@@ -304,6 +309,7 @@ namespace Duplicati.Server.Database
                 TargetURL = this.TargetURL,
                 ConnectionStringID = this.ConnectionStringID,
                 OperationType = this.OperationType,
+                Enabled = this.Enabled,
                 DBPath = this.DBPath,
                 Sources = (string[])this.Sources?.Clone() ?? [],
                 Settings = this.Settings?.Select(s => new Setting { Name = s.Name, Value = s.Value, Filter = s.Filter }).ToArray() ?? [],

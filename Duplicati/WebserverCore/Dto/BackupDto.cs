@@ -58,6 +58,10 @@ public sealed record BackupDto
     /// </summary>
     public Duplicati.Server.Serialization.OperationType OperationType { get; init; } = Duplicati.Server.Serialization.OperationType.Backup;
     /// <summary>
+    /// Gets a value indicating whether the scheduler runs this backup
+    /// </summary>
+    public bool Enabled { get; init; } = true;
+    /// <summary>
     /// The path to the local database
     /// </summary>
     public required string DBPath { get; init; }

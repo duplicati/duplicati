@@ -177,9 +177,14 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
                     importData.Backup.SetDBPath(null);
                     importData.Backup.Metadata = null;
 
-                    // Keep ID and DBPath if the backup already exists
+                    // Keep ID, DBPath and the enabled state if the backup already exists.
+                    // Enabling and disabling is a local choice, so a settings push from the
+                    // console must not re-enable a backup the user disabled here.
                     if (existingBackups.TryGetValue(externalId, out var existing))
+                    {
                         importData.Backup.ID = existing.ID;
+                        importData.Backup.Enabled = existing.Enabled;
+                    }
 
                     connection.AddOrUpdateBackupAndSchedule(importData.Backup, importData.Schedule);
                 }
