@@ -151,89 +151,94 @@ namespace Duplicati.CommandLine.RecoveryTool
                         }
 
                         startedCount++;
+                        string targetfile;
                         try
                         {
-                            var targetfile = MapToRestorePath(f.Path, largestprefix, targetpath, sourceDirsep);
+                            targetfile = MapToRestorePath(f.Path, largestprefix, targetpath, sourceDirsep);
+                        }
+                        catch (Exception ex)
+                        {
+                            errorCount++;
+                            Console.WriteLine(" error: {0}", ex);
+                            i++;
+                            continue;
+                        }
 
-                            if (!allowPathTraversal && !string.IsNullOrWhiteSpace(targetpath) && !Util.IsPathInsideTarget(targetfile, targetpath))
+                        if (!allowPathTraversal && !string.IsNullOrWhiteSpace(targetpath) && !Util.IsPathInsideTarget(targetfile, targetpath))
+                        {
+                            Console.WriteLine($"WARNING: Path traversal detected: {targetfile} resolves outside {targetpath}, skipping entry. Use --allow-restore-outside-target-directory if you are sure this is safe.");
+                            errorCount++;
+                            continue;
+                        }
+
+                        // Running out of open files closes half of the open archives, and the file is restored again.
+                        // The blocklist hashes are read from the file list as they are listed, so they are kept for that.
+                        var blocklistHashes = f.BlocklistHashes?.ToList();
+                        var retry = true;
+                        while (retry)
+                        {
+                            retry = false;
+                            var countsAtStart = (errorCount, restoredCount, fileErrors, totalSize);
+                            try
                             {
-                                Console.WriteLine($"WARNING: Path traversal detected: {targetfile} resolves outside {targetpath}, skipping entry. Use --allow-restore-outside-target-directory if you are sure this is safe.");
-                                errorCount++;
-                                continue;
-                            }
+                                if (!systemIO.DirectoryExists(systemIO.PathGetDirectoryName(targetfile)))
+                                    systemIO.DirectoryCreate(systemIO.PathGetDirectoryName(targetfile));
 
-                            if (!systemIO.DirectoryExists(systemIO.PathGetDirectoryName(targetfile)))
-                                systemIO.DirectoryCreate(systemIO.PathGetDirectoryName(targetfile));
+                                Console.Write($"{i} ({Utility.FormatSizeString(totalSize)}): {targetfile} ({Utility.FormatSizeString(f.Size)})");
+                                totalSize += f.Size;
 
-                            Console.Write($"{i} ({Utility.FormatSizeString(totalSize)}): {targetfile} ({Utility.FormatSizeString(f.Size)})");
-                            totalSize += f.Size;
-
-                            using (var tf = new Library.Utility.TempFile())
-                            {
-                                using (var sw = File.OpenWrite(tf))
+                                using (var tf = new Library.Utility.TempFile())
                                 {
-                                    if (f.BlocklistHashes == null)
+                                    using (var sw = File.OpenWrite(tf))
                                     {
-                                        if (f.Size > 0)
-                                            lookup.WriteHash(sw, f.Hash, buffer);
-                                    }
-                                    else
-                                    {
-                                        var blhi = 0L;
-                                        foreach (var blh in f.BlocklistHashes)
+                                        if (blocklistHashes == null)
                                         {
-                                            Console.Write(" {0}", blhi);
-                                            var blockhashoffset = blhi * hashesprblock * blocksize;
-
-                                            try
+                                            if (f.Size > 0)
+                                                lookup.WriteHash(sw, f.Hash, buffer);
+                                        }
+                                        else
+                                        {
+                                            var blhi = 0L;
+                                            foreach (var blh in blocklistHashes)
                                             {
-                                                var bi = 0;
-                                                foreach (var h in lookup.ReadBlocklistHashes(blh, blocklistbuffer))
+                                                Console.Write(" {0}", blhi);
+                                                var blockhashoffset = blhi * hashesprblock * blocksize;
+
+                                                try
                                                 {
-                                                    try
+                                                    var bi = 0;
+                                                    foreach (var h in lookup.ReadBlocklistHashes(blh, blocklistbuffer))
                                                     {
-                                                        sw.Position = blockhashoffset + (bi * blocksize);
-                                                        lookup.WriteHash(sw, h, buffer);
-                                                    }
-                                                    catch (Exception ex)
-                                                    {
-                                                        errorCount++;
-                                                        Console.WriteLine("Failed to read hash: {0}{1}{2}", h, Environment.NewLine, ex);
-                                                    }
+                                                        try
+                                                        {
+                                                            sw.Position = blockhashoffset + (bi * blocksize);
+                                                            lookup.WriteHash(sw, h, buffer);
+                                                        }
+                                                        catch (Exception ex) when (!IsOutOfOpenFiles(ex))
+                                                        {
+                                                            errorCount++;
+                                                            Console.WriteLine("Failed to read hash: {0}{1}{2}", h, Environment.NewLine, ex);
+                                                        }
 
-                                                    bi++;
+                                                        bi++;
+                                                    }
                                                 }
-                                            }
-                                            catch (Exception ex)
-                                            {
-                                                errorCount++;
-                                                Console.WriteLine("Failed to read Blocklist hash: {0}{1}{2}", blh, Environment.NewLine, ex);
-                                            }
+                                                catch (Exception ex) when (!IsOutOfOpenFiles(ex))
+                                                {
+                                                    errorCount++;
+                                                    Console.WriteLine("Failed to read Blocklist hash: {0}{1}{2}", blh, Environment.NewLine, ex);
+                                                }
 
-                                            blhi++;
+                                                blhi++;
+                                            }
                                         }
                                     }
-                                }
 
-                                restoredCount++;
+                                    restoredCount++;
 
-                                if (disableFileVerify)
-                                {
-                                    Console.WriteLine(" done! (not verified)");
-                                    if (systemIO.FileExists(targetfile))
-                                        systemIO.FileCopy(tf, targetfile, true);
-                                    else
-                                        systemIO.FileMove(tf, targetfile);
-                                }
-                                else
-                                {
-                                    string fh;
-                                    using (var fs = File.OpenRead(tf))
-                                        fh = Convert.ToBase64String(filehasher.ComputeHash(fs));
-
-                                    if (fh == f.Hash)
+                                    if (disableFileVerify)
                                     {
-                                        Console.WriteLine(" done!");
+                                        Console.WriteLine(" done! (not verified)");
                                         if (systemIO.FileExists(targetfile))
                                             systemIO.FileCopy(tf, targetfile, true);
                                         else
@@ -241,20 +246,41 @@ namespace Duplicati.CommandLine.RecoveryTool
                                     }
                                     else
                                     {
-                                        fileErrors++;
-                                        Console.Write(" - Restored file hash mismatch");
-                                        if (systemIO.FileExists(targetfile))
-                                            Console.WriteLine(" - not overwriting existing file: {0}", targetfile);
+                                        string fh;
+                                        using (var fs = File.OpenRead(tf))
+                                            fh = Convert.ToBase64String(filehasher.ComputeHash(fs));
+
+                                        if (fh == f.Hash)
+                                        {
+                                            Console.WriteLine(" done!");
+                                            if (systemIO.FileExists(targetfile))
+                                                systemIO.FileCopy(tf, targetfile, true);
+                                            else
+                                                systemIO.FileMove(tf, targetfile);
+                                        }
                                         else
-                                            Console.WriteLine(" - restoring file in damaged condition");
+                                        {
+                                            fileErrors++;
+                                            Console.Write(" - Restored file hash mismatch");
+                                            if (systemIO.FileExists(targetfile))
+                                                Console.WriteLine(" - not overwriting existing file: {0}", targetfile);
+                                            else
+                                                Console.WriteLine(" - restoring file in damaged condition");
+                                        }
                                     }
                                 }
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            errorCount++;
-                            Console.WriteLine(" error: {0}", ex);
+                            catch (Exception ex) when (IsOutOfOpenFiles(ex) && mru.CloseHalf())
+                            {
+                                (errorCount, restoredCount, fileErrors, totalSize) = countsAtStart;
+                                Console.WriteLine(" out of open files, retrying with at most {0} archives open", mru.MaxOpenArchives);
+                                retry = true;
+                            }
+                            catch (Exception ex)
+                            {
+                                errorCount++;
+                                Console.WriteLine(" error: {0}", ex);
+                            }
                         }
                         i++;
                     }
@@ -322,6 +348,24 @@ namespace Duplicati.CommandLine.RecoveryTool
                 filecount++;
             }
             return largestprefixparts.Length == 0 ? "" : Util.AppendDirSeparator(largestprefix, sourceDirsep);
+        }
+
+        /// <summary>
+        /// Checks if an error is the process or the system running out of open files.
+        /// </summary>
+        /// <param name="ex">The error to check.</param>
+        /// <returns><c>true</c> if no more files could be opened; <c>false</c> otherwise.</returns>
+        internal static bool IsOutOfOpenFiles(Exception ex)
+        {
+            for (var e = ex; e != null; e = e.InnerException)
+                if (e is IOException)
+                {
+                    // ERROR_TOO_MANY_OPEN_FILES on Windows, EMFILE and ENFILE elsewhere
+                    if (OperatingSystem.IsWindows() ? e.HResult == unchecked((int)0x80070004) : e.HResult is 23 or 24)
+                        return true;
+                }
+
+            return false;
         }
 
         public static string MapToRestorePath(string path, string prefixpath, string restorepath, string sourceDirsep)
@@ -571,7 +615,12 @@ namespace Duplicati.CommandLine.RecoveryTool
             private readonly Dictionary<string, string> m_options;
             private readonly bool m_useWrappedZip;
 
-            private readonly int MAX_OPEN_ARCHIVES = 200;
+            private int MAX_OPEN_ARCHIVES = 200;
+
+            /// <summary>
+            /// The number of archives kept open
+            /// </summary>
+            public int MaxOpenArchives => MAX_OPEN_ARCHIVES;
 
             public CompressedFileMRUCache(Dictionary<string, string> options)
             {
@@ -607,7 +656,34 @@ namespace Duplicati.CommandLine.RecoveryTool
                     m_mru.Insert(0, filename);
                 }
 
-                while (m_mru.Count > MAX_OPEN_ARCHIVES)
+                CloseOldest(MAX_OPEN_ARCHIVES);
+
+                return cf.OpenRead(Library.Utility.Utility.Base64PlainToBase64Url(hash));
+            }
+
+            /// <summary>
+            /// Closes the older half of the open archives, and keeps no more than the rest open
+            /// from then on. The system can allow fewer open files than the archives kept open.
+            /// </summary>
+            /// <returns><c>true</c> if an archive was closed; <c>false</c> if none was open.</returns>
+            public bool CloseHalf()
+            {
+                if (m_mru.Count == 0)
+                    return false;
+
+                var keep = m_mru.Count / 2;
+                MAX_OPEN_ARCHIVES = Math.Max(1, keep);
+                CloseOldest(keep);
+                return true;
+            }
+
+            /// <summary>
+            /// Closes the least recently used archives.
+            /// </summary>
+            /// <param name="keep">The number of archives to keep open.</param>
+            private void CloseOldest(int keep)
+            {
+                while (m_mru.Count > keep)
                 {
                     var f = m_mru.Last();
                     (m_lookup[f] as IDisposable)?.Dispose();
@@ -616,8 +692,6 @@ namespace Duplicati.CommandLine.RecoveryTool
                     m_streams.Remove(f);
                     m_mru.Remove(f);
                 }
-
-                return cf.OpenRead(Library.Utility.Utility.Base64PlainToBase64Url(hash));
             }
 
             #region IDisposable implementation
