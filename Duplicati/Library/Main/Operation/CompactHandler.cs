@@ -62,6 +62,11 @@ namespace Duplicati.Library.Main.Operation
                 await Utility.VerifyOptionsAndUpdateDatabaseAsync(db, m_options, m_result.TaskControl.ProgressToken)
                     .ConfigureAwait(false);
 
+                // An operation that was stopped while uploading leaves volumes that never finished. Clean
+                // them up first, as a backup would, so the compact is planned from what the destination holds.
+                if (await db.TerminatedWithActiveUploadsAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                    await FilelistProcessor.VerifyRemoteListAsync(backendManager, m_options, db, m_result.BackendWriter, true, FilelistProcessor.VerifyMode.VerifyAndClean, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+
                 var changed = await DoCompactAsync(db, false, backendManager).ConfigureAwait(false);
 
                 if (changed && m_options.UploadVerificationFile)
