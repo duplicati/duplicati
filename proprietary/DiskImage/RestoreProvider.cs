@@ -41,7 +41,20 @@ internal enum RestorePathType
 }
 
 /// <summary>
-/// Restore provider for disk images. Allows restoring disk images back to physical disks.
+/// The kind of target a disk image is restored to.
+/// </summary>
+internal enum RestoreTargetKind
+{
+    /// <summary>The target is a physical disk device.</summary>
+    Device,
+
+    /// <summary>The target is an image file (raw, VHD or VHDX).</summary>
+    ImageFile
+}
+
+/// <summary>
+/// Restore provider for disk images. Allows restoring disk images back to physical disks,
+/// or to raw, VHD or VHDX image files (see <see cref="ImageFileRestoreProvider"/>).
 /// When the target URL points to a partition within a disk (e.g. part_GPT_1), the data
 /// is restored into that partition instead, which also supports backups of a single
 /// partition that have no geometry metadata.
@@ -64,7 +77,49 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     private readonly bool _skipPartitionTable;
     private readonly bool _validateSize;
     private readonly bool _hasSetOverwriteOption;
+
+    /// <summary>
+    /// The kind of target the restore writes to.
+    /// </summary>
+    private readonly RestoreTargetKind _targetKind;
+
+    /// <summary>
+    /// Whether a restored image file is created sparse (image file targets only).
+    /// </summary>
+    private readonly bool _imageSparse;
+
+    /// <summary>
+    /// The format requested for the image file, or <c>null</c> to choose it from
+    /// the file extension (new images) or the file content (existing images).
+    /// </summary>
+    private readonly ImageFormat? _imageFormat;
+
+    /// <summary>
+    /// Whether the restore is a dry run, which writes nothing to the target.
+    /// </summary>
+    private readonly bool _dryRun;
+
+    /// <summary>
+    /// Whether the legacy restore flow is used, which image file targets do not support.
+    /// </summary>
+    private readonly bool _restoreLegacy;
+
+    /// <summary>
+    /// Whether all versions are restored into timestamp folders, which image file targets do not support.
+    /// </summary>
+    private readonly bool _restoreAllFiles;
+
+    /// <summary>
+    /// Whether writing metadata failed, which the restore does not count as a failed file.
+    /// </summary>
+    private volatile bool _metadataWriteFailed;
+
     private IRawDisk? _targetDisk;
+
+    /// <summary>
+    /// The target disk when restoring to an image file; the same instance as <see cref="_targetDisk"/>.
+    /// </summary>
+    private ImageFile? _imageFile;
     private bool _disposed;
 
     /// <summary>
@@ -162,6 +217,12 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         _skipPartitionTable = false;
         _validateSize = true;
         _hasSetOverwriteOption = false;
+        _targetKind = RestoreTargetKind.Device;
+        _imageSparse = true;
+        _imageFormat = null;
+        _dryRun = false;
+        _restoreLegacy = false;
+        _restoreAllFiles = false;
     }
 
     /// <summary>
@@ -170,20 +231,61 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <param name="url">The destination URL for the restore operation</param>
     /// <param name="options">The options for the restore operation</param>
     public RestoreProvider(string url, Dictionary<string, string?> options)
+        : this(url, options, RestoreTargetKind.Device)
+    {
+    }
+
+    /// <summary>
+    /// Constructs the RestoreProvider for the given kind of target.
+    /// </summary>
+    /// <param name="url">The destination URL for the restore operation</param>
+    /// <param name="options">The options for the restore operation</param>
+    /// <param name="targetKind">The kind of target the URL refers to</param>
+    internal RestoreProvider(string url, Dictionary<string, string?> options, RestoreTargetKind targetKind)
     {
         var uri = new Library.Utility.RelaxedUri(url);
-        _restorePath = uri.HostAndPath;
+        _targetKind = targetKind;
 
-        // Split the target into the disk device path and an optional subpath
-        // within the disk hierarchy (e.g. a partition). When a subpath is present,
+        // Split the target into the disk device (or image file) path and an optional
+        // subpath within the disk hierarchy (e.g. a partition). When a subpath is present,
         // the restore writes into that partition instead of rewriting the whole disk,
         // which also allows restoring partition backups that have no geometry.json.
-        (_devicePath, _subpath) = SourceProvider.SplitDeviceAndSubpath(uri.HostAndPath);
+        if (targetKind == RestoreTargetKind.ImageFile)
+        {
+            var (imagePath, subpath) = SourceProvider.SplitImageAndSubpath(uri.HostAndPath);
+
+            // The restore engine builds the target paths from TargetDestination, and
+            // the geometry file is recognized by the image path, so both use the same
+            // absolute path
+            try
+            {
+                _devicePath = string.IsNullOrWhiteSpace(imagePath) ? imagePath : Path.GetFullPath(imagePath);
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                throw new UserInformationException($"The image file path '{imagePath}' is not valid: {ex.Message}", "DiskImageFileInvalidPath", ex);
+            }
+            _subpath = subpath;
+            _restorePath = string.IsNullOrEmpty(subpath) ? _devicePath : $"{_devicePath}{Path.DirectorySeparatorChar}{subpath}";
+        }
+        else
+        {
+            _restorePath = uri.HostAndPath;
+            (_devicePath, _subpath) = SourceProvider.SplitDeviceAndSubpath(uri.HostAndPath);
+        }
 
         _skipPartitionTable = Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_SKIP_PARTITION_TABLE_OPTION);
         _validateSize = !Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_SKIP_SIZE_VALIDATION_OPTION);
         _autoUnmount = Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_AUTO_UNMOUNT_OPTION);
         _hasSetOverwriteOption = Utility.ParseBoolOption(options, "overwrite");
+        _imageSparse = !Utility.ParseBoolOption(options, OptionsHelper.DISK_RESTORE_IMAGE_PREALLOCATE_OPTION);
+        _imageFormat = targetKind == RestoreTargetKind.ImageFile ? ParseImageFormat(options) : null;
+        _dryRun = Utility.ParseBoolOption(options, "dry-run") || Utility.ParseBoolOption(options, "dryrun");
+        _restoreLegacy = Utility.ParseBoolOption(options, "restore-legacy");
+        // Parsed as the restore does: only the names True and Unique turn it on
+        _restoreAllFiles = options.TryGetValue("restore-all-files", out var allFiles)
+            && allFiles?.Trim() is { } mode
+            && (mode.Equals("True", StringComparison.OrdinalIgnoreCase) || mode.Equals("Unique", StringComparison.OrdinalIgnoreCase));
     }
 
     /// <inheritdoc />
@@ -207,22 +309,43 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         if (string.IsNullOrEmpty(_devicePath))
             throw new UserInformationException("Disk device path is not specified.", "DiskDeviceNotSpecified");
 
-        if (OperatingSystem.IsWindows())
-            _targetDisk = new Windows(_devicePath);
-        else if (OperatingSystem.IsMacOS())
-            _targetDisk = new Mac(_devicePath);
-        else if (OperatingSystem.IsLinux())
-            _targetDisk = new Linux(_devicePath);
+        if (_targetKind == RestoreTargetKind.ImageFile)
+        {
+            // The legacy flow writes the geometry without reading it back, so
+            // the image would never be sized, and it does not report failed files
+            if (_restoreLegacy)
+                throw new UserInformationException("Restoring to an image file is not supported with --restore-legacy.", "DiskImageFileLegacyRestore");
+
+            // Each version would be restored below a timestamp folder of the image path
+            if (_restoreAllFiles)
+                throw new UserInformationException("Restoring to an image file is not supported with --restore-all-files. Restore one version at a time.", "DiskImageFileRestoreAllFiles");
+
+            _targetDisk = _imageFile = CreateImageFileTarget();
+
+            if (_autoUnmount)
+                Log.WriteVerboseMessage(LOGTAG, "AutoUnmountIgnored", $"The option {OptionsHelper.DISK_RESTORE_AUTO_UNMOUNT_OPTION} does not apply to image file targets and is ignored.");
+        }
         else
-            throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
+        {
+            if (OperatingSystem.IsWindows())
+                _targetDisk = new Windows(_devicePath);
+            else if (OperatingSystem.IsMacOS())
+                _targetDisk = new Mac(_devicePath);
+            else if (OperatingSystem.IsLinux())
+                _targetDisk = new Linux(_devicePath);
+            else
+                throw new PlatformNotSupportedException(Strings.PlatformNotSupported);
 
-        if (_autoUnmount)
-            if (!await _targetDisk.AutoUnmountAsync(cancel).ConfigureAwait(false))
-                throw new UserInformationException($"Failed to auto unmount target disk: {_devicePath}. Ensure the disk is not in use and you have sufficient permissions.", "DiskAutoUnmountFailed");
+            if (_autoUnmount)
+                if (!await _targetDisk.AutoUnmountAsync(cancel).ConfigureAwait(false))
+                    throw new UserInformationException($"Failed to auto unmount target disk: {_devicePath}. Ensure the disk is not in use and you have sufficient permissions.", "DiskAutoUnmountFailed");
+        }
 
-        var msg = await _targetDisk.InitializeAsync(enableWrite: true, cancel);
+        // A dry run reads an existing image without changing it
+        var enableWrite = !(_dryRun && _imageFile != null && !string.IsNullOrEmpty(_subpath));
+        var msg = await _targetDisk.InitializeAsync(enableWrite, cancel);
         if (!string.IsNullOrWhiteSpace(msg))
-            throw new UserInformationException(string.Format(Strings.RestoreDeviceNotWriteable, _devicePath, msg), "DiskInitializeFailed");
+            throw new UserInformationException(Strings.RestoreDeviceNotWriteable(_devicePath, msg), "DiskInitializeFailed");
 
         // When the target URL points to a partition within the disk, resolve the
         // target partition from the disk's partition table. This allows restoring
@@ -240,6 +363,215 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     }
 
     /// <summary>
+    /// Gets the path of the temporary file a whole-disk image is written to before
+    /// it is renamed to the image path when the restore completes.
+    /// </summary>
+    /// <param name="imagePath">The image path.</param>
+    /// <returns>The path of the temporary file.</returns>
+    internal static string GetPartialImagePath(string imagePath)
+        => imagePath + ".partial";
+
+    /// <summary>
+    /// Creates the image file disk for the restore target. A whole-disk restore
+    /// writes a new image to a temporary ".partial" file next to the image path,
+    /// which replaces the image when the restore completes. A restore into a
+    /// partition writes into an existing image in place.
+    /// </summary>
+    /// <returns>The image file disk.</returns>
+    /// <exception cref="UserInformationException">Thrown if the image file cannot be used as a restore target.</exception>
+    private ImageFile CreateImageFileTarget()
+    {
+        ValidateImageFileTarget();
+
+        if (string.IsNullOrEmpty(_subpath))
+        {
+            var format = _imageFormat ?? GetImageFormatFromExtension(_devicePath);
+            Log.WriteInformationMessage(LOGTAG, "ImageFileFormat", $"Restoring the disk to a {format} image at {_devicePath}");
+            // A dry run writes nothing; a throwaway file keeps an earlier
+            // ".partial" file, and the folder of the image, untouched
+            var backingPath = _dryRun
+                ? Path.Combine(Path.GetTempPath(), $"duplicati-dryrun-{Guid.NewGuid():N}.img")
+                : GetPartialImagePath(_devicePath);
+
+            if (File.Exists(backingPath))
+            {
+                // Creating the file would follow a link and overwrite its target
+                if (new FileInfo(backingPath).LinkTarget != null)
+                    throw new UserInformationException($"The path '{backingPath}', where the image is written during the restore, is a symbolic link. Remove it and try again.", "DiskImageFileIsLink");
+
+                // An earlier partial file is replaced: it is removed rather than
+                // truncated, so a hard link to it keeps its content, and a restore
+                // that still writes it is detected first
+                EnsureImageFileNotInUse(backingPath, forWriting: true);
+                File.Delete(backingPath);
+            }
+
+            return new ImageFile(_devicePath, backingPath, createNew: true, sparse: _imageSparse, format: format);
+        }
+
+        return new ImageFile(_devicePath, _devicePath, createNew: false, sparse: _imageSparse, format: _imageFormat);
+    }
+
+    /// <summary>
+    /// Parses the image format option.
+    /// </summary>
+    /// <param name="options">The options for the restore operation.</param>
+    /// <returns>The requested format, or <c>null</c> to choose it automatically.</returns>
+    /// <exception cref="UserInformationException">Thrown if the option has an unknown value.</exception>
+    private static ImageFormat? ParseImageFormat(Dictionary<string, string?> options)
+    {
+        if (!options.TryGetValue(OptionsHelper.DISK_RESTORE_IMAGE_FORMAT_OPTION, out var value)
+            || string.IsNullOrWhiteSpace(value)
+            || value.Equals(OptionsHelper.ImageFormatAuto, StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        // Only a single format name; Enum.TryParse also accepts numbers and comma lists
+        if (value.Trim().All(char.IsLetter) && Enum.TryParse<ImageFormat>(value, true, out var format) && Enum.IsDefined(format))
+            return format;
+
+        throw new UserInformationException($"Unknown image format '{value}' for --{OptionsHelper.DISK_RESTORE_IMAGE_FORMAT_OPTION}. Use one of: {string.Join(", ", OptionsHelper.ImageFormatValues)}.", "DiskImageFileUnknownFormat");
+    }
+
+    /// <summary>
+    /// Chooses the format of a new image from its file extension: ".vhd" and
+    /// ".vhdx" select those formats, anything else a raw image.
+    /// </summary>
+    /// <param name="path">The image path.</param>
+    /// <returns>The image format.</returns>
+    internal static ImageFormat GetImageFormatFromExtension(string path)
+        => Path.GetExtension(path).ToLowerInvariant() switch
+        {
+            ".vhd" => ImageFormat.Vhd,
+            ".vhdx" => ImageFormat.Vhdx,
+            _ => ImageFormat.Raw
+        };
+
+    /// <summary>
+    /// Checks that the image path can be used as the restore target. A whole-disk
+    /// restore needs an existing folder, and replaces an existing image only with
+    /// --overwrite; a restore into a partition needs an existing image. In both
+    /// cases an existing image must not be in use.
+    /// </summary>
+    /// <exception cref="UserInformationException">Thrown if the image file cannot be used as a restore target.</exception>
+    private void ValidateImageFileTarget()
+    {
+        if (string.IsNullOrEmpty(_devicePath))
+            throw new UserInformationException("Image file path is not specified.", "DiskImageFileNotSpecified");
+
+        EnsureImagePathIsFile();
+
+        if (!string.IsNullOrEmpty(_subpath))
+        {
+            if (!File.Exists(_devicePath))
+                throw new UserInformationException($"The image file '{_devicePath}' does not exist. Restoring into a partition requires an existing image file that contains the partition.", "DiskImageFileNotFound");
+
+            EnsureImageFileNotInUse(_devicePath, forWriting: !_dryRun);
+            return;
+        }
+
+        var folder = Path.GetDirectoryName(_devicePath);
+        if (string.IsNullOrEmpty(folder) || !Directory.Exists(folder))
+            throw new UserInformationException($"The folder for the image file '{_devicePath}' does not exist.", "DiskImageFileFolderMissing");
+
+        if (Directory.Exists(_devicePath))
+            throw new UserInformationException($"The image file path '{_devicePath}' is a folder. Specify the path of the image file to create.", "DiskImageFileIsFolder");
+
+        if (File.Exists(_devicePath))
+        {
+            if (!_hasSetOverwriteOption)
+                throw new UserInformationException($"The image file '{_devicePath}' already exists. Set --overwrite to replace it.", "DiskImageFileExists");
+            EnsureImageFileNotInUse(_devicePath, forWriting: !_dryRun);
+        }
+    }
+
+    /// <summary>
+    /// Fails if the image path names a device, or, for a whole-disk image, a
+    /// symbolic link: the image is put in place by renaming a new file over the
+    /// path, which would replace the device node or the link itself.
+    /// </summary>
+    /// <exception cref="UserInformationException">Thrown if the image path is not a plain file path.</exception>
+    private void EnsureImagePathIsFile()
+    {
+        var isDevice = OperatingSystem.IsWindows()
+            ? _devicePath.StartsWith(@"\\.\", StringComparison.Ordinal) || _devicePath.StartsWith(@"\\?\GLOBALROOT", StringComparison.OrdinalIgnoreCase)
+            : _devicePath.StartsWith("/dev/", StringComparison.Ordinal);
+        if (isDevice)
+            throw new UserInformationException($"The image path '{_devicePath}' is a device. Use diskimage:// to restore to a disk.", "DiskImageFileIsDevice");
+
+        if (string.IsNullOrEmpty(_subpath) && File.Exists(_devicePath) && new FileInfo(_devicePath).LinkTarget != null)
+            throw new UserInformationException($"The image path '{_devicePath}' is a symbolic link. Give the path of the image file itself.", "DiskImageFileIsLink");
+    }
+
+    /// <summary>
+    /// Fails if the image file is open in another process. On Windows the check
+    /// covers every process; on Linux and macOS it only detects processes that
+    /// hold a lock on the file.
+    /// </summary>
+    /// <param name="path">The path of the image file.</param>
+    /// <param name="forWriting">Whether the file will be written; otherwise only other writers are detected (dry run).</param>
+    /// <exception cref="UserInformationException">Thrown if the file is in use or cannot be opened for writing.</exception>
+    internal static void EnsureImageFileNotInUse(string path, bool forWriting)
+    {
+        try
+        {
+            using var _ = forWriting
+                ? new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None)
+                : new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            throw new UserInformationException($"The image file '{path}' cannot be opened for writing: {ex.Message}", "DiskImageFileNotWriteable", ex);
+        }
+        catch (IOException ex) when (ex is not FileNotFoundException)
+        {
+            throw new UserInformationException($"The image file '{path}' is in use by another process. Close the program that uses it and try again.", "DiskImageFileInUse", ex);
+        }
+    }
+
+    /// <summary>
+    /// Tests an image file target without creating the image.
+    /// </summary>
+    /// <param name="cancel">Cancellation token.</param>
+    /// <returns>An awaitable task.</returns>
+    /// <exception cref="UserInformationException">Thrown if the image file cannot be used as a restore target.</exception>
+    private async Task TestImageFileTargetAsync(CancellationToken cancel)
+    {
+        ValidateImageFileTarget();
+
+        if (!string.IsNullOrEmpty(_subpath))
+        {
+            Log.WriteInformationMessage(LOGTAG, "RestoreTestSuccess", $"Image file {_devicePath} can be written");
+            return;
+        }
+
+        var folder = Path.GetDirectoryName(_devicePath)!;
+
+        // Check that files can be created in the folder
+        var probe = Path.Combine(folder, $".duplicati-probe-{Guid.NewGuid():N}");
+        try
+        {
+            await File.WriteAllBytesAsync(probe, [], cancel).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw new UserInformationException($"Cannot create files in the folder '{folder}': {ex.Message}", "DiskImageFileFolderNotWriteable", ex);
+        }
+        finally
+        {
+            try
+            {
+                File.Delete(probe);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                Log.WriteVerboseMessage(LOGTAG, "ImageFileProbeDeleteFailed", ex, $"Could not remove the probe file {probe}");
+            }
+        }
+
+        Log.WriteInformationMessage(LOGTAG, "RestoreTestSuccess", $"Image file {_devicePath} can be created");
+    }
+
+    /// <summary>
     /// Resolves the target partition identified by <see cref="_subpath"/> from the
     /// target disk's partition table and registers it, so that restore paths
     /// referencing the partition can be mapped without geometry metadata.
@@ -251,15 +583,10 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     {
         var segment = _subpath.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
         if (string.IsNullOrEmpty(segment))
-            throw new UserInformationException(string.Format(Strings.RestoreInvalidPath, _restorePath), "DiskRestoreInvalidPath");
+            throw new UserInformationException(Strings.RestoreInvalidPath(_restorePath), "DiskRestoreInvalidPath");
 
-        // The segment is expected in the format "part_{PartitionTableType}_{PartitionNumber}", e.g. "part_GPT_1"
-        var parts = segment.Split('_');
-        if (parts.Length < 3
-            || !parts[0].Equals("part", StringComparison.OrdinalIgnoreCase)
-            || !Enum.TryParse<PartitionTableType>(parts[1], true, out var ptType)
-            || !int.TryParse(parts[2], out var partitionNumber))
-            throw new UserInformationException($"The restore target '{_restorePath}' does not point to a partition. Expected format: part_{{PartitionTableType}}_{{PartitionNumber}}", "DiskRestoreInvalidPartitionPath");
+        if (!PartitionSegment.TryParse(segment, out var ptType, out var partitionNumber))
+            throw new UserInformationException($"The restore target '{_restorePath}' does not point to a partition. Expected format: {PartitionSegment.FormatDescription}", "DiskRestoreInvalidPartitionPath");
 
         var table = await PartitionTableFactory.CreateAsync(_targetDisk!, cancel).ConfigureAwait(false);
         if (table == null || table.TableType == PartitionTableType.Unknown)
@@ -269,7 +596,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             throw new UserInformationException($"The target disk '{_devicePath}' uses a {table.TableType} partition table, which does not match the requested {ptType} partition '{segment}'.", "DiskRestorePartitionTableMismatch");
 
         var partition = await table.GetPartitionAsync(partitionNumber, cancel).ConfigureAwait(false)
-            ?? throw new UserInformationException(string.Format(Strings.RestoreTargetNotFound, $"{_devicePath}/{segment}"), "DiskRestorePartitionNotFound");
+            ?? throw new UserInformationException(Strings.RestoreTargetNotFound($"{_devicePath}/{segment}"), "DiskRestorePartitionNotFound");
 
         _partitions.Add(partition);
 
@@ -280,6 +607,12 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <inheritdoc />
     public async Task Test(CancellationToken cancellationToken)
     {
+        if (_targetKind == RestoreTargetKind.ImageFile)
+        {
+            await TestImageFileTargetAsync(cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
         if (_targetDisk == null)
             throw new InvalidOperationException("Provider not initialized.");
 
@@ -336,18 +669,8 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     /// <exception cref="InvalidOperationException">Thrown if the partition segment cannot be parsed or the partition is not found.</exception>
     internal IPartition ParsePartition(string segment)
     {
-        // Example segment: "part_GPT_1"
-        var parts = segment.Split('_');
-        if (parts.Length < 3)
-            throw new InvalidOperationException($"Unable to parse partition information from segment: {segment}. Expected format: part_{{PartitionTableType}}_{{PartitionNumber}}");
-
-        // Parse partition table type (second part)
-        if (!Enum.TryParse<PartitionTableType>(parts[1], true, out var ptType))
-            throw new InvalidOperationException($"Unable to parse partition table type from segment: {segment}. Tried {parts[1]}");
-
-        // Parse partition number (third part)
-        if (!int.TryParse(parts[2], out var pn))
-            throw new InvalidOperationException($"Unable to parse partition number from segment: {segment}. Tried {parts[2]}");
+        if (!PartitionSegment.TryParse(segment, out var ptType, out var pn))
+            throw new InvalidOperationException($"Unable to parse partition information from segment: {segment}. Expected format: {PartitionSegment.FormatDescription}");
 
         // When restoring into a target partition, all partition content maps to that
         // partition; the number in the path is the source partition's and is not matched
@@ -401,6 +724,12 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
                 throw new UserInformationException($"Cannot create a partition on the target disk '{_devicePath}' because the partition table is excluded from the restore ({OptionsHelper.DISK_RESTORE_SKIP_PARTITION_TABLE_OPTION} is set). Restore to an existing partition on the target disk instead, or unset the option.", "DiskRestorePartitionCreationSkipped");
 
             var source = info.Partition;
+
+            // A new image file has no size until the geometry is known. Without
+            // geometry, the disk is laid out around the restored partitions.
+            if (_imageFile != null && !_imageFile.HasGeometry)
+                _imageFile.EnsureSize(GetImageSizeForPartition(source.StartOffset, source.Size));
+
             var allocated = PartitionCreator.AllocateAsync(
                 _targetDisk!,
                 source.Size,
@@ -437,6 +766,35 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
             return partition;
         }
+    }
+
+    /// <summary>
+    /// Computes the image size needed to hold a partition of a backup without
+    /// geometry metadata, together with the partitions already created. The
+    /// partition is placed by the same rule <see cref="PartitionCreator.AllocateAsync"/>
+    /// uses on a blank disk (its source offset when free, otherwise the first
+    /// aligned gap), with room for the new GPT, which is written when the restore
+    /// completes, at both ends.
+    /// </summary>
+    /// <param name="sourceStart">The source partition's start offset in bytes.</param>
+    /// <param name="sourceSize">The source partition's size in bytes.</param>
+    /// <returns>The required image size in bytes.</returns>
+    internal long GetImageSizeForPartition(long sourceStart, long sourceSize)
+    {
+        const long alignment = PartitionCreator.DefaultAlignment;
+
+        var size = Alignment.AlignUp(sourceSize, _targetDisk!.SectorSize);
+        var (reservedStart, reservedEnd) = PartitionCreator.GetNewGptReservedSpace(_targetDisk.SectorSize);
+        var existing = _pendingPartitionCreations.Select(p => (p.StartOffset, p.Size)).ToList();
+
+        // Without an end limit there is always a place for the partition. The
+        // placement does not depend on the end of the disk as long as it fits, so
+        // the allocation on the sized image picks the same offset
+        var start = PartitionCreator.FindFreeSpace(existing, reservedStart, long.MaxValue - reservedEnd - alignment, size, alignment, sourceStart)
+            ?? throw new InvalidOperationException($"No room for a partition of {size} bytes.");
+
+        var end = existing.Select(p => p.StartOffset + p.Size).Append(start + size).Max();
+        return Alignment.AlignUp(end + reservedEnd, alignment);
     }
 
     /// <summary>
@@ -508,14 +866,27 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         if (!Enum.TryParse<FileSystemType>(fsTypeStr, true, out var fsType))
             throw new InvalidOperationException($"Unable to parse filesystem type from segment: {segment}. Tried {fsTypeStr}");
 
-        // Find the filesystem in our reconstructed list
-        var fs = _filesystems.FirstOrDefault(f => f.Partition.PartitionNumber == partition.PartitionNumber && f.Type == fsType);
-
-        // Read under the creation lock, as CreateTargetPartition (triggered by
-        // concurrent writes) adds to the dictionary
-        bool isCreatedPartition;
+        // Look up and create under the creation lock, as concurrent writes add
+        // filesystems here and CreateTargetPartition adds to the dictionary
         lock (_creationLock)
-            isCreatedPartition = _createdPartitions.ContainsKey(partition.PartitionNumber);
+            return FindOrCreateFilesystem(partition, segment, fsType);
+    }
+
+    /// <summary>
+    /// Finds the filesystem for a partition, or creates a block-level filesystem
+    /// handler for a partition that has no reconstructed filesystem (a partition
+    /// target, or a partition created during this restore). Called with the
+    /// creation lock held.
+    /// </summary>
+    /// <param name="partition">The partition to which the filesystem belongs.</param>
+    /// <param name="segment">The filesystem segment string, for messages.</param>
+    /// <param name="fsType">The filesystem type from the segment.</param>
+    /// <returns>The corresponding filesystem.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the filesystem is not found.</exception>
+    private IFilesystem FindOrCreateFilesystem(IPartition partition, string segment, FileSystemType fsType)
+    {
+        var fs = _filesystems.FirstOrDefault(f => f.Partition.PartitionNumber == partition.PartitionNumber && f.Type == fsType);
+        var isCreatedPartition = _createdPartitions.ContainsKey(partition.PartitionNumber);
 
         if (fs == null && (!string.IsNullOrEmpty(_subpath) || isCreatedPartition))
         {
@@ -534,7 +905,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
 
             if (_validateSize && info.Partition != null && info.Partition.Size > partition.Size)
                 throw new UserInformationException(
-                    string.Format(Strings.RestoreTargetTooSmall, partition.Size, info.Partition.Size),
+                    Strings.RestoreTargetTooSmall(partition.Size, info.Partition.Size),
                     "RestoreTargetTooSmall");
 
             var blockSize = info.Filesystem is { BlockSize: > 0 } fsGeom
@@ -586,7 +957,18 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             return (RestorePathType.Geometry, null, null);
         }
 
-        var segments = path.Split(separators, StringSplitOptions.RemoveEmptyEntries) ??
+        // Only the part below the target disk identifies partitions and
+        // filesystems; the folders of an image file path may have names that
+        // start with "part_" or "fs_"
+        var targetRoot = NormalizePath(_targetDisk?.DevicePath ?? _devicePath ?? string.Empty);
+        var relativePath = targetRoot.Length > 0
+            && path.Length > targetRoot.Length
+            && separators.Contains(path[targetRoot.Length])
+            && path.StartsWith(targetRoot, StringComparison.OrdinalIgnoreCase)
+                ? path[(targetRoot.Length + 1)..]
+                : path;
+
+        var segments = relativePath.Split(separators, StringSplitOptions.RemoveEmptyEntries) ??
             throw new InvalidOperationException($"Unable to parse path: {path}");
 
         // When the restore target is a single partition, a geometry file in the
@@ -605,7 +987,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         static UserInformationException DiskContentToPartitionTarget()
             => new($"The backup contains a full disk image (including '{GeometryMetadata.FileName}'), which cannot be restored into a single partition. Restore to a whole-disk target instead.", "DiskRestoreDiskContentToPartitionTarget");
 
-        string? partitionSegment = segments.FirstOrDefault(s => s.StartsWith("part_", StringComparison.OrdinalIgnoreCase));
+        string? partitionSegment = segments.FirstOrDefault(s => s.StartsWith(PartitionSegment.Prefix, StringComparison.OrdinalIgnoreCase));
         if (!string.IsNullOrEmpty(partitionSegment))
         {
             string? filesystemSegment = segments.FirstOrDefault(s => s.StartsWith("fs_", StringComparison.OrdinalIgnoreCase));
@@ -965,7 +1347,9 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             stream.Position = 0;
         }
 
-        var wrapper = new CaptureStream(stream, async data =>
+        // The callback runs synchronously when the stream is disposed, so errors
+        // (such as an image format that cannot hold the disk) reach the restore
+        var wrapper = new CaptureStream(stream, data =>
         {
             try
             {
@@ -984,6 +1368,15 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
                         return;
                     }
 
+                    // A new image file is sized from the source disk
+                    if (_imageFile != null)
+                    {
+                        if (newGeometry.Disk == null)
+                            throw new UserInformationException($"The disk geometry in the backup does not describe the source disk, so the size of the image file '{_devicePath}' cannot be determined.", "DiskImageFileGeometryMissing");
+
+                        _imageFile.ApplyGeometry(newGeometry.Disk.Size, newGeometry.Disk.SectorSize);
+                    }
+
                     // Clear existing reconstructed objects
                     foreach (var part in _partitions)
                         part.Dispose();
@@ -995,7 +1388,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
                     // Reconstruct disk, partition table, partitions, and filesystems from geometry metadata
                     ReconstructFromGeometryMetadata();
 
-                    using var _ = await OpenWriteDisk("disk", cancel); // Mark disk-level data as pending write for Finalize
+                    using var _ = OpenWriteDisk("disk", cancel).Await(); // Mark disk-level data as pending write for Finalize
 
                     Log.WriteInformationMessage(LOGTAG, "GeometryMetadataUpdated", $"Successfully updated geometry metadata during ReadWrite. Reconstructed {_partitions.Count} partitions and {_filesystems.Count} filesystems.");
                 }
@@ -1004,7 +1397,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
                     Log.WriteWarningMessage(LOGTAG, "GeometryMetadataUpdateFailed", null, $"Failed to parse geometry metadata during ReadWrite. Parsed object was null.");
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not UserInformationException)
             {
                 Log.WriteWarningMessage(LOGTAG, "GeometryMetadataParseFailed", ex,
                     $"Failed to parse geometry metadata during ReadWrite");
@@ -1073,9 +1466,14 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
                 : _partitions.FirstOrDefault(p => p.PartitionNumber == partitionNumber);
 
             if (target != null && sourceSize > target.Size)
+            {
+                // The restore only logs metadata errors, so an image target
+                // remembers it, and does not present the image as complete
+                _metadataWriteFailed = true;
                 throw new UserInformationException(
-                    string.Format(Strings.RestoreTargetTooSmall, target.Size, sourceSize),
+                    Strings.RestoreTargetTooSmall(target.Size, sourceSize),
                     "RestoreTargetTooSmall");
+            }
         }
 
         return Task.FromResult(true);
@@ -1114,7 +1512,7 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     }
 
     /// <inheritdoc />
-    public async Task Finalize(Action<double>? progressCallback, CancellationToken cancel)
+    public async Task Finalize(Action<double>? progressCallback, bool isComplete, CancellationToken cancel)
     {
         if (_targetDisk == null)
             throw new InvalidOperationException("Provider not initialized.");
@@ -1123,6 +1521,23 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
         if (totalItems == 0)
         {
             Log.WriteInformationMessage(LOGTAG, "RestoreNoItems", "No items to restore.");
+
+            // Partition content is written through the filesystems, which leave
+            // no pending items, so an image restored into in place, or a new image
+            // that was sized from the geometry, is still committed
+            if (!string.IsNullOrEmpty(_subpath) || _imageFile?.HasGeometry == true)
+            {
+                CommitImageFile(isComplete);
+            }
+            else
+            {
+                // A completed whole-disk restore that never described a disk
+                // produced no image, which must not look like success
+                var noDisk = _imageFile != null && !_dryRun && isComplete;
+                DiscardEmptyImageFile();
+                if (noDisk)
+                    throw new UserInformationException($"The restored data did not describe a disk, so no image was written to '{_devicePath}'.", "DiskImageFileNoDisk");
+            }
             return;
         }
 
@@ -1226,7 +1641,121 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
             pendingWrite.Dispose();
         _pendingWrites.Clear();
 
+        CommitImageFile(isComplete);
+
         Log.WriteInformationMessage(LOGTAG, "RestoreComplete", "Restore operation completed.");
+    }
+
+    /// <summary>
+    /// Completes a whole-disk restore to an image file by flushing the temporary
+    /// ".partial" file and renaming it to the image path, replacing any existing
+    /// image. When the restore did not complete, the ".partial" file is kept and
+    /// the image path is not touched. A restore into a partition of an existing
+    /// image is only flushed.
+    /// </summary>
+    /// <param name="isComplete"><c>true</c> if every selected item was restored.</param>
+    /// <exception cref="UserInformationException">Thrown if the existing image file is in use.</exception>
+    private void CommitImageFile(bool isComplete)
+    {
+        if (_imageFile == null)
+            return;
+
+        isComplete &= !_metadataWriteFailed;
+
+        // A dry run leaves the target as it was
+        if (_dryRun)
+        {
+            DiscardEmptyImageFile();
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(_subpath))
+        {
+            _imageFile.Commit();
+            return;
+        }
+
+        if (!_imageFile.HasGeometry && _pendingPartitionCreations.Count == 0)
+        {
+            // When the restore is incomplete, the cause is already reported, and
+            // the disk description may be among what failed to restore
+            if (!isComplete)
+            {
+                Log.WriteWarningMessage(LOGTAG, "ImageFileNoDisk", null, $"The restored data did not describe a disk, so no image was written to '{_devicePath}'.");
+                return;
+            }
+
+            throw new UserInformationException($"The restored data did not describe a disk, so no image was written to '{_devicePath}'.", "DiskImageFileNoDisk");
+        }
+
+        var partialPath = _imageFile.FilePath;
+
+        // Write the image headers and close the file, so it can be renamed
+        _imageFile.Commit();
+        _imageFile.Dispose();
+        _imageFile = null;
+        _targetDisk = null;
+
+        // An incomplete image must not replace an existing image, nor look complete
+        if (!isComplete)
+        {
+            Log.WriteWarningMessage(LOGTAG, "ImageFileIncomplete", null,
+                $"The restore did not complete, so the image was not written to '{_devicePath}'. The incomplete image is in '{partialPath}'.");
+            return;
+        }
+
+        // The image may have been opened by another program during the restore
+        if (File.Exists(_devicePath))
+        {
+            try
+            {
+                EnsureImageFileNotInUse(_devicePath, forWriting: true);
+            }
+            catch (UserInformationException ex)
+            {
+                throw new UserInformationException($"{ex.Message} The restored image is in '{partialPath}'.", ex.HelpID, ex);
+            }
+        }
+
+        try
+        {
+            File.Move(partialPath, _devicePath, overwrite: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw new UserInformationException($"The restored image could not replace '{_devicePath}': {ex.Message}. The restored image is in '{partialPath}'.", "DiskImageFileInUse", ex);
+        }
+
+        Log.WriteInformationMessage(LOGTAG, "ImageFileWritten", $"Restored the disk image to {_devicePath}");
+    }
+
+    /// <summary>
+    /// Removes the file of a whole-disk image restore that restored nothing (or
+    /// was a dry run), so no empty image is left behind. A restore into a
+    /// partition of an existing image is only closed.
+    /// </summary>
+    private void DiscardEmptyImageFile()
+    {
+        if (_imageFile == null)
+            return;
+
+        if (!string.IsNullOrEmpty(_subpath))
+        {
+            _imageFile.Dispose();
+            _imageFile = null;
+            _targetDisk = null;
+            return;
+        }
+
+        // Only a file this restore opened is removed; when opening failed, the
+        // file may belong to another restore of the same image
+        var partialPath = _imageFile.FilePath;
+        var ownsFile = _imageFile.IsOpen;
+        _imageFile.Dispose();
+        _imageFile = null;
+        _targetDisk = null;
+        if (ownsFile)
+            File.Delete(partialPath);
     }
 
     /// <summary>
@@ -1246,6 +1775,21 @@ public sealed class RestoreProvider : IRestoreDestinationProviderModule, IDispos
     public void Dispose()
     {
         if (_disposed) return;
+
+        // A whole-disk image that never got a disk (e.g. the geometry was
+        // rejected), and the throwaway file of a dry run, are removed
+        if (_imageFile != null && _imageFile.IsOpen && string.IsNullOrEmpty(_subpath)
+            && (_dryRun || (!_imageFile.HasGeometry && _pendingPartitionCreations.Count == 0)))
+        {
+            try
+            {
+                DiscardEmptyImageFile();
+            }
+            catch (Exception ex)
+            {
+                Log.WriteWarningMessage(LOGTAG, "ImageFileDiscardFailed", ex, $"Failed to remove the empty image file for '{_devicePath}'.");
+            }
+        }
 
         _targetDisk?.Dispose();
 

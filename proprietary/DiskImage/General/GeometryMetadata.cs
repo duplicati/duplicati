@@ -95,7 +95,7 @@ public class DiskGeometry
     /// <summary>
     /// The number of sectors on the disk.
     /// </summary>
-    public int Sectors { get; set; }
+    public long Sectors { get; set; }
 
     /// <summary>
     /// The type of partition table on the disk.

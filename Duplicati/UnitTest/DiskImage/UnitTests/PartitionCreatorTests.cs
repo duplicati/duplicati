@@ -144,7 +144,7 @@ public partial class DiskImageUnitTests : BasicSetupHelper
             {
                 SectorSize = sectorSize,
                 Size = 100 * MiB,
-                Sectors = (int)(100 * MiB / sectorSize)
+                Sectors = (100 * MiB / sectorSize)
             },
             PartitionTable = new PartitionTableGeometry
             {

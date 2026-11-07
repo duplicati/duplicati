@@ -361,7 +361,10 @@ internal static class PartitionTableSynthesizer
             return;
 
         var sectorSize = geometryMetadata.Disk.SectorSize;
-        var diskSectors = geometryMetadata.Disk.Sectors;
+
+        // Derived from the size, as backups made before the sector count was a
+        // 64-bit value store a truncated count for disks over 1 TiB
+        var diskSectors = geometryMetadata.Disk.Size / sectorSize;
 
         // Calculate sizes
         int numPartitionEntries = 128;

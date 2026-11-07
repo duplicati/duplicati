@@ -328,6 +328,53 @@ public sealed class SourceProvider : ISourceProviderModule, ISnapshotAwareModule
         return (devicePath, subpath);
     }
 
+    /// <summary>
+    /// Splits a host-and-path value from an image file URL into the image file path
+    /// and an optional subpath within the disk hierarchy (e.g. "part_GPT_1"). When a
+    /// leading part of the value is an existing file, that file is the image and the
+    /// rest is the subpath. Otherwise the subpath starts at the first segment that
+    /// names a partition ("part_{PartitionTableType}_{PartitionNumber}") and does not
+    /// follow an existing folder; other segments are part of the image path.
+    /// </summary>
+    /// <param name="hostAndPath">The host and path value to split.</param>
+    /// <returns>
+    /// A tuple with the image file path and the subpath. The subpath is empty when
+    /// the value targets the whole image.
+    /// </returns>
+    public static (string ImagePath, string Subpath) SplitImageAndSubpath(string hostAndPath)
+    {
+        var separators = OperatingSystem.IsWindows() ? new[] { '/', '\\' } : new[] { '/' };
+
+        // Positions where a segment starts
+        var starts = new List<int>();
+        for (var i = 0; i < hostAndPath.Length; i++)
+            if (!separators.Contains(hostAndPath[i]) && (i == 0 || separators.Contains(hostAndPath[i - 1])))
+                starts.Add(i);
+
+        (string, string) SplitAt(int index)
+            => (hostAndPath[..index].TrimEnd(separators), hostAndPath[index..].Trim(separators));
+
+        // An existing image file followed by more segments
+        foreach (var start in starts.Skip(1))
+        {
+            var candidate = hostAndPath[..start].TrimEnd(separators);
+            if (File.Exists(candidate))
+                return SplitAt(start);
+        }
+
+        // A partition segment after a path that is not a folder (a missing image
+        // file); a folder named like a partition belongs to the path of a new image
+        foreach (var start in starts)
+        {
+            var next = hostAndPath.IndexOfAny(separators, start);
+            if (PartitionSegment.TryParse(hostAndPath[start..(next < 0 ? hostAndPath.Length : next)], out _, out _)
+                && !Directory.Exists(hostAndPath[..start].TrimEnd(separators)))
+                return SplitAt(start);
+        }
+
+        return (hostAndPath.TrimEnd(separators), string.Empty);
+    }
+
     /// <inheritdoc />
     public void Dispose()
     {

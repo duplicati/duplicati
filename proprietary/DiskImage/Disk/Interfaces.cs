@@ -35,7 +35,7 @@ internal interface IRawDisk : IDisposable
     /// <summary>
     /// Gets the number of sectors on the disk.
     /// </summary>
-    int Sectors { get; }
+    long Sectors { get; }
 
     /// <summary>
     /// Gets whether the disk is opened for write access.

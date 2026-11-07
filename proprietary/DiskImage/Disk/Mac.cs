@@ -124,14 +124,14 @@ namespace Duplicati.Proprietary.DiskImage.Disk
         }
 
         /// <inheritdoc />
-        public int Sectors
+        public long Sectors
         {
             get
             {
                 if (!m_initialized)
                     throw new InvalidOperationException("Disk not initialized.");
 
-                return (int)(m_size / m_sectorSize);
+                return m_size / m_sectorSize;
             }
         }
 

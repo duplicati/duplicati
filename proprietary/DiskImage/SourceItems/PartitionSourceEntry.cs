@@ -21,7 +21,7 @@ namespace Duplicati.Proprietary.DiskImage.SourceItems;
 /// Acts as a container for the filesystem within the partition.
 /// </summary>
 internal class PartitionSourceEntry(string parentPath, IPartition partition, bool treatFilesystemAsUnknown = false)
-    : DiskImageEntryBase(System.IO.Path.Combine(parentPath, $"part_{partition.PartitionTable.TableType}_{partition.PartitionNumber}{System.IO.Path.DirectorySeparatorChar}"))
+    : DiskImageEntryBase(System.IO.Path.Combine(parentPath, PartitionSegment.Format(partition.PartitionTable.TableType, partition.PartitionNumber) + System.IO.Path.DirectorySeparatorChar))
 {
     /// <inheritdoc />
     public override bool IsFolder => true;

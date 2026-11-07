@@ -46,9 +46,10 @@ public interface IRestoreDestinationProvider : IDisposable
     /// Finalizes the restore destination provider
     /// </summary>
     /// <param name="progressCallback">A callback to report progress</param>
+    /// <param name="isComplete"><c>true</c> if every selected item was restored; <c>false</c> if the restore was stopped or some items failed to restore</param>
     /// <param name="cancel">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    Task Finalize(Action<double>? progressCallback, CancellationToken cancel);
+    Task Finalize(Action<double>? progressCallback, bool isComplete, CancellationToken cancel);
 
     /// <summary>
     /// Tests the provider connection

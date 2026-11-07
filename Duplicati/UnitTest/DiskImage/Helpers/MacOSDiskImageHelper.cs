@@ -628,13 +628,38 @@ internal class MacOSDiskImageHelper : IDiskImageHelper
         EjectDisk(diskIdentifier);
         var readOnlyArg = readOnly ? " -readonly" : "";
         var reattachoutput = RunProcess("hdiutil", $"attach -nomount -noautofsck{readOnlyArg} \"{imagePath}\"");
+        return ParseAttachOutput(reattachoutput, tableType);
+    }
+
+    public string AttachImage(string imagePath, PartitionTableType tableType, bool readOnly)
+    {
+        if (DiskImageTestHelpers.IsVirtualDiskFile(imagePath))
+            throw new PlatformNotSupportedException("macOS can only attach raw disk images.");
+
+        var readOnlyArg = readOnly ? " -readonly" : "";
+        var output = RunProcess("hdiutil", $"attach -nomount -noautofsck{readOnlyArg} -imagekey diskimage-class=CRawDiskImage \"{imagePath}\"");
+        return ParseAttachOutput(output, tableType);
+    }
+
+    /// <summary>
+    /// Gets the disk identifier from the output of <c>hdiutil attach</c>.
+    /// </summary>
+    /// <param name="output">The output of hdiutil attach.</param>
+    /// <param name="tableType">The type of partition table on the disk.</param>
+    /// <returns>The disk identifier, e.g. /dev/disk4.</returns>
+    private static string ParseAttachOutput(string output, PartitionTableType tableType)
+    {
+        var devices = output
+            .Split('\n')
+            .Select(x => x.Trim())
+            .Where(x => x.StartsWith("/dev/"));
+
         if (tableType == PartitionTableType.Unknown)
-            return reattachoutput.Split('\n').First().Trim();
+            return devices.First().Split(' ', '\t').First();
         else
-            return reattachoutput
-                .Split('\n')
-                .Select(x => x.Trim()
-                    .Split(' ')
+            return devices
+                .Select(x => x
+                    .Split(' ', '\t')
                     .Where(y => !string.IsNullOrEmpty(y))
                     .Select(y => y.Trim())
                     .ToArray()

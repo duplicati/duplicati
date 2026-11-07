@@ -67,7 +67,7 @@ internal sealed class VssDiskWrapper : IRawDisk
     public int SectorSize => _rawDisk.SectorSize;
 
     /// <inheritdoc />
-    public int Sectors => _rawDisk.Sectors;
+    public long Sectors => _rawDisk.Sectors;
 
     /// <inheritdoc />
     public bool IsWriteable => false; // VSS snapshots are read-only

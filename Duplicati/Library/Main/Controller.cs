@@ -289,10 +289,16 @@ namespace Duplicati.Library.Main
                     .RunAsync(config.Context.paths, config.BackendManager, config.Filter, restoreDestination, config.BackendUrl)
                     .ConfigureAwait(false);
 
+                // A stopped restore, or one where files failed, returns normally; the
+                // destination is told, so it does not present the result as complete
+                var isComplete = !config.Result.TaskControl.StopToken.IsCancellationRequested
+                    && config.Result.BrokenLocalFiles.Count == 0
+                    && config.Result.BrokenRemoteFiles.Count == 0;
+
                 await restoreDestination.Finalize((pg) =>
                 {
                     config.Result.OperationProgressUpdater.UpdateProgress((float)pg);
-                }, config.Result.TaskControl.ProgressToken).ConfigureAwait(false);
+                }, isComplete, config.Result.TaskControl.ProgressToken).ConfigureAwait(false);
                 config.Result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Complete);
                 config.Result.EndTime = DateTime.UtcNow;
 

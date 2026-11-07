@@ -262,7 +262,8 @@ namespace Duplicati.Library.Main.Operation
                                 .RunAsync([], backendManager, restoreFilter, destination)
                                 .ConfigureAwait(false);
 
-                        await destination.Finalize(null, token).ConfigureAwait(false);
+                        var isComplete = restoreResults.BrokenLocalFiles.Count == 0 && restoreResults.BrokenRemoteFiles.Count == 0;
+                        await destination.Finalize(null, isComplete, token).ConfigureAwait(false);
                     }
                     catch (Exception ex) when (!ex.IsAbortOrCancelException() && !watchdog.Fired)
                     {
