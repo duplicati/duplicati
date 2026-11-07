@@ -374,7 +374,9 @@ namespace Duplicati.Library.Snapshots.USN
                     }
 
                     if (e == Win32USN.ERROR_JOURNAL_ENTRY_DELETED)
-                        throw new UsnJournalSoftFailureException(Strings.USNHelper.JournalEntriesDeleted, new Win32Exception(e));
+                        throw new UsnJournalPurgedException(
+                            Strings.USNHelper.JournalEntriesPurged(m_volume.TrimEnd('\\'), Utility.Utility.FormatSizeString(m_journal.MaximumSize)),
+                            new Win32Exception(e));
 
                     throw new Win32Exception(e);
                 }
@@ -721,6 +723,18 @@ namespace Duplicati.Library.Snapshots.USN
         }
 
         public UsnJournalSoftFailureException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+    }
+
+    /// <summary>
+    /// The journal no longer holds the entries since the previous backup,
+    /// because it is too small for the changes made between backups
+    /// </summary>
+    [Serializable]
+    public class UsnJournalPurgedException : UsnJournalSoftFailureException
+    {
+        public UsnJournalPurgedException(string message, Exception innerException) : base(message, innerException)
         {
         }
     }
