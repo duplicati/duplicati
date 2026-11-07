@@ -23,11 +23,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
-using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Operation.Common;
 using Newtonsoft.Json;
 
@@ -171,24 +168,8 @@ namespace Duplicati.Library.Main
         /// </summary>
         protected static readonly int SERIALIZATION_LIMIT = 20;
 
-        protected class DbMessage
-        {
-            public readonly string Type;
-            public readonly string Message;
-            public readonly Exception Exception;
-
-            public DbMessage(string type, string message, Exception ex)
-            {
-                this.Type = type;
-                this.Message = message;
-                this.Exception = ex;
-            }
-        }
-
         protected readonly BasicResults m_parent;
         protected System.Threading.Thread m_callerThread;
-        protected readonly SemaphoreSlim m_lock = new(1, 1);
-        protected readonly Queue<DbMessage> m_dbqueue;
 
         public virtual ParsedResultType ParsedResult
         {
@@ -263,36 +244,6 @@ namespace Duplicati.Library.Main
                     return m_parent.BackendProgressUpdater;
                 else
                     return m_backendProgressUpdater;
-            }
-        }
-
-        /// <summary>
-        /// Flushes the log messages to the database.
-        /// </summary>
-        /// <param name="db">The database to flush the log messages to.</param>
-        /// <param name="token">The cancellation token to use.</param>
-        /// <returns>A task that completes when the log messages have been flushed.</returns>
-        public async Task FlushLogAsync(LocalDatabase db, CancellationToken token)
-        {
-            if (m_parent != null)
-                await m_parent.FlushLogAsync(db, token).ConfigureAwait(false);
-            else
-            {
-                await m_lock.WaitAsync(token).ConfigureAwait(false);
-                try
-                {
-                    while (m_dbqueue.Count > 0)
-                    {
-                        var el = m_dbqueue.Dequeue();
-                        await db
-                            .LogMessageAsync(el.Type, el.Message, el.Exception, token)
-                            .ConfigureAwait(false);
-                    }
-                }
-                finally
-                {
-                    m_lock.Release();
-                }
             }
         }
 
@@ -394,7 +345,6 @@ namespace Duplicati.Library.Main
             m_warnings = new Library.Utility.FileBackedStringList();
             m_errors = new Library.Utility.FileBackedStringList();
             m_retryAttempts = new Library.Utility.FileBackedStringList();
-            m_dbqueue = new Queue<DbMessage>();
             m_backendStatistics = new BackendWriter(this);
             m_callerThread = System.Threading.Thread.CurrentThread;
             m_backendProgressUpdater = new BackendProgressUpdater();

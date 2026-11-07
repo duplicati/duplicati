@@ -3619,12 +3619,8 @@ namespace Duplicati.Library.Main.Database.Local
             var id = -1L;
             if (m_connection != null && result != null)
             {
-                if (result is BasicResults basicResults)
-                {
-                    await basicResults.FlushLogAsync(this, token).ConfigureAwait(false);
-                    if (basicResults.EndTime.Ticks == 0)
-                        basicResults.EndTime = DateTime.UtcNow;
-                }
+                if (result is BasicResults basicResults && basicResults.EndTime.Ticks == 0)
+                    basicResults.EndTime = DateTime.UtcNow;
 
                 var serializer = new JsonFormatSerializer();
                 await LogMessageAsync(ResultLogType,
