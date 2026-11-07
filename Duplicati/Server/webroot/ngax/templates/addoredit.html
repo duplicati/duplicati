@@ -73,7 +73,7 @@
                                     <a href ng-click="generatePassphrase()" translate>Generate</a>
                                 </li>
                                 <li ng-show="PassphraseScoreString && !isMaskedPassphrase()">|</li>
-                                <li class="strength score-{{PassphraseScore}}" ng-show="PassphraseScoreString && !isMaskedPassphrase()">{{PassphraseScore != 'x' ? 'Strength: ' : ''}} {{PassphraseScoreString}}</li>
+                                <li class="strength score-{{PassphraseScore}}" ng-show="PassphraseScoreString && !isMaskedPassphrase()"><span ng-if="PassphraseScore != 'x'" translate>Strength:</span> {{PassphraseScoreString}}</li>
                             </ul>
                         </div>
                     </div>
