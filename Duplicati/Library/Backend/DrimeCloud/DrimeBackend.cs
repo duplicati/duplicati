@@ -756,8 +756,12 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
                 if (entry.Id <= 0 || entry.Parent_Id != folderId)
                     throw new DrimePaginationException("A listing entry had an invalid ID or belonged to another folder.");
                 var date = ParseListingDate(entry.Created_At);
-                if ((lower.HasValue && date < lower.Value) || (lastDate.HasValue && date < lastDate.Value))
-                    throw new DrimePaginationException("Drime ignored the date boundary or returned timestamps out of order.");
+                if (lower.HasValue && date < lower.Value)
+                    throw new DrimePaginationException("Drime ignored the date boundary.");
+                // Drime does not keep every entry in created_at order: a folder
+                // can come ahead of older files. The next window starts at the
+                // date of the last entry returned; anything this skips leaves
+                // the ID count short, and the listing fails below.
                 lastDate = date;
                 windowIds.Add(entry.Id);
 
