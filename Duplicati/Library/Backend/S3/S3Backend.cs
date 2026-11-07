@@ -578,6 +578,8 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(S3AwsClient.S3_ASSUME_ROLE_SESSION_NAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.AssumeRoleSessionNameDescriptionShort, Strings.S3Backend.AssumeRoleSessionNameDescriptionLong(S3AwsClient.S3_ASSUME_ROLE_ARN_OPTION), S3AssumeRoleCredentials.DEFAULT_SESSION_NAME),
                     new CommandLineArgument(S3AwsClient.S3_ASSUME_ROLE_EXTERNAL_ID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AssumeRoleExternalIdDescriptionShort, Strings.S3Backend.AssumeRoleExternalIdDescriptionLong(S3AwsClient.S3_ASSUME_ROLE_ARN_OPTION)),
                     new CommandLineArgument(S3AwsClient.S3_STS_ENDPOINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.StsEndpointDescriptionShort, Strings.S3Backend.StsEndpointDescriptionLong(S3AwsClient.S3_ASSUME_ROLE_ARN_OPTION)),
+                    new CommandLineArgument(S3AwsClient.S3_SERVER_SIDE_ENCRYPTION_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.S3ServerSideEncryptionDescriptionShort, Strings.S3Backend.S3ServerSideEncryptionDescriptionLong(S3AwsClient.S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID_OPTION), "none", null, ["none", S3AwsClient.SSE_S3, S3AwsClient.SSE_KMS]),
+                    new CommandLineArgument(S3AwsClient.S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3ServerSideEncryptionKmsKeyIdDescriptionShort, Strings.S3Backend.S3ServerSideEncryptionKmsKeyIdDescriptionLong(S3AwsClient.S3_SERVER_SIDE_ENCRYPTION_OPTION)),
                     .. TimeoutOptionsHelper.GetOptions(),
                     .. exts
                 ];

@@ -131,6 +131,64 @@ namespace Duplicati.Library.Backend
         private readonly S3AssumeRoleCredentials? m_roleCredentials;
 
         /// <summary>
+        /// The option to request server-side encryption of the stored objects
+        /// </summary>
+        public const string S3_SERVER_SIDE_ENCRYPTION_OPTION = "s3-server-side-encryption";
+
+        /// <summary>
+        /// The option to choose the key management service key for server-side encryption
+        /// </summary>
+        public const string S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID_OPTION = "s3-server-side-encryption-kms-key-id";
+
+        /// <summary>
+        /// The server-side encryption with keys managed by the server
+        /// </summary>
+        public const string SSE_S3 = "AES256";
+
+        /// <summary>
+        /// The server-side encryption with keys managed by the key management service
+        /// </summary>
+        public const string SSE_KMS = "aws:kms";
+
+        /// <summary>
+        /// The server-side encryption to request, or <c>null</c> for none
+        /// </summary>
+        private readonly string? m_sseMethod;
+
+        /// <summary>
+        /// The key management service key for server-side encryption, or <c>null</c> for the default key
+        /// </summary>
+        private readonly string? m_sseKmsKeyId;
+
+        /// <summary>
+        /// Reads the server-side encryption options
+        /// </summary>
+        /// <param name="options">The backend options</param>
+        /// <returns>The encryption to request, or <c>null</c> for none, and the key management service key, or <c>null</c> for the default</returns>
+        /// <exception cref="UserInformationException">If the encryption is not supported, or a key is given without aws:kms</exception>
+        public static (string? Method, string? KmsKeyId) ParseServerSideEncryption(IReadOnlyDictionary<string, string?> options)
+        {
+            var value = options.GetValueOrDefault(S3_SERVER_SIDE_ENCRYPTION_OPTION)?.Trim();
+            string? method;
+            if (string.IsNullOrEmpty(value) || string.Equals(value, "none", StringComparison.OrdinalIgnoreCase))
+                method = null;
+            else if (string.Equals(value, SSE_S3, StringComparison.OrdinalIgnoreCase))
+                method = SSE_S3;
+            else if (string.Equals(value, SSE_KMS, StringComparison.OrdinalIgnoreCase))
+                method = SSE_KMS;
+            else
+                throw new UserInformationException(Strings.S3Backend.UnknownServerSideEncryptionError(value, S3_SERVER_SIDE_ENCRYPTION_OPTION), "S3UnknownServerSideEncryption");
+
+            var keyId = options.GetValueOrDefault(S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID_OPTION)?.Trim();
+            if (string.IsNullOrEmpty(keyId))
+                keyId = null;
+            else if (method != SSE_KMS)
+                throw new UserInformationException(Strings.S3Backend.KmsKeyWithoutKmsEncryptionError(S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID_OPTION, S3_SERVER_SIDE_ENCRYPTION_OPTION), "S3KmsKeyWithoutKmsEncryption");
+
+            return (method, keyId);
+        }
+
+        /// <summary>
         /// The default storage classes that are considered archive classes
         /// </summary>
         public static readonly IReadOnlySet<S3StorageClass> DEFAULT_ARCHIVE_CLASSES = new HashSet<S3StorageClass>([
@@ -174,6 +232,7 @@ namespace Duplicati.Library.Backend
             m_disablePayloadSigning = disablePayloadSigning;
             m_archiveClasses = ParseStorageClasses(options.GetValueOrDefault(S3_ARCHIVE_CLASSES_OPTION));
             m_lockMode = lockMode;
+            (m_sseMethod, m_sseKmsKeyId) = ParseServerSideEncryption(options);
         }
 
         /// <summary>
@@ -344,6 +403,12 @@ namespace Duplicati.Library.Backend
 
             if (!string.IsNullOrWhiteSpace(m_storageClass))
                 objectAddRequest.StorageClass = new S3StorageClass(m_storageClass);
+
+            if (m_sseMethod != null)
+            {
+                objectAddRequest.ServerSideEncryptionMethod = ServerSideEncryptionMethod.FindValue(m_sseMethod);
+                objectAddRequest.ServerSideEncryptionKeyManagementServiceKeyId = m_sseKmsKeyId;
+            }
 
             // Provide SigV4 payload hash explicitly (lowercase hex) iff applicable.
             // - If chunked streaming is ON, the SDK uses the streaming literal.
@@ -652,6 +717,13 @@ namespace Duplicati.Library.Backend
                 DestinationBucket = bucketName,
                 DestinationKey = target
             };
+
+            // A copy is encrypted as the request says, not as its source is
+            if (m_sseMethod != null)
+            {
+                copyObjectRequest.ServerSideEncryptionMethod = ServerSideEncryptionMethod.FindValue(m_sseMethod);
+                copyObjectRequest.ServerSideEncryptionKeyManagementServiceKeyId = m_sseKmsKeyId;
+            }
 
             try
             {
