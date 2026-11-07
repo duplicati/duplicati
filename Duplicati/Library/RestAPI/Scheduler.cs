@@ -219,6 +219,23 @@ namespace Duplicati.Server
             return res;
         }
 
+        /// <summary>
+        /// Checks if a backup is still covered by a repeating schedule
+        /// </summary>
+        /// <param name="backupId">The ID of the backup</param>
+        /// <returns><c>true</c> if a schedule still runs the backup</returns>
+        private bool IsScheduled(string backupId)
+            => m_dataConnection.Schedules
+                .Where(sc => !string.IsNullOrEmpty(sc.Repeat))
+                .Any(sc => m_dataConnection.GetBackupIDsForTags(sc.Tags).Any(id => id.ToString() == backupId));
+
+        /// <summary>
+        /// Thrown when a queued scheduled run is about to start, but its backup is no longer scheduled
+        /// </summary>
+        /// <param name="backupId">The ID of the backup</param>
+        public sealed class RunNoLongerScheduledException(string backupId)
+            : Exception($"The scheduled run of backup {backupId} was skipped, as the backup is no longer scheduled");
+
         private Task OnCompletedAsync(Runner.IRunnerData task)
         {
             Tuple<ISchedule, DateTime, DateTime>? t = null;
@@ -242,6 +259,15 @@ namespace Duplicati.Server
         {
             if (task is null)
                 return Task.CompletedTask;
+
+            // A run can wait in the queue, as it does while the server is paused after a start;
+            // if the schedule of the backup was removed meanwhile, the run is no longer wanted
+            if (task.BackupID != null && !IsScheduled(task.BackupID))
+            {
+                lock (m_lock)
+                    m_updateTasks.Remove(task);
+                throw new RunNoLongerScheduledException(task.BackupID);
+            }
 
             lock (m_lock)
             {
