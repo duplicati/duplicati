@@ -24,6 +24,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.SQLiteHelper;
@@ -31,6 +32,7 @@ using Duplicati.Library.Utility;
 using Microsoft.Data.Sqlite;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using CollectionAssert = NUnit.Framework.Legacy.CollectionAssert;
 
 namespace Duplicati.UnitTest
 {
@@ -380,6 +382,128 @@ namespace Duplicati.UnitTest
                 Assert.AreEqual(EXPECTED_LATEST_SCHEMA_VERSION + 5, rows[21].WriterVersion);
                 Assert.IsFalse(rows.ContainsKey(EXPECTED_LATEST_SCHEMA_VERSION + 1), "Rows above the database version must be removed");
             }
+        }
+
+        /// <summary>
+        /// Two processes can open the same database at once, such as two servers started at the
+        /// same time. Both found the old version and ran the upgrade, and the one that came
+        /// second failed on the changes the first one had made. The second one must wait for
+        /// the first one, and then find the database upgraded.
+        /// </summary>
+        [Test]
+        public async Task UpgradeDatabase_FromTwoConnectionsAtOnce_BothSucceedAsync()
+        {
+            for (var run = 0; run < 10; run++)
+            {
+                using var dbfile = new TempFile();
+                await RewindToPreviousVersionAsync(dbfile);
+
+                try
+                {
+                    using var barrier = new Barrier(2);
+                    var errors = await Task.WhenAll(Enumerable.Range(0, 2).Select(_ => Task.Run(async () =>
+                    {
+                        using var db = await SQLiteLoader.LoadConnectionAsync(dbfile);
+                        barrier.SignalAndWait();
+                        try
+                        {
+                            DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
+                            return null;
+                        }
+                        catch (Exception ex)
+                        {
+                            return ex.Message;
+                        }
+                    })));
+
+                    Assert.That(errors.Where(x => x != null), Is.Empty, $"An upgrade failed in run {run}");
+                    using var check = await SQLiteLoader.LoadConnectionAsync(dbfile);
+                    Assert.AreEqual(EXPECTED_LATEST_SCHEMA_VERSION, await ReadVersionAsync(check));
+                    Assert.IsTrue(await TableExistsAsync(check, "SourceProviderState"));
+                }
+                finally
+                {
+                    SqliteConnection.ClearAllPools();
+                    DeleteUpgradeBackups(dbfile);
+                }
+            }
+        }
+
+        /// <summary>
+        /// An upgrade that failed copied the database it had saved before the upgrade back over
+        /// the database. That copy failed while another connection had the database open, and
+        /// the database was left with half of the upgrade applied, under the old version. The
+        /// upgrade must instead be undone as a whole.
+        /// </summary>
+        [Test]
+        public async Task UpgradeDatabase_ThatFails_LeavesTheDatabaseAsItWasAsync()
+        {
+            using var dbfile = new TempFile();
+
+            using (var db = await SQLiteLoader.LoadConnectionAsync(dbfile))
+            using (var cmd = db.CreateCommand())
+            {
+                // Two versions behind, where the last upgrade fails because its table is in the way
+                DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
+                cmd.CommandText = @"
+                    DROP TABLE ""RestoreTestHistory"";
+                    DROP TABLE ""SourceProviderState"";
+                    CREATE TABLE ""SourceProviderState"" (""ID"" INTEGER PRIMARY KEY);
+                    UPDATE ""Version"" SET ""Version"" = @ver;";
+                cmd.Parameters.AddWithValue("@ver", EXPECTED_LATEST_SCHEMA_VERSION - 2);
+                await cmd.ExecuteNonQueryAsync();
+                await db.CloseAsync();
+            }
+
+            try
+            {
+                // Another user of the database, as another server or the tray icon would be
+                using (var other = await SQLiteLoader.LoadConnectionAsync(dbfile))
+                using (var db = await SQLiteLoader.LoadConnectionAsync(dbfile))
+                    Assert.Catch(() => DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker)));
+
+                SqliteConnection.ClearAllPools();
+                using var check = await SQLiteLoader.LoadConnectionAsync(dbfile);
+                Assert.AreEqual(EXPECTED_LATEST_SCHEMA_VERSION - 2, await ReadVersionAsync(check));
+                Assert.IsFalse(await TableExistsAsync(check, "RestoreTestHistory"), "The upgrade before the one that failed was kept");
+            }
+            finally
+            {
+                SqliteConnection.ClearAllPools();
+                DeleteUpgradeBackups(dbfile);
+            }
+        }
+
+        /// <summary>
+        /// The upgrade runs in a transaction, except through a script that begins, commits or
+        /// vacuums on its own. Only the old "6. Optimize FileSetEntry-Table.sql" of the local
+        /// database does that, and a trigger body must not be taken for it.
+        /// </summary>
+        [Test]
+        public void UpgradeDatabase_OnlyScriptsWithTheirOwnTransactionRunWithoutOne()
+        {
+            var local = DatabaseUpgrader.GetSchemaScripts(typeof(DatabaseSchemaMarker)).Upgrades;
+            var server = DatabaseUpgrader.GetSchemaScripts(typeof(Library.RestAPI.Database.DatabaseSchemaMarker)).Upgrades;
+
+            CollectionAssert.AreEqual(new[] { 6 }, local.Where(x => DatabaseUpgrader.ManagesItsOwnTransaction(x.Content)).Select(x => x.Version).ToArray());
+            CollectionAssert.IsEmpty(server.Where(x => DatabaseUpgrader.ManagesItsOwnTransaction(x.Content)));
+
+            Assert.IsFalse(DatabaseUpgrader.ManagesItsOwnTransaction(@"
+                CREATE TRIGGER ""T"" AFTER INSERT ON ""A""
+                BEGIN
+                    DELETE FROM ""B"";
+                END;"));
+        }
+
+        /// <summary>
+        /// Deletes the copies of the database that the upgrader saves before an upgrade
+        /// </summary>
+        /// <param name="dbfile">The database that was upgraded</param>
+        private static void DeleteUpgradeBackups(string dbfile)
+        {
+            var folder = Path.GetDirectoryName(Path.GetFullPath(dbfile))!;
+            foreach (var backup in Directory.GetFiles(folder, "* " + Path.GetFileNameWithoutExtension(dbfile) + " *.sqlite"))
+                File.Delete(backup);
         }
 
         /// <summary>
