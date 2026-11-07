@@ -440,7 +440,7 @@ namespace Duplicati.Library.Main.Operation
                             await FilesetVolumeWriter.ProbeUnusedFilenameNameAsync(db, m_options, timestamp, cancellationToken)
                                 .ConfigureAwait(false);
 
-                        var fsw = new FilesetVolumeWriter(m_options, fileTime);
+                        var fsw = new FilesetVolumeWriter(m_options, fileTime) { IsRemoteNameTaken = FilesetVolumeWriter.NameTakenIn(db) };
                         Logging.Log.WriteInformationMessage(LOGTAG, "ReuploadingFileset", "Re-uploading fileset {0} from {1} as remote volume registration is missing, new filename: {2}", filesetId, timestamp, fsw.RemoteFilename);
 
                         if (!string.IsNullOrEmpty(m_options.ControlFiles))
@@ -562,7 +562,7 @@ namespace Duplicati.Library.Main.Operation
                             var fileTime =
                                 await FilesetVolumeWriter.ProbeUnusedFilenameNameAsync(db, m_options, timestamp, cancellationToken)
                                     .ConfigureAwait(false);
-                            var volumeWriter = newEntry = new FilesetVolumeWriter(m_options, fileTime);
+                            var volumeWriter = newEntry = new FilesetVolumeWriter(m_options, fileTime) { IsRemoteNameTaken = FilesetVolumeWriter.NameTakenIn(db) };
 
                             // The replacement file needs a name that is not taken, but the fileset
                             // itself keeps its original time: the fileset time is what orders the

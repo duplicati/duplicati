@@ -42,6 +42,13 @@ namespace Duplicati.Library.Main.Volumes
 
         public override RemoteVolumeType FileType { get { return RemoteVolumeType.Files; } }
 
+        /// <summary>
+        /// Checks if a remote name is already in use. A failed upload is retried under a new
+        /// name, and a dlist name is only a time, so the new name has to be checked against the
+        /// names that are taken.
+        /// </summary>
+        public Func<string, CancellationToken, Task<bool>> IsRemoteNameTaken { get; set; }
+
         public FilesetVolumeWriter(Options options, DateTime timestamp)
             : base(options, timestamp)
         {
@@ -250,6 +257,22 @@ namespace Duplicati.Library.Main.Volumes
                 sr.Write(JsonConvert.SerializeObject(data));
             }
         }
+
+        /// <summary>
+        /// Checks remote names against the volumes registered in the database
+        /// </summary>
+        /// <param name="database">The database to check for clashes</param>
+        /// <returns>A function that tells if a remote name is taken</returns>
+        internal static Func<string, CancellationToken, Task<bool>> NameTakenIn(DatabaseCommon database)
+            => async (name, cancellationToken) => await database.GetRemoteVolumeIDAsync(name, cancellationToken).ConfigureAwait(false) >= 0;
+
+        /// <summary>
+        /// Checks remote names against the volumes registered in the database
+        /// </summary>
+        /// <param name="database">The database to check for clashes</param>
+        /// <returns>A function that tells if a remote name is taken</returns>
+        internal static Func<string, CancellationToken, Task<bool>> NameTakenIn(LocalDatabase database)
+            => async (name, cancellationToken) => await database.GetRemoteVolumeIDAsync(name, cancellationToken).ConfigureAwait(false) >= 0;
 
         /// <summary>
         /// Probes for an unused filename, using the current time as a starting point
