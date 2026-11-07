@@ -851,6 +851,60 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// The old UI lists the files of one version to choose what to restore. The all-versions option
+    /// of the backup or the server must not turn that into a list of every version, or it shows
+    /// files that the restore of the version then leaves out (#5055).
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task FileListOfOneVersionIgnoresTheAllVersionsSetting_Async()
+    {
+        var backupPassphrase = "integration-passphrase";
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "kept.txt"), "kept");
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "deleted.txt"), "deleted");
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var backupId = await CreateBackupAsync(httpClient, backupPassphrase,
+                extraSettings: [new BackupAndScheduleInputDto.SettingInputDto { Name = "all-versions", Value = "true" }]).ConfigureAwait(false);
+
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+            File.Delete(Path.Combine(this.DATAFOLDER, "deleted.txt"));
+            await Task.Delay(TimeSpan.FromSeconds(1.5)).ConfigureAwait(false);
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+            var listFilesetsResponse = await httpClient.PostAsJsonAsync("/api/v2/backup/list-filesets", new ListFilesetsRequestDto { BackupId = backupId }, JsonOptions).ConfigureAwait(false);
+            listFilesetsResponse.EnsureSuccessStatusCode();
+            var listFilesets = await listFilesetsResponse.Content.ReadFromJsonAsync<ListFilesetsResponseDto>(JsonOptions).ConfigureAwait(false)
+                               ?? throw new InvalidOperationException("list-filesets response was empty");
+            Assert.That(listFilesets.Data, Has.Count.EqualTo(2));
+            var latest = listFilesets.Data!.OrderByDescending(fileset => fileset.Time).First().Time.ToUniversalTime().ToString("o", System.Globalization.CultureInfo.InvariantCulture);
+            var folderFilter = Uri.EscapeDataString("@" + Util.AppendDirSeparator(this.DATAFOLDER));
+
+            async Task<string[]> ListFileNamesAsync(string query)
+            {
+                var response = await httpClient.GetAsync($"/api/v1/backup/{backupId}/files?prefix-only=false&folder-contents=true&filter={folderFilter}&{query}").ConfigureAwait(false);
+                var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                var files = JsonDocument.Parse(body).RootElement.EnumerateObject()
+                    .Single(p => string.Equals(p.Name, "Files", StringComparison.OrdinalIgnoreCase)).Value;
+                return files.EnumerateArray()
+                    .Select(f => f.EnumerateObject().Single(p => string.Equals(p.Name, "Path", StringComparison.OrdinalIgnoreCase)).Value.GetString()!)
+                    .Select(Path.GetFileName)
+                    .Where(n => !string.IsNullOrEmpty(n))
+                    .Select(n => n!)
+                    .ToArray();
+            }
+
+            // The latest version, which is what the restore of that version gives back
+            Assert.That(await ListFileNamesAsync($"time={Uri.EscapeDataString(latest)}").ConfigureAwait(false), Is.EquivalentTo(new[] { "kept.txt" }));
+
+            // Asking for every version still lists the deleted file
+            Assert.That(await ListFileNamesAsync("all-versions=true").ConfigureAwait(false), Does.Contain("deleted.txt"));
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Waits until the task is no longer current, so its result has been stored.
     /// </summary>
     private static async Task WaitForTaskResultAsync(long taskId)
