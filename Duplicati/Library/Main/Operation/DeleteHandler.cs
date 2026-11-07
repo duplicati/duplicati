@@ -372,6 +372,12 @@ namespace Duplicati.Library.Main.Operation
 
                 Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "NextTimeAndFrame", "Next time frame and interval pair: {0}", singleRetentionPolicyOptionValue);
 
+                // A scheduled backup can start a little later than the one before it, so the interval
+                // gets the same tolerance as --keep-time: 1% of the interval, at most one hour
+                TimeSpan minimumInterval = this.Options.DisableTimeTolerance
+                    ? singleRetentionPolicyOptionValue.Interval
+                    : singleRetentionPolicyOptionValue.Interval - TimeSpan.FromSeconds(Math.Min(singleRetentionPolicyOptionValue.Interval.TotalSeconds / 100, 60.0 * 60.0));
+
                 List<IListResultFileset> backupsInTimeFrame = new List<IListResultFileset>();
                 while (clonedBackupList.Count > 0 && clonedBackupList[0].Time >= timeFrame)
                 {
@@ -390,7 +396,7 @@ namespace Duplicati.Library.Main.Operation
                     // Keep this backup if
                     // - no backup has yet been added to the time frame (keeps at least the oldest backup in a time frame)
                     // - difference between last added backup and this backup is bigger than the specified interval
-                    if (lastKept == null || singleRetentionPolicyOptionValue.IsKeepAllVersions() || (fileset.Time - lastKept.Time) >= singleRetentionPolicyOptionValue.Interval)
+                    if (lastKept == null || singleRetentionPolicyOptionValue.IsKeepAllVersions() || (fileset.Time - lastKept.Time) >= minimumInterval)
                     {
                         Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "KeepBackups", $"Keeping {(isFullBackup ? "" : "partial")} backup: {fileset.Time}", Logging.LogMessageType.Profiling);
                         if (isFullBackup)
