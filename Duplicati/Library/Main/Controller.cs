@@ -1293,8 +1293,20 @@ namespace Duplicati.Library.Main
             if (m_options.NoLocalDb || string.IsNullOrWhiteSpace(m_options.Dbpath) || !File.Exists(m_options.Dbpath))
                 return;
 
-            using var db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, operation.ToString(), true, null, CancellationToken.None).Await();
-            Utility.UpdateOptionsFromDbAsync(db, m_options, CancellationToken.None).Await();
+            LocalDatabase db;
+            try
+            {
+                db = LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, operation.ToString(), true, null, CancellationToken.None).Await();
+            }
+            // A repair sets an unreadable database aside and recreates it, so it must get to do that
+            catch (Exception ex) when (operation == OperationMode.Repair)
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "SkipOptionsFromUnreadableDatabase", "Not reading the options stored in the local database {0}, as it cannot be opened: {1}", m_options.Dbpath, ex.Message);
+                return;
+            }
+
+            using (db)
+                Utility.UpdateOptionsFromDbAsync(db, m_options, CancellationToken.None).Await();
         }
 
         private async Task ApplySecretProviderAsync(CancellationToken cancellationToken)
