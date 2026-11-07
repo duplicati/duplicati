@@ -606,13 +606,20 @@ public class ImageFileRestoreTests
     /// <summary>
     /// Starts a container with qemu-img installed and the test root folder mounted.
     /// </summary>
-    /// <returns>The container, or null when Docker is not available.</returns>
+    /// <returns>The container, or null when Docker is not available or cannot run Linux containers.</returns>
     private async Task<IContainer?> StartQemuContainerAsync()
     {
         try
         {
-            using (var client = new DockerClientConfiguration().CreateClient())
-                await client.System.PingAsync();
+            using var client = new DockerClientConfiguration().CreateClient();
+            var info = await client.System.GetSystemInfoAsync();
+
+            // Docker on a Windows host may run Windows containers, which cannot run the Linux image
+            if (!string.Equals(info.OSType, "linux", StringComparison.OrdinalIgnoreCase))
+            {
+                await TestContext.Progress.WriteLineAsync($"Docker runs {info.OSType} containers, not Linux containers, so the image files are not checked with qemu-img.");
+                return null;
+            }
         }
         catch (Exception ex)
         {
