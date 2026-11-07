@@ -196,6 +196,58 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
     }
 
     /// <summary>
+    /// Deletes an empty folder below the path specified in the connection parameters.
+    /// </summary>
+    /// <param name="folderName">The folder to delete, relative to the connection path</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <exception cref="UserInformationException">Exception to be displayed to user</exception>
+    public async Task DeleteDirectoryAsync(string folderName, CancellationToken cancellationToken)
+    {
+        await _semaphore.WaitAsync(cancellationToken);
+        try
+        {
+            await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, _ =>
+            {
+                var status = _smbFileStore.CreateFile(out var fileHandle, out var fileStatus, NormalizeSlashes(Path.Combine(_connectionParameters.Path, folderName)),
+                    AccessMask.DELETE | AccessMask.SYNCHRONIZE,
+                    FileAttributes.Directory,
+                    ShareAccess.Read | ShareAccess.Write | ShareAccess.Delete,
+                    CreateDisposition.FILE_OPEN,
+                    CreateOptions.FILE_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT,
+                    null);
+
+                // Already gone, which is the outcome the caller asked for
+                if (status is NTStatus.STATUS_OBJECT_NAME_NOT_FOUND or NTStatus.STATUS_OBJECT_PATH_NOT_FOUND)
+                    return;
+
+                if (status != NTStatus.STATUS_SUCCESS)
+                    throw new UserInformationException($"{LC.L("Failed to open folder on DeleteDirectoryAsync")} {folderName} with status {status}", "DeleteFolderError");
+
+                try
+                {
+                    status = _smbFileStore.SetFileInformation(fileHandle, new FileDispositionInformation { DeletePending = true });
+                    if (status != NTStatus.STATUS_SUCCESS)
+                        throw new UserInformationException($"{LC.L("Failed to delete folder on DeleteDirectoryAsync")} with status {status}", "DeleteFolderError");
+                }
+                catch
+                {
+                    // Release the handle so the folder is not left open on the server
+                    try { _smbFileStore.CloseFile(fileHandle); }
+                    catch { }
+                    throw;
+                }
+                status = _smbFileStore.CloseFile(fileHandle);
+                if (status != NTStatus.STATUS_SUCCESS)
+                    throw new UserInformationException($"{LC.L("Failed to close folder on DeleteDirectoryAsync")} with status {status}", "CloseFileError");
+            }).ConfigureAwait(false);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    /// <summary>
     /// Create the folder structure specified in the path.
     /// </summary>
     /// <param name="path">Path to create</param>
@@ -651,6 +703,67 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
                     // The file could not be opened, so it was not renamed
                     throw new UserInformationException($"{LC.L("Failed to open file on RenameAsync")} {oldname} with status {status}", "RenameFileError");
                 }
+            }).ConfigureAwait(false);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+
+    /// <summary>
+    /// Creates a hard link: a second name for the content of an existing file, using
+    /// the SMB2 FileLinkInformation set-info request.
+    /// </summary>
+    /// <param name="existingName">The existing file, relative to the connection path</param>
+    /// <param name="targetName">The link to create, relative to the connection path</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <exception cref="HardLinkNotSupportedException">The server or the share's filesystem cannot create hard links</exception>
+    public async Task CreateHardLinkAsync(string existingName, string targetName, CancellationToken cancellationToken)
+    {
+        await _semaphore.WaitAsync(cancellationToken);
+        try
+        {
+            await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, _ =>
+            {
+                var status = _smbFileStore.CreateFile(out var fileHandle, out var fileStatus, NormalizeSlashes(Path.Combine(_connectionParameters.Path, existingName)),
+                    AccessMask.GENERIC_WRITE | AccessMask.SYNCHRONIZE,
+                    FileAttributes.Normal,
+                    ShareAccess.Read | ShareAccess.Write | ShareAccess.Delete,
+                    CreateDisposition.FILE_OPEN,
+                    CreateOptions.FILE_NON_DIRECTORY_FILE | CreateOptions.FILE_SYNCHRONOUS_IO_ALERT,
+                    null);
+
+                if (status == NTStatus.STATUS_OBJECT_NAME_NOT_FOUND)
+                    throw new FileMissingException();
+
+                if (status != NTStatus.STATUS_SUCCESS)
+                    throw new UserInformationException($"{LC.L("Failed to open file on CreateHardLinkAsync")} {existingName} with status {status}", "HardLinkFileError");
+
+                var linkInformation = new FileLinkInformationType2
+                {
+                    ReplaceIfExists = false,
+                    FileName = NormalizeSlashes(Path.Combine(_connectionParameters.Path, targetName))
+                };
+                try
+                {
+                    status = _smbFileStore.SetFileInformation(fileHandle, linkInformation);
+                    // A server or filesystem without hard links answers with one of these
+                    if (status is NTStatus.STATUS_NOT_SUPPORTED or NTStatus.STATUS_INVALID_DEVICE_REQUEST or NTStatus.STATUS_INVALID_INFO_CLASS)
+                        throw new HardLinkNotSupportedException($"{LC.L("The SMB share cannot create hard links")} ({status})");
+                    if (status != NTStatus.STATUS_SUCCESS)
+                        throw new UserInformationException($"{LC.L("Failed to create hard link on CreateHardLinkAsync")} with status {status}", "HardLinkFileError");
+                }
+                catch
+                {
+                    // Release the handle so the file is not left open on the server
+                    try { _smbFileStore.CloseFile(fileHandle); }
+                    catch { }
+                    throw;
+                }
+                status = _smbFileStore.CloseFile(fileHandle);
+                if (status != NTStatus.STATUS_SUCCESS)
+                    throw new UserInformationException($"{LC.L("Failed to close file on CreateHardLinkAsync")} with status {status}", "CloseFileError");
             }).ConfigureAwait(false);
         }
         finally

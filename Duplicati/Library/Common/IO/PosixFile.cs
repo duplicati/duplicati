@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Mono.Unix.Native;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.Common.IO
 {
@@ -245,6 +246,30 @@ namespace Duplicati.Library.Common.IO
         {
             if (Mono.Unix.Native.Syscall.symlink(target, path) != 0)
                 throw new System.IO.IOException(string.Format("Unable to create symlink from \"{0}\" to \"{1}\", error: {2} ({3})", path, target, Syscall.GetLastError(), (int)Syscall.GetLastError()));
+        }
+
+        /// <summary>
+        /// Creates a hard link at <paramref name="newPath"/> to the existing file <paramref name="existingPath"/>
+        /// </summary>
+        /// <param name="existingPath">The existing file</param>
+        /// <param name="newPath">The path of the link to create</param>
+        /// <exception cref="HardLinkNotSupportedException">The filesystem cannot link the two paths</exception>
+        public static void CreateHardLink(string existingPath, string newPath)
+        {
+            if (Syscall.link(existingPath, newPath) == 0)
+                return;
+
+            var errno = Syscall.GetLastError();
+            var message = string.Format("Unable to create hard link from \"{0}\" to \"{1}\", error: {2} ({3})", newPath, existingPath, errno, (int)errno);
+
+            // EPERM is what Linux and macOS report for a filesystem without hard links
+            // (FAT, exFAT, many FUSE and network mounts); EXDEV and EMLINK cannot be
+            // fixed by retrying either.
+            if (errno is Errno.EPERM or Errno.EOPNOTSUPP or Errno.EXDEV or Errno.EMLINK or Errno.ENOSYS)
+                throw new HardLinkNotSupportedException(message);
+            if (errno == Errno.ENOENT)
+                throw new System.IO.FileNotFoundException(message, existingPath);
+            throw new System.IO.IOException(message);
         }
 
         /// <summary>

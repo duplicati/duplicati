@@ -37,7 +37,9 @@ namespace Duplicati.Library.Main
         QuotaInfo,
         WaitForEmpty,
         SetObjectLock,
-        GetObjectLock
+        GetObjectLock,
+        CreateHardLink,
+        DeleteFolder
     }
 
     public enum BackendEventType

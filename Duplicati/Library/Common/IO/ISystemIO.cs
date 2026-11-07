@@ -43,6 +43,14 @@ namespace Duplicati.Library.Common.IO
         IFileEntry FileEntry(string path);
         IFileEntry FileEntry(FileInfo fileInfo);
         void FileMove(string source, string target);
+        /// <summary>
+        /// Creates a hard link at <paramref name="newPath"/> that shares the content of the
+        /// existing file <paramref name="existingPath"/>.
+        /// </summary>
+        /// <param name="existingPath">The existing file</param>
+        /// <param name="newPath">The path of the link to create; it must not exist</param>
+        /// <exception cref="HardLinkNotSupportedException">The filesystem cannot create a hard link between the two paths</exception>
+        void FileCreateHardLink(string existingPath, string newPath);
         void FileDelete(string path);
         void FileCopy(string source, string target, bool overwrite);
         void FileSetLastWriteTimeUtc(string path, DateTime time);

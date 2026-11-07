@@ -1192,6 +1192,75 @@ public class SyncHandlerTests : BasicSetupHelper
     /// that <paramref name="target"/> contains no extra files. Folder-only entries
     /// are implicit (derived from file presence), so only files are compared.
     /// </summary>
+    /// <summary>
+    /// A folder removed from the source is removed from the destination with
+    /// --sync-then-delete, with everything in it, through the backend's recursive folder
+    /// delete. The folder loop only visits folders the source has, so before this the
+    /// folder and its files stayed behind. Without the option the folder is kept.
+    /// </summary>
+    [TestCase(nameof(SyncRemoteState.UseRemoteState))]
+    [TestCase(nameof(SyncRemoteState.UseLocalState))]
+    [Category("Sync")]
+    public async Task TestSyncThenDeleteRemovesFoldersGoneFromSourceAsync(string stateMode)
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "sync_data_folder_delete");
+        var target = Path.Combine(BASEFOLDER, "sync_target_folder_delete");
+        foreach (var dir in new[] { dataFolder, target })
+        {
+            if (Directory.Exists(dir)) Directory.Delete(dir, true);
+            Directory.CreateDirectory(dir);
+        }
+
+        File.WriteAllText(Path.Combine(dataFolder, "keep.txt"), "keep");
+        Directory.CreateDirectory(Path.Combine(dataFolder, "kept", "inner"));
+        File.WriteAllText(Path.Combine(dataFolder, "kept", "inner", "file.txt"), "kept");
+        Directory.CreateDirectory(Path.Combine(dataFolder, "gone", "inner", "deeper"));
+        File.WriteAllText(Path.Combine(dataFolder, "gone", "a.txt"), "a");
+        File.WriteAllText(Path.Combine(dataFolder, "gone", "inner", "deeper", "b.txt"), "b");
+        Directory.CreateDirectory(Path.Combine(dataFolder, "kept", "gonetoo"));
+        File.WriteAllText(Path.Combine(dataFolder, "kept", "gonetoo", "c.txt"), "c");
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-remote-state"] = stateMode,
+            ["dbpath"] = Path.Combine(BASEFOLDER, $"sync-folder-delete-{Guid.NewGuid():N}.sqlite"),
+            [Options.SYNC_THEN_DELETE_OPTION] = "true",
+        };
+        var url = "file://" + target.Replace("\\", "/");
+
+        async Task<Library.Interface.ISyncResults> RunAsync(Dictionary<string, string> o)
+        {
+            using var c = new Controller(url, o, null);
+            var res = await c.SyncAsync(new[] { dataFolder }, null);
+            Assert.IsEmpty(res.Errors, string.Join(Environment.NewLine, res.Errors));
+            Assert.IsEmpty(res.Warnings, string.Join(Environment.NewLine, res.Warnings));
+            return res;
+        }
+
+        await RunAsync(opts);
+        Assert.IsTrue(File.Exists(Path.Combine(target, "gone", "inner", "deeper", "b.txt")));
+
+        // Without --sync-then-delete a removed folder stays on the destination.
+        Directory.Delete(Path.Combine(dataFolder, "gone"), true);
+        Directory.Delete(Path.Combine(dataFolder, "kept", "gonetoo"), true);
+        await RunAsync(new Dictionary<string, string>(opts) { [Options.SYNC_THEN_DELETE_OPTION] = "false" });
+        Assert.IsTrue(Directory.Exists(Path.Combine(target, "gone")), "Without the option the folder is kept");
+
+        var res = await RunAsync(opts);
+        Assert.IsFalse(Directory.Exists(Path.Combine(target, "gone")), "A folder removed from the source is removed from the destination");
+        Assert.IsFalse(Directory.Exists(Path.Combine(target, "kept", "gonetoo")), "A removed folder below a kept folder is removed too");
+        Assert.AreEqual(2, res.FoldersDeleted);
+        Assert.AreEqual("keep", File.ReadAllText(Path.Combine(target, "keep.txt")));
+        Assert.AreEqual("kept", File.ReadAllText(Path.Combine(target, "kept", "inner", "file.txt")));
+
+        // The cache forgot the deleted folders, so a later run has nothing more to delete.
+        res = await RunAsync(opts);
+        Assert.AreEqual(0, res.FoldersDeleted);
+        Assert.AreEqual(0, res.FilesUploaded);
+    }
+
     private static void AssertTargetMirrorsSource(string source, string target)
     {
         var sourceRelPaths = Directory.Exists(source)
@@ -1588,6 +1657,93 @@ public class NonFolderSyncHandlerTests : BasicSetupHelper
             await c.SyncAsync(new[] { dataFolder }, null);
         }
         Assert.IsTrue(File.Exists(Path.Combine(targetDir, "file2.txt")), "file2.txt should NOT be deleted when sync-then-delete is off");
+    }
+
+    /// <summary>
+    /// A destination that cannot delete folders still loses the files of a folder that
+    /// was removed from the source with --sync-then-delete: they are deleted one by one.
+    /// </summary>
+    [Test]
+    public async Task TestNonFolderSyncThenDeleteRemovesFilesOfFoldersGoneFromSourceAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "nofolder_data_folder_delete");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(Path.Combine(dataFolder, "gone", "inner"));
+        File.WriteAllText(Path.Combine(dataFolder, "keep.txt"), "keep");
+        File.WriteAllText(Path.Combine(dataFolder, "gone", "a.txt"), "a");
+        File.WriteAllText(Path.Combine(dataFolder, "gone", "inner", "b.txt"), "b");
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            [Options.SYNC_THEN_DELETE_OPTION] = "true",
+        };
+
+        using (var c = new Controller(backendUrl, opts, null))
+            await c.SyncAsync(new[] { dataFolder }, null);
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "gone", "inner", "b.txt")));
+
+        Directory.Delete(Path.Combine(dataFolder, "gone"), true);
+        using (var c = new Controller(backendUrl, opts, null))
+        {
+            var res = await c.SyncAsync(new[] { dataFolder }, null);
+            Assert.IsEmpty(res.Errors, string.Join(Environment.NewLine, res.Errors));
+        }
+
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "keep.txt")));
+        var left = Directory.Exists(Path.Combine(targetDir, "gone"))
+            ? Directory.GetFiles(Path.Combine(targetDir, "gone"), "*", SearchOption.AllDirectories)
+            : [];
+        Assert.IsEmpty(left, "The files of the removed folder are deleted: " + string.Join(", ", left));
+    }
+
+    /// <summary>
+    /// A destination without hard-link support still gets complete snapshot folders: an
+    /// unchanged file is copied into the new snapshot again instead of linked.
+    /// </summary>
+    [Test]
+    public async Task TestNonFolderSnapshotFallsBackToCopiesAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "nofolder_snapshot_data");
+        var dbPath = Path.Combine(BASEFOLDER, "nofolder_snapshot.sqlite");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        if (File.Exists(dbPath)) File.Delete(dbPath);
+        Directory.CreateDirectory(Path.Combine(dataFolder, "sub"));
+        File.WriteAllText(Path.Combine(dataFolder, "same.txt"), "unchanged");
+        File.WriteAllText(Path.Combine(dataFolder, "sub", "deep.txt"), "deep");
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["dbpath"] = dbPath,
+            [Options.SYNC_SNAPSHOT_FOLDERS_OPTION] = "true",
+        };
+
+        for (var i = 0; i < 2; i++)
+        {
+            using var c = new Controller(backendUrl, opts, null);
+            var res = await c.SyncAsync(new[] { dataFolder }, null);
+            Assert.IsEmpty(res.Errors, string.Join(Environment.NewLine, res.Errors));
+            Assert.IsEmpty(res.Warnings, string.Join(Environment.NewLine, res.Warnings));
+            Assert.AreEqual(2, res.FilesUploaded, "Without links every file is uploaded into each snapshot");
+        }
+
+        var snapshots = Directory.GetDirectories(targetDir).Select(Path.GetFileName).OrderBy(x => x, StringComparer.Ordinal).ToArray();
+        Assert.AreEqual(2, snapshots.Length, string.Join(", ", snapshots));
+        Assert.AreEqual(snapshots[1], File.ReadAllText(Path.Combine(targetDir, "duplicati-latest-snapshot.txt")).Trim());
+        foreach (var snapshot in snapshots)
+        {
+            Assert.AreEqual("unchanged", File.ReadAllText(Path.Combine(targetDir, snapshot, "same.txt")));
+            Assert.AreEqual("deep", File.ReadAllText(Path.Combine(targetDir, snapshot, "sub", "deep.txt")));
+        }
+
+        if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+            Assert.AreNotEqual(
+                Library.Common.IO.PosixFile.GetInodeTargetID(Path.Combine(targetDir, snapshots[0], "same.txt")),
+                Library.Common.IO.PosixFile.GetInodeTargetID(Path.Combine(targetDir, snapshots[1], "same.txt")),
+                "The copies are separate files");
     }
 }
 
@@ -2232,5 +2388,312 @@ public class CaseInsensitiveDestinationSyncTests : BasicSetupHelper
 
         Assert.AreEqual(1, RemoteNames().Count, $"The destination should hold one file: {string.Join(", ", RemoteNames())}");
         Assert.AreEqual(1, result.Warnings.Count(x => x.Contains("CaseCollision")), $"Expected one CaseCollision warning, got: {string.Join(" | ", result.Warnings)}");
+    }
+}
+
+/// <summary>
+/// Tests for snapshot-style sync (<c>--sync-snapshot-folders</c>): each run writes into
+/// its own dated folder below the destination, unchanged files are hard linked from the
+/// previous snapshot on the file backend, a marker file names the latest snapshot, and
+/// <c>--sync-keep-snapshots</c> removes the oldest folders.
+/// </summary>
+[TestFixture]
+[Category("Sync")]
+public class SnapshotSyncHandlerTests : BasicSetupHelper
+{
+    /// <summary>
+    /// The pattern every snapshot folder name follows
+    /// </summary>
+    private static readonly System.Text.RegularExpressions.Regex SnapshotNamePattern = new(@"^\d{4}-\d{2}-\d{2}T\d{6}Z$");
+
+    private string targetDir;
+    private string dataFolder;
+    private string dbPath;
+    private string backendUrl;
+
+    [SetUp]
+    public void Setup()
+    {
+        targetDir = Path.Combine(BASEFOLDER, "snapshot_target");
+        dataFolder = Path.Combine(BASEFOLDER, "snapshot_data");
+        dbPath = Path.Combine(BASEFOLDER, "snapshot_sync.sqlite");
+        foreach (var dir in new[] { targetDir, dataFolder })
+        {
+            if (Directory.Exists(dir))
+                Directory.Delete(dir, true);
+            Directory.CreateDirectory(dir);
+        }
+        if (File.Exists(dbPath))
+            File.Delete(dbPath);
+        backendUrl = "file://" + targetDir.Replace("\\", "/");
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        foreach (var dir in new[] { targetDir, dataFolder })
+            try { if (Directory.Exists(dir)) Directory.Delete(dir, true); } catch { }
+    }
+
+    private Dictionary<string, string> SnapshotOptions(int keep, string stateMode)
+        => new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["dbpath"] = dbPath,
+            ["sync-remote-state"] = stateMode,
+            [Options.SYNC_SNAPSHOT_FOLDERS_OPTION] = "true",
+            [Options.SYNC_KEEP_SNAPSHOTS_OPTION] = keep.ToString(),
+        };
+
+    private async Task<Library.Interface.ISyncResults> SyncAsync(Dictionary<string, string> opts)
+    {
+        using var c = new Controller(backendUrl, opts, null);
+        var res = await c.SyncAsync(new[] { dataFolder }, null);
+        Assert.IsEmpty(res.Errors, string.Join(Environment.NewLine, res.Errors));
+        Assert.IsEmpty(res.Warnings, string.Join(Environment.NewLine, res.Warnings));
+        return res;
+    }
+
+    private string[] SnapshotFolders()
+        => Directory.GetDirectories(targetDir).Select(Path.GetFileName).Where(x => SnapshotNamePattern.IsMatch(x)).OrderBy(x => x, StringComparer.Ordinal).ToArray();
+
+    private string Marker()
+        => File.ReadAllText(Path.Combine(targetDir, "duplicati-latest-snapshot.txt")).Trim();
+
+    /// <summary>
+    /// Tells whether two paths are the same file on disk (hard links of one another).
+    /// On POSIX the device and inode are compared; on every platform a write through one
+    /// path must show through the other.
+    /// </summary>
+    private static bool IsSameFile(string a, string b)
+    {
+        if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+        {
+            if (Library.Common.IO.PosixFile.GetInodeTargetID(a) != Library.Common.IO.PosixFile.GetInodeTargetID(b))
+                return false;
+        }
+
+        var original = File.ReadAllText(b);
+        File.AppendAllText(a, "!");
+        var same = File.ReadAllText(b) == original + "!";
+        File.WriteAllText(a, original);
+        return same;
+    }
+
+    [Test]
+    public async Task TestSnapshotFolderPerRunWithMarkerAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "file1.txt"), "one");
+        Directory.CreateDirectory(Path.Combine(dataFolder, "sub"));
+        File.WriteAllText(Path.Combine(dataFolder, "sub", "file2.txt"), "two");
+
+        var opts = SnapshotOptions(0, nameof(SyncRemoteState.UseRemoteState));
+        await SyncAsync(opts);
+        var afterFirst = SnapshotFolders();
+        Assert.AreEqual(1, afterFirst.Length, "One snapshot folder per run");
+        Assert.AreEqual(afterFirst[0], Marker(), "The marker names the latest snapshot");
+        Assert.AreEqual("one", File.ReadAllText(Path.Combine(targetDir, afterFirst[0], "file1.txt")));
+        Assert.AreEqual("two", File.ReadAllText(Path.Combine(targetDir, afterFirst[0], "sub", "file2.txt")));
+        Assert.IsFalse(File.Exists(Path.Combine(targetDir, "file1.txt")), "Nothing is written to the destination root");
+
+        await SyncAsync(opts);
+        var afterSecond = SnapshotFolders();
+        Assert.AreEqual(2, afterSecond.Length, "A second run adds a second snapshot folder");
+        Assert.AreEqual(afterSecond[1], Marker());
+        Assert.Less(string.CompareOrdinal(afterSecond[0], afterSecond[1]), 0);
+        Assert.AreEqual("two", File.ReadAllText(Path.Combine(targetDir, afterSecond[1], "sub", "file2.txt")));
+        CollectionAssert.AreEquivalent(
+            afterSecond.Append("duplicati-latest-snapshot.txt"),
+            Directory.EnumerateFileSystemEntries(targetDir).Select(Path.GetFileName),
+            "The root holds the snapshot folders and the marker only");
+    }
+
+    [TestCase(nameof(SyncRemoteState.UseRemoteState))]
+    [TestCase(nameof(SyncRemoteState.UseLocalState))]
+    public async Task TestUnchangedFileIsHardLinkedAsync(string stateMode)
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "same.txt"), "unchanged");
+        File.WriteAllText(Path.Combine(dataFolder, "changed.txt"), "before");
+        Directory.CreateDirectory(Path.Combine(dataFolder, "sub"));
+        File.WriteAllText(Path.Combine(dataFolder, "sub", "deep.txt"), "deep");
+
+        var opts = SnapshotOptions(0, stateMode);
+        await SyncAsync(opts);
+
+        File.WriteAllText(Path.Combine(dataFolder, "changed.txt"), "after, and longer");
+        File.WriteAllText(Path.Combine(dataFolder, "new.txt"), "new");
+        File.Delete(Path.Combine(dataFolder, "sub", "deep.txt"));
+        File.WriteAllText(Path.Combine(dataFolder, "sub", "other.txt"), "other");
+        File.SetLastWriteTimeUtc(Path.Combine(dataFolder, "changed.txt"), DateTime.UtcNow.AddMinutes(1));
+
+        var res = await SyncAsync(opts);
+        var snapshots = SnapshotFolders();
+        Assert.AreEqual(2, snapshots.Length);
+        string Old(string rel) => Path.Combine(targetDir, snapshots[0], rel);
+        string New(string rel) => Path.Combine(targetDir, snapshots[1], rel);
+
+        Assert.IsTrue(IsSameFile(New("same.txt"), Old("same.txt")), "An unchanged file is a hard link of the previous snapshot's copy");
+        Assert.IsFalse(IsSameFile(New("changed.txt"), Old("changed.txt")), "A changed file is a new file");
+        Assert.AreEqual("before", File.ReadAllText(Old("changed.txt")), "The previous snapshot keeps the old content");
+        Assert.AreEqual("after, and longer", File.ReadAllText(New("changed.txt")));
+        Assert.AreEqual("new", File.ReadAllText(New("new.txt")));
+        Assert.IsFalse(File.Exists(New(Path.Combine("sub", "deep.txt"))), "A file deleted from the source is not in the new snapshot");
+        Assert.AreEqual("deep", File.ReadAllText(Old(Path.Combine("sub", "deep.txt"))), "but stays in the old one");
+        Assert.AreEqual(3, res.FilesUploaded, "changed.txt, new.txt and sub/other.txt are uploaded");
+        Assert.AreEqual(1, res.UnchangedFiles, "same.txt is linked");
+    }
+
+    [Test]
+    public async Task TestHardLinksCanBeTurnedOffAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "same.txt"), "unchanged");
+        Directory.CreateDirectory(Path.Combine(dataFolder, "sub"));
+        File.WriteAllText(Path.Combine(dataFolder, "sub", "deep.txt"), "deep");
+
+        var opts = SnapshotOptions(0, nameof(SyncRemoteState.UseRemoteState));
+        opts[Options.SYNC_SNAPSHOT_DISABLE_HARDLINKS_OPTION] = "true";
+        await SyncAsync(opts);
+        var res = await SyncAsync(opts);
+
+        var snapshots = SnapshotFolders();
+        Assert.AreEqual(2, snapshots.Length);
+        foreach (var rel in new[] { "same.txt", Path.Combine("sub", "deep.txt") })
+        {
+            var older = Path.Combine(targetDir, snapshots[0], rel);
+            var newer = Path.Combine(targetDir, snapshots[1], rel);
+            Assert.AreEqual(File.ReadAllText(older), File.ReadAllText(newer));
+            Assert.IsFalse(IsSameFile(newer, older), $"With hard links turned off {rel} is a separate copy");
+        }
+        Assert.AreEqual(2, res.FilesUploaded, "Both unchanged files are copied again");
+    }
+
+    [Test]
+    public async Task TestRetentionDeletesOldestSnapshotsAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "file.txt"), "content");
+        var opts = SnapshotOptions(2, nameof(SyncRemoteState.UseRemoteState));
+
+        var created = new List<string>();
+        for (var i = 0; i < 4; i++)
+        {
+            await SyncAsync(opts);
+            created.Add(Marker());
+        }
+
+        CollectionAssert.AreEqual(created.Skip(2).ToArray(), SnapshotFolders(), "Only the two newest snapshots are kept");
+        Assert.AreEqual(created[^1], Marker());
+        Assert.AreEqual("content", File.ReadAllText(Path.Combine(targetDir, created[^1], "file.txt")), "Links survive the deletion of the snapshot they came from");
+    }
+
+    [Test]
+    public async Task TestSyncRestoreListsVersionsAndRestoresFolderAsync()
+    {
+        Directory.CreateDirectory(Path.Combine(dataFolder, "keep"));
+        File.WriteAllText(Path.Combine(dataFolder, "keep", "a.txt"), "first");
+        File.WriteAllText(Path.Combine(dataFolder, "top.txt"), "top");
+        Directory.CreateDirectory(Path.Combine(dataFolder, "keep", "empty"));
+
+        var opts = SnapshotOptions(0, nameof(SyncRemoteState.UseRemoteState));
+        await SyncAsync(opts);
+        File.WriteAllText(Path.Combine(dataFolder, "keep", "a.txt"), "second, longer");
+        await SyncAsync(opts);
+
+        var sourceRoot = Library.Common.IO.Util.AppendDirSeparator(dataFolder);
+        var keepFolder = Library.Common.IO.Util.AppendDirSeparator(Path.Combine(dataFolder, "keep"));
+
+        DateTime olderTime;
+        using (var c = new Controller(backendUrl, opts, null))
+        {
+            var versions = (await c.ListSyncVersionsAsync()).Filesets.ToArray();
+            Assert.AreEqual(2, versions.Length);
+            CollectionAssert.AreEqual(new long[] { 0, 1 }, versions.Select(x => x.Version));
+            Assert.Greater(versions[0].Time, versions[1].Time, "Version 0 is the newest");
+            olderTime = versions[1].Time;
+        }
+
+        var olderOpts = new Dictionary<string, string>(opts) { ["time"] = Library.Utility.Utility.SerializeDateTime(olderTime) };
+        using (var c = new Controller(backendUrl, olderOpts, null))
+        {
+            var root = await c.ListSyncFolderAsync(new[] { dataFolder }, null, 0, 0);
+            CollectionAssert.AreEqual(new[] { sourceRoot }, root.Entries.Items.Select(x => x.Path), "The tree starts at the source folder");
+
+            var listing = await c.ListSyncFolderAsync(new[] { dataFolder }, new[] { keepFolder }, 0, 0);
+            CollectionAssert.AreEquivalent(
+                new[] { Library.Common.IO.Util.AppendDirSeparator(Path.Combine(keepFolder, "empty")), Path.Combine(keepFolder, "a.txt") },
+                listing.Entries.Items.Select(x => x.Path));
+            Assert.AreEqual("first".Length, listing.Entries.Items.Single(x => !x.IsDirectory).Size);
+        }
+
+        var restoreFolder = Path.Combine(BASEFOLDER, "snapshot_restore");
+        if (Directory.Exists(restoreFolder))
+            Directory.Delete(restoreFolder, true);
+        var restoreOpts = new Dictionary<string, string>(olderOpts) { ["restore-path"] = restoreFolder, ["overwrite"] = "true" };
+        using (var c = new Controller(backendUrl, restoreOpts, null))
+        {
+            var res = await c.SyncRestoreAsync(new[] { dataFolder }, new[] { keepFolder + "*" });
+            Assert.IsEmpty(res.Errors, string.Join(Environment.NewLine, res.Errors));
+            Assert.AreEqual(1, res.RestoredFiles);
+        }
+
+        Assert.AreEqual("first", File.ReadAllText(Path.Combine(restoreFolder, "a.txt")), "The older version of the selected folder is restored");
+        Assert.IsTrue(Directory.Exists(Path.Combine(restoreFolder, "empty")), "Empty folders come back too");
+        Assert.IsFalse(File.Exists(Path.Combine(restoreFolder, "top.txt")), "Files outside the selection are not restored");
+
+        // Restoring to the original location without overwrite keeps the current file
+        using (var c = new Controller(backendUrl, olderOpts, null))
+        {
+            var res = await c.SyncRestoreAsync(new[] { dataFolder }, new[] { Path.Combine(keepFolder, "a.txt") });
+            Assert.AreEqual(1, res.RestoredFiles);
+        }
+        Assert.AreEqual("second, longer", File.ReadAllText(Path.Combine(keepFolder, "a.txt")), "The current file is not overwritten");
+        Assert.AreEqual(1, Directory.GetFiles(keepFolder, "a.*.txt").Length, "The restored copy is saved next to it");
+
+        // Browsing and restoring wrote nothing that breaks the next run
+        await SyncAsync(opts);
+    }
+
+    [Test]
+    public async Task TestSyncRestoreOfMirrorIsOneVersionAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "file.txt"), "mirror");
+        var opts = SnapshotOptions(0, nameof(SyncRemoteState.UseRemoteState));
+        opts.Remove(Options.SYNC_SNAPSHOT_FOLDERS_OPTION);
+        await SyncAsync(opts);
+
+        using (var c = new Controller(backendUrl, opts, null))
+            Assert.AreEqual(1, (await c.ListSyncVersionsAsync()).Filesets.Count(), "A mirror is one version");
+
+        var restoreFolder = Path.Combine(BASEFOLDER, "mirror_restore");
+        if (Directory.Exists(restoreFolder))
+            Directory.Delete(restoreFolder, true);
+        using (var c = new Controller(backendUrl, new Dictionary<string, string>(opts) { ["restore-path"] = restoreFolder }, null))
+            await c.SyncRestoreAsync(new[] { dataFolder }, null);
+        Assert.AreEqual("mirror", File.ReadAllText(Path.Combine(restoreFolder, "file.txt")));
+    }
+
+    [Test]
+    public async Task TestIncompleteSnapshotIsRemovedAndForeignFoldersKeptAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "file.txt"), "content");
+        var opts = SnapshotOptions(0, nameof(SyncRemoteState.UseRemoteState));
+        await SyncAsync(opts);
+        var first = Marker();
+
+        // A folder newer than the marked snapshot is what an interrupted run leaves behind
+        Library.Main.Operation.Sync.SyncSnapshotLayout.TryParseFolderName(first, out var firstUtc);
+        var aborted = Library.Main.Operation.Sync.SyncSnapshotLayout.FormatFolderName(firstUtc.AddSeconds(1));
+        Directory.CreateDirectory(Path.Combine(targetDir, aborted));
+        File.WriteAllText(Path.Combine(targetDir, aborted, "partial.txt"), "partial");
+        Directory.CreateDirectory(Path.Combine(targetDir, "not-a-snapshot"));
+
+        await SyncAsync(opts);
+
+        var snapshots = SnapshotFolders();
+        CollectionAssert.DoesNotContain(snapshots, aborted, "The interrupted run's folder is removed");
+        Assert.AreEqual(2, snapshots.Length);
+        Assert.AreEqual(first, snapshots[0]);
+        Assert.Less(string.CompareOrdinal(aborted, snapshots[1]), 0, "The new snapshot sorts after every existing folder");
+        Assert.IsTrue(Directory.Exists(Path.Combine(targetDir, "not-a-snapshot")), "Folders that are not snapshots are left alone");
     }
 }

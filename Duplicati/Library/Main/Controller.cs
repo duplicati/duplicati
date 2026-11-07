@@ -77,6 +77,18 @@ namespace Duplicati.Library.Main
         private bool m_operationStarted = false;
 
         /// <summary>
+        /// Set while an operation runs that reads a sync job's destination, such as listing
+        /// or restoring its snapshots. Such an operation uses the sync database of the job,
+        /// which has its own schema and must never be opened as a backup database.
+        /// </summary>
+        private bool m_syncDatabaseOperation;
+
+        /// <summary>
+        /// Whether the current operation keeps its state in the sync database
+        /// </summary>
+        private bool UsesSyncDatabase => m_options.MainAction == OperationMode.Sync || m_syncDatabaseOperation;
+
+        /// <summary>
         /// A stop asked for before the first operation started, applied when it starts
         /// </summary>
         private bool m_stopBeforeStart = false;
@@ -646,6 +658,44 @@ namespace Duplicati.Library.Main
             );
         }
 
+        /// <inheritdoc />
+        public async Task<IListFilesetResults> ListSyncVersionsAsync()
+            => await RunSyncDatabaseActionAsync(() => RunActionAsync(new ListFilesetResults(), null, null, false, static config =>
+                Operation.Sync.SyncRestoreHandler.ListVersionsAsync(config.Options, config.Result, config.BackendManager)
+            )).ConfigureAwait(false);
+
+        /// <inheritdoc />
+        public async Task<IListFolderResults> ListSyncFolderAsync(string[] sourcePaths, string[] folders, long offset, long limit)
+            => await RunSyncDatabaseActionAsync(() => RunActionAsync(new ListFolderResults(), null, null, new { sourcePaths, folders, offset, limit }, static config =>
+                Operation.Sync.SyncRestoreHandler.ListFolderAsync(config.Options, config.Result, config.BackendManager, config.Context.sourcePaths, config.Context.folders, config.Context.offset, config.Context.limit)
+            )).ConfigureAwait(false);
+
+        /// <inheritdoc />
+        public async Task<IRestoreResults> SyncRestoreAsync(string[] sourcePaths, string[] paths)
+            => await RunSyncDatabaseActionAsync(() => RunActionAsync(new RestoreResults(), null, null, new { sourcePaths, paths }, static config =>
+                Operation.Sync.SyncRestoreHandler.RestoreAsync(config.Options, config.Result, config.BackendManager, config.Context.sourcePaths, config.Context.paths)
+            )).ConfigureAwait(false);
+
+        /// <summary>
+        /// Runs an operation that reads a sync job's destination, marking it as one that
+        /// uses the sync database for as long as it runs.
+        /// </summary>
+        /// <typeparam name="TRes">The result type</typeparam>
+        /// <param name="action">The operation</param>
+        /// <returns>The result of the operation</returns>
+        private async Task<TRes> RunSyncDatabaseActionAsync<TRes>(Func<Task<TRes>> action)
+        {
+            m_syncDatabaseOperation = true;
+            try
+            {
+                return await action().ConfigureAwait(false);
+            }
+            finally
+            {
+                m_syncDatabaseOperation = false;
+            }
+        }
+
         public async Task<IVacuumResults> VacuumAsync()
         {
             return await RunActionAsync(new VacuumResults(), null, null, false, static config =>
@@ -722,7 +772,7 @@ namespace Duplicati.Library.Main
                     using (m_options.ConcurrencyMaxThreads <= 0 ? null : new CoCoL.CappedThreadedThreadPool(m_options.ConcurrencyMaxThreads))
                     // Sync keeps its own intent journal and does not record a remote operation log,
                     // so the messages are never flushed and must not be collected in memory
-                    using (var backend = new Backend.BackendManager(m_backendUrl, m_options, result.BackendWriter, result.TaskControl, collectDatabaseMessages: m_options.MainAction != OperationMode.Sync))
+                    using (var backend = new Backend.BackendManager(m_backendUrl, m_options, result.BackendWriter, result.TaskControl, collectDatabaseMessages: !UsesSyncDatabase))
                     {
                         try
                         {
@@ -746,7 +796,7 @@ namespace Duplicati.Library.Main
                             // instead of relying on the operations to correctly toggle the flag
                             //
                             // The sync operation owns its own database and records its own audit log.
-                            if (File.Exists(m_options.Dbpath) && !m_options.NoLocalDb && m_options.MainAction != OperationMode.Sync)
+                            if (File.Exists(m_options.Dbpath) && !m_options.NoLocalDb && !UsesSyncDatabase)
                             {
                                 try
                                 {
@@ -778,7 +828,7 @@ namespace Duplicati.Library.Main
                     // (Operation, LogData, DeletedVolume tables). The sync database has its own
                     // schema, so sync operations write their results through the sync database
                     // instead of running incompatible SQL against it.
-                    if (File.Exists(m_options.Dbpath) && !m_options.Dryrun && m_options.MainAction != OperationMode.Sync)
+                    if (File.Exists(m_options.Dbpath) && !m_options.Dryrun && !UsesSyncDatabase)
                     {
                         try
                         {
@@ -809,7 +859,7 @@ namespace Duplicati.Library.Main
                             Logging.Log.WriteWarningMessage(LOGTAG, "FailedWriteOperation", ex, "Failed to write operation results to database: {0}", ex.Message);
                         }
                     }
-                    else if (m_options.MainAction == OperationMode.Sync)
+                    else if (UsesSyncDatabase)
                     {
                         try
                         {
@@ -841,7 +891,7 @@ namespace Duplicati.Library.Main
                     {
                         // No operation was started in database, so write logs to new operation.
                         // Sync uses its own database schema
-                        if (m_options.MainAction == OperationMode.Sync)
+                        if (UsesSyncDatabase)
                             await WriteSyncResultsAsync(result, false).ConfigureAwait(false);
                         else if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                             await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, result.MainOperation.ToString(), true, null, CancellationToken.None).ConfigureAwait(false))
@@ -880,7 +930,7 @@ namespace Duplicati.Library.Main
                     {
                         // Write logs to previous operation if database exists.
                         // Sync uses its own database schema
-                        if (m_options.MainAction == OperationMode.Sync)
+                        if (UsesSyncDatabase)
                             await WriteSyncResultsAsync(result, false).ConfigureAwait(false);
                         else if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                             await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).ConfigureAwait(false))
@@ -912,7 +962,7 @@ namespace Duplicati.Library.Main
                         resultSetter.Fatal = true;
                         // Write logs to previous operation if database exists.
                         // Sync uses its own database schema
-                        if (m_options.MainAction == OperationMode.Sync)
+                        if (UsesSyncDatabase)
                             await WriteSyncResultsAsync(result, false).ConfigureAwait(false);
                         else if (File.Exists(m_options.Dbpath) && !m_options.Dryrun)
                             await using (var db = await LocalDatabase.CreateLocalDatabaseAsync(m_options.Dbpath, null, true, null, CancellationToken.None).ConfigureAwait(false))
@@ -947,6 +997,10 @@ namespace Duplicati.Library.Main
         private async Task WriteSyncResultsAsync(IBasicResults result, bool purgeOldResults)
         {
             if (!File.Exists(m_options.Dbpath) || m_options.Dryrun)
+                return;
+
+            // Browsing a sync job's snapshots is not an event for the job log; a restore is
+            if (result is not ISyncResults and not IRestoreResults)
                 return;
 
             using var db = new LocalSyncDatabase(m_options.Dbpath);
@@ -1104,7 +1158,7 @@ namespace Duplicati.Library.Main
             }
 
             if (string.IsNullOrEmpty(m_options.Dbpath))
-                m_options.Dbpath = CLIDatabaseLocator.GetDatabasePathForCLI(m_backendUrl, m_options, true, false, m_options.MainAction == OperationMode.Sync);
+                m_options.Dbpath = CLIDatabaseLocator.GetDatabasePathForCLI(m_backendUrl, m_options, true, false, UsesSyncDatabase);
 
             RestoreOptionsFromExistingDatabase(result.MainOperation);
 
@@ -1233,7 +1287,7 @@ namespace Duplicati.Library.Main
             // backup LocalDatabase, and does not store options to restore. Opening it as a
             // backup database would run the backup schema upgrade against an incompatible
             // schema and throw. Sync reads its options directly from the command-line dict.
-            if (operation == OperationMode.Sync)
+            if (UsesSyncDatabase)
                 return;
 
             if (m_options.NoLocalDb || string.IsNullOrWhiteSpace(m_options.Dbpath) || !File.Exists(m_options.Dbpath))

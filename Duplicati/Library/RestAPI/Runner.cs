@@ -309,15 +309,31 @@ namespace Duplicati.Server
         }
 
         /// <summary>
-        /// The operations a sync job supports. A sync job copies the files to the destination
-        /// without keeping versions, and its local database is not a backup database, so the
-        /// other operations would run backup queries against it and fail.
+        /// The operations a sync job supports. A sync job copies the files to the destination,
+        /// one dated snapshot folder per run or a single mirror, and its local database is not
+        /// a backup database, so the other operations would run backup queries against it and
+        /// fail. Listing and restore are answered from the destination by the sync restore
+        /// operations instead of the backup ones.
         /// </summary>
         private static readonly HashSet<DuplicatiOperation> SyncJobOperations =
         [
             DuplicatiOperation.BackupOrSync,
             DuplicatiOperation.Delete,
+            DuplicatiOperation.ListFilesets,
+            DuplicatiOperation.ListFolderContents,
+            DuplicatiOperation.Restore,
         ];
+
+        /// <summary>
+        /// Gets the source folders of a job, with environment variables expanded.
+        /// </summary>
+        /// <param name="backup">The job</param>
+        /// <returns>The source folders</returns>
+        private static string[] GetExpandedSources(IBackup backup)
+            => backup.Sources
+                .Select(n => SpecialFolders.ExpandEnvironmentVariables(n))
+                .WhereNotNullOrWhiteSpace()
+                .ToArray();
 
         /// <summary>
         /// Refuses an operation that the job cannot perform, before it is queued or run.
@@ -328,7 +344,7 @@ namespace Duplicati.Server
         private static void EnsureOperationIsSupported(DuplicatiOperation operation, IBackup backup)
         {
             if (backup.OperationType == OperationType.Sync && !SyncJobOperations.Contains(operation))
-                throw new UserInformationException($"The operation {operation} is not available for a sync job, as a sync job copies the files to the destination without keeping versions", "SyncJobNotSupported");
+                throw new UserInformationException($"The operation {operation} is not available for a sync job, as a sync job copies the files to the destination instead of keeping a backup", "SyncJobNotSupported");
         }
 
         public static IRunnerData CreateTask(DuplicatiOperation operation, IBackup backup, IDictionary<string, string?>? extraOptions = null, string[]? filterStrings = null, string[]? extraArguments = null, int pageSize = 0, int pageOffset = 0, bool returnExtended = false, bool caseSensitiveSearch = false, bool includeMetadata = false)
@@ -1083,10 +1099,7 @@ namespace Duplicati.Server
                         case DuplicatiOperation.BackupOrSync:
                             {
                                 var filter = ApplyFilter(backup, GetCommonFilter(databaseConnection));
-                                var sources = backup.Sources
-                                    .Select(n => SpecialFolders.ExpandEnvironmentVariables(n))
-                                    .WhereNotNullOrWhiteSpace()
-                                    .ToArray();
+                                var sources = GetExpandedSources(backup);
 
                                 IBasicResults r;
                                 if (backup.OperationType == OperationType.Sync)
@@ -1122,7 +1135,9 @@ namespace Duplicati.Server
                             }
                         case DuplicatiOperation.Restore:
                             {
-                                var r = await controller.RestoreAsync(data.FilterStrings).ConfigureAwait(false);
+                                var r = backup.OperationType == OperationType.Sync
+                                    ? await controller.SyncRestoreAsync(GetExpandedSources(backup), data.FilterStrings).ConfigureAwait(false)
+                                    : await controller.RestoreAsync(data.FilterStrings).ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
@@ -1213,6 +1228,9 @@ namespace Duplicati.Server
 
                         case DuplicatiOperation.ListFilesets:
                             {
+                                if (backup.OperationType == OperationType.Sync)
+                                    return await controller.ListSyncVersionsAsync().ConfigureAwait(false);
+
                                 var r = await controller.ListFilesetsAsync().ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
@@ -1225,6 +1243,9 @@ namespace Duplicati.Server
                             }
                         case DuplicatiOperation.ListFolderContents:
                             {
+                                if (backup.OperationType == OperationType.Sync)
+                                    return await controller.ListSyncFolderAsync(GetExpandedSources(backup), data.ExtraArguments, data.PageOffset * data.PageSize, data.PageSize).ConfigureAwait(false);
+
                                 return await controller.ListFolderAsync(data.ExtraArguments, data.PageOffset * data.PageSize, data.PageSize, data.ReturnExtendedData).ConfigureAwait(false);
                             }
 

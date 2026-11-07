@@ -39,7 +39,7 @@ using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Backend
 {
-    public class SSHv2 : IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend
+    public class SSHv2 : IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend, IFolderDeleteEnabledBackend
     {
         private static readonly string LOGTAG = Log.LogTagFromType<SSHv2>();
         private const string SSH_KEYFILE_OPTION = "ssh-keyfile";
@@ -690,5 +690,56 @@ namespace Duplicati.Library.Backend
         /// <inheritdoc/>
         public Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
             => Task.FromResult<IFileEntry?>(null);
+
+        /// <inheritdoc/>
+        public async Task DeleteFolderRecursiveAsync(string path, CancellationToken cancellationToken)
+        {
+            // Only a relative path below the backend folder is accepted, so the delete
+            // cannot reach the backend folder itself or anything outside it.
+            var segments = (path ?? "").Split('/');
+            if (string.IsNullOrWhiteSpace(path) || path.StartsWith('/') || segments.Any(x => x is "" or "." or ".." || x.Contains('\\')))
+                throw new ArgumentException($"Refusing to delete the folder \"{path}\"", nameof(path));
+
+            var con = await CreateConnection(cancellationToken).ConfigureAwait(false);
+            await SetWorkingDirectory(con, cancellationToken).ConfigureAwait(false);
+
+            var prefixPath = m_useRelativePath ? "" : m_path;
+            if (!string.IsNullOrWhiteSpace(prefixPath))
+                prefixPath = Util.AppendDirSeparator(prefixPath, "/");
+
+            try
+            {
+                await DeleteTreeAsync(con, prefixPath + path, cancellationToken).ConfigureAwait(false);
+            }
+            catch (SftpPathNotFoundException)
+            {
+                // Already gone, which is the outcome the caller asked for
+            }
+        }
+
+        /// <summary>
+        /// Deletes a folder on the server after deleting everything below it. Symbolic
+        /// links are deleted as links and never followed.
+        /// </summary>
+        /// <param name="con">The connection</param>
+        /// <param name="folder">The folder to delete</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        private async Task DeleteTreeAsync(SftpClient con, string folder, CancellationToken cancellationToken)
+        {
+            var children = new List<(string Path, bool IsFolder)>();
+            await foreach (var x in Utility.Utility.WithPerItemTimeout(con.ListDirectoryAsync(folder, cancellationToken), m_timeouts.ListTimeout, cancellationToken).ConfigureAwait(false))
+                if (x.Name != "." && x.Name != "..")
+                    children.Add((folder + "/" + x.Name, x.Attributes.IsDirectory && !x.Attributes.IsSymbolicLink));
+
+            foreach (var (childPath, isFolder) in children)
+            {
+                if (isFolder)
+                    await DeleteTreeAsync(con, childPath, cancellationToken).ConfigureAwait(false);
+                else
+                    await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, ct => con.DeleteFileAsync(childPath, ct)).ConfigureAwait(false);
+            }
+
+            await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, ct => con.DeleteDirectoryAsync(folder, ct)).ConfigureAwait(false);
+        }
     }
 }

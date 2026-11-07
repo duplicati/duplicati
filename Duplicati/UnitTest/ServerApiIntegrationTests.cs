@@ -1223,20 +1223,27 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
-    /// A sync job copies the files to the destination without keeping versions, and its
-    /// local database is not a backup database (forum topic 22782). Listing its versions
-    /// or restoring from it is refused with a message saying so, instead of running backup
-    /// queries against the sync database, and the sync job still runs afterwards.
+    /// A sync job with snapshot folders lists one version per run, browses a version under
+    /// the original source path and restores an older version through the same endpoints
+    /// the restore of a backup uses. Operations that need a backup database are still
+    /// refused (forum topic 22782), and the sync database still works afterwards.
     /// </summary>
     [Test]
     [Category("Integration")]
-    public async Task SyncJobRefusesVersionListingAndRestore_Async()
+    public async Task SyncJobListsAndRestoresSnapshots_Async()
     {
-        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sync sample");
+        var samplePath = Path.Combine(this.DATAFOLDER, "sample.txt");
+        File.WriteAllText(samplePath, "First version");
         Directory.CreateDirectory(this.TARGETFOLDER);
 
         await WithAuthenticatedServerAsync(async httpClient =>
         {
+            var extensions = await GetApiExtensionsAsync(httpClient).ConfigureAwait(false);
+            Assert.That(extensions, Does.Contain(SystemInfoProvider.SyncSnapshotsExtension),
+                "System info should advertise snapshot folders for Sync jobs");
+            Assert.That(extensions, Does.Contain(SystemInfoProvider.SyncRestoreExtension),
+                "System info should advertise that Sync jobs can be restored");
+
             var request = new BackupAndScheduleInputDto
             {
                 Backup = new BackupAndScheduleInputDto.BackupInputDto
@@ -1249,7 +1256,8 @@ public class ServerApiIntegrationTests : BasicSetupHelper
                     Settings = new[]
                     {
                         new BackupAndScheduleInputDto.SettingInputDto { Name = "--no-encryption", Value = "true" },
-                        new BackupAndScheduleInputDto.SettingInputDto { Name = "snapshot-policy", Value = "Off" }
+                        new BackupAndScheduleInputDto.SettingInputDto { Name = "snapshot-policy", Value = "Off" },
+                        new BackupAndScheduleInputDto.SettingInputDto { Name = "--" + Duplicati.Library.Main.Options.SYNC_SNAPSHOT_FOLDERS_OPTION, Value = "true" }
                     },
                     Filters = Array.Empty<BackupAndScheduleInputDto.FilterInputDto>(),
                     Metadata = new Dictionary<string, string>()
@@ -1262,27 +1270,59 @@ public class ServerApiIntegrationTests : BasicSetupHelper
                 ?? throw new InvalidOperationException("Sync job creation did not return an ID");
 
             await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+            File.WriteAllText(samplePath, "Second version");
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
 
-            // The restore page starts by listing the versions
+            // The restore page starts by listing the versions: one per snapshot, newest first
             var listFilesetsResponse = await httpClient.PostAsJsonAsync("/api/v2/backup/list-filesets", new ListFilesetsRequestDto { BackupId = backupId }, JsonOptions).ConfigureAwait(false);
             var listFilesetsBody = await listFilesetsResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
             Assert.That(listFilesetsResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), listFilesetsBody);
+            string olderTime;
             using (var listFilesets = JsonDocument.Parse(listFilesetsBody))
             {
-                Assert.That(listFilesets.RootElement.TryGetProperty("Success", out var success) && !success.GetBoolean(), Is.True, listFilesetsBody);
-                Assert.That(GetStringProperty(listFilesets.RootElement, "statusCode"), Is.EqualTo("SyncJobNotSupported"), listFilesetsBody);
+                Assert.That(listFilesets.RootElement.GetProperty("Success").GetBoolean(), Is.True, listFilesetsBody);
+                var versions = listFilesets.RootElement.GetProperty("Data").EnumerateArray().ToArray();
+                Assert.That(versions, Has.Length.EqualTo(2), listFilesetsBody);
+                Assert.That(versions[0].GetProperty("Version").GetInt64(), Is.EqualTo(0), listFilesetsBody);
+                olderTime = versions[1].GetProperty("Time").GetDateTime().ToUniversalTime().ToString("o");
             }
 
+            // The file tree starts at the source folder, as it does for a backup
+            var sourceFolder = Duplicati.Library.Common.IO.Util.AppendDirSeparator(this.DATAFOLDER);
+            var rootResponse = await httpClient.PostAsJsonAsync("/api/v2/backup/list-folder", new ListFolderContentRequestDto { BackupId = backupId, Paths = null, Time = olderTime, PageSize = 1000, Page = 0 }, JsonOptions).ConfigureAwait(false);
+            var rootBody = await rootResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+            Assert.That(rootResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), rootBody);
+            using (var root = JsonDocument.Parse(rootBody))
+                Assert.That(root.RootElement.GetProperty("Data").EnumerateArray().Select(x => x.GetProperty("Path").GetString()), Is.EqualTo(new[] { sourceFolder }), rootBody);
+
+            var folderResponse = await httpClient.PostAsJsonAsync("/api/v2/backup/list-folder", new ListFolderContentRequestDto { BackupId = backupId, Paths = new[] { sourceFolder }, Time = olderTime, PageSize = 1000, Page = 0 }, JsonOptions).ConfigureAwait(false);
+            var folderBody = await folderResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+            using (var folder = JsonDocument.Parse(folderBody))
+                Assert.That(folder.RootElement.GetProperty("Data").EnumerateArray().Select(x => x.GetProperty("Path").GetString()), Does.Contain(samplePath), folderBody);
+
+            // Restore the older version of the folder, the way the restore page asks for it
+            if (Directory.Exists(this.RESTOREFOLDER))
+                Directory.Delete(this.RESTOREFOLDER, true);
             var restoreResponse = await httpClient.PostAsJsonAsync(
                 $"/api/v1/backup/{backupId}/restore",
-                new RestoreInputDto(null, null, "now", this.RESTOREFOLDER, true, false, false, null, null),
+                new RestoreInputDto(new[] { sourceFolder + "*" }, null, olderTime, this.RESTOREFOLDER, true, false, false, null, null),
                 JsonOptions).ConfigureAwait(false);
             var restoreBody = await restoreResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
-            Assert.That(restoreResponse.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), restoreBody);
-            using (var restore = JsonDocument.Parse(restoreBody))
-                Assert.That(GetStringProperty(restore.RootElement, "helpId"), Is.EqualTo("SyncJobNotSupported"), restoreBody);
+            Assert.That(restoreResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), restoreBody);
+            var restoreTask = await restoreResponse.Content.ReadFromJsonAsync<TaskStartedDto>(JsonOptions).ConfigureAwait(false)
+                ?? throw new InvalidOperationException("Restore did not return a task");
+            await WaitForTaskCompletionAsync(httpClient, restoreTask.ID).ConfigureAwait(false);
+            await AssertTaskCompletedAsync(httpClient, restoreTask.ID).ConfigureAwait(false);
+            Assert.That(File.ReadAllText(Path.Combine(this.RESTOREFOLDER, "sample.txt")), Is.EqualTo("First version"));
 
-            // The refused requests did not damage the sync database
+            // Operations that need a backup database are still refused
+            var verifyResponse = await httpClient.PostAsync($"/api/v1/backup/{backupId}/verify", null).ConfigureAwait(false);
+            var verifyBody = await verifyResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+            Assert.That(verifyResponse.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), verifyBody);
+            using (var verify = JsonDocument.Parse(verifyBody))
+                Assert.That(GetStringProperty(verify.RootElement, "helpId"), Is.EqualTo("SyncJobNotSupported"), verifyBody);
+
+            // Listing and restoring did not damage the sync database
             await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
         }).ConfigureAwait(false);
     }

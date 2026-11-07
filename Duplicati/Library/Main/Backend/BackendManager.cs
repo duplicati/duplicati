@@ -68,6 +68,18 @@ internal partial class BackendManager : IBackendManager
     private readonly Lazy<bool> supportsFolderOperations;
 
     /// <summary>
+    /// Indicates whether the backend can create hard links between relative paths.
+    /// Requires folder support as well, so both names are full relative paths.
+    /// </summary>
+    private readonly Lazy<bool> supportsHardLinks;
+
+    /// <summary>
+    /// Indicates whether the backend can delete a folder and its contents in one call.
+    /// Requires folder support as well, so the folder is a relative path.
+    /// </summary>
+    private readonly Lazy<bool> supportsFolderDelete;
+
+    /// <summary>
     /// Flag keeping track of whether the object has been disposed
     /// </summary>
     private bool isDisposed = false;
@@ -132,6 +144,9 @@ internal partial class BackendManager : IBackendManager
             }
         }, isThreadSafe: true);
 
+        supportsHardLinks = new Lazy<bool>(() => BackendIs<ILinkEnabledBackend>() && supportsFolderOperations.Value, isThreadSafe: true);
+        supportsFolderDelete = new Lazy<bool>(() => BackendIs<IFolderDeleteEnabledBackend>() && supportsFolderOperations.Value, isThreadSafe: true);
+
         // The BackendManager class is a wrapper that essentially sends
         // requests into a queue and processes them in order.
         // The Handler class is the one that actually processes the requests.
@@ -145,6 +160,57 @@ internal partial class BackendManager : IBackendManager
     /// Gets a value indicating whether the configured backend supports object locking
     /// </summary>
     public bool SupportsObjectLocking => supportsObjectLocking.Value;
+
+    /// <inheritdoc/>
+    public bool SupportsHardLinks => supportsHardLinks.Value;
+
+    /// <inheritdoc/>
+    public bool SupportsFolderDelete => supportsFolderDelete.Value;
+
+    /// <summary>
+    /// Checks whether the configured backend type implements a capability interface,
+    /// by creating and disposing a backend instance.
+    /// </summary>
+    /// <typeparam name="T">The capability interface</typeparam>
+    /// <returns><c>true</c> if the backend implements the interface</returns>
+    private bool BackendIs<T>()
+    {
+        var backend = DynamicLoader.BackendLoader.GetBackend(backendUrl, context.Options.RawOptions);
+        if (backend == null)
+            return false;
+        try
+        {
+            return backend is T;
+        }
+        finally
+        {
+            (backend as IDisposable)?.Dispose();
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task CreateHardLinkAsync(string existingPath, string targetPath, CancellationToken cancelToken)
+    {
+        if (!supportsHardLinks.Value)
+            throw new HardLinkNotSupportedException();
+
+        var op = new CreateHardLinkOperation(existingPath, targetPath, context, cancelToken);
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        await op.GetResultAsync().ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    public async Task DeleteFolderRecursiveAsync(string path, CancellationToken cancelToken)
+    {
+        if (!supportsFolderDelete.Value)
+            throw new NotSupportedException("The backend cannot delete folders");
+        if (string.IsNullOrWhiteSpace(path))
+            throw new ArgumentException("Refusing to delete the backend root folder", nameof(path));
+
+        var op = new DeleteFolderOperation(path, context, cancelToken);
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        await op.GetResultAsync().ConfigureAwait(false);
+    }
 
     /// <summary>
     /// Enters a task into the queue for processing.
@@ -372,6 +438,21 @@ internal partial class BackendManager : IBackendManager
             Decrypt = false,
             AllowParityRepair = allowParityRepair
         };
+        await QueueTaskAsync(op).ConfigureAwait(false);
+        (var file, var _, var _) = await op.GetResultAsync().ConfigureAwait(false);
+        return file;
+    }
+
+    /// <inheritdoc/>
+    public async Task<TempFile> GetFileUnencryptedWithPathAsync(string remotename, CancellationToken cancelToken)
+    {
+        var op = new GetOperation(remotename, -1, context, cancelToken)
+        {
+            Hash = null,
+            Decrypt = false,
+            AllowParityRepair = false
+        };
+        ApplyPathTranslation(op);
         await QueueTaskAsync(op).ConfigureAwait(false);
         (var file, var _, var _) = await op.GetResultAsync().ConfigureAwait(false);
         return file;
