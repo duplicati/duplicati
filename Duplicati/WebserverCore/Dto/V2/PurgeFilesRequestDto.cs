@@ -41,4 +41,12 @@ public sealed record PurgeFilesRequestDto
     /// If not set, the files are purged from all versions.
     /// </summary>
     public long[]? Versions { get; init; }
+
+    /// <summary>
+    /// A flag indicating whether to suppress automatic compaction after purging the files.
+    /// If set, it is passed as the no-auto-compact option of this operation only, and it overrides
+    /// the setting of the backup without changing it. A value of <c>false</c> does not force a compact;
+    /// the usual checks decide whether one is needed. If not set, the setting of the backup is used.
+    /// </summary>
+    public bool? SuppressCompact { get; init; }
 }

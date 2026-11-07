@@ -48,6 +48,10 @@ public class BackupPurgeFiles : IEndpointV2
         if (input.Filters is null || input.Filters.Length == 0)
             throw new BadRequestException("No paths or filters supplied");
 
-        return Task.FromResult(new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreatePurgeFilesTask(bk, input.Filters, input.Versions))));
+        var extra = new Dictionary<string, string?>();
+        if (input.SuppressCompact.HasValue)
+            extra["no-auto-compact"] = input.SuppressCompact.Value.ToString();
+
+        return Task.FromResult(new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreatePurgeFilesTask(bk, input.Filters, input.Versions, extra))));
     }
 }
