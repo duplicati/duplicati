@@ -556,10 +556,15 @@ ssize_t DuplicatiPhotosReadAsset(void *handle, uint8_t *buffer, size_t bufferLen
         return -1;
     }
 
-    DuplicatiPhotosReader *reader = (__bridge DuplicatiPhotosReader *)handle;
-    ssize_t result = [reader readInto:buffer length:bufferLength error:errorMessageOut];
-    DLog(@"DuplicatiPhotos: DuplicatiPhotosReadAsset returning: %zd", result);
-    return result;
+    // The caller is a managed thread that has no autorelease pool which ever
+    // drains, so anything autoreleased while reading would otherwise stay
+    // alive for the life of the process.
+    @autoreleasepool {
+        DuplicatiPhotosReader *reader = (__bridge DuplicatiPhotosReader *)handle;
+        ssize_t result = [reader readInto:buffer length:bufferLength error:errorMessageOut];
+        DLog(@"DuplicatiPhotos: DuplicatiPhotosReadAsset returning: %zd", result);
+        return result;
+    }
 }
 
 int DuplicatiPhotosGetAssetSize(void *handle, int64_t *sizeOut, char **errorMessageOut) {
@@ -608,8 +613,11 @@ void DuplicatiPhotosCloseAsset(void *handle) {
         return;
     }
 
-    DuplicatiPhotosReader *reader = (__bridge_transfer DuplicatiPhotosReader *)handle;
-    [reader close];
+    // See DuplicatiPhotosReadAsset: the managed caller has no draining pool
+    @autoreleasepool {
+        DuplicatiPhotosReader *reader = (__bridge_transfer DuplicatiPhotosReader *)handle;
+        [reader close];
+    }
 }
 
 void DuplicatiPhotosFreeString(char *value) {
