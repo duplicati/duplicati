@@ -619,6 +619,18 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         => await InvokeAsync<ISyncResults>(nameof(IController.SyncAsync), sources, filter).ConfigureAwait(false);
 
     /// <inheritdoc />
+    public async Task<IListFilesetResults> ListSyncVersionsAsync()
+        => await InvokeAsync<IListFilesetResults>(nameof(IController.ListSyncVersionsAsync)).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<IListFolderResults> ListSyncFolderAsync(string[] sourcePaths, string[]? folders, long offset, long limit)
+        => await InvokeAsync<IListFolderResults>(nameof(IController.ListSyncFolderAsync), sourcePaths, folders, offset, limit).ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<IRestoreResults> SyncRestoreAsync(string[] sourcePaths, string[]? paths)
+        => await InvokeAsync<IRestoreResults>(nameof(IController.SyncRestoreAsync), sourcePaths, paths).ConfigureAwait(false);
+
+    /// <inheritdoc />
     public async Task<ITestResults> TestAsync(long samples = 1)
         => await InvokeAsync<ITestResults>(nameof(IController.TestAsync), samples).ConfigureAwait(false);
 

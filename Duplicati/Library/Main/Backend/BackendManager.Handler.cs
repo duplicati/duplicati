@@ -474,8 +474,10 @@ partial class BackendManager
                         return;
                     }
 
-                    // Object locking being unavailable is a permanent condition, so retrying cannot help
-                    if (Library.Utility.ExceptionExtensions.FlattenException(ex).Any(x => x is ObjectLockNotSupportedException))
+                    // Object locking or hard links being unavailable is a permanent condition, so retrying cannot help
+                    // A link whose source file is gone will not appear by waiting; the caller uploads the file instead
+                    if (Library.Utility.ExceptionExtensions.FlattenException(ex).Any(x => x is ObjectLockNotSupportedException or HardLinkNotSupportedException
+                        || (op is CreateHardLinkOperation && x is FileMissingException or System.IO.FileNotFoundException)))
                     {
                         context.Statwriter.SendEvent(op.Operation, BackendEventType.Failed, op.RemoteFilename, op.Size);
                         break;
@@ -594,6 +596,12 @@ partial class BackendManager
                         return;
                     case GetObjectLockOperation getLockOp:
                         await ExecuteAsync(getLockOp, cancellationToken).ConfigureAwait(false);
+                        return;
+                    case CreateHardLinkOperation linkOp:
+                        await ExecuteAsync(linkOp, cancellationToken).ConfigureAwait(false);
+                        return;
+                    case DeleteFolderOperation deleteFolderOp:
+                        await ExecuteAsync(deleteFolderOp, cancellationToken).ConfigureAwait(false);
                         return;
                     default:
                         throw new NotImplementedException($"Operation type {op.GetType()} is not supported");

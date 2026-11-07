@@ -135,6 +135,33 @@ namespace Duplicati.Library.Interface
     }
 
     /// <summary>
+    /// An exception indicating that the destination cannot create hard links, because
+    /// the filesystem or share it points at has no hard-link support. This is a
+    /// permanent condition, so operations failing with this exception are not retried
+    /// and callers fall back to storing the content again.
+    /// </summary>
+    [Serializable]
+    public class HardLinkNotSupportedException : UserInformationException
+    {
+        /// <summary>
+        /// The help ID used for this exception
+        /// </summary>
+        public const string HELP_ID = "HardLinkNotSupported";
+
+        public HardLinkNotSupportedException()
+            : base(Strings.Common.HardLinkNotSupportedError, HELP_ID)
+        { }
+
+        public HardLinkNotSupportedException(string message)
+            : base(message, HELP_ID)
+        { }
+
+        public HardLinkNotSupportedException(string message, Exception innerException)
+            : base(message, HELP_ID, innerException)
+        { }
+    }
+
+    /// <summary>
     /// An exception indicating that the requested folder already existed
     /// </summary>
     [Serializable]

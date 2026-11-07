@@ -234,4 +234,48 @@ internal interface IBackendManager : IDisposable
     /// </summary>
     bool SupportsObjectLocking { get; }
 
+    /// <summary>
+    /// Downloads a file without decrypting it, treating the remote name as a relative
+    /// path that may contain sub-folders (the same translation as
+    /// <see cref="PutFileUnencryptedWithPathAsync"/>). No hash or size is checked.
+    /// </summary>
+    /// <param name="remotename">The relative path of the remote file</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>The downloaded file</returns>
+    Task<TempFile> GetFileUnencryptedWithPathAsync(string remotename, CancellationToken cancelToken);
+
+    /// <summary>
+    /// Indicates whether the backend can create hard links between relative paths
+    /// (see <see cref="ILinkEnabledBackend"/>). A destination filesystem may still
+    /// refuse, in which case <see cref="CreateHardLinkAsync"/> throws
+    /// <see cref="HardLinkNotSupportedException"/>.
+    /// </summary>
+    bool SupportsHardLinks { get; }
+
+    /// <summary>
+    /// Indicates whether the backend can delete a folder and everything below it in one
+    /// call (see <see cref="IFolderDeleteEnabledBackend"/>).
+    /// </summary>
+    bool SupportsFolderDelete { get; }
+
+    /// <summary>
+    /// Creates a hard link at <paramref name="targetPath"/> to the existing remote file
+    /// <paramref name="existingPath"/>. Both are relative paths that may contain sub-folders.
+    /// </summary>
+    /// <param name="existingPath">The relative path of the existing remote file</param>
+    /// <param name="targetPath">The relative path of the link to create</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    /// <exception cref="HardLinkNotSupportedException">The backend or the destination cannot create hard links</exception>
+    Task CreateHardLinkAsync(string existingPath, string targetPath, CancellationToken cancelToken);
+
+    /// <summary>
+    /// Deletes a remote folder and everything below it. Only valid when
+    /// <see cref="SupportsFolderDelete"/> is true.
+    /// </summary>
+    /// <param name="path">The relative path of the folder; must not be empty</param>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    Task DeleteFolderRecursiveAsync(string path, CancellationToken cancelToken);
+
 }

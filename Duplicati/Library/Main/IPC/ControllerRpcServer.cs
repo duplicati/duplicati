@@ -184,6 +184,18 @@ public class ControllerRpcServer : IController, IDisposable
         => Controller.SyncAsync(sourcePaths, filter);
 
     /// <inheritdoc />
+    public Task<IListFilesetResults> ListSyncVersionsAsync()
+        => Controller.ListSyncVersionsAsync();
+
+    /// <inheritdoc />
+    public Task<IListFolderResults> ListSyncFolderAsync(string[] sourcePaths, string[]? folders, long offset, long limit)
+        => Controller.ListSyncFolderAsync(sourcePaths, folders, offset, limit);
+
+    /// <inheritdoc />
+    public Task<IRestoreResults> SyncRestoreAsync(string[] sourcePaths, string[]? paths)
+        => Controller.SyncRestoreAsync(sourcePaths, paths);
+
+    /// <inheritdoc />
     public Task<ITestResults> TestAsync(long samples = 1)
         => Controller.TestAsync(samples);
 

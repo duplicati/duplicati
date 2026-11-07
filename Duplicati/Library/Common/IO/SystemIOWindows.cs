@@ -170,6 +170,42 @@ namespace Duplicati.Library.Common.IO
             public static extern bool FindClose(IntPtr hFindFile);
 
             /// <summary>
+            /// Creates a hard link to an existing file
+            /// </summary>
+            /// <param name="lpFileName">The name of the new link</param>
+            /// <param name="lpExistingFileName">The name of the existing file</param>
+            /// <param name="lpSecurityAttributes">Reserved, must be <c>IntPtr.Zero</c></param>
+            /// <returns><c>true</c> if the call succeeds, <c>false</c> otherwise</returns>
+            [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            public static extern bool CreateHardLinkW(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
+
+            /// <summary>
+            /// The request is not supported (for example a FAT volume)
+            /// </summary>
+            public const int ERROR_NOT_SUPPORTED = 50;
+
+            /// <summary>
+            /// The function is not valid on this volume
+            /// </summary>
+            public const int ERROR_INVALID_FUNCTION = 1;
+
+            /// <summary>
+            /// The source and target are on different volumes
+            /// </summary>
+            public const int ERROR_NOT_SAME_DEVICE = 17;
+
+            /// <summary>
+            /// The file has reached the maximum number of hard links
+            /// </summary>
+            public const int ERROR_TOO_MANY_LINKS = 1142;
+
+            /// <summary>
+            /// The file was not found
+            /// </summary>
+            public const int ERROR_FILE_NOT_FOUND = 2;
+
+            /// <summary>
             /// The access mode for CreateFile to write
             /// </summary>
             public const uint GENERIC_WRITE = 0x40000000;
@@ -485,6 +521,20 @@ namespace Duplicati.Library.Common.IO
 
         public void FileDelete(string path)
             => File.Delete(AddExtendedDevicePathPrefix(path));
+
+        public void FileCreateHardLink(string existingPath, string newPath)
+        {
+            if (Win32API.CreateHardLinkW(AddExtendedDevicePathPrefix(newPath), AddExtendedDevicePathPrefix(existingPath), IntPtr.Zero))
+                return;
+
+            var error = Marshal.GetLastWin32Error();
+            var message = $"Unable to create hard link from \"{newPath}\" to \"{existingPath}\": {new Win32Exception(error).Message} ({error})";
+            if (error is Win32API.ERROR_NOT_SUPPORTED or Win32API.ERROR_INVALID_FUNCTION or Win32API.ERROR_NOT_SAME_DEVICE or Win32API.ERROR_TOO_MANY_LINKS)
+                throw new HardLinkNotSupportedException(message);
+            if (error == Win32API.ERROR_FILE_NOT_FOUND)
+                throw new FileNotFoundException(message, existingPath);
+            throw new IOException(message, new Win32Exception(error));
+        }
 
         public void FileSetLastWriteTimeUtc(string path, DateTime time)
             => File.SetLastWriteTimeUtc(AddExtendedDevicePathPrefix(path), time);
