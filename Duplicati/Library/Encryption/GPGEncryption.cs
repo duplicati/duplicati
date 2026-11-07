@@ -207,10 +207,14 @@ namespace Duplicati.Library.Encryption
                 WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden
             };
 
+            // The passphrase goes to the input of gpg, but the switches may hold one too
+            var shownArgs = HidePassphrase(args);
+            Logging.Log.WriteProfilingMessage(LOGTAG, "GPGCommand", "Running GPG: {0} {1}", m_programpath, shownArgs);
+
 #if DEBUG
             psi.CreateNoWindow = false;
             psi.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
-            Console.Error.WriteLine("Running command: {0} {1}", m_programpath, args);
+            Console.Error.WriteLine("Running command: {0} {1}", m_programpath, shownArgs);
 #endif
 
             System.Diagnostics.Process p = null;
@@ -246,7 +250,7 @@ namespace Duplicati.Library.Encryption
                 }
 
                 Logging.Log.WriteErrorMessage(LOGTAG, "GPGEncryptFailure", ex, "Error occurred while encrypting with GPG:" + ex.Message);
-                throw new Exception(Strings.GPGEncryption.GPGExecuteError(m_programpath, args, ex.Message), ex);
+                throw new Exception(Strings.GPGEncryption.GPGExecuteError(m_programpath, shownArgs, ex.Message), ex);
             }
 
             Task copier;
@@ -263,6 +267,20 @@ namespace Duplicati.Library.Encryption
 
             return new GPGStreamWrapper(p, copier, stderr, p.StandardOutput.BaseStream);
         }
+
+        /// <summary>
+        /// Matches the value of a --passphrase switch, but not --passphrase-fd or --passphrase-file
+        /// </summary>
+        private static readonly System.Text.RegularExpressions.Regex PassphraseSwitch =
+            new(@"(--passphrase)(=|\s+)(""[^""]*""|'[^']*'|\S+)", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        /// <summary>
+        /// Hides the value of a --passphrase switch in the arguments, so they can be shown
+        /// </summary>
+        /// <param name="args">The commandline arguments</param>
+        /// <returns>The arguments with the passphrase replaced</returns>
+        private static string HidePassphrase(string args)
+            => PassphraseSwitch.Replace(args, "$1$2***");
 
         /// <summary>
         /// Copies the content of one stream into another on a thread of its own.
