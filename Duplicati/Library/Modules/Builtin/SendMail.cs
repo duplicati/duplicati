@@ -73,6 +73,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private const string OPTION_BODY = "send-mail-body";
         /// <summary>
+        /// Option used to send the mail body as HTML
+        /// </summary>
+        private const string OPTION_BODY_HTML = "send-mail-body-html";
+        /// <summary>
         /// Option used to specify mail level
         /// </summary>
         private const string OPTION_SENDLEVEL = "send-mail-level";
@@ -156,6 +160,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private bool m_ignoreRevocationFailure;
         /// <summary>
+        /// Whether the body is sent as HTML
+        /// </summary>
+        private bool m_bodyHtml;
+        /// <summary>
         /// The mail recipient
         /// </summary>
         private string? m_to;
@@ -194,6 +202,7 @@ namespace Duplicati.Library.Modules.Builtin
             new CommandLineArgument(OPTION_SENDER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSenderShort, Strings.SendMail.OptionSenderLong, DEFAULT_SENDER),
             new CommandLineArgument(OPTION_SUBJECT, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSubjectShort, Strings.SendMail.OptionSubjectLong(OPTION_BODY), DEFAULT_SUBJECT),
             new CommandLineArgument(OPTION_BODY, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionBodyShort, Strings.SendMail.OptionBodyLong, DEFAULT_BODY),
+            new CommandLineArgument(OPTION_BODY_HTML, CommandLineArgument.ArgumentType.Boolean, Strings.SendMail.OptionBodyHtmlShort, Strings.SendMail.OptionBodyHtmlLong(OPTION_BODY), "false"),
             new CommandLineArgument(OPTION_SERVER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionServerShort, Strings.SendMail.OptionServerLong),
             new CommandLineArgument(OPTION_USERNAME, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionUsernameShort, Strings.SendMail.OptionUsernameLong),
             new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.Password, Strings.SendMail.OptionPasswordShort, Strings.SendMail.OptionPasswordLong),
@@ -248,9 +257,13 @@ namespace Duplicati.Library.Modules.Builtin
                 ? hashes.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
                 : null;
             m_ignoreRevocationFailure = commandlineOptions.TryGetValue(OPTION_IGNORE_REVOCATION_FAILURE, out var ignoreRevocation) && Utility.Utility.ParseBool(ignoreRevocation, true);
+            m_bodyHtml = commandlineOptions.TryGetValue(OPTION_BODY_HTML, out var bodyHtml) && Utility.Utility.ParseBool(bodyHtml, true);
 
             return true;
         }
+
+        /// <inheritdoc/>
+        protected override bool BodyIsHtml => m_bodyHtml;
 
         #endregion
 
@@ -290,7 +303,7 @@ namespace Duplicati.Library.Modules.Builtin
                 message.From.Add(mailbox);
 
             message.Subject = subject;
-            message.Body = new TextPart("plain") { Text = body, ContentTransferEncoding = ContentEncoding.EightBit };
+            message.Body = new TextPart(m_bodyHtml ? "html" : "plain") { Text = body, ContentTransferEncoding = ContentEncoding.EightBit };
 
             List<string>? servers = null;
             if (string.IsNullOrEmpty(m_server))

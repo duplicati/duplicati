@@ -249,6 +249,12 @@ namespace Duplicati.Library.Modules.Builtin
         protected abstract void SendMessage(string subject, string body);
 
         /// <summary>
+        /// Whether the message body is HTML. The values put into it, such as log lines and options,
+        /// are then escaped.
+        /// </summary>
+        protected virtual bool BodyIsHtml => false;
+
+        /// <summary>
         /// Redacts the paths in a text put into a report, unless paths are allowed in log messages
         /// </summary>
         /// <param name="text">The text to redact.</param>
@@ -656,7 +662,10 @@ namespace Duplicati.Library.Modules.Builtin
                 string Mark(string value)
                 {
                     // Only the values are redacted: the text of the template is written by the user
-                    values.Add(RedactPathsUnlessAllowed(value ?? ""));
+                    value = RedactPathsUnlessAllowed(value ?? "");
+                    if (!subjectline && BodyIsHtml)
+                        value = System.Net.WebUtility.HtmlEncode(value);
+                    values.Add(value);
                     return $"{VALUE_MARKER_START}{values.Count - 1}{VALUE_MARKER_END}";
                 }
 
@@ -712,7 +721,17 @@ namespace Duplicati.Library.Modules.Builtin
 
                 // A reduced report carries no file names, including the ones written in the template,
                 // as reduced reporting may be required by someone else than the author of the template
-                return m_reducedReporting ? RedactPathsUnlessAllowed(expanded) : expanded;
+                if (!m_reducedReporting)
+                    return expanded;
+
+                // The tags of an HTML body are not text, and their slashes would be taken for paths,
+                // so only the text between them is redacted. The values are escaped, so a tag is
+                // always from the template
+                if (!subjectline && BodyIsHtml)
+                    return string.Concat(Regex.Split(expanded, "(<[^<>]*>)")
+                        .Select((part, index) => index % 2 == 1 ? part : RedactPathsUnlessAllowed(part)));
+
+                return RedactPathsUnlessAllowed(expanded);
             }
         }
 

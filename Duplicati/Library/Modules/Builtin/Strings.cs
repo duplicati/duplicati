@@ -139,6 +139,8 @@ In the message body, certain tokens are replaced:
 
 All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
         public static string OptionBodyShort { get { return LC.L(@"The message body"); } }
+        public static string OptionBodyHtmlLong(string optionname) { return LC.L(@"Use this option to send the message body given with --{0} as HTML instead of plain text. The values put into the body, such as %RESULT%, are escaped as HTML. The result keeps its line breaks only inside an element such as <pre>, for example: <pre>%RESULT%</pre>", optionname); }
+        public static string OptionBodyHtmlShort { get { return LC.L(@"Send the message body as HTML"); } }
         public static string OptionPasswordLong { get { return LC.L(@"Use this option to set the password used to authenticate with the SMTP server if required."); } }
         public static string OptionPasswordShort { get { return LC.L(@"SMTP Password"); } }
         public static string OptionRecipientLong { get { return LC.L(@"This setting is required if mail should be sent, all other settings have default values. You can supply multiple email addresses separated with commas, and you can use the normal address format as specified by RFC2822 section 3.4.
