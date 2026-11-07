@@ -296,6 +296,139 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
+        /// Backs up a folder with report.txt in folder a and in folder b, and notes.txt, twice, with all three
+        /// files changed in between, so each path is in two versions.
+        /// </summary>
+        /// <returns>The paths of the two report files</returns>
+        private async Task<(string InA, string InB)> BackUpTwoVersionsOfTwoReportsAsync(Dictionary<string, string> options)
+        {
+            var inA = Path.Combine(this.DATAFOLDER, "a", "report.txt");
+            var inB = Path.Combine(this.DATAFOLDER, "b", "report.txt");
+            var notes = Path.Combine(this.DATAFOLDER, "notes.txt");
+            Directory.CreateDirectory(Path.GetDirectoryName(inA)!);
+            Directory.CreateDirectory(Path.GetDirectoryName(inB)!);
+
+            for (var i = 0; i < 2; i++)
+            {
+                foreach (var file in new[] { inA, inB, notes })
+                    File.WriteAllText(file, $"{file} {i}");
+                using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                    TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+                // Fileset timestamps have a resolution of one second
+                if (i == 0)
+                    await Task.Delay(1500);
+            }
+
+            return (inA, inB);
+        }
+
+        /// <summary>
+        /// Each search row carries the time of the version it is in, the same time list-filesets reports
+        /// for that version. The time used to be the Unix seconds of the fileset read as ticks, a date in year 1.
+        /// </summary>
+        [Test]
+        public async Task SearchEntries_TimeIsTheTimeOfTheVersionAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions) { ["all-versions"] = "true" };
+            var (inA, _) = await BackUpTwoVersionsOfTwoReportsAsync(options);
+
+            using var c = new Controller("file://" + this.TARGETFOLDER, options, null);
+            var filesetTimes = (await c.ListFilesetsAsync()).Filesets.ToDictionary(f => f.Version, f => f.Time);
+            Assert.That(filesetTimes, Has.Count.EqualTo(2));
+            Assert.That(filesetTimes[0], Is.GreaterThan(filesetTimes[1]), "Version 0 is the newest");
+
+            var rows = (await c.SearchEntriesAsync(null, new FilterExpression("*report.txt", true), false, 0, 0, false, false)).FileVersions.Items.ToArray();
+            Assert.That(rows, Has.Length.EqualTo(4));
+            Assert.That(rows.Where(r => r.Path == inA).Select(r => r.Version), Is.EquivalentTo(new long[] { 0, 1 }), "The same path is in both versions");
+
+            foreach (var row in rows)
+            {
+                Assert.That(row.Time.Kind, Is.EqualTo(DateTimeKind.Utc), row.Path);
+                Assert.That(row.Time.ToUniversalTime(), Is.EqualTo(filesetTimes[row.Version].ToUniversalTime()), $"{row.Path} in version {row.Version}");
+                Assert.That(row.Time.Ticks % TimeSpan.TicksPerSecond, Is.EqualTo(0), "Fileset times are whole seconds");
+            }
+        }
+
+        /// <summary>
+        /// The first page of a search reports the total number of matches and pages, also when the page is full.
+        /// Later pages report -1 for both, as the total is only counted for the first page.
+        /// </summary>
+        [Test]
+        [TestCase(1, 4, 4)]
+        [TestCase(3, 4, 2)]
+        [TestCase(4, 4, 1)]
+        [TestCase(5, 4, 1)]
+        public async Task SearchEntries_FirstPageReportsTheTotalAsync(int pageSize, long expectedTotal, int expectedPages)
+        {
+            var options = new Dictionary<string, string>(this.TestOptions) { ["all-versions"] = "true" };
+            await BackUpTwoVersionsOfTwoReportsAsync(options);
+            var filter = new FilterExpression("*report.txt", true);
+
+            using var c = new Controller("file://" + this.TARGETFOLDER, options, null);
+            var all = (await c.SearchEntriesAsync(null, filter, false, 0, 0, false, false)).FileVersions;
+            Assert.That(all.TotalCount, Is.EqualTo(4), "A search without a limit returns everything");
+            Assert.That(all.TotalPages, Is.EqualTo(1), "Everything is on one page");
+            Assert.That(all.Items.Count(), Is.EqualTo(4));
+
+            var seen = new List<(string, long)>();
+            for (var page = 0; page < expectedPages; page++)
+            {
+                var result = (await c.SearchEntriesAsync(null, filter, false, page * pageSize, pageSize, false, false)).FileVersions;
+                Assert.That(result.Page, Is.EqualTo(page));
+                Assert.That(result.PageSize, Is.EqualTo(pageSize));
+                if (page == 0)
+                {
+                    Assert.That(result.TotalCount, Is.EqualTo(expectedTotal), "Total on the first page");
+                    Assert.That(result.TotalPages, Is.EqualTo(expectedPages), "Pages on the first page");
+                }
+                else
+                {
+                    Assert.That(result.TotalCount, Is.EqualTo(-1), "Later pages do not count the total");
+                    Assert.That(result.TotalPages, Is.EqualTo(-1));
+                }
+                seen.AddRange(result.Items.Select(r => (r.Path, r.Version)));
+            }
+
+            Assert.That(seen, Is.EquivalentTo(all.Items.Select(r => (r.Path, r.Version))), "The pages together hold every match once");
+        }
+
+        /// <summary>
+        /// The total of the first page is counted with the same filter, folder scope and version limit as the rows.
+        /// </summary>
+        [Test]
+        public async Task SearchEntries_FirstPageTotalUsesTheFilterFolderAndVersionsAsync()
+        {
+            var allVersions = new Dictionary<string, string>(this.TestOptions) { ["all-versions"] = "true" };
+            var (inA, _) = await BackUpTwoVersionsOfTwoReportsAsync(allVersions);
+            var reports = new FilterExpression("*report.txt", true);
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, allVersions, null))
+            {
+                var everything = (await c.SearchEntriesAsync(null, new FilterExpression("*.txt", true), false, 0, 1, false, false)).FileVersions;
+                Assert.That(everything.TotalCount, Is.EqualTo(6), "Three files in two versions");
+
+                var inFolder = (await c.SearchEntriesAsync(new[] { Path.GetDirectoryName(inA)! }, reports, false, 0, 1, false, false)).FileVersions;
+                Assert.That(inFolder.TotalCount, Is.EqualTo(2), "One file in folder a, in two versions");
+                Assert.That(inFolder.TotalPages, Is.EqualTo(2));
+
+                var none = (await c.SearchEntriesAsync(null, new FilterExpression("*missing.txt", true), false, 0, 1, false, false)).FileVersions;
+                Assert.That(none.TotalCount, Is.EqualTo(0));
+                Assert.That(none.TotalPages, Is.EqualTo(0));
+                Assert.That(none.Items, Is.Empty);
+            }
+
+            var latestOnly = new Dictionary<string, string>(this.TestOptions) { ["version"] = "0" };
+            using (var c = new Controller("file://" + this.TARGETFOLDER, latestOnly, null))
+            {
+                var latest = (await c.SearchEntriesAsync(null, reports, false, 0, 1, false, false)).FileVersions;
+                Assert.That(latest.TotalCount, Is.EqualTo(2), "Two reports in the latest version");
+                Assert.That(latest.TotalPages, Is.EqualTo(2));
+                Assert.That(latest.Items.Single().Version, Is.EqualTo(0));
+            }
+        }
+
+        /// <summary>
         /// A search limited to folders covers those folders and everything below them,
         /// and nothing beside them: "f10" is not below "f1".
         /// </summary>
