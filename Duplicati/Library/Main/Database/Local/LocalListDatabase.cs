@@ -1820,7 +1820,8 @@ namespace Duplicati.Library.Main.Database.Local
             {
                 var id = rd.ConvertValueToInt64(0, -1);
                 var version = versionMap[rd.ConvertValueToInt64(1, -1)];
-                var time = new DateTime(rd.ConvertValueToInt64(2, 0), DateTimeKind.Utc);
+                // Fileset timestamps are stored as Unix seconds, unlike the ticks of Lastmodified below
+                var time = ParseFromEpochSeconds(rd.ConvertValueToInt64(2, 0));
                 var path = rd.ConvertValueToString(3) ?? string.Empty;
                 var size = rd.ConvertValueToInt64(4, 0);
                 var isDirectory = rd.GetInt32(5) != 0;
@@ -1838,9 +1839,10 @@ namespace Duplicati.Library.Main.Database.Local
                 // Only calculate the total for the first query
                 totalCount = -1;
             }
-            else if (results.Count <= limit)
+            else if (results.Count < limit)
             {
-                // If we have all results, we already know the total
+                // A page that is not full holds all the results, so we already know the total.
+                // A full page may have more results after it, so those are counted below
                 totalCount = results.Count;
             }
             else
@@ -1873,7 +1875,11 @@ namespace Duplicati.Library.Main.Database.Local
             }
 
             var intLimit = limit > int.MaxValue ? int.MaxValue : (int)limit;
-            var totalPages = (int)((totalCount + limit - 1) / limit);
+            // The pages are unknown when the total is, and the limit can be long.MaxValue,
+            // so the count is not rounded up by adding the limit to it
+            var totalPages = totalCount < 0 ? -1
+                : totalCount == 0 ? 0
+                : (int)Math.Min((totalCount - 1) / limit + 1, int.MaxValue);
 
             return new PaginatedResults<ISearchFileVersion>(
                 (int)(offset / limit),
