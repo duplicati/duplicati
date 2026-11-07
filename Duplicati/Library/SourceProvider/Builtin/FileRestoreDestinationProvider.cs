@@ -156,7 +156,8 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
         {
             if (!allowRestoreOutsideTargetDirectory && !string.IsNullOrWhiteSpace(TargetDestination))
             {
-                var fullPath = Path.GetFullPath(path);
+                // A folder link's path ends in a separator, which would make the link its own parent
+                var fullPath = Path.GetFullPath(targetpath);
                 var parent = Path.GetDirectoryName(fullPath);
                 if (!string.IsNullOrEmpty(parent))
                 {
