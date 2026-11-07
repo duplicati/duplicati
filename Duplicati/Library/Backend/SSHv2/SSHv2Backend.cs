@@ -333,7 +333,7 @@ namespace Duplicati.Library.Backend
         {
             var con = await CreateConnection(cancelToken).ConfigureAwait(false);
             await SetWorkingDirectory(con, cancelToken).ConfigureAwait(false);
-            await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => con.RenameFileAsync(source, target, ct).ConfigureAwait(false));
+            await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => con.RenameFileAsync(source, target, ct)).ConfigureAwait(false);
         }
 
         #endregion
