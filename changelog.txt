@@ -1,3 +1,190 @@
+2026-11-07 - 2.4.1.101_canary_2026-11-07
+==========
+This release is a canary release intended to be used for testing.
+
+# Automatic updates are back
+
+The automatic updater from earlier Duplicati versions has been re-introduced, now built for the OS and CPU specific .NET builds. When an update is available, it can be installed from the new UI.
+
+The install is handled by a small helper executable. The running instance starts the helper and exits, and the helper verifies the signed package, installs it with the method for the system (MSI, macOS pkg or DMG, deb, rpm, AppImage or zip), removes the old version where relevant, and starts the new one. Installs that need administrator permissions are elevated as required. Docker, Synology and QNAP installs cannot be updated this way and do not show the update button.
+
+This is the first version of the new updater, so expect rough edges. When Duplicati runs as a service with a separate TrayIcon, the TrayIcon is stopped during the update so no files are locked, but it is not started again for the user. The service itself is restarted.
+
+# Restore a disk image to an image file
+
+A full disk backup can now be restored into a disk image file instead of a physical disk, for use with a virtual machine or other disk tools, including mounting it in the OS. The image can be written as a raw image, or as a dynamic VHD or VHDX file. With the default `--diskimage-restore-image-format=auto`, the format is chosen from the file extension. Raw images are created as sparse files unless `--diskimage-restore-image-preallocate` is set.
+
+# Enable and disable backups
+
+Each backup now has an enabled flag. A disabled backup keeps its schedule but does not run on it. The new UI shows the state and can toggle it. This adds a column to the server database, so going back to an earlier version requires downgrading the server database with `duplicati-database-tool`.
+
+# Scheduler and time zones
+
+- The scheduler documented that it used the local time zone, but used UTC unless a time zone had been chosen, which only the old UI offered. The local time zone is now the default, so schedules no longer drift by an hour across daylight saving changes. The new UI can now choose the time zone for the scheduler.
+- A schedule that landed on an excluded weekday was moved a day without taking daylight saving into account.
+- Legacy time zone names such as `CET`, `EST` or `US/Eastern` are missing on newer distributions, including Debian 13 used by the Docker image, unless `tzdata-legacy` is installed. `CET` stopped the server, and `EST` and `MST` matched unrelated zones by part of their display name, so schedules ran hours off. The legacy names are now resolved to the matching zones, and display names are only matched as whole words, thanks @JamBalaya56562.
+- A scheduled run that was queued while the server was paused, as it is for a while after start, still ran after its schedule was removed. It is now skipped, thanks @JamBalaya56562.
+- `--retention-policy` deleted a weekly or daily backup that started a few seconds later than the previous one. The intervals now have the same time tolerance as `--keep-time`, 1% of the interval and at most one hour, which `--disable-time-tolerance` turns off, thanks @JamBalaya56562.
+
+# Destination folders that disappear
+
+When the destination folder disappeared after it was listed but before the first upload, for example because a USB drive was unplugged or a network share dropped, the folder was created again and the backup continued into a new, empty folder, possibly on the disk the drive was mounted on. Once the drive was back, the destination was missing the files of that backup. A folder that has been listed with files in it is no longer created again. The remote synchronization tool had the same problem, and it is fixed there as well, thanks @JamBalaya56562.
+
+# FTP and FTPS
+
+Some FTPS servers, such as vsftpd with `require_ssl_reuse` and FileZilla Server 1.x, require each data connection to resume the TLS session of its control connection. The .NET TLS implementation cannot do that reliably, so transfers failed with only `Status is Failed` and left empty files on the server. The new `--ftp-tls-implementation` option (`--aftp-tls-implementation` for aftp) chooses the TLS implementation. With the default `Auto`, Duplicati switches to Bouncy Castle when the server refuses a data connection for this reason, and tries again. A failed upload now includes the server's last reply, thanks @JamBalaya56562.
+
+The FTP backend also did not read the server's reply after a download, so a download the server reported as failed was not noticed, thanks @JamBalaya56562.
+
+# Certificate validation in reports
+
+The XMPP report accepted any server certificate, and sent the login to servers with self-signed or expired certificates without a warning. The certificate is now validated by default. For servers with a self-signed certificate, use the new `--send-xmpp-accept-any-ssl-certificate`, `--send-xmpp-accept-specified-ssl-hash` or `--send-xmpp-ignore-revocation-failure` options. A setup that sends to such a server stops getting reports until one of these is set, thanks @JamBalaya56562.
+
+The mail report had no certificate options, which caused failures where the revocation check of the mail server's certificate could not complete, as reported on several Macs. The new `--send-mail-accept-any-ssl-certificate`, `--send-mail-accept-specified-ssl-hash` and `--send-mail-ignore-revocation-failure` options work as the ones for the HTTP report. Without them, the certificate is validated as before, thanks @JamBalaya56562.
+
+# Restore fixes
+
+- A restore of many small files kept a timer and a callback for every block it requested, so memory grew with the number of files, up to many GB for backups with millions of files. Memory use is now flat while files are restored, thanks @JamBalaya56562.
+- With `--restore-with-local-blocks`, an original file that was locked by another program made the restore fail. The blocks that cannot be read from the original now come from the backup, thanks @JamBalaya56562.
+- A restore without a local database failed asking for a repair when a backup uploaded files at the same time, thanks @JamBalaya56562.
+- The restore file list showed the files of every version when `all-versions` was set on the backup or in the server settings, so a file missing from the chosen version could be selected and was then silently left out, thanks @JamBalaya56562.
+- A folder link that pointed one level outside the restore folder was created, while the same link to a file was skipped, thanks @JamBalaya56562.
+- A restored symbolic link only got its owner back when both `--restore-symlink-metadata` and `--restore-permissions` were set. `--restore-permissions` alone now restores the owner, without changing the target, thanks @JamBalaya56562.
+- `RestoredSymlinks` in the restore results was always 0. It now counts the restored links, thanks @JamBalaya56562.
+- The recovery tool restore failed for every file after the system ran out of open files. It now closes some of the open archives and continues, thanks @JamBalaya56562.
+
+# Database and remote volume fixes
+
+- `purge-broken-files` could fail on a timestamp clash after it had already removed blocks, leaving the database in a state where backup, repair and purge all failed until the database was recreated. Purged versions can now be moved to a free second before the next version, and `purge-broken-files` checks that every version can be rewritten before it changes anything, thanks @JamBalaya56562.
+- A retried dlist upload could take the name of another version, which could remove a version from the destination. The retry now skips names that are already in use, thanks @JamBalaya56562.
+- A compact that was stopped mid-upload left records that a later volume with the same id inherited. `test` then reported missing blocks, and after a recreate a restore could fail, thanks @JamBalaya56562.
+- A standalone `compact` after an operation that was stopped mid-upload failed in strict mode until a backup or repair had run. It now cleans up as a backup does, thanks @JamBalaya56562.
+- `test` failed on a block volume without blocks, which a backup can upload after `purge-broken-files`, thanks @JamBalaya56562.
+- With the USN journal or change tracking, carrying the files of the previous version over took time that grew with the square of the file count. With 20000 files, this went from 32 seconds to 0.3 seconds, thanks @JamBalaya56562.
+
+# Storage providers
+
+- Google Workspace downloads can now resume, more back-off responses are handled, and repeated attempts have a timeout. Chat files that are documents are handled better, and Drive revisions that the admin account cannot reach are skipped.
+- The Microsoft 365 Chat API was called with parameters it does not support.
+- Jottacloud now waits as instructed when it is rate limited.
+- The Duplicati backend now reports when the key is read-only, with better messages than "AccessDenied".
+- pCloud, rclone, Storj, COS and WebDAV now return file times in UTC, and the remote synchronization compares times with their time zone in mind.
+- The Minio S3 client ignored `--s3-list-api-version`, thanks @JamBalaya56562.
+- An SFTP rename was not awaited, so it could return before it was done and errors were lost, thanks @JamBalaya56562.
+
+# Platform fixes
+
+- On QNAP, shares are now bind-mounted into the environment Duplicati runs in, so they can be backed up, and are shown in the source picker.
+- On distributions with SELinux enforcing, the service installed by the rpm could not connect to anything. The executables are now labeled as binaries, thanks @JamBalaya56562.
+- A backup failed when another program was creating a shadow copy at the same time. The snapshot is now retried until `--vss-timeout`, thanks @JamBalaya56562.
+- Jobs saved with `--snapshot-provider=Wmic` from the 2.4 stable releases warned on every run and used the Native provider. `Wmic` now selects the WMI provider, thanks @JamBalaya56562.
+- A Windows update could roll back and leave Duplicati uninstalled when the preload settings were in a folder that failed the security check. The service installer commands no longer crash on this, thanks @JamBalaya56562.
+- A data folder that is a symbolic link was rejected with a message about its permissions, and `secure-datafolder` changed the folder it pointed to. The message now says that links are not accepted, thanks @JamBalaya56562.
+- When the permissions of a file could not be read, the file was stored without its timestamps and attributes. The failure is now a warning, and the timestamps are kept, thanks @JamBalaya56562.
+- The new `--force-locale` option sets the language of the server and TrayIcon, for Windows where `LC_LANG` is not read.
+
+# Server and user interface
+
+- Changing the password now resets the authentication, so existing connections are dropped and existing tokens stop working.
+- The file tree now reports the kind of each item, which the new UI uses to show overlay icons.
+- Search failed when running in an isolated process.
+- The old UI wrote the results of the last run back when a backup was saved while it ran, so the backup looked as if it had not run, thanks @JamBalaya56562.
+- The old UI could not keep an IPv6 server address in a destination URL, thanks @JamBalaya56562.
+- Backup reports now include the executable that started the operation.
+- SQLite was updated to 3.54.1.
+
+## Detailed list of changes
+
+- Re-introduced automatic updating with a helper that installs the new version
+- Added restoring a disk image backup to a raw, VHD or VHDX image file
+- Added an enabled flag to backups
+- Fixed the scheduler using UTC instead of the local time zone by default
+- Fixed the scheduler not handling daylight saving when skipping an excluded weekday
+- Fixed legacy time zone names not resolving when they are not installed, thanks @JamBalaya56562
+- Fixed a queued scheduled run starting after its schedule was removed, thanks @JamBalaya56562
+- Added a time tolerance to the retention policy intervals, thanks @JamBalaya56562
+- Fixed a destination folder that disappears during a backup being created again, thanks @JamBalaya56562
+- Fixed a synchronization destination that disappears being created again, thanks @JamBalaya56562
+- Added `--ftp-tls-implementation` and Bouncy Castle support for FTPS servers that require TLS session resumption, thanks @JamBalaya56562
+- Fixed the FTP backend not reading the server's reply after a download, thanks @JamBalaya56562
+- Added certificate validation and certificate options to the XMPP report, thanks @JamBalaya56562
+- Added certificate options to the mail report, thanks @JamBalaya56562
+- Fixed a restore of many small files keeping memory for every block, thanks @JamBalaya56562
+- Fixed a restore failing when the original file is locked with `--restore-with-local-blocks`, thanks @JamBalaya56562
+- Fixed a restore without a database failing when a backup uploads at the same time, thanks @JamBalaya56562
+- Fixed the file list of one version showing all versions when `all-versions` is set, thanks @JamBalaya56562
+- Fixed a folder link outside the restore folder being created, thanks @JamBalaya56562
+- Fixed the owner of symbolic links not being restored with `--restore-permissions` alone, thanks @JamBalaya56562
+- Fixed restored symbolic links not being counted in `RestoredSymlinks`, thanks @JamBalaya56562
+- Updated the `--restore-symlink-metadata` help text, thanks @JamBalaya56562
+- Fixed the recovery tool failing when the system runs out of open files, thanks @JamBalaya56562
+- Fixed `purge-broken-files` breaking the database on a timestamp clash, thanks @JamBalaya56562
+- Fixed a retried dlist upload taking a name that is in use, thanks @JamBalaya56562
+- Fixed duplicate block records of cleaned up volumes being inherited by a later volume, thanks @JamBalaya56562
+- Fixed compact failing after an operation stopped mid-upload, thanks @JamBalaya56562
+- Fixed `test` failing on a block volume without blocks, thanks @JamBalaya56562
+- Improved the speed of carrying files over with the USN journal or change tracking, thanks @JamBalaya56562
+- Improved Google Workspace reads with resuming downloads and more back-off handling
+- Fixed the Microsoft 365 Chat API parameters
+- Added rate limit support for Jottacloud
+- Improved the error messages from the Duplicati backend
+- Changed pCloud, rclone, Storj, COS and WebDAV to return UTC times, and the remote synchronization to compare times with their kind
+- Fixed the Minio S3 client ignoring `--s3-list-api-version`, thanks @JamBalaya56562
+- Fixed the SFTP rename not being awaited, thanks @JamBalaya56562
+- Improved QNAP share access with automatic bind mounts and a source picker entry
+- Fixed the rpm executables not being labeled as binaries for SELinux, thanks @JamBalaya56562
+- Added retrying a snapshot while another shadow copy is being created, thanks @JamBalaya56562
+- Fixed `--snapshot-provider=Wmic` no longer being accepted, thanks @JamBalaya56562
+- Fixed the preload check crashing the Windows service installer, thanks @JamBalaya56562
+- Improved the message for a data folder that is a symbolic link, thanks @JamBalaya56562
+- Fixed the timestamps of a file being lost when its permissions cannot be read, thanks @JamBalaya56562
+- Added `--force-locale` for the server and TrayIcon
+- Changed a password change to reset the authentication
+- Added the kind of each item to the file tree
+- Fixed search failing in an isolated process
+- Fixed the old UI overwriting the results of the last run when saving a backup, thanks @JamBalaya56562
+- Fixed the old UI not keeping an IPv6 server address, thanks @JamBalaya56562
+- Fixed a duplicate parameter in the old UI that stopped localization extraction, thanks @JamBalaya56562
+- Added the entry assembly to the backup reports
+- Updated SQLite to 3.54.1
+- Listed BouncyCastle in the third-party licenses, thanks @JamBalaya56562
+- Fixed the backend queue runner warning when a backend is slow to disconnect, thanks @JamBalaya56562
+- Fixed the backend tester leaving test files of failed attempts, thanks @JamBalaya56562
+- Added a generic module helper for tests and instrumentation
+- Fixed flaky time zone, Storj and Playwright tests, thanks @JamBalaya56562
+
+## Updates to ngclient
+
+- Added installing updates from the UI when the server supports it
+- Added restoring a disk to a disk image file
+- Added showing and toggling whether a backup is enabled
+- Added choosing the time zone for the scheduler
+- Added overlay icons in the file tree based on the kind of item
+- Added a button to maximize the file tree
+- Added Shift-click range selection to the file picker, thanks @JamBalaya56562
+- Added the last modified time to the restore tree
+- Added browsing older job logs, thanks @JamBalaya56562
+- Added saved destinations as a choice for direct restore from backup files, thanks @JamBalaya56562
+- Changed a logout caused by revoked tokens to be handled
+- Updated the home page detailed view
+- Fixed "uploading" being shown while processing
+- Fixed the test restore results not being shown on the log page
+- Fixed IPv6 addresses not being bracketed in destination URLs, thanks @JamBalaya56562
+- Fixed the selected file export encryption options being ignored, thanks @JamBalaya56562
+- Fixed advanced option save failures and duplicate writes, thanks @JamBalaya56562
+- Fixed duplicate configuration import preparation and late responses, thanks @JamBalaya56562
+- Fixed the configuration import using bytes from a previously selected file, thanks @JamBalaya56562
+- Fixed failed configuration listings being shown as empty, thanks @JamBalaya56562
+- Fixed plain remote operation log data being lost, thanks @JamBalaya56562
+- Fixed command output polling overlapping, thanks @JamBalaya56562
+- Fixed malformed saved browser preferences breaking the UI, thanks @JamBalaya56562
+- Fixed long source paths not wrapping, thanks @JamBalaya56562
+- Fixed restore offering advanced options that the UI handles itself
+- Fixed some text not being selectable
+- Fixed searching in the language selector
+- Fixed the logo
+- Updated to Node.js 26 LTS and unified the Playwright configuration, thanks @JamBalaya56562
+
 2026-10-31 - 2.4.1.100_canary_2026-10-31
 ==========
 This release is a canary release intended to be used for testing.
