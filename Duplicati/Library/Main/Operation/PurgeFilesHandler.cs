@@ -177,7 +177,7 @@ namespace Duplicati.Library.Main.Operation
                     else
                     {
                         using (var tf = new TempFile())
-                        using (var vol = new FilesetVolumeWriter(m_options, ts))
+                        using (var vol = new FilesetVolumeWriter(m_options, ts) { IsRemoteNameTaken = FilesetVolumeWriter.NameTakenIn(db) })
                         {
                             var isOriginalFilesetFullBackup = await db
                                 .IsFilesetFullBackupAsync(tsOriginal, m_result.TaskControl.ProgressToken)
