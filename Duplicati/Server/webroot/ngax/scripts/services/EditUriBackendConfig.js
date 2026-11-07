@@ -26,9 +26,14 @@ backupApp.service('EditUriBackendConfig', function(AppService, AppUtils, SystemI
         var opts = {};
         self.merge_in_advanced_options(scope, opts, true);
 
+        // An IPv6 address goes in brackets, so its colons are not read as a port
+        var server = scope.Server || '';
+        if (server.indexOf(':') >= 0 && /^[0-9a-fA-F:.]+$/.test(server))
+            server = '[' + server + ']';
+
         var url = AppUtils.format('{0}://{1}{2}/{3}{4}',
             scope.Backend.Key,
-            scope.Server || '',
+            server,
             (scope.Port || '') == '' ? '' : ':' + scope.Port,
             scope.Path || '',
             AppUtils.encodeDictAsUrl(opts)
