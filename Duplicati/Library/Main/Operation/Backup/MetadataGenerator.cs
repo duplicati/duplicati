@@ -57,7 +57,18 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                 if (!options.SkipMetadata)
                 {
-                    metadata = await entry.GetMinorMetadata(token).ConfigureAwait(false);
+                    // The minor metadata holds the permissions, which some file systems cannot give;
+                    // that must not cost the timestamps and attributes that are added below
+                    try
+                    {
+                        metadata = await entry.GetMinorMetadata(token).ConfigureAwait(false);
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException)
+                    {
+                        LogExceptionHelper.LogCommonWarning(ex, METALOGTAG, "MinorMetadataReadFailed", entry.Path, "Failed to read the permissions and extended attributes of \"{0}\", storing the timestamps and attributes only");
+                        metadata = null;
+                    }
+
                     if (metadata == null)
                         metadata = new Dictionary<string, string>();
 
