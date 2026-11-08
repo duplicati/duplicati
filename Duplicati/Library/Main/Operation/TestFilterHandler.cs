@@ -47,6 +47,8 @@ namespace Duplicati.Library.Main.Operation
         public async Task RunAsync(string[] sources, Library.Utility.IFilter filter)
         {
             var stopToken = m_result.TaskControl.ProgressToken;
+            var skipModifiedBefore = m_options.SkipFilesModifiedBefore;
+            var skipModifiedAfter = m_options.SkipFilesModifiedAfter;
 
             using (var provider = await Common.SourceProviderFactory.GetSourceProviderAsync(sources, m_options, stopToken).ConfigureAwait(false))
             {
@@ -120,7 +122,24 @@ namespace Duplicati.Library.Main.Operation
                                     Logging.Log.WriteVerboseMessage(LOGTAG, "SizeReadFailed", "Failed to read length of file {0}: {1}", entry.Path, ex.Message);
                                 }
 
-                                if (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || size < m_options.SkipFilesLargerThan)
+                                var lastWrite = new DateTime(0, DateTimeKind.Utc);
+                                try
+                                {
+                                    lastWrite = entry.LastModificationUtc;
+                                }
+                                catch (Exception ex)
+                                {
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "TimestampReadFailed", "Failed to read timestamp of file {0}: {1}", entry.Path, ex.Message);
+                                }
+
+                                // As the backup does, a file without a modification time is kept
+                                var skippedByTime = lastWrite.Ticks != 0
+                                    && ((skipModifiedBefore.HasValue && lastWrite < skipModifiedBefore.Value)
+                                        || (skipModifiedAfter.HasValue && lastWrite > skipModifiedAfter.Value));
+
+                                if (skippedByTime)
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "ExcludeFileByModifiedTime", "Excluding file due to modification time: {0} ({1})", entry.Path, lastWrite.ToLocalTime());
+                                else if (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || size < m_options.SkipFilesLargerThan)
                                     Logging.Log.WriteVerboseMessage(LOGTAG, "IncludeFile", "Including file: {0} ({1})", entry.Path, size < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));
                                 else
                                     Logging.Log.WriteVerboseMessage(LOGTAG, "ExcludeLargeFile", "Excluding file due to size: {0} ({1})", entry.Path, size < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));

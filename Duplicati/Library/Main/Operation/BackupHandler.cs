@@ -134,8 +134,14 @@ namespace Duplicati.Library.Main.Operation
             // is not async and shouldn't be executing "heavy" code, such as
             // database queries.
             var journalData = m_database.GetChangeJournalDataAsync(lastfilesetid, m_taskReader.ProgressToken).ToBlockingEnumerable();
+            // The journal only lists the changed files. The time limits are compared as points in time,
+            // so a limit given as an interval moves with every run and the files have to be scanned again,
+            // as a file can cross it without being changed
+            var timeLimits = new[] { ("skip-files-modified-before", m_options.SkipFilesModifiedBefore), ("skip-files-modified-after", m_options.SkipFilesModifiedAfter) }
+                .Where(x => x.Item2.HasValue)
+                .Select(x => $"{x.Item1}={x.Item2!.Value.Ticks}");
             var service = new UsnJournalService(fileProvider.SnapshotService, filter, m_options.FileAttributeFilter, m_options.SkipFilesLargerThan,
-                journalData, cancellationTokenSource.Token);
+                journalData, cancellationTokenSource.Token, timeLimits);
 
             foreach (var volumeData in service.VolumeDataList)
             {
@@ -427,6 +433,10 @@ namespace Duplicati.Library.Main.Operation
             // neither honored nor stored
             if (m_options.ChangedFilelist is { Length: > 0 })
                 throw new UserInformationException("The --changed-files option cannot be combined with a source that tracks its own changes.", "ChangedFilesWithChangeTrackingSource");
+
+            // The provider only enumerates what changed, and a file can cross a moving limit without being changed
+            if (m_options.HasMovingModifiedTimeLimit)
+                throw new UserInformationException("A modification time limit given relative to now, such as --skip-files-modified-after=1W, cannot be combined with a source that tracks its own changes. Give the limit as a date instead.", "MovingTimeLimitWithChangeTrackingSource");
 
             await coordinator.LoadStateAsync(m_database, lastfilesetid, m_taskReader.ProgressToken).ConfigureAwait(false);
             return coordinator;
