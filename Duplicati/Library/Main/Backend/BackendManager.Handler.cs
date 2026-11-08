@@ -196,7 +196,7 @@ partial class BackendManager
 
             // TODO Currently, only the restore process uses parallel downloads. If others need it as well, maybe use another option.
             maxParallelDownloads = Math.Max(1, context.Options.RestoreVolumeDownloaders);
-            maxParallelUploads = Math.Max(1, context.Options.AsynchronousConcurrentUploadLimit);
+            maxParallelUploads = GetMaxParallelUploads(context.Options.AsynchronousConcurrentUploadLimit);
             maxRetries = context.Options.NumberOfRetries;
             retryDelay = context.Options.RetryDelay;
             retryWithExponentialBackoff = context.Options.RetryWithExponentialBackoff;
@@ -258,6 +258,14 @@ partial class BackendManager
             await ReclaimCompletedTasksAsync(activeUploads);
             await ReclaimCompletedTasksAsync(activeDownloads);
         }
+
+        /// <summary>
+        /// Gets the number of uploads allowed at once; zero means no limit, as the option's help says
+        /// </summary>
+        /// <param name="limit">The configured upload limit</param>
+        /// <returns>The number of uploads allowed at once</returns>
+        private static int GetMaxParallelUploads(int limit)
+            => limit == 0 ? int.MaxValue : Math.Max(1, limit);
 
         /// <summary>
         /// Ensures that there are at most N - 1 active tasks
