@@ -192,7 +192,8 @@ namespace Duplicati.Library.Main.Operation
         /// </summary>
         /// <returns>The list of paths</returns>
         public static HashSet<string> GetBlacklistedPaths(Options options)
-            => new HashSet<string>(Library.Utility.Utility.ClientFilenameStringComparer)
+        {
+            var paths = new HashSet<string>(Library.Utility.Utility.ClientFilenameStringComparer)
             {
                 //m_options.Dbpath,
                 options.Dbpath + "-journal",
@@ -200,6 +201,23 @@ namespace Duplicati.Library.Main.Operation
                 options.Dbpath + "-wal",
                 options.Dbpath + "-shm",
             };
+
+            // The log file is written while the backup runs (#1443). It is opened relative to the
+            // current folder, and the source paths are full paths
+            if (!string.IsNullOrWhiteSpace(options.Logfile))
+            {
+                try
+                {
+                    paths.Add(System.IO.Path.GetFullPath(options.Logfile));
+                }
+                catch (Exception ex) when (ex is ArgumentException || ex is NotSupportedException || ex is System.IO.PathTooLongException)
+                {
+                    // The log file could not be opened with that path either
+                }
+            }
+
+            return paths;
+        }
 
         /// <summary>
         /// Returns a list of paths that should be blacklisted
