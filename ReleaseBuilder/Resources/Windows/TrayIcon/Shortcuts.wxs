@@ -86,5 +86,30 @@
       </Directory>
     </DirectoryRef>
 
+    <!--
+      The startup entry for the current user only. With ALLUSERS=1 the
+      StartupFolder above is the folder shared by every user, so a per-user
+      entry is written to the Run key in HKCU instead. HKCU is the hive of the
+      user running the installer, so this is the user who installs Duplicati.
+      The second value is a marker that lets an upgrade keep the choice.
+    -->
+    <DirectoryRef Id="ProgramMenuFolder">
+      <Component Id="UserStartupRunEntry" Guid="5C0E7A51-3D6B-4F1E-9C2A-8B47D1E6F0A3">
+        <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run">
+          <RegistryValue
+                  Name="Duplicati"
+                  Value="&quot;[INSTALLLOCATION]Duplicati.GUI.TrayIcon.exe&quot;{ [NOHOSTEDSERVERARG]}"
+                  Type="string"
+                  KeyPath="yes" />
+        </RegistryKey>
+        <RegistryKey Root="HKCU" Key="Software\DuplicatiTeam\Duplicati\UserStartupShortcut">
+          <RegistryValue
+                  Name="Enabled"
+                  Value="1"
+                  Type="string" />
+        </RegistryKey>
+      </Component>
+    </DirectoryRef>
+
   </Fragment>
 </Wix>
