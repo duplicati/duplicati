@@ -209,6 +209,11 @@ namespace Duplicati.Library.Main
         public static readonly int DEFAULT_RESTORE_VOLUME_DOWNLOADERS = Math.Max(1, Environment.ProcessorCount / 2);
 
         /// <summary>
+        /// The default value for the number of volume downloaders during restore from a local folder
+        /// </summary>
+        private const int DEFAULT_LOCAL_RESTORE_VOLUME_DOWNLOADERS = 1;
+
+        /// <summary>
         /// The default value for the size of the channel buffers during restore
         /// </summary>
         public static readonly int DEFAULT_RESTORE_CHANNEL_BUFFER_SIZE = Environment.ProcessorCount;
@@ -2262,6 +2267,33 @@ namespace Duplicati.Library.Main
         /// Gets the number of volume downloaders to use in the restore process
         /// </summary>
         public int RestoreVolumeDownloaders => GetInt("restore-volume-downloaders", DEFAULT_RESTORE_VOLUME_DOWNLOADERS);
+
+        /// <summary>
+        /// Gets the number of volume downloaders to use when restoring from the given destination. A local
+        /// folder is often an external hard disk, which is slow when several volumes are read from it at once,
+        /// so it gets one downloader unless a number is given (#6829).
+        /// </summary>
+        /// <param name="backendUrl">The URL of the destination, or null if it is not known</param>
+        /// <returns>The number of volume downloaders</returns>
+        public int GetRestoreVolumeDownloaders(string? backendUrl)
+        {
+            if (backendUrl == null || m_options.ContainsKey("restore-volume-downloaders"))
+                return RestoreVolumeDownloaders;
+
+            string? scheme = null;
+            try
+            {
+                scheme = new Library.Utility.RelaxedUri(backendUrl).Scheme;
+            }
+            catch
+            {
+                // An invalid URL is reported when the backend is loaded
+            }
+
+            return string.Equals(scheme, "file", StringComparison.OrdinalIgnoreCase)
+                ? DEFAULT_LOCAL_RESTORE_VOLUME_DOWNLOADERS
+                : RestoreVolumeDownloaders;
+        }
 
         /// <summary>
         /// Gets the size of the buffer used for the restore channel
