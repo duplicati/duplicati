@@ -272,6 +272,7 @@
             <File Id="Duplicati.WindowsService.exe"
                   Name="Duplicati.WindowsService.exe"
                   KeyPath="yes"
+                  DefaultVersion="$(var.ProductVersion)"
                   Source="$(var.HarvestPath)Duplicati.WindowsService.exe" />
 
             <ServiceInstall Id="DuplicatiServiceInstall"
@@ -307,6 +308,7 @@
             <File Id="Duplicati.WindowsService.exe.FileOnly"
                   Name="Duplicati.WindowsService.exe"
                   KeyPath="yes"
+                  DefaultVersion="$(var.ProductVersion)"
                   Source="$(var.HarvestPath)Duplicati.WindowsService.exe" />
           </Component>
         </Directory>
