@@ -368,7 +368,7 @@ namespace Duplicati.Library.Main.Operation
                 m_options.HardlinkPolicy,
                 m_options.DisableBackupExclusionXattr,
                 m_options.IgnoreFilenames,
-                GetBlacklistedPaths(m_options),
+                GetBlacklistedPaths(m_options, fileRoots),
                 m_taskReader.ProgressToken).ConfigureAwait(false);
         }
 
@@ -436,7 +436,9 @@ namespace Duplicati.Library.Main.Operation
         /// Returns a list of paths that should be blacklisted
         /// </summary>
         /// <returns>The list of paths</returns>
-        public static HashSet<string> GetBlacklistedPaths(Options options)
+        /// <param name="options">The options to use</param>
+        /// <param name="sources">The source paths, used to find the other file systems below them</param>
+        public static HashSet<string> GetBlacklistedPaths(Options options, IEnumerable<string> sources)
         {
             var paths = new HashSet<string>(Library.Utility.Utility.ClientFilenameStringComparer)
             {
@@ -461,15 +463,15 @@ namespace Duplicati.Library.Main.Operation
                 }
             }
 
+            if (options.OneFileSystem)
+                foreach (var mountPoint in Backup.OtherFileSystems.GetMountPointsBelowSources(sources, Backup.OtherFileSystems.ListMountPoints()))
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "ExcludingOtherFileSystem", "Excluding folder on another file system: {0}", mountPoint);
+                    paths.Add(mountPoint);
+                }
+
             return paths;
         }
-
-        /// <summary>
-        /// Returns a list of paths that should be blacklisted
-        /// </summary>
-        /// <returns>The list of paths</returns>
-        public HashSet<string> GetBlacklistedPaths()
-            => GetBlacklistedPaths(m_options);
 
         private sealed record PreBackupVerifyResult(
             LocalBackupDatabase Database,
@@ -677,7 +679,7 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Performs the bulk of work by starting all relevant processes
         /// </summary>
-        private static async Task RunMainOperationAsync(Backup.Channels channels, ISourceProvider source, UsnJournalService journalService, Backup.ChangeTrackingCoordinator changeTracking, Backup.ChangeList changeList, string changeListToken, Backup.FailedPathRecorder failedPaths, Backup.BackupDatabase database, IBackendManager backendManager, Backup.BackupStatsCollector stats, Options options, IFilter filter, BackupResults result, ITaskReader taskreader, long filesetid, long lastfilesetid)
+        private static async Task RunMainOperationAsync(Backup.Channels channels, ISourceProvider source, UsnJournalService journalService, Backup.ChangeTrackingCoordinator changeTracking, Backup.ChangeList changeList, string changeListToken, Backup.FailedPathRecorder failedPaths, Backup.BackupDatabase database, IBackendManager backendManager, Backup.BackupStatsCollector stats, Options options, IFilter filter, HashSet<string> blacklistPaths, BackupResults result, ITaskReader taskreader, long filesetid, long lastfilesetid)
         {
             using (new Logging.Timer(LOGTAG, "BackupMainOperation", "BackupMainOperation"))
             {
@@ -695,7 +697,7 @@ namespace Duplicati.Library.Main.Operation
                                     options.HardlinkPolicy, options.DisableBackupExclusionXattr, options.ExcludeEmptyFolders,
                                     changeTracking != null && changeTracking.HasLoadedState ? changeTracking.IsIncrementallyEnumeratedFolder : null,
                                     options.IgnoreFilenames,
-                                    GetBlacklistedPaths(options), options.ChangedFilelist, changeList, taskreader,
+                                    blacklistPaths, options.ChangedFilelist, changeList, taskreader,
                                     () => result.PartialBackup = true, CancellationToken.None),
                                 Backup.FilePreFilterProcess.RunAsync(channels, options, stats, database, taskreader),
                                 Backup.MetadataPreProcess.RunAsync(channels, options, database, lastfilesetid, taskreader),
@@ -1065,6 +1067,7 @@ namespace Duplicati.Library.Main.Operation
             }
 
             Backup.Channels channels = new();
+            var blacklistPaths = GetBlacklistedPaths(m_options, sources);
 
             StopWhenUploadLimitIsReached();
 
@@ -1176,14 +1179,14 @@ namespace Duplicati.Library.Main.Operation
                             }
                             else
                             {
-                                parallelScanner = Backup.CountFilesHandler.RunAsync(source, journalService, m_result, m_options, m_filter, GetBlacklistedPaths(), m_result.TaskControl, counterToken.Token);
+                                parallelScanner = Backup.CountFilesHandler.RunAsync(source, journalService, m_result, m_options, m_filter, blacklistPaths, m_result.TaskControl, counterToken.Token);
                             }
 
                             // Run the backup operation
                             if (await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                             {
                                 var stats = new Backup.BackupStatsCollector(m_result);
-                                await RunMainOperationAsync(channels, source, journalService, changeTracking, changeList, changeListHandoff?.Token, failedPaths, db, backendManager, stats, m_options, m_filter, m_result, m_result.TaskControl, filesetid, lastfilesetid).ConfigureAwait(false);
+                                await RunMainOperationAsync(channels, source, journalService, changeTracking, changeList, changeListHandoff?.Token, failedPaths, db, backendManager, stats, m_options, m_filter, blacklistPaths, m_result, m_result.TaskControl, filesetid, lastfilesetid).ConfigureAwait(false);
                             }
                             else
                             {
