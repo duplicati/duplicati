@@ -248,6 +248,13 @@ namespace Duplicati.Library.Modules.Builtin
         /// <param name="body">The message body.</param>
         protected abstract void SendMessage(string subject, string body);
 
+        /// <summary>
+        /// Redacts the paths in a text put into a report, unless paths are allowed in log messages
+        /// </summary>
+        /// <param name="text">The text to redact.</param>
+        /// <returns>The text, with its paths redacted unless paths are allowed.</returns>
+        private string RedactPathsUnlessAllowed(string text)
+            => m_allowPathsInLogMessages ? text : SensitiveDataFilter.RedactPaths(text);
 
         /// <summary>
         /// This method is the interception where the module can interact with the execution environment and modify the settings.
@@ -588,7 +595,7 @@ namespace Duplicati.Library.Modules.Builtin
                             : GetDefaultValue(key);
                     extra[Logging.ReducedReportFormat.REPORT_MODE_KEY] = Logging.ReducedReportFormat.REDUCED_REPORT_MODE;
 
-                    return resultFormatSerializer.Serialize(result, exception, LogLines, extra);
+                    return RedactPathsUnlessAllowed(resultFormatSerializer.Serialize(result, exception, LogLines, extra));
                 }
 
                 // Add the default values, if found in the template
@@ -610,7 +617,8 @@ namespace Duplicati.Library.Modules.Builtin
                     foreach (var v in m_extraValues)
                         extra[v.Key] = v.Value;
 
-                return resultFormatSerializer.Serialize(result, exception, LogLines, extra);
+                // The template is not used, so the whole result is redacted
+                return RedactPathsUnlessAllowed(resultFormatSerializer.Serialize(result, exception, LogLines, extra));
             }
             else
             {
@@ -620,7 +628,8 @@ namespace Duplicati.Library.Modules.Builtin
                 var values = new List<string>();
                 string Mark(string value)
                 {
-                    values.Add(value ?? "");
+                    // Only the values are redacted: the text of the template is written by the user
+                    values.Add(RedactPathsUnlessAllowed(value ?? ""));
                     return $"{VALUE_MARKER_START}{values.Count - 1}{VALUE_MARKER_END}";
                 }
 
@@ -755,12 +764,8 @@ namespace Duplicati.Library.Modules.Builtin
                 body = ReplaceTemplate(body, result, exception, false);
                 subject = ReplaceTemplate(subject, result, exception, true);
 
-                if (!m_allowPathsInLogMessages)
-                {
-                    body = SensitiveDataFilter.RedactPaths(body);
-                    subject = SensitiveDataFilter.RedactPaths(subject);
-                }
-
+                // The paths were redacted while the templates were expanded, see ReplaceTemplate,
+                // as a module may expand and send the report itself
                 SendMessage(subject, body);
             }
             catch (Exception ex)
