@@ -572,17 +572,12 @@ namespace Duplicati.Library.Main.Database.Local
                     ""H"".""Index"",
                     ""H"".""BlockID""
                 FROM ({selectAllBlocksetEntries}) H
-                WHERE (
-                        ""H"".""BlocksetID""
-                        || ':'
-                        || ""H"".""Index""
-                    ) NOT IN (
-                    SELECT (
-                        ""ExistingBlocksetEntries"".""BlocksetID""
-                        || ':'
-                        || ""ExistingBlocksetEntries"".""Index""
-                    )
+                WHERE NOT EXISTS (
+                    SELECT 1
                     FROM ""BlocksetEntry"" ""ExistingBlocksetEntries""
+                    WHERE
+                        ""ExistingBlocksetEntries"".""BlocksetID"" = ""H"".""BlocksetID""
+                        AND ""ExistingBlocksetEntries"".""Index"" = ""H"".""Index""
                 )
             ";
 
