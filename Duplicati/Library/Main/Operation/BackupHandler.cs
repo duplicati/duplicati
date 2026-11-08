@@ -648,6 +648,33 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
+        /// Stops the backup after the current file once it has uploaded --max-upload-per-run, the same
+        /// way as a stop from the user, so the files it did not reach are backed up by the next run
+        /// </summary>
+        private void StopWhenUploadLimitIsReached()
+        {
+            var limit = m_options.MaxUploadPerRun;
+            if (limit <= 0)
+                return;
+
+            var reached = 0;
+            void Check(long uploaded)
+            {
+                if (uploaded < limit || Interlocked.Exchange(ref reached, 1) != 0)
+                    return;
+
+                Log.WriteWarningMessage(LOGTAG, "MaxUploadPerRunReached", null,
+                    Strings.Options.MaxUploadPerRunReached(Library.Utility.Utility.FormatSizeString(limit), Library.Utility.Utility.FormatSizeString(uploaded)));
+                m_result.TaskControl.Stop();
+            }
+
+            m_result.BackendWriter.UploadCompleted = Check;
+
+            // The checks before the backup can already have uploaded files
+            Check(m_result.BackendWriter.BytesUploaded);
+        }
+
+        /// <summary>
         /// Performs the bulk of work by starting all relevant processes
         /// </summary>
         private static async Task RunMainOperationAsync(Backup.Channels channels, ISourceProvider source, UsnJournalService journalService, Backup.ChangeTrackingCoordinator changeTracking, Backup.ChangeList changeList, string changeListToken, Backup.FailedPathRecorder failedPaths, Backup.BackupDatabase database, IBackendManager backendManager, Backup.BackupStatsCollector stats, Options options, IFilter filter, BackupResults result, ITaskReader taskreader, long filesetid, long lastfilesetid)
@@ -1038,6 +1065,8 @@ namespace Duplicati.Library.Main.Operation
             }
 
             Backup.Channels channels = new();
+
+            StopWhenUploadLimitIsReached();
 
             // If there is no filter, we set an empty filter to simplify the code
             m_filter = filter ?? new Library.Utility.FilterExpression();
