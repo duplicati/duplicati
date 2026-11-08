@@ -106,6 +106,31 @@ namespace Duplicati.Library.Backend
         public const string S3_LEGACY_LIST_API_VERSION_OPTION = "list-api-version";
 
         /// <summary>
+        /// The option to specify the ARN of a role to assume through STS
+        /// </summary>
+        public const string S3_ASSUME_ROLE_ARN_OPTION = "s3-assume-role-arn";
+
+        /// <summary>
+        /// The option to specify the name of the role session
+        /// </summary>
+        public const string S3_ASSUME_ROLE_SESSION_NAME_OPTION = "s3-assume-role-session-name";
+
+        /// <summary>
+        /// The option to specify the external id the role requires
+        /// </summary>
+        public const string S3_ASSUME_ROLE_EXTERNAL_ID_OPTION = "s3-assume-role-external-id";
+
+        /// <summary>
+        /// The option to specify the URL of the STS endpoint that assumes the role
+        /// </summary>
+        public const string S3_STS_ENDPOINT_OPTION = "s3-sts-endpoint";
+
+        /// <summary>
+        /// The credentials of the assumed role, if a role is assumed
+        /// </summary>
+        private readonly S3AssumeRoleCredentials? m_roleCredentials;
+
+        /// <summary>
         /// The default storage classes that are considered archive classes
         /// </summary>
         public static readonly IReadOnlySet<S3StorageClass> DEFAULT_ARCHIVE_CLASSES = new HashSet<S3StorageClass>([
@@ -126,7 +151,19 @@ namespace Duplicati.Library.Backend
 
             CommandLineArgumentMapper.ApplyArguments(cfg, options, EXT_OPTION_PREFIX);
 
-            m_client = new AmazonS3Client(awsID, awsKey, cfg);
+            var roleArn = options.GetValueOrDefault(S3_ASSUME_ROLE_ARN_OPTION);
+            if (string.IsNullOrWhiteSpace(roleArn))
+                m_client = new AmazonS3Client(awsID, awsKey, cfg);
+            else
+            {
+                // The given access key only assumes the role; the requests are signed with the role's credentials
+                m_roleCredentials = new S3AssumeRoleCredentials(awsID, awsKey, roleArn,
+                    options.GetValueOrDefault(S3_ASSUME_ROLE_SESSION_NAME_OPTION),
+                    options.GetValueOrDefault(S3_ASSUME_ROLE_EXTERNAL_ID_OPTION),
+                    options.GetValueOrDefault(S3_STS_ENDPOINT_OPTION),
+                    authRegion);
+                m_client = new AmazonS3Client(m_roleCredentials, cfg);
+            }
 
             m_timeouts = timeouts;
             m_useV2ListApi = string.Equals(options.GetValueOrDefault(S3_LIST_API_VERSION_OPTION) ?? options.GetValueOrDefault(S3_LEGACY_LIST_API_VERSION_OPTION) ?? "v1", "v2", StringComparison.OrdinalIgnoreCase);
@@ -668,6 +705,7 @@ namespace Duplicati.Library.Backend
         {
             if (m_client != null)
                 m_client.Dispose();
+            m_roleCredentials?.Dispose();
         }
 
         #endregion
