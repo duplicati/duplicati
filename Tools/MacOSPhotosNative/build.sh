@@ -9,11 +9,16 @@ SRC="${SCRIPT_DIR}/DuplicatiPhotos.m"
 HEADER="${SCRIPT_DIR}/DuplicatiPhotos.h"
 OUTPUT="${SCRIPT_DIR}/libDuplicatiPhotos.dylib"
 
+# Oldest macOS the library may load on. Without this, clang uses the SDK
+# version, so building on a newer SDK silently raises the minimum OS.
+export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-26.0}"
+
 compile_arch() {
   local arch="$1"
   local destination="$2"
-  echo "Building ${arch} variant..."
-  xcrun -sdk macosx clang -fobjc-arc -arch "${arch}" -dynamiclib "${SRC}" -o "${destination}" \
+  echo "Building ${arch} variant (minimum macOS ${MACOSX_DEPLOYMENT_TARGET})..."
+  xcrun -sdk macosx clang -fobjc-arc -arch "${arch}" -mmacosx-version-min="${MACOSX_DEPLOYMENT_TARGET}" \
+    -dynamiclib -install_name "@rpath/libDuplicatiPhotos.dylib" "${SRC}" -o "${destination}" \
     -framework Foundation -framework Photos
 }
 
