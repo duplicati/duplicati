@@ -146,6 +146,12 @@ namespace Duplicati.Library.Main
         public IReadOnlySet<string> RejectUnsupportedOptions { get; set; }
 
         /// <summary>
+        /// The names of the options that the caller handles itself, such as the options of the
+        /// command line tool, so they are not reported as unsupported.
+        /// </summary>
+        public IReadOnlySet<string> OptionsHandledByCaller { get; set; }
+
+        /// <summary>
         /// Constructs a new interface for performing backup and restore operations
         /// </summary>
         /// <param name="backendUrl">The url for the backend to use</param>
@@ -1593,6 +1599,10 @@ namespace Duplicati.Library.Main
                             Logging.Log.WriteWarningMessage(LOGTAG, "DefaultBooleanOption", null, Strings.Controller.WrongDefaultBooleanOptionWarning(a.Name), null);
                     }
             }
+
+            // Added last, so a name that Duplicati also declares is not reported as a duplicate
+            foreach (var s in OptionsHandledByCaller ?? new HashSet<string>())
+                supportedOptions.TryAdd(s, null);
 
             //Now look for options that were supplied but not supported
             var rejectedOptions = new List<string>();
