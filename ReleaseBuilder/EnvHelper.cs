@@ -116,19 +116,20 @@ public static class EnvHelper
     {
         if (!string.IsNullOrWhiteSpace(envkey))
         {
-            var targets = GetExecutablePaths(ExpandEnv(envkey, ""));
-
-            foreach (var target in targets)
+            var value = ExpandEnv(envkey, "");
+            if (!string.IsNullOrWhiteSpace(value))
             {
-                if (!string.IsNullOrWhiteSpace(target))
-                {
-                    if (!File.Exists(target))
-                        throw new Exception($"Executable specified for {envkey} but not found: {target}");
-                    if (!IsExecutable(target))
-                        throw new Exception($"File specified for {envkey} found but is not executable: {target}");
-
+                // The path as given, then (on Windows) with each executable extension, so
+                // that npm.cmd is found when there is no npm.exe next to it
+                var candidates = new[] { value }.Concat(GetExecutablePaths(value)).Distinct().ToArray();
+                var target = candidates.FirstOrDefault(IsExecutable);
+                if (target != null)
                     return target;
-                }
+
+                var existing = candidates.FirstOrDefault(File.Exists);
+                if (existing != null)
+                    throw new Exception($"File specified for {envkey} found but is not executable: {existing}");
+                throw new Exception($"Executable specified for {envkey} but not found: {value}");
             }
         }
 
