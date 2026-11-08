@@ -111,6 +111,57 @@ namespace Duplicati.Library.Main.Operation.Common
         }
 
         /// <summary>
+        /// A filter entry that starts with <c>?:</c> names a path at the root of any drive, such as the
+        /// <c>?:\$Recycle.Bin\</c> of the default excludes (the filter groups are expanded into their
+        /// entries when the filter is made). A remote source is mounted below a folder instead of on a
+        /// drive, so these entries did not reach the root of the share. For each remote source, this adds
+        /// each such entry again with the mount point in place of the drive, right after the entry and with
+        /// its sign, so the filter keeps its order.
+        /// </summary>
+        /// <param name="filter">The filter to extend</param>
+        /// <param name="sources">The sources of the operation</param>
+        /// <returns>The extended filter, or the same instance if nothing was added</returns>
+        public static IFilter? AddDriveRootEntriesForRemoteSources(IFilter? filter, IEnumerable<string> sources)
+        {
+            if (filter == null || filter.Empty)
+                return filter;
+
+            // A mount point that is not a valid rooted path is reported when the source is loaded,
+            // and one with a wildcard character would make the added entries match more than the share
+            var mountpoints = sources
+                .Select(ParseRemoteSource)
+                .OfType<RemoteSource>()
+                .Select(x => x.Mountpoint)
+                .Where(x => Path.IsPathRooted(x) && !x.Any(c => c == '*' || c == '?' || Path.GetInvalidPathChars().Contains(c)))
+                .Select(x => NormalizeMountpoint(x).TrimEnd(Path.DirectorySeparatorChar))
+                .Distinct(Library.Utility.Utility.ClientFilenameStringComparer)
+                .ToList();
+            if (mountpoints.Count == 0)
+                return filter;
+
+            var entries = FilterExpression.Serialize(filter);
+            var result = new List<string>(entries.Length);
+            var added = false;
+            foreach (var entry in entries)
+            {
+                result.Add(entry);
+
+                // The entry is the sign followed by the expression; "?:" followed by a separator is a drive root
+                if (entry.Length < 4 || entry[1] != '?' || entry[2] != ':' || (entry[3] != '\\' && entry[3] != '/'))
+                    continue;
+
+                var rest = entry.Substring(3);
+                foreach (var mountpoint in mountpoints)
+                {
+                    result.Add(entry[0] + mountpoint + rest);
+                    added = true;
+                }
+            }
+
+            return added ? FilterExpression.Deserialize(result.ToArray()) : filter;
+        }
+
+        /// <summary>
         /// Translates a single serialized filter entry, see <see cref="TranslatePrefixedFilters"/>
         /// </summary>
         /// <param name="entry">The serialized entry, starting with <c>+</c> or <c>-</c></param>
