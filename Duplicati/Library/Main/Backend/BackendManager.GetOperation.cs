@@ -104,8 +104,13 @@ partial class BackendManager
                         // repair using a parity companion file, if one is available. In the
                         // test/verification flow (AllowParityRepair == false) we skip the
                         // repair so that damaged files are reported instead of masked.
-                        if (AllowParityRepair && await TryRepairWithParityAsync(backend, tmpfile, cancelToken).ConfigureAwait(false))
+                        var repaired = AllowParityRepair
+                            ? await TryRepairWithParityAsync(backend, tmpfile, cancelToken).ConfigureAwait(false)
+                            : null;
+                        if (repaired != null)
                         {
+                            tmpfile.Dispose();
+                            tmpfile = repaired;
                             dataSizeDownloaded = new System.IO.FileInfo(tmpfile).Length;
                             fileHash = CalculateFileHash(tmpfile, Context.Options);
                             sizeMismatch = Size >= 0 && dataSizeDownloaded != Size;
@@ -144,23 +149,23 @@ partial class BackendManager
         /// unavailable, it returns false and the caller reports the original error.
         /// </summary>
         /// <param name="backend">The backend to download the parity file from</param>
-        /// <param name="tmpfile">The downloaded (still-encrypted) file to repair in place</param>
+        /// <param name="tmpfile">The downloaded (still-encrypted) file to repair</param>
         /// <param name="cancelToken">The cancellation token</param>
-        /// <returns>True if the file was repaired and is now intact</returns>
-        private async Task<bool> TryRepairWithParityAsync(IBackend backend, TempFile tmpfile, CancellationToken cancelToken)
+        /// <returns>A repaired copy of the file, or null if it was not repaired</returns>
+        private async Task<TempFile?> TryRepairWithParityAsync(IBackend backend, TempFile tmpfile, CancellationToken cancelToken)
         {
             var parityModule = Context.Options.ParityModule;
             if (string.IsNullOrEmpty(parityModule))
-                return false;
+                return null;
 
             // Do not attempt to repair a parity file itself, or non-volume files. Only
             // data volumes (dblock/dlist) have parity companions; for anything else there
             // is no parity file to find.
             var parsed = Volumes.VolumeBase.ParseFilename(RemoteFilename);
             if (parsed == null || parsed.IsParity)
-                return false;
+                return null;
             if (parsed.FileType != RemoteVolumeType.Blocks && parsed.FileType != RemoteVolumeType.Files)
-                return false;
+                return null;
 
             try
             {
@@ -168,7 +173,7 @@ partial class BackendManager
                 // availability probe and any "not found" warning happen once, not per volume.
                 var parity = Context.Parity.Get();
                 if (parity == null || !parity.IsAvailable)
-                    return false;
+                    return null;
 
                 var parityEffectiveName = GetEffectiveRemoteName() + "." + parity.FilenameExtension;
                 using var parityTemp = new TempFile();
@@ -179,24 +184,37 @@ partial class BackendManager
                 catch (Exception ex)
                 {
                     Logging.Log.WriteVerboseMessage(LOGTAG, "ParityFileNotAvailable", ex, "No parity file available to repair {0}: {1}", RemoteFilename, ex.Message);
-                    return false;
+                    return null;
                 }
 
-                if (await parity.RepairAsync(tmpfile, parityTemp, cancelToken).ConfigureAwait(false))
+                // Repair a copy: the downloaded file can be a hard link to the stored file,
+                // and writing to it would change the stored file as well
+                TempFile? repaired = new TempFile();
+                try
                 {
-                    // Repairing a volume means the remote data was damaged; emit a warning
-                    // so it is visible that the backup data is no longer in prime condition.
-                    Logging.Log.WriteWarningMessage(LOGTAG, "ParityRepairSuccess", null, "Repaired {0} using parity data; the remote copy is damaged and should be checked", RemoteFilename);
-                    return true;
+                    System.IO.File.Copy(tmpfile, repaired, true);
+                    if (await parity.RepairAsync(repaired, parityTemp, cancelToken).ConfigureAwait(false))
+                    {
+                        // Repairing a volume means the remote data was damaged; emit a warning
+                        // so it is visible that the backup data is no longer in prime condition.
+                        Logging.Log.WriteWarningMessage(LOGTAG, "ParityRepairSuccess", null, "Repaired {0} using parity data; the remote copy is damaged and should be checked", RemoteFilename);
+                        var result = repaired;
+                        repaired = null;
+                        return result;
+                    }
+                }
+                finally
+                {
+                    repaired?.Dispose();
                 }
 
                 Logging.Log.WriteWarningMessage(LOGTAG, "ParityRepairFailed", null, "Parity repair did not succeed for {0}", RemoteFilename);
-                return false;
+                return null;
             }
             catch (Exception ex)
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "ParityRepairError", ex, "Error during parity repair of {0}: {1}", RemoteFilename, ex.Message);
-                return false;
+                return null;
             }
         }
 

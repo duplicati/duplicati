@@ -36,6 +36,10 @@ namespace Duplicati.Library.Backend
     public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend, ILinkEnabledBackend, IFolderDeleteEnabledBackend, IModificationTimeEnabledBackend
     {
         /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<File>();
+        /// <summary>
         /// The option key for the destination marker file
         /// </summary>
         private const string OPTION_DESTINATION_MARKER = "alternate-destination-marker";
@@ -47,6 +51,10 @@ namespace Duplicati.Library.Backend
         /// The option key for moving files instead of copying them
         /// </summary>
         private const string OPTION_MOVE_FILE = "use-move-for-put";
+        /// <summary>
+        /// The option key for linking downloaded files instead of copying them
+        /// </summary>
+        private const string OPTION_HARDLINK_GET = "use-hardlink-for-get";
         /// <summary>
         /// The option key for forcing reauthentication against the remote share
         /// </summary>
@@ -76,6 +84,10 @@ namespace Duplicati.Library.Backend
         /// Flag to indicate if the file should be moved instead of copied
         /// </summary>
         private readonly bool m_moveFile;
+        /// <summary>
+        /// Flag to indicate if a downloaded file should be a hard link to the stored file instead of a copy
+        /// </summary>
+        private readonly bool m_hardlinkGet;
         /// <summary>
         /// Flag to indicate if the backend has already authenticated
         /// </summary>
@@ -182,6 +194,7 @@ namespace Duplicati.Library.Backend
 
             m_path = path;
             m_moveFile = Utility.Utility.ParseBoolOption(options, OPTION_MOVE_FILE);
+            m_hardlinkGet = Utility.Utility.ParseBoolOption(options, OPTION_HARDLINK_GET);
             m_forceReauth = Utility.Utility.ParseBoolOption(options, OPTION_FORCE_REAUTH);
             m_verifyDestinationLength = !Utility.Utility.ParseBoolOption(options, OPTION_DISABLE_LENGTH_VERIFICATION);
             m_disableFilenameSanitization = Utility.Utility.ParseBoolOption(options, OPTION_DISABLE_FILENAME_SANITIZATION);
@@ -249,7 +262,8 @@ namespace Duplicati.Library.Backend
         // The local filesystem follows the operating system, which is the default
         public bool HasCaseSensitivePaths => false;
 
-        public bool SupportsStreaming => !m_moveFile;
+        // Moving and linking work on whole files, so both need the file-based transfers
+        public bool SupportsStreaming => !m_moveFile && !m_hardlinkGet;
 
         /// <inheritdoc />
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
@@ -486,7 +500,9 @@ namespace Duplicati.Library.Backend
         {
             try
             {
-                systemIO.FileCopy(GetRemoteName(remotename), filename, true);
+                var source = GetRemoteName(remotename);
+                if (!m_hardlinkGet || !TryCreateHardLink(source, filename))
+                    systemIO.FileCopy(source, filename, true);
                 return Task.CompletedTask;
             }
             catch (Exception ex)
@@ -495,6 +511,39 @@ namespace Duplicati.Library.Backend
                 throw;
             }
         }
+
+        /// <summary>
+        /// Replaces the target file with a hard link to the source file.
+        /// </summary>
+        /// <param name="source">The stored file</param>
+        /// <param name="target">The file to replace with the link</param>
+        /// <returns>True if the link was created; false if the caller should copy instead</returns>
+        private static bool TryCreateHardLink(string source, string target)
+        {
+            try
+            {
+                // Neither CreateHardLink nor link() overwrites an existing file
+                if (systemIO.FileExists(target))
+                    systemIO.FileDelete(target);
+
+                var created = OperatingSystem.IsWindows()
+                    ? CreateHardLinkW(target, source, IntPtr.Zero)
+                    : Mono.Unix.Native.Syscall.link(source, target) == 0;
+
+                if (!created)
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "HardLinkFailed", null, "Could not link {0} to {1}, copying it instead", target, source);
+                return created;
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteVerboseMessage(LOGTAG, "HardLinkFailed", ex, "Could not link {0} to {1}, copying it instead", target, source);
+                return false;
+            }
+        }
+
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        private static extern bool CreateHardLinkW(string lpFileName, string lpExistingFileName, IntPtr lpSecurityAttributes);
 
         /// <inheritdoc />
         public async Task DeleteAsync(string remotename, CancellationToken cancelToken)
@@ -520,6 +569,7 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(OPTION_DESTINATION_MARKER, CommandLineArgument.ArgumentType.String, Strings.FileBackend.AlternateDestinationMarkerShort, Strings.FileBackend.AlternateDestinationMarkerLong(OPTION_ALTERNATE_PATHS)),
                     new CommandLineArgument(OPTION_ALTERNATE_PATHS, CommandLineArgument.ArgumentType.Path, Strings.FileBackend.AlternateTargetPathsShort, Strings.FileBackend.AlternateTargetPathsLong(OPTION_DESTINATION_MARKER, System.IO.Path.PathSeparator)),
                     new CommandLineArgument(OPTION_MOVE_FILE, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.UseMoveForPutShort, Strings.FileBackend.UseMoveForPutLong),
+                    new CommandLineArgument(OPTION_HARDLINK_GET, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.UseHardlinkForGetShort, Strings.FileBackend.UseHardlinkForGetLong),
                     new CommandLineArgument(OPTION_DISABLE_LENGTH_VERIFICATION, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.DisableLengthVerificationShort, Strings.FileBackend.DisableLengthVerificationLong),
                     new CommandLineArgument(OPTION_DISABLE_FILENAME_SANITIZATION, CommandLineArgument.ArgumentType.Boolean, Strings.FileBackend.DisableFilenameSanitizationShort, Strings.FileBackend.DisableFilenameSanitizationLong),
                     .. TimeoutOptionsHelper.GetOptions()
