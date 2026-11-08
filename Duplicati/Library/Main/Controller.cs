@@ -138,6 +138,14 @@ namespace Duplicati.Library.Main
         public Action<IBasicResults, Exception> OnOperationCompleted { get; set; }
 
         /// <summary>
+        /// The names of the options that stop the operation when they are not supported, instead of
+        /// being ignored with a warning. The command line sets it to the options that were typed, so
+        /// a misspelled option does not run the operation without it, while saved jobs and the
+        /// options of modules that are not loaded keep working elsewhere.
+        /// </summary>
+        public IReadOnlySet<string> RejectUnsupportedOptions { get; set; }
+
+        /// <summary>
         /// Constructs a new interface for performing backup and restore operations
         /// </summary>
         /// <param name="backendUrl">The url for the backend to use</param>
@@ -1583,12 +1591,20 @@ namespace Duplicati.Library.Main
             }
 
             //Now look for options that were supplied but not supported
+            var rejectedOptions = new List<string>();
             foreach (var s in ropts.Keys)
                 if (!supportedOptions.ContainsKey(s))
-                    if (disabledModuleOptions.ContainsKey(s))
+                    if (RejectUnsupportedOptions != null && RejectUnsupportedOptions.Contains(s))
+                        rejectedOptions.Add(disabledModuleOptions.TryGetValue(s, out var module)
+                            ? Strings.Controller.UnsupportedOptionDisabledModuleError(s, module)
+                            : Strings.Controller.UnsupportedOptionError(s));
+                    else if (disabledModuleOptions.ContainsKey(s))
                         Logging.Log.WriteWarningMessage(LOGTAG, "UnsupportedDisabledModule", null, Strings.Controller.UnsupportedOptionDisabledModuleWarning(s, disabledModuleOptions[s]), null);
                     else
                         Logging.Log.WriteWarningMessage(LOGTAG, "UnsupportedOption", null, Strings.Controller.UnsupportedOptionWarning(s), null);
+
+            if (rejectedOptions.Count > 0)
+                throw new UserInformationException(string.Join(Environment.NewLine, rejectedOptions), "UnsupportedOptionGiven");
 
             //Look at the value supplied for each argument and see if is valid according to its type
             foreach (var s in ropts.Keys)

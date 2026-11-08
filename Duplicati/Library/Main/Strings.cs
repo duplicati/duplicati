@@ -39,6 +39,8 @@ namespace Duplicati.Library.Main.Strings
         public static string SourceUnreadableError(string foldername, string message) { return LC.L(@"Backup aborted since the source folder {0} could not be read: {1}. Please verify that the folder and the drive it is on are available, or set the allow-missing-source option to run the backup without it.", foldername, message); }
         public static string UnsupportedOptionDisabledModuleWarning(string optionname, string modulename) { return LC.L(@"The option --{0} is not supported because the module {1} is not currently loaded", optionname, modulename); }
         public static string UnsupportedOptionWarning(string optionname) { return LC.L(@"The supplied option --{0} is not supported and will be ignored", optionname); }
+        public static string UnsupportedOptionError(string optionname) { return LC.L(@"The supplied option --{0} is not supported. Check the spelling, or remove the option.", optionname); }
+        public static string UnsupportedOptionDisabledModuleError(string optionname, string modulename) { return LC.L(@"The supplied option --{0} is not supported because the module {1} is not currently loaded. Load the module, or remove the option.", optionname, modulename); }
         public static string StartingOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has started", operationname); }
         public static string CompletedOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has completed", operationname); }
         public static string FailedOperationMessage(OperationMode operationname) { return LC.L(@"The operation {0} has failed", operationname); }
