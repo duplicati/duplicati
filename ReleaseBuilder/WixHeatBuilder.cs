@@ -82,9 +82,9 @@ public static class WixHeatBuilder
         var doc = new XmlDocument();
         doc.LoadXml($"<Wix xmlns=\"{wixNs}\"></Wix>");
         var root = doc.DocumentElement!;
-        var fragment = doc.CreateElement("Fragment");
+        var fragment = doc.CreateElement("Fragment", doc.DocumentElement!.NamespaceURI);
         root.AppendChild(fragment);
-        var directoryRef = doc.CreateElement("DirectoryRef");
+        var directoryRef = doc.CreateElement("DirectoryRef", doc.DocumentElement!.NamespaceURI);
         directoryRef.SetAttribute("Id", directoryRefName);
         fragment.AppendChild(directoryRef);
 
@@ -98,15 +98,15 @@ public static class WixHeatBuilder
             else if (Directory.Exists(f))
                 AddDirectory(doc, directoryRef, f, version, itemIds, fileIdGenerator, pathTransformer, IsExcluded);
 
-        var fragment2 = doc.CreateElement("Fragment");
+        var fragment2 = doc.CreateElement("Fragment", doc.DocumentElement!.NamespaceURI);
         root.AppendChild(fragment2);
-        var componentGroup = doc.CreateElement("ComponentGroup");
+        var componentGroup = doc.CreateElement("ComponentGroup", doc.DocumentElement!.NamespaceURI);
         componentGroup.SetAttribute("Id", componentGroupId);
         fragment2.AppendChild(componentGroup);
 
         foreach (var file in itemIds.Keys)
         {
-            var componentRef = doc.CreateElement("ComponentRef");
+            var componentRef = doc.CreateElement("ComponentRef", doc.DocumentElement!.NamespaceURI);
             componentRef.SetAttribute("Id", itemIds[file]);
             componentGroup.AppendChild(componentRef);
         }
@@ -129,12 +129,12 @@ public static class WixHeatBuilder
         var id = fileIdGenerator.Invoke(file);
         itemIds.Add(file, id);
 
-        var component = doc.CreateElement("Component");
+        var component = doc.CreateElement("Component", doc.DocumentElement!.NamespaceURI);
         component.SetAttribute("Id", id);
         component.SetAttribute("Guid", "*");
         directoryRef.AppendChild(component);
 
-        var fileElement = doc.CreateElement("File");
+        var fileElement = doc.CreateElement("File", doc.DocumentElement!.NamespaceURI);
         fileElement.SetAttribute("Id", id);
         fileElement.SetAttribute("KeyPath", "yes");
         fileElement.SetAttribute("DefaultVersion", version);
@@ -156,7 +156,7 @@ public static class WixHeatBuilder
         var id = fileIdGenerator.Invoke(dir);
 
         var dirName = Path.GetFileName(dir);
-        var directory = doc.CreateElement("Directory");
+        var directory = doc.CreateElement("Directory", doc.DocumentElement!.NamespaceURI);
         directory.SetAttribute("Id", id);
         directory.SetAttribute("Name", dirName);
         directoryRef.AppendChild(directory);
