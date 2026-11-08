@@ -68,6 +68,10 @@ partial class BackendManager
         /// </summary>
         public required bool Unencrypted { get; set; }
         /// <summary>
+        /// The modification time to record on the remote file, if the backend supports it
+        /// </summary>
+        public DateTime? LastModifiedUtc { get; set; }
+        /// <summary>
         /// The local filename as a string
         /// </summary>
         public string LocalFilename => LocalTempfile;
@@ -303,7 +307,14 @@ partial class BackendManager
             try
             {
                 Context.ProgressHandler.BeginTransfer(BackendActionType.Put, size, RemoteFilename);
-                if (backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming && !Context.Options.DisableStreamingTransfers)
+                if (LastModifiedUtc.HasValue && backend is IModificationTimeEnabledBackend timeBackend)
+                {
+                    using var fs = System.IO.File.OpenRead(LocalFilename);
+                    using var ts = new ThrottleEnabledStream(fs, Context.UploadThrottleManager, Context.DownloadThrottleManager);
+                    using var pgs = new ProgressReportingStream(ts, pg => Context.ProgressHandler.HandleProgress(pg, RemoteFilename));
+                    await timeBackend.PutAsync(effectiveName, pgs, LastModifiedUtc.Value, cancelToken).ConfigureAwait(false);
+                }
+                else if (backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming && !Context.Options.DisableStreamingTransfers)
                 {
                     using var fs = System.IO.File.OpenRead(LocalFilename);
                     using var ts = new ThrottleEnabledStream(fs, Context.UploadThrottleManager, Context.DownloadThrottleManager);

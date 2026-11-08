@@ -447,6 +447,8 @@ namespace Duplicati.Library.Main.Strings
         public static string SyncThenDeleteLong { get { return LC.L("Deletes files on the remote that no longer exist locally"); } }
         public static string SyncVerifyHashShort { get { return LC.L("Verify file hashes"); } }
         public static string SyncVerifyHashLong { get { return LC.L("Verifies file content using SHA-256 hashes when size and time match"); } }
+        public static string SyncKeepModificationTimeShort { get { return LC.L("Keep file modification times"); } }
+        public static string SyncKeepModificationTimeLong { get { return LC.L("Use this option to give the uploaded files the modification time of the local files, instead of the time of the upload. This works with destinations that can set the time: a local folder, and WebDAV servers that accept the X-OC-Mtime header, such as Nextcloud and ownCloud. Other destinations keep the time of the upload."); } }
         public static string SyncRemoteStateShort { get { return LC.L("Remote state source"); } }
         public static string SyncRemoteStateLong { get { return LC.L($"Controls how the sync operation determines the remote state of each folder: '{SyncRemoteState.UseRemoteState}' enumerates the remote destination per folder (safest, one listing per folder), '{SyncRemoteState.UseLocalState}' uses the local database and assumes it is up to date (faster, no extra listings), '{SyncRemoteState.BlindlyUpload}' uploads every local file unconditionally without checking remote state (fastest, deletes are skipped with a warning)."); } }
         public static string SyncSnapshotFoldersShort { get { return LC.L("Write each run into a dated snapshot folder"); } }

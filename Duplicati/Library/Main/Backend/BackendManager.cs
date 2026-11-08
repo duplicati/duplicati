@@ -600,9 +600,14 @@ internal partial class BackendManager : IBackendManager
     /// <param name="tempFile">The temporary file to upload</param>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
-    public async Task PutFileUnencryptedWithPathAsync(string remotename, TempFile tempFile, CancellationToken cancelToken)
+    public Task PutFileUnencryptedWithPathAsync(string remotename, TempFile tempFile, CancellationToken cancelToken)
+        => PutFileUnencryptedWithPathAsync(remotename, tempFile, null, cancelToken);
+
+    /// <inheritdoc />
+    public async Task PutFileUnencryptedWithPathAsync(string remotename, TempFile tempFile, DateTime? lastModifiedUtc, CancellationToken cancelToken)
     {
         var op = CreateUnencryptedPutOperation(remotename, tempFile, cancelToken);
+        op.LastModifiedUtc = lastModifiedUtc;
         ApplyPathTranslation(op);
         await QueueTaskAsync(op).ConfigureAwait(false);
         await op.GetResultAsync().ConfigureAwait(false);

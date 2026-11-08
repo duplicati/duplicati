@@ -53,6 +53,7 @@ internal class SyncHandler
         // every destination of the run gets the same name.
         var runStartUtc = DateTime.UtcNow;
         var verifyHash = m_options.SyncVerifyHash;
+        var keepModificationTime = m_options.SyncKeepModificationTime;
         var configuredStateMode = m_options.SyncRemoteState;
 
         // The handler cannot tell whether a destination distinguishes letter case, so
@@ -249,6 +250,7 @@ internal class SyncHandler
                         isDryRun,
                         false,
                         verifyHash,
+                        keepModificationTime,
                         planSummary,
                         ct).ConfigureAwait(false);
             }
@@ -276,6 +278,7 @@ internal class SyncHandler
                     isDryRun,
                     isDelete,
                     verifyHash,
+                    keepModificationTime,
                     planSummary,
                     folderQueue,
                     ct).ConfigureAwait(false);
@@ -448,6 +451,7 @@ internal class SyncHandler
         bool isDryRun,
         bool isDelete,
         bool verifyHash,
+        bool keepModificationTime,
         PlanSummary planSummary,
         Queue<FolderWorkItem> folderQueue,
         CancellationToken ct)
@@ -582,6 +586,7 @@ internal class SyncHandler
                     nameComparer,
                     isDryRun,
                     verifyHash,
+                    keepModificationTime,
                     planSummary,
                     ct).ConfigureAwait(false);
                 continue;
@@ -597,6 +602,7 @@ internal class SyncHandler
                 isDryRun,
                 isDelete,
                 verifyHash,
+                keepModificationTime,
                 planSummary,
                 ct).ConfigureAwait(false);
         }
@@ -620,6 +626,7 @@ internal class SyncHandler
         bool isDryRun,
         bool isDelete,
         bool verifyHash,
+        bool keepModificationTime,
         PlanSummary planSummary,
         CancellationToken ct)
     {
@@ -815,12 +822,17 @@ internal class SyncHandler
                 else
                 {
                     remoteHash = remoteEntry.ContentHash;
-                    if (remoteEntry.Size != size || remoteEntry.LastModified < modifiedUtc)
+                    // A destination that keeps the local time may store it in whole seconds
+                    // (WebDAV), which would otherwise look older than the local file on every run
+                    var localModifiedUtc = keepModificationTime
+                        ? Library.Utility.Utility.NormalizeDateTime(modifiedUtc)
+                        : modifiedUtc;
+                    if (remoteEntry.Size != size || remoteEntry.LastModified < localModifiedUtc)
                     {
                         needsUpload = true;
                     }
                     else if (verifyHash && !string.IsNullOrEmpty(remoteEntry.ContentHash)
-                             && remoteEntry.Size == size && remoteEntry.LastModified >= modifiedUtc)
+                             && remoteEntry.Size == size && remoteEntry.LastModified >= localModifiedUtc)
                     {
                         // Size and mtime are unchanged but a remote hash exists: re-check
                         // the local hash and skip the upload if it still matches.
@@ -878,7 +890,7 @@ internal class SyncHandler
 
             try
             {
-                await UploadOrUpdateAsync(db, backendManager, results, targetRelPath, entry, operation, label, verifyHash, maintainInventory, isDryRun, planSummary, ct).ConfigureAwait(false);
+                await UploadOrUpdateAsync(db, backendManager, results, targetRelPath, entry, operation, label, verifyHash, keepModificationTime, maintainInventory, isDryRun, planSummary, ct).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -1134,6 +1146,7 @@ internal class SyncHandler
         StringComparer nameComparer,
         bool isDryRun,
         bool verifyHash,
+        bool keepModificationTime,
         PlanSummary planSummary,
         CancellationToken ct)
     {
@@ -1206,7 +1219,11 @@ internal class SyncHandler
             var targetPath = SyncSnapshotLayout.Combine(snapshot.Name, relPath);
             previousFiles.TryGetValue(name, out var previous);
 
-            var unchanged = previous != null && previous.Size == size && previous.LastModified >= modifiedUtc;
+            // A destination that keeps the local time may store it in whole seconds (WebDAV)
+            var localModifiedUtc = keepModificationTime
+                ? Library.Utility.Utility.NormalizeDateTime(modifiedUtc)
+                : modifiedUtc;
+            var unchanged = previous != null && previous.Size == size && previous.LastModified >= localModifiedUtc;
             if (unchanged && verifyHash && !string.IsNullOrEmpty(previous!.ContentHash))
             {
                 try
@@ -1261,7 +1278,7 @@ internal class SyncHandler
             var label = operation == SyncOperation.Update ? "Updating" : "Uploading";
             try
             {
-                await UploadOrUpdateAsync(db, backendManager, results, targetPath, entry, operation, label, verifyHash, maintainInventory, isDryRun, planSummary, ct).ConfigureAwait(false);
+                await UploadOrUpdateAsync(db, backendManager, results, targetPath, entry, operation, label, verifyHash, keepModificationTime, maintainInventory, isDryRun, planSummary, ct).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -1371,6 +1388,7 @@ internal class SyncHandler
     /// <param name="operation">The intent operation to record (<see cref="SyncOperation.Upload"/> or <see cref="SyncOperation.Update"/>).</param>
     /// <param name="logLabel">The label used in the log message (e.g. "Uploading" or "Updating").</param>
     /// <param name="verifyHash">Whether to compute and store a content hash.</param>
+    /// <param name="keepModificationTime">Whether to record the modification time of the local file on the remote file, where the backend supports it.</param>
     /// <param name="maintainInventory">Whether to write the observed state back into the inventory cache (UseLocalState). Under UseRemoteState/BlindlyUpload the inventory is not maintained.</param>
     /// <param name="isDryRun">Whether this is a dry run; when true the upload is logged but not performed.</param>
     /// <param name="planSummary">The running plan counters to bump for the summary log.</param>
@@ -1384,6 +1402,7 @@ internal class SyncHandler
         SyncOperation operation,
         string logLabel,
         bool verifyHash,
+        bool keepModificationTime,
         bool maintainInventory,
         bool isDryRun,
         PlanSummary planSummary,
@@ -1428,7 +1447,7 @@ internal class SyncHandler
 
         // The caller has already ensured the destination folder exists, so we put the
         // file directly. No EnsureFolderAsync call here.
-        await backendManager.PutFileUnencryptedWithPathAsync(relPath, temp, cancellationToken);
+        await backendManager.PutFileUnencryptedWithPathAsync(relPath, temp, keepModificationTime ? lf.LastModificationUtc : null, cancellationToken);
 
         // Commit the inventory update and intent clearance atomically so a crash
         // between them cannot leave the inventory and intent journal inconsistent.
