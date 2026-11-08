@@ -31,7 +31,7 @@ These tools are used by the build process, each tool can be changed by using the
 - `SIGNTOOL=osslsigncode`: Optional. Used to make Authenticode signing of Windows executables (using `SIGNTOOL=signtool.exe` on Windows)
 - `CODESIGN=codesign`: Optional. Used to sign MacOS binaries and packages.
 - `PRODUCTSIGN=productsign`: Optional. Used to sign MacOS packages.
-- `WIX=wixl`: Optional. Required to build the Windows MSI packages.
+- `WIX=wixl`: Optional. Required to build the Windows MSI packages. On Windows the tool uses the WiX toolset instead (`WIX=wix`, version 4 or later, for example `dotnet tool install --global wix --version 6.0.2`) and needs its UI extension: `wix extension add --global WixToolset.UI.wixext/<the same version as wix>`. Keep only that version of the extension in the global cache, as WiX 4 picks the newest one even when it is for another WiX version. WiX 7 and later only run after the Open Source Maintenance Fee EULA is accepted (`wix eula accept wix7`, see https://wixtoolset.org/osmf/). The sources are written for `wixl`; the tool converts a copy of them for WiX before building.
 - `DOCKER=docker`: Optional. Required to build some Linux packages, including the QNAP QPKG package which uses the QNAP Development Kit (QDK) in a Docker container.
 
 # Invoking the tool

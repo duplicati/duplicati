@@ -185,12 +185,26 @@
         <Directory Id="INSTALLLOCATION" Name="Duplicati 2" >
           <Component Id="SecureInstallDirComp" Guid="7C52A563-7182-411E-8B57-79F881775E9B">
               <CreateFolder>
-              <!-- WiX supports permssions, wixl uses sql -->
+              <!-- WiX supports permssions, wixl uses sql. The Sddl form is the
+                   core PermissionEx element (MsiLockPermissionsEx table),
+                   not the util one. -->
 <?if $(var.BuildEnv) = "Windows" ?>
-                <util:PermissionEx Sddl="D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;GRFX;;;BU)" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension"/>
+                <PermissionEx Sddl="D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;GRFX;;;BU)" />
 <?endif?>
               </CreateFolder>
           </Component>
+
+<?if $(var.BuildEnv) = "Windows" ?>
+          <!-- Copies preload.json from the folder of the MSI when
+               INSTALL_PRELOAD=true, and removes it on uninstall. wixl cannot
+               parse CopyFile, so wixl builds get the same MoveFile and
+               RemoveFile rows from InstallTables.sql instead. -->
+          <Component Id="PreloadJsonComponent" Guid="7E7A7711-0177-4436-BCA9-56C95A33759B">
+            <CreateFolder />
+            <CopyFile Id="CopyPreloadJson" SourceProperty="PRELOAD_SOURCE" SourceName="preload.json" DestinationProperty="INSTALLLOCATION" DestinationName="preload.json" />
+            <RemoveFile Id="RemovePreloadJson" Name="preload.json" On="uninstall" />
+          </Component>
+<?endif?>
 
           <!-- Always-installed component that records the install directory,
                so the next upgrade can default to the same directory. -->
@@ -289,7 +303,15 @@
                    wixl builds get the equivalent MsiServiceConfig row injected
                    from InstallTables.sql instead. -->
 <?if $(var.BuildEnv) = "Windows" ?>
-              <ServiceConfig DelayedAutoStart="yes" OnInstall="yes" OnReinstall="yes" />
+              <ServiceConfig DelayedAutoStart="yes" FailureActionsWhen="failedToStopOrReturnedError" OnInstall="yes" OnReinstall="yes" />
+              <!-- Restart the service 60 seconds after a failure, at most twice a
+                   day, as the FailureActionsFlagSvc and RestartSvcOnFailure rows
+                   of InstallTables.sql do for wixl builds -->
+              <ServiceConfigFailureActions OnInstall="yes" OnReinstall="yes" ResetPeriod="86400">
+                <Failure Action="restartService" Delay="60000" />
+                <Failure Action="restartService" Delay="60000" />
+                <Failure Action="none" Delay="0" />
+              </ServiceConfigFailureActions>
 <?endif?>
             </ServiceInstall>
 
@@ -323,6 +345,9 @@
       <ComponentRef Id="DuplicatiServiceKeyComponent" />
       <!-- Always-installed file-only copy of Duplicati.WindowsService.exe -->
       <ComponentRef Id="DuplicatiWindowsServiceFileComponent" />
+<?if $(var.BuildEnv) = "Windows" ?>
+      <ComponentRef Id="PreloadJsonComponent" />
+<?endif?>
       <ComponentGroupRef Id="DUPLICATIBIN" />
     </Feature>
       
@@ -507,7 +532,15 @@
       <!-- Upgrade sentinel management; set sentinel for upgrade to drop service certs before removing service -->
       <Custom Action="WriteUpgradeSentinel" After="FindRelatedProducts">PREVIOUSVERSIONSINSTALLED AND PREVIOUS_SERVICE_CERTS_INSTALLED="1" AND NOT (INSTALL_TLS_CERTS="1" AND (INSTALLASSERVICE="true" OR LAUNCH_AS_SERVICE="1")) AND NOSCRIPT &lt;&gt; "true"</Custom>
       <Custom Action="ClearUpgradeSentinel" After="RemoveExistingProducts">PREVIOUSVERSIONSINSTALLED AND NOSCRIPT &lt;&gt; "true"</Custom>
-      
+
+<?if $(var.BuildEnv) = "Windows" ?>
+      <!-- The same positions and conditions as the rows wixl builds get from
+           InstallTables.sql; see the comments there. -->
+      <ResolveSource Sequence="850">INSTALL_PRELOAD="true" AND NOT Installed</ResolveSource>
+      <MoveFiles Sequence="3800">INSTALL_PRELOAD="true"</MoveFiles>
+      <MsiConfigureServices Sequence="5850">NOT REMOVE~="ALL"</MsiConfigureServices>
+<?endif?>
+
     </InstallExecuteSequence>
 
     <!-- Post-ExecuteAction client-side actions:
