@@ -133,6 +133,18 @@ namespace Duplicati.Library.Backend.Storj
             _timeouts = TimeoutOptionsHelper.Parse(options);
         }
 
+        /// <summary>
+        /// Creates a backend on the given services, without loading the native library; for tests
+        /// </summary>
+        internal Storj(IBucketService bucketService, IObjectService objectService, TimeoutOptionsHelper.Timeouts timeouts)
+        {
+            _bucket = STORJ_DEFAULT_BUCKET;
+            _access = null!;
+            _bucketService = bucketService;
+            _objectService = objectService;
+            _timeouts = timeouts;
+        }
+
         /// <inheritdoc/>
         public string DisplayName => Strings.Storj.DisplayName;
 
@@ -205,14 +217,13 @@ namespace Duplicati.Library.Backend.Storj
             var bucket = await GetBucketAsync(cancelToken).ConfigureAwait(false);
             var download = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, _ => _objectService.DownloadObjectAsync(bucket, GetBasePath() + remotename, new DownloadOptions(), false)).ConfigureAwait(false);
             await WaitForTransferAsync(download.StartDownloadAsync(), () => download.BytesReceived, download.Cancel, _timeouts.ReadWriteTimeout, cancelToken).ConfigureAwait(false);
+            if (!download.Completed)
+                throw new Exception(download.ErrorMessage);
 
-            if (download.Completed)
+            using (var file = new FileStream(filename, FileMode.Create))
             {
-                using (var file = new FileStream(filename, FileMode.Create))
-                {
-                    await file.WriteAsync(download.DownloadedBytes, 0, (int)download.BytesReceived, cancelToken).ConfigureAwait(false);
-                    await file.FlushAsync(cancelToken).ConfigureAwait(false);
-                }
+                await file.WriteAsync(download.DownloadedBytes, 0, (int)download.BytesReceived, cancelToken).ConfigureAwait(false);
+                await file.FlushAsync(cancelToken).ConfigureAwait(false);
             }
         }
 
@@ -234,6 +245,8 @@ namespace Duplicati.Library.Backend.Storj
                 index = index + newPartLength;
             };
             await WaitForTransferAsync(download.StartDownloadAsync(), () => download.BytesReceived, download.Cancel, _timeouts.ReadWriteTimeout, cancelToken).ConfigureAwait(false);
+            if (!download.Completed)
+                throw new Exception(download.ErrorMessage);
         }
 
         /// <inheritdoc />
