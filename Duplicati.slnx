@@ -12,6 +12,7 @@
     <Project Path="Duplicati/Library/Backend/Filen/Duplicati.Library.Backend.Filen.csproj" />
     <Project Path="Duplicati/Library/Backend/FTP/Duplicati.Library.Backend.FTP.csproj" />
     <Project Path="Duplicati/Library/Backend/GoogleServices/Duplicati.Library.Backend.GoogleServices.csproj" />
+    <Project Path="Duplicati/Library/Backend/Internxt/Duplicati.Library.Backend.Internxt.csproj" />
     <Project Path="Duplicati/Library/Backend/Idrivee2/Duplicati.Library.Backend.Idrivee2.csproj">
       <BuildDependency Project="Duplicati/Library/Backend/S3/Duplicati.Library.Backend.S3.csproj" />
     </Project>
