@@ -87,6 +87,29 @@ CREATE TABLE `MsiServiceConfig` (`MsiServiceConfig` CHAR(72) NOT NULL, `Name` CH
 INSERT INTO `MsiServiceConfig` (`MsiServiceConfig`, `Name`, `Event`, `ConfigType`, `Argument`, `Component_`) VALUES ('DelayStartSvc', 'Duplicati', 3, 3, '1', 'DuplicatiWindowsServiceComponent')
 
 -- ---------------------------------------------------------------------------
+-- Service recovery: restart the service 60 seconds after a failure, at most
+-- twice a day, then leave it stopped. WiX has the <ServiceConfigFailureActions>
+-- element for this; wixl 0.106 does not.
+--
+-- The service reports the exit code 1067 when the server ends on its own
+-- with an error (for example when it crashes while starting), and does not
+-- crash, so the actions only run for it with the flag below
+-- (SERVICE_CONFIG_FAILURE_ACTIONS_FLAG, ConfigType 4, Argument '1': also run
+-- the actions when the service stops with a non-zero exit code). A requested
+-- stop, and the exit the server makes for an update, report exit code 0.
+--
+--   Event        - 5 = msidbServiceConfigEventInstall (1) | ...Reinstall (4).
+--   ResetPeriod  - 86400 seconds: the failure count is reset after a day
+--                  without failures.
+--   Actions      - SC_ACTION_RESTART (1), SC_ACTION_RESTART, SC_ACTION_NONE (0).
+--   DelayActions - the delays in milliseconds, one per action.
+-- Both rows are processed by MsiConfigureServices, scheduled below.
+-- ---------------------------------------------------------------------------
+INSERT INTO `MsiServiceConfig` (`MsiServiceConfig`, `Name`, `Event`, `ConfigType`, `Argument`, `Component_`) VALUES ('FailureActionsFlagSvc', 'Duplicati', 5, 4, '1', 'DuplicatiWindowsServiceComponent')
+CREATE TABLE `MsiServiceConfigFailureActions` (`MsiServiceConfigFailureActions` CHAR(72) NOT NULL, `Name` CHAR(255) NOT NULL, `Event` INT NOT NULL, `ResetPeriod` LONG, `RebootMessage` CHAR(255), `Command` CHAR(255), `Actions` CHAR(255), `DelayActions` CHAR(255), `Component_` CHAR(72) NOT NULL PRIMARY KEY `MsiServiceConfigFailureActions`)
+INSERT INTO `MsiServiceConfigFailureActions` (`MsiServiceConfigFailureActions`, `Name`, `Event`, `ResetPeriod`, `Actions`, `DelayActions`, `Component_`) VALUES ('RestartSvcOnFailure', 'Duplicati', 5, 86400, '1[~]1[~]0', '60000[~]60000[~]0', 'DuplicatiWindowsServiceComponent')
+
+-- ---------------------------------------------------------------------------
 -- InstallExecuteSequence: schedule the standard MsiConfigureServices action so
 -- the MsiServiceConfig row above is processed. wixl does not auto-insert it
 -- because the table is empty at wixl build time. 5850 is just after the

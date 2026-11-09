@@ -198,13 +198,24 @@ namespace Duplicati.WindowsService
                             };
                             SetServiceStatus(this.ServiceHandle, ref sv2);
                         },
-                        () =>
+                        (failedExitCode) =>
                         {
                             if (m_verbose_messages)
                                 m_eventLog.WriteEntry("Stopped!");
+
+                            // A server that ended on its own with an error must not look like a service
+                            // that stopped normally: the exit code makes Windows log the failure and lets
+                            // the service recovery actions restart it
+                            if (failedExitCode != null)
+                            {
+                                m_eventLog.WriteEntry($"The {m_executable} ended with exit code {failedExitCode}; the service reports that it failed", System.Diagnostics.EventLogEntryType.Error);
+                                ExitCode = ERROR_PROCESS_ABORTED;
+                            }
+
                             var sv2 = new ServiceStatus()
                             {
-                                dwCurrentState = ServiceState.SERVICE_STOPPED
+                                dwCurrentState = ServiceState.SERVICE_STOPPED,
+                                dwWin32ExitCode = failedExitCode != null ? (uint)ERROR_PROCESS_ABORTED : 0
                             };
                             SetServiceStatus(this.ServiceHandle, ref sv2);
 
@@ -251,6 +262,12 @@ namespace Duplicati.WindowsService
 
         }
 
+        /// <summary>
+        /// The Win32 error "The process terminated unexpectedly", reported as the service exit code
+        /// when the hosted server or agent ends on its own with an error
+        /// </summary>
+        private const int ERROR_PROCESS_ABORTED = 1067;
+
         private enum ServiceState : uint
         {
             SERVICE_STOPPED = 0x00000001,
@@ -268,7 +285,7 @@ namespace Duplicati.WindowsService
             public readonly uint dwServiceType;
             public ServiceState dwCurrentState;
             public readonly uint dwControlsAccepted;
-            public readonly uint dwWin32ExitCode;
+            public uint dwWin32ExitCode;
             public readonly uint dwServiceSpecificExitCode;
             public readonly uint dwCheckPoint;
             public uint dwWaitHint;
