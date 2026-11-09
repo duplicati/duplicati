@@ -267,6 +267,45 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
+        /// Lists the remote files, and lists them again while a volume that was uploaded but not yet
+        /// seen in a listing is not in the list, as some destinations list a new file only after a while.
+        /// The listing is tried once more for each of the configured retries, with the retry delay between;
+        /// a volume that is still not listed after that is reported as missing by the caller.
+        /// </summary>
+        /// <param name="backendManager">The backend manager instance to use.</param>
+        /// <param name="options">The options used.</param>
+        /// <param name="database">The database with the uploaded volumes.</param>
+        /// <param name="filenameComparer">The comparer for remote file names.</param>
+        /// <param name="cancellationToken">The cancellation token to use.</param>
+        /// <returns>The last listing of the remote files.</returns>
+        private static async Task<IEnumerable<IFileEntry>> ListUntilUploadedVolumesAreFoundAsync(IBackendManager backendManager, Options options, LocalDatabase database, StringComparer filenameComparer, CancellationToken cancellationToken)
+        {
+            var rawlist = await backendManager.ListAsync(null, cancellationToken).ConfigureAwait(false);
+
+            // A volume in the uploaded state has been uploaded, but not yet seen in a listing
+            var uploaded = await database.GetRemoteVolumesAsync(cancellationToken)
+                .Where(x => x.State == RemoteVolumeState.Uploaded)
+                .Select(x => x.Name)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            for (var attempt = 1; uploaded.Count > 0 && attempt <= options.NumberOfRetries; attempt++)
+            {
+                var listed = rawlist.Select(x => x.Name).ToHashSet(filenameComparer);
+                var notListed = uploaded.Where(x => !listed.Contains(x)).ToList();
+                if (notListed.Count == 0)
+                    break;
+
+                var delay = Library.Utility.Utility.GetRetryDelay(options.RetryDelay, attempt, options.RetryWithExponentialBackoff);
+                Logging.Log.WriteInformationMessage(LOGTAG, "UploadedFileNotListed", "The listing does not have {0} uploaded file(s), such as {1}; listing again in {2} (attempt {3} of {4})", notListed.Count, notListed[0], delay, attempt, options.NumberOfRetries);
+                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+                rawlist = await backendManager.ListAsync(null, cancellationToken).ConfigureAwait(false);
+            }
+
+            return rawlist;
+        }
+
+        /// <summary>
         /// Helper method that verifies uploaded volumes and updates their state in the database.
         /// Throws an error if there are issues with the remote storage.
         /// </summary>
@@ -289,8 +328,8 @@ namespace Duplicati.Library.Main.Operation
             if (verifyMode == VerifyMode.VerifyAndCleanForced)
                 verifyMode = VerifyMode.VerifyAndClean;
 
-            var rawlist = await backendManager.ListAsync(null, cancellationToken).ConfigureAwait(false);
             var filenameComparer = options.CaseInsensitiveRemote ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+            var rawlist = await ListUntilUploadedVolumesAreFoundAsync(backendManager, options, database, filenameComparer, cancellationToken).ConfigureAwait(false);
             var lookup = new Dictionary<string, Volumes.IParsedVolume>(filenameComparer);
             protectedFiles = protectedFiles ?? [];
             strictExcemptFiles = strictExcemptFiles ?? [];
