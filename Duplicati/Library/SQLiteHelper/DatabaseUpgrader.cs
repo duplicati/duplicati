@@ -127,6 +127,24 @@ namespace Duplicati.Library.SQLiteHelper
         }
 
         /// <summary>
+        /// Matches a statement that cannot run inside a transaction: one that begins or commits a
+        /// transaction, or a vacuum. The BEGIN of a trigger body is not followed by a semicolon,
+        /// and its END is not followed by TRANSACTION.
+        /// </summary>
+        private static readonly Regex OwnTransactionStatement = new Regex(
+            @"^[\s\uFEFF]*(BEGIN(\s+(DEFERRED|IMMEDIATE|EXCLUSIVE))?(\s+TRANSACTION)?\s*;|COMMIT(\s+TRANSACTION)?\s*;|END\s+TRANSACTION\s*;|VACUUM\b)",
+            RegexOptions.IgnoreCase | RegexOptions.Multiline);
+
+        /// <summary>
+        /// Checks whether an upgrade script begins, commits or vacuums on its own, and so cannot
+        /// run inside a transaction
+        /// </summary>
+        /// <param name="script">The upgrade script</param>
+        /// <returns><c>true</c> if the script cannot run inside a transaction</returns>
+        public static bool ManagesItsOwnTransaction(string script)
+            => OwnTransactionStatement.IsMatch(script);
+
+        /// <summary>
         /// Preparses an SQL in a very simple way to support conditional statements / clauses.
         /// Nesting is supported by using {#if_xx} {#else_xx} {#endif_xx} with xx being a number inside the blocks.
         /// </summary>
@@ -411,28 +429,50 @@ namespace Duplicati.Library.SQLiteHelper
                 }
                 else if (versions.Count > dbversion)
                 {
-                    // In some cases (mostly test setups)
-                    // the database upgrades can happen within a second of each other
-                    // causing the upgrades to fail. This scheme adds up to 15 seconds
-                    // delay, making room for multiple rapid upgrade calls
+                    // A script that begins and commits a transaction of its own, or vacuums, cannot
+                    // run inside one, so an upgrade through such a script runs without one, as before
+                    var transaction = Enumerable.Range(dbversion, versions.Count - dbversion).Any(i => ManagesItsOwnTransaction(versions[i]))
+                        ? null
+                        : connection.BeginTransaction();
+
                     var backupfile = string.Empty;
-                    for (var i = 0; i < 10; i++)
-                    {
-                        backupfile = System.IO.Path.Combine(
-                            System.IO.Path.GetDirectoryName(sourcefile),
-                            Strings.DatabaseUpgrader.BackupFilenamePrefix + " " + System.IO.Path.GetFileNameWithoutExtension(sourcefile) + " " + (DateTime.Now + TimeSpan.FromSeconds(i * 1.5)).ToString("yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture) + ".sqlite");
-
-                        if (!System.IO.File.Exists(backupfile))
-                            break;
-                    }
-
                     try
                     {
-                        if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(backupfile)))
-                            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(backupfile));
+                        if (transaction != null)
+                        {
+                            // Another process may be upgrading the same database. Taking the write
+                            // lock waits for it to finish, so the version is read again under the lock.
+                            cmd.Transaction = transaction;
+                            cmd.CommandText = @"
+                                SELECT max(Version)
+                                FROM Version
+                            ";
+                            dbversion = Convert.ToInt32(cmd.ExecuteScalar());
+                            preparserVars["db_version"] = dbversion;
+                        }
 
-                        //Keep a backup
-                        System.IO.File.Copy(sourcefile, backupfile, false);
+                        if (dbversion < versions.Count)
+                        {
+                            // In some cases (mostly test setups)
+                            // the database upgrades can happen within a second of each other
+                            // causing the upgrades to fail. This scheme adds up to 15 seconds
+                            // delay, making room for multiple rapid upgrade calls
+                            for (var i = 0; i < 10; i++)
+                            {
+                                backupfile = System.IO.Path.Combine(
+                                    System.IO.Path.GetDirectoryName(sourcefile),
+                                    Strings.DatabaseUpgrader.BackupFilenamePrefix + " " + System.IO.Path.GetFileNameWithoutExtension(sourcefile) + " " + (DateTime.Now + TimeSpan.FromSeconds(i * 1.5)).ToString("yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture) + ".sqlite");
+
+                                if (!System.IO.File.Exists(backupfile))
+                                    break;
+                            }
+
+                            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(backupfile)))
+                                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(backupfile));
+
+                            //Keep a backup
+                            System.IO.File.Copy(sourcefile, backupfile, false);
+                        }
 
                         for (int i = dbversion; i < versions.Count; i++)
                         {
@@ -469,17 +509,36 @@ namespace Duplicati.Library.SQLiteHelper
                             preparserVars["db_version"] = i + 1;
                         }
 
-                        //Update databaseversion, so we don't run the scripts again
-                        cmd.CommandText = "Update version SET Version = " + versions.Count.ToString(CultureInfo.InvariantCulture);
-                        cmd.ExecuteNonQuery();
-                        applied = true;
+                        if (dbversion < versions.Count)
+                        {
+                            //Update databaseversion, so we don't run the scripts again
+                            cmd.CommandText = "Update version SET Version = " + versions.Count.ToString(CultureInfo.InvariantCulture);
+                            cmd.ExecuteNonQuery();
+                            applied = true;
+                        }
+
+                        transaction?.Commit();
                     }
                     catch (Exception ex)
                     {
-                        connection.Close();
-                        //Restore the database
-                        System.IO.File.Copy(backupfile, sourcefile, true);
+                        if (transaction != null)
+                        {
+                            // Undo the whole upgrade. Copying the backup back instead would replace a
+                            // database that other connections may have open.
+                            transaction.Rollback();
+                        }
+                        else
+                        {
+                            connection.Close();
+                            //Restore the database
+                            System.IO.File.Copy(backupfile, sourcefile, true);
+                        }
                         throw new Exception(Strings.DatabaseUpgrader.UpgradeFailure(cmd.CommandText, ex.Message), ex);
+                    }
+                    finally
+                    {
+                        cmd.Transaction = null;
+                        transaction?.Dispose();
                     }
                 }
             }
