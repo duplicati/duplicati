@@ -1601,6 +1601,47 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         }
     }
 
+    /// <summary>
+    /// A page loaded with a refresh cookie that is no longer valid, for example from before an
+    /// update, tried to refresh it, and every such attempt was logged as an error in the server
+    /// log (forum 22685). It is an expected answer, so it must not be an error.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task AnInvalidRefreshCookieIsNotLoggedAsAnErrorAsync()
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            using var client = new HttpClient(new HttpClientHandler { UseCookies = false }) { BaseAddress = httpClient.BaseAddress };
+            using var refresh = new HttpRequestMessage(HttpMethod.Post, "/api/v1/auth/refresh") { Content = JsonContent.Create(new { nonce = "" }) };
+            refresh.Headers.Add("Cookie", $"RefreshToken_{httpClient.BaseAddress!.Port}=not-a-token");
+            var response = await client.SendAsync(refresh).ConfigureAwait(false);
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Unauthorized));
+
+            var errors = await httpClient.GetStringAsync("/api/v1/logdata/poll?level=Error&id=0&pagesize=100").ConfigureAwait(false);
+            Assert.That(errors, Does.Not.Contain("Failed to refresh token"));
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The exceptions that the endpoints throw for an expected answer, such as unauthorized or not
+    /// found, are logged by ASP.NET as unhandled. That log category is turned off, but the event
+    /// log of Windows has a filter rule of its own, which the general rule did not reach, so each
+    /// of them was written to the event log as an error (forum 22685, event 1000).
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task TheExceptionHandlerLogsNothingAsync()
+    {
+        await WithAuthenticatedServerAsync(httpClient =>
+        {
+            var loggerFactory = (Microsoft.Extensions.Logging.ILoggerFactory)ServerProgram.DuplicatiWebserver.Provider.GetService(typeof(Microsoft.Extensions.Logging.ILoggerFactory))!;
+            var logger = loggerFactory.CreateLogger("Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware");
+            Assert.That(logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Error), Is.False);
+            return Task.CompletedTask;
+        }).ConfigureAwait(false);
+    }
+
     private Task WithAuthenticatedServerAsync(Func<HttpClient, Task> testBody, string? ports = null, string listenInterface = "127.0.0.1")
         => WithAuthenticatedServerAsync(testBody, ports, listenInterface, []);
 

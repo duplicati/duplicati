@@ -312,6 +312,11 @@ public class DuplicatiWebserver
                 .AddFilter("System", LogLevel.Warning)
                 .AddFilter("Duplicati", LogLevel.Warning)
                 .AddFilter("Microsoft.AspNetCore.Diagnostics", LogLevel.None);
+
+            // The event log of Windows has a filter rule of its own, which takes precedence
+            // over the rules above, so the exceptions must be silenced for it separately
+            if (OperatingSystem.IsWindows())
+                builder.Logging.AddFilter<Microsoft.Extensions.Logging.EventLog.EventLogLoggerProvider>("Microsoft.AspNetCore.Diagnostics", LogLevel.None);
         }
 
         builder.Services.AddHttpClient();

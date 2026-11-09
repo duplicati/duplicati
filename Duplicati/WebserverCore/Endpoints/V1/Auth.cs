@@ -53,7 +53,12 @@ public partial class Auth : IEndpointV1
                 }
                 catch (Exception ex)
                 {
-                    Log.WriteErrorMessage(LOGTAG, "RefreshTokenError", ex, "Failed to refresh token");
+                    // A refresh token that has expired, was signed with an older key, or was
+                    // already used is an expected answer, such as for a page loaded with an old cookie
+                    if (ex is UnauthorizedException || ex is SecurityTokenException || ex is SecurityTokenArgumentException)
+                        Log.WriteVerboseMessage(LOGTAG, "RefreshTokenRejected", ex, "Refresh token rejected: {0}", ex.Message);
+                    else
+                        Log.WriteErrorMessage(LOGTAG, "RefreshTokenError", ex, "Failed to refresh token");
                     // Any error with the refresh token should be treated as unauthorized
                     throw new UnauthorizedException("Failed to refresh token");
                 }
