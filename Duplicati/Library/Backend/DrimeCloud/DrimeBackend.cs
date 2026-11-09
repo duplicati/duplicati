@@ -665,7 +665,11 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
     /// Concrete folders use timestamp windows and independent folder counts.
     /// Root path discovery retains the existing folder-only pagination.
     /// </summary>
-    private async Task<List<Model.FileEntry>> ListEntriesAsync(long? parentId, bool foldersOnly, CancellationToken cancelToken)
+    /// <param name="parentId">The folder to list, or <c>null</c> for the root</param>
+    /// <param name="foldersOnly">Whether to list folders only</param>
+    /// <param name="allowNewEntries">Whether entries added while a concrete folder is listed are accepted, see <see cref="ListFolderWindowsAsync"/></param>
+    /// <param name="cancelToken">The cancellation token</param>
+    private async Task<List<Model.FileEntry>> ListEntriesAsync(long? parentId, bool foldersOnly, CancellationToken cancelToken, bool allowNewEntries = false)
     {
         if (!parentId.HasValue)
             return await ListEntriesUsingFilterAsync(parentId, foldersOnly, cancelToken).ConfigureAwait(false);
@@ -676,7 +680,7 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
         // Do not restrict the separate count by entry type. The windowed
         // listing tracks all observed IDs separately from active IDs so trash
         // cannot occupy an active completeness slot.
-        return await ListFolderWindowsAsync(parentId.Value, hash, cancelToken).ConfigureAwait(false);
+        return await ListFolderWindowsAsync(parentId.Value, hash, allowNewEntries, cancelToken).ConfigureAwait(false);
     }
 
     private async Task<long> GetFolderCountAsync(long folderId, CancellationToken cancelToken)
@@ -707,7 +711,19 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
         return date.ToUniversalTime();
     }
 
-    private async Task<List<Model.FileEntry>> ListFolderWindowsAsync(long folderId, string folderHash, CancellationToken cancelToken)
+    /// <summary>
+    /// Lists a concrete folder in created_at windows and checks the result against the separate folder count.
+    /// </summary>
+    /// <param name="folderId">The folder to list</param>
+    /// <param name="folderHash">The hash of the folder</param>
+    /// <param name="allowNewEntries">
+    /// Whether the folder may gain entries while it is listed. Other uploads of the same operation add files to the
+    /// folder at the same time, so the listing an upload makes to find a taken name can see more entries than the
+    /// count read before it. The listing is ordered by created_at, so the entries that existed when the count was
+    /// read come first, and only a folder that grew is accepted. A folder that shrank still fails.
+    /// </param>
+    /// <param name="cancelToken">The cancellation token</param>
+    private async Task<List<Model.FileEntry>> ListFolderWindowsAsync(long folderId, string folderHash, bool allowNewEntries, CancellationToken cancelToken)
     {
         var expected = await GetFolderCountAsync(folderId, cancelToken).ConfigureAwait(false);
         var observed = new Dictionary<long, Model.FileEntry>();
@@ -775,7 +791,7 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
                     ordered.Add(entry);
             }
 
-            if (active.Count > expected)
+            if (active.Count > expected && !allowNewEntries)
                 throw new DrimePaginationException(
                     "The listing contains more unique active IDs than the separate folder count.");
 
@@ -791,7 +807,7 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
                         $"Terminal page {page} reported total={result.Total?.ToString() ?? "null"}, " +
                         $"but window {window} contained {windowIds.Count} unique IDs.");
 
-                if (active.Count != expected)
+                if (allowNewEntries ? active.Count < expected : active.Count != expected)
                     throw new DrimePaginationException(
                         $"The terminal listing contained {active.Count} active and {observed.Count} observed IDs, " +
                         $"but the separate folder count was {expected}. Trash semantics cannot be reconciled safely.");
@@ -799,7 +815,8 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
                 break;
             }
 
-            if (active.Count == expected)
+            // Without allowNewEntries a larger count has already failed above
+            if (active.Count >= expected)
                 break;
 
             if (result.Data.Count == 0)
@@ -821,7 +838,7 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
         }
 
         var after = await GetFolderCountAsync(folderId, cancelToken).ConfigureAwait(false);
-        if (after != expected)
+        if (allowNewEntries ? after < expected : after != expected)
             throw new DrimePaginationException($"Folder count changed during listing: {expected} -> {after}.");
         Duplicati.Library.Logging.Log.WriteInformationMessage(LOGTAG, "DrimeListingComplete",
             "Drime folder {0}: validated {1} active IDs ({2} observed) against stable count {3}",
@@ -1046,22 +1063,25 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
     }
 
     /// <summary>
-    /// Gets the file cache, populating it if necessary
+    /// Gets the file cache, populating it if necessary.
+    /// The cache only answers which names are taken, before an upload or a delete. Other uploads of the
+    /// same operation run at the same time and add files to the folder while it is listed, so unlike
+    /// <see cref="ListAsync"/> the listing accepts a folder that grew while it was read.
     /// </summary>
     private async Task<ConcurrentDictionary<string, CachedFileEntry>> GetFileCacheAsync(CancellationToken cancelToken)
     {
         if (_fileCache != null)
             return _fileCache;
 
-        await foreach (var _ in ListAsync(cancelToken).ConfigureAwait(false))
-        {
-            // ListAsync populates the cache
-        }
+        var folderId = await GetTargetFolderIdAsync(cancelToken).ConfigureAwait(false);
+        var entries = await ListEntriesAsync(folderId, foldersOnly: false, cancelToken, allowNewEntries: true).ConfigureAwait(false);
 
-        if (_fileCache == null)
-            throw new InvalidOperationException("File cache was not populated during listing");
+        var cache = new ConcurrentDictionary<string, CachedFileEntry>();
+        foreach (var entry in entries)
+            if (string.IsNullOrWhiteSpace(entry.Deleted_At) && entry.Type == FILE_TYPE)
+                cache[entry.Name] = new CachedFileEntry(entry.Id, entry.Hash, entry.File_Size);
 
-        return _fileCache;
+        return _fileCache = cache;
     }
 
     /// <summary>
