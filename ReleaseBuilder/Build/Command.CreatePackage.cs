@@ -615,6 +615,10 @@ public static partial class Command
                         foreach (var query in queries)
                             await ProcessHelper.Execute([rtcfg.Configuration.Commands.MsiBuild, msiFile, "-q", query]);
                     }
+
+                    // wixl does not list the Secure="yes" properties in SecureCustomProperties
+                    foreach (var query in MsiSecureProperties.GetQueries(MsiSecureProperties.Get(fragments)))
+                        await ProcessHelper.Execute([rtcfg.Configuration.Commands.MsiBuild, msiFile, "-q", query]);
                 }
             }
 
