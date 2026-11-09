@@ -115,8 +115,7 @@ namespace Duplicati.Library.Main.Operation
                     if (volumeData.Exception == null || volumeData.Exception is UsnJournalSoftFailureException)
                     {
                         // soft fail
-                        Logging.Log.WriteInformationMessage(LOGTAG, "SkipUsnForVolume",
-                            "Performing full scan for volume \"{0}\": {1}", volumeData.Volume, volumeData.Exception?.Message);
+                        LogUsnFullScan(volumeData.Volume, volumeData.Exception, m_options.UsnStrategy);
                     }
                     else
                     {
@@ -137,6 +136,24 @@ namespace Duplicati.Library.Main.Operation
             }
 
             return service;
+        }
+
+        /// <summary>
+        /// Logs that a volume is scanned in full because the USN journal could not be used.
+        /// A journal that is too small to reach back to the previous backup is a warning
+        /// when the USN journal was asked for, as it happens on every backup until it is enlarged
+        /// </summary>
+        /// <param name="volume">The volume that is scanned in full</param>
+        /// <param name="exception">The reason the journal could not be used, if any</param>
+        /// <param name="strategy">The USN policy in use</param>
+        internal static void LogUsnFullScan(string volume, Exception exception, Options.OptimizationStrategy strategy)
+        {
+            if (exception is UsnJournalPurgedException && strategy is Options.OptimizationStrategy.On or Options.OptimizationStrategy.Required)
+                Logging.Log.WriteWarningMessage(LOGTAG, "UsnJournalPurged", null,
+                    "Performing full scan for volume \"{0}\": {1}", volume, exception.Message);
+            else
+                Logging.Log.WriteInformationMessage(LOGTAG, "SkipUsnForVolume",
+                    "Performing full scan for volume \"{0}\": {1}", volume, exception?.Message);
         }
 
         /// <summary>
