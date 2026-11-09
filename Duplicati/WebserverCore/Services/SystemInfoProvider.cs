@@ -43,6 +43,18 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
     public const string BackupEnableDisableExtension = "v1:backup:enable-disable";
 
     /// <summary>
+    /// The API extension that signals Sync jobs can keep each run in a dated snapshot folder,
+    /// with the "sync-snapshot-folders" and "sync-keep-snapshots" options
+    /// </summary>
+    public const string SyncSnapshotsExtension = "v1:backup:sync-snapshots";
+
+    /// <summary>
+    /// The API extension that signals Sync jobs can be restored: listing versions and folders
+    /// and restoring through the same endpoints as a backup restore
+    /// </summary>
+    public const string SyncRestoreExtension = "v1:backup:sync-restore";
+
+    /// <summary>
     /// The API extensions that are available
     /// </summary>
     public static readonly string[] SupportedAPIExtensions = [
@@ -78,6 +90,8 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v2:systemstatus",
         "v2:backup:restore-test",
         BackupEnableDisableExtension,
+        SyncSnapshotsExtension,
+        SyncRestoreExtension,
         "v2:backup:purge-files:suppress-compact",
 
         // "v1:subscribe:scheduler",

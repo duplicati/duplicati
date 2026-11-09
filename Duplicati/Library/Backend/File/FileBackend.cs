@@ -33,7 +33,7 @@ namespace Duplicati.Library.Backend
     /// <summary>
     /// The file backend implementation
     /// </summary>
-    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend
+    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend, ILinkEnabledBackend, IFolderDeleteEnabledBackend
     {
         /// <summary>
         /// The option key for the destination marker file
@@ -575,6 +575,51 @@ namespace Duplicati.Library.Backend
             systemIO.FileMove(source, target);
 
             return Task.CompletedTask;
+        }
+
+        /// <inheritdoc />
+        public async Task CreateHardLinkAsync(string existingName, string targetName, CancellationToken cancellationToken)
+        {
+            PreAuthenticate();
+
+            if (!systemIO.DirectoryExists(m_path))
+                throw new FolderMissingException(Strings.FileBackend.FolderMissingError(m_path));
+
+            // Both names come from the caller and are resolved under the backend root, so
+            // a link can neither read from nor write to a place outside the destination.
+            var source = ResolveContainedPath(SanitizeFilename(existingName));
+            var target = ResolveContainedPath(SanitizeFilename(targetName));
+
+            try
+            {
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancellationToken, _
+                    => systemIO.FileCreateHardLink(source, target)
+                ).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                MapException(ex);
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task DeleteFolderRecursiveAsync(string path, CancellationToken cancellationToken)
+        {
+            PreAuthenticate();
+
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException("Refusing to delete the backend root folder", nameof(path));
+
+            var folder = ResolveContainedPath(SanitizeFilename(path));
+            if (string.Equals(systemIO.PathGetFullPath(folder).TrimEnd(System.IO.Path.DirectorySeparatorChar), systemIO.PathGetFullPath(m_path).TrimEnd(System.IO.Path.DirectorySeparatorChar), OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+                throw new ArgumentException("Refusing to delete the backend root folder", nameof(path));
+            if (!systemIO.DirectoryExists(folder))
+                return;
+
+            await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancellationToken, _
+                => systemIO.DirectoryDelete(folder, true)
+            ).ConfigureAwait(false);
         }
 
         /// <summary>

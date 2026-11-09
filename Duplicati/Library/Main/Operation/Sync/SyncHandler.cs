@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -47,6 +48,10 @@ internal class SyncHandler
 
         var isDryRun = m_options.Dryrun;
         var isDelete = m_options.SyncThenDelete;
+        var snapshotMode = m_options.SyncSnapshotFolders;
+        // The snapshot folder of this run is named after the time the run started, so
+        // every destination of the run gets the same name.
+        var runStartUtc = DateTime.UtcNow;
         var verifyHash = m_options.SyncVerifyHash;
         var configuredStateMode = m_options.SyncRemoteState;
 
@@ -71,8 +76,19 @@ internal class SyncHandler
         // BlindlyUpload has no remote state to diff against, so deleting remote files
         // is not meaningful. Warn once at the start so the user is not surprised that
         // --sync-then-delete is ignored for the run.
-        if (initialStateMode == SyncRemoteState.BlindlyUpload && isDelete)
-            Logging.Log.WriteWarningMessage(LOGTAG, "BlindlyUploadIgnoresDelete", null, $"sync-remote-state={SyncRemoteState.BlindlyUpload} cannot determine which remote files to delete; --sync-then-delete will be ignored for this run.");
+        if (initialStateMode == SyncRemoteState.BlindlyUpload && isDelete && !snapshotMode)
+            Logging.Log.WriteWarningMessage(LOGTAG, "BlindlyUploadIgnoresDelete", null, $"sync-remote-state={SyncRemoteState.BlindlyUpload} cannot determine which remote files to delete; --{Options.SYNC_THEN_DELETE_OPTION} will be ignored for this run.");
+
+        // A snapshot folder starts empty and receives only what the source holds, so
+        // there is never anything in it to delete.
+        if (snapshotMode && isDelete)
+        {
+            Logging.Log.WriteInformationMessage(LOGTAG, "SnapshotIgnoresDelete", $"--{Options.SYNC_THEN_DELETE_OPTION} has no effect with --{Options.SYNC_SNAPSHOT_FOLDERS_OPTION}: each snapshot folder holds only the files the source has; use --{Options.SYNC_KEEP_SNAPSHOTS_OPTION} to remove old snapshots.");
+            isDelete = false;
+        }
+
+        if (snapshotMode && m_options.SyncSnapshotDisableHardlinks)
+            Logging.Log.WriteInformationMessage(LOGTAG, "SnapshotHardLinksDisabled", $"--{Options.SYNC_SNAPSHOT_DISABLE_HARDLINKS_OPTION} is set: unchanged files are copied into each snapshot instead of being hard linked.");
 
         using var sourceProvider = await SourceProviderFactory.GetSourceProviderAsync(m_sources, m_options, ct).ConfigureAwait(false);
 
@@ -162,11 +178,32 @@ internal class SyncHandler
                 // under UseRemoteState + verifyHash (so computed hashes are remembered for
                 // later hash re-checks), and under the UseLocalState-fallback (so the empty
                 // cache gets seeded for the next run).
+                SnapshotRunState? snapshot = null;
+                if (snapshotMode)
+                {
+                    snapshot = await PrepareSnapshotAsync(mgr, stateMode, runStartUtc, isDryRun, ct).ConfigureAwait(false);
+
+                    // Under UseLocalState the cache is the baseline, and in snapshot mode the
+                    // baseline is the previous snapshot. A cache without rows for it (written
+                    // by a mirror run, or for a snapshot that has since been removed) cannot
+                    // say what the previous snapshot holds, so list it fresh for this run.
+                    if (stateMode == SyncRemoteState.UseLocalState && snapshot.Previous != null
+                        && !await mgr.Database.HasAnyInventoryBelowFolderAsync(snapshot.Previous, ct).ConfigureAwait(false))
+                    {
+                        Logging.Log.WriteInformationMessage(LOGTAG, "SnapshotInventoryMissing", "The local sync inventory does not describe snapshot {0}; listing it fresh for this run.", snapshot.Previous);
+                        stateMode = SyncRemoteState.UseRemoteState;
+                        forcePopulateInventory = true;
+                    }
+
+                    if (stateMode == SyncRemoteState.UseRemoteState && snapshot.Previous != null)
+                        await SeedPreviousFoldersAsync(mgr.BackendManager, snapshot, m_sources, ct).ConfigureAwait(false);
+                }
+
                 var maintainInventory = stateMode == SyncRemoteState.UseLocalState
                     || (stateMode == SyncRemoteState.UseRemoteState && verifyHash)
                     || forcePopulateInventory;
 
-                backendStates.Add(new BackendRunState(mgr.BackendManager, mgr.Database, stateMode, maintainInventory));
+                backendStates.Add(new BackendRunState(mgr.BackendManager, mgr.Database, stateMode, maintainInventory, snapshot));
             }
 
             // Seed the folder queue with one entry per source root. The relative path of a
@@ -218,6 +255,12 @@ internal class SyncHandler
                     folderQueue,
                     ct).ConfigureAwait(false);
             }
+
+            // A snapshot becomes the latest one only when the run went through every
+            // folder; an interrupted run leaves its folder behind for the next run to remove.
+            if (snapshotMode && !ct.IsCancellationRequested)
+                foreach (var bs in backendStates)
+                    await FinishSnapshotAsync(bs, planSummary, isDryRun, m_options.SyncKeepSnapshots, ct).ConfigureAwait(false);
         }
         finally
         {
@@ -258,17 +301,16 @@ internal class SyncHandler
         // rather than uploads, so report the wait-for-upload phase here.
         m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Sync_WaitForUpload);
 
-        Logging.Log.WriteInformationMessage(LOGTAG, "SyncPlan", "Plan: Upload {0}, Update {1}, Delete {2}", planSummary.Upload, planSummary.Update, planSummary.Delete);
+        Logging.Log.WriteInformationMessage(LOGTAG, "SyncPlan", "Plan: Upload {0}, Update {1}, Delete {2}, Link {3}", planSummary.Upload, planSummary.Update, planSummary.Delete, planSummary.Linked);
 
         // Flush the running counters into the results so callers (CLI, IPC, web UI)
         // see folders created, files uploaded/unchanged/deleted, and the total
         // files/size encountered. Upload+Update is the combined "files uploaded"
         // count; Delete maps to files deleted from the remote.
         m_results.FoldersCreated = planSummary.FoldersCreated;
-        // The handler deletes unknown remote files only, never remote folders, so
-        // the folders-deleted count is always zero today; the field is exposed for
-        // completeness and future folder-deletion support.
-        m_results.FoldersDeleted = 0;
+        // The mirror deletes unknown remote files only, never remote folders; the only
+        // folders deleted are old snapshot folders removed by snapshot retention.
+        m_results.FoldersDeleted = planSummary.FoldersDeleted;
         m_results.FilesUploaded = planSummary.Upload + planSummary.Update;
         m_results.UnchangedFiles = planSummary.UnchangedFiles;
         m_results.FilesDeleted = planSummary.Delete;
@@ -503,6 +545,23 @@ internal class SyncHandler
         // even if the source were to change mid-run.
         foreach (var bs in backendStates)
         {
+            if (bs.Snapshot != null)
+            {
+                await ProcessSnapshotFolderForBackendAsync(
+                    folderRelPath,
+                    localFiles,
+                    enqueuedSubfolders,
+                    bs,
+                    bs.Snapshot,
+                    results,
+                    nameComparer,
+                    isDryRun,
+                    verifyHash,
+                    planSummary,
+                    ct).ConfigureAwait(false);
+                continue;
+            }
+
             await ProcessFolderForBackendAsync(
                 folderRelPath,
                 localFiles,
@@ -539,7 +598,7 @@ internal class SyncHandler
         PlanSummary planSummary,
         CancellationToken ct)
     {
-        var (backendManager, db, stateMode, maintainInventory) = bs;
+        var (backendManager, db, stateMode, maintainInventory, _) = bs;
 
         // Check remote state for the current folder. Under UseRemoteState we list
         // the remote folder; under UseLocalState we read the inventory cache; under
@@ -798,6 +857,7 @@ internal class SyncHandler
             }
             catch (Exception ex)
             {
+                planSummary.Failed++;
                 Logging.Log.WriteWarningMessage(LOGTAG, "UploadFailed", ex, "Failed to {0} file: {1}", label, relPath);
             }
         }
@@ -876,6 +936,384 @@ internal class SyncHandler
                         await db.RemovePendingOperationAsync(relPath, txCt).ConfigureAwait(false);
                     }
                 }, ct).ConfigureAwait(false);
+            }
+
+            await DeleteOrphanedFoldersAsync(folderRelPath, enqueuedSubfolders, remoteFolderNames, bs, nameComparer, isDryRun, planSummary, ct).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Deletes the sub-folders of a folder that exist on the destination but no longer
+    /// in the source, with everything in them. The folder loop only visits folders the
+    /// source has, so without this pass a folder removed from the source would stay on
+    /// the destination with all its files. A backend that can delete a folder tree does
+    /// so in one call; otherwise the files are deleted one by one
+    /// (<see cref="SyncRemoteFolders.DeleteTreeAsync"/>).
+    /// </summary>
+    /// <param name="folderRelPath">The relative path of the folder being processed</param>
+    /// <param name="enqueuedSubfolders">The sub-folders the source has and that are synchronized</param>
+    /// <param name="remoteFolderNames">The sub-folder names a listing showed, under <see cref="SyncRemoteState.UseRemoteState"/></param>
+    /// <param name="bs">The state of the destination</param>
+    /// <param name="nameComparer">The comparer for names on the destination</param>
+    /// <param name="isDryRun">Whether this is a dry run</param>
+    /// <param name="planSummary">The plan summary to count deleted folders in</param>
+    /// <param name="ct">The cancellation token</param>
+    private static async Task DeleteOrphanedFoldersAsync(
+        string folderRelPath,
+        List<(ISourceProviderEntry Entry, string RelativePath)> enqueuedSubfolders,
+        HashSet<string> remoteFolderNames,
+        BackendRunState bs,
+        StringComparer nameComparer,
+        bool isDryRun,
+        PlanSummary planSummary,
+        CancellationToken ct)
+    {
+        var (backendManager, db, stateMode, _, _) = bs;
+
+        // Under UseRemoteState the listing shows the sub-folders; under UseLocalState the
+        // cache knows a sub-folder when it holds a file below it.
+        IEnumerable<string> remoteSubfolders = stateMode switch
+        {
+            SyncRemoteState.UseRemoteState => remoteFolderNames,
+            SyncRemoteState.UseLocalState => await db.GetInventorySubfolderNamesAsync(folderRelPath, ct).ConfigureAwait(false),
+            _ => []
+        };
+
+        var localSubfolderNames = new HashSet<string>(enqueuedSubfolders.Select(x => GetEntryName(x.RelativePath)), nameComparer);
+        foreach (var name in remoteSubfolders.Distinct(nameComparer).ToList())
+        {
+            if (localSubfolderNames.Contains(name))
+                continue;
+
+            if (!IsValidEntryName(name) || !TryBuildSafeRelativePath(folderRelPath, name, out var relPath))
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "InvalidRemoteName", null, "Skipping delete of remote folder with an unsafe name: {0}", name);
+                continue;
+            }
+
+            planSummary.FoldersDeleted++;
+            if (isDryRun)
+            {
+                Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would delete folder: {0}", relPath);
+                continue;
+            }
+
+            Logging.Log.WriteInformationMessage(LOGTAG, "DeletingFolder", "Deleting folder {0}", relPath);
+            // Record the intent before the backend call, as for a file delete, so an
+            // interrupted delete is reported on the next run.
+            await db.UpsertPendingOperationAsync(relPath, SyncOperation.Delete, null, null, ct).ConfigureAwait(false);
+            await SyncRemoteFolders.DeleteTreeAsync(backendManager, relPath, ct).ConfigureAwait(false);
+            await db.ExecuteInTransactionAsync(async txCt =>
+            {
+                await db.RemoveInventoryBelowFolderAsync(relPath, txCt).ConfigureAwait(false);
+                await db.RemovePendingOperationAsync(relPath, txCt).ConfigureAwait(false);
+            }, ct).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Prepares a snapshot-style run on one destination: reads the destination root,
+    /// chooses the name of this run's snapshot folder (after every existing one, even if
+    /// the clock went back or two runs started in the same second) and creates it, with
+    /// one sub-folder per source when there are several sources.
+    /// </summary>
+    /// <param name="mgr">The destination</param>
+    /// <param name="stateMode">The resolved remote-state mode for the destination</param>
+    /// <param name="runStartUtc">The time the run started</param>
+    /// <param name="isDryRun">Whether this is a dry run</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>The snapshot state of the run</returns>
+    private async Task<SnapshotRunState> PrepareSnapshotAsync(ManagerInstance mgr, SyncRemoteState stateMode, DateTime runStartUtc, bool isDryRun, CancellationToken ct)
+    {
+        var root = await SyncSnapshotLayout.ReadRootStateAsync(mgr.BackendManager, ct).ConfigureAwait(false);
+
+        var name = SyncSnapshotLayout.FormatFolderName(runStartUtc);
+        var newest = root.Snapshots.Count > 0 ? root.Snapshots[^1] : null;
+        if (newest != null && string.CompareOrdinal(name, newest) <= 0 && SyncSnapshotLayout.TryParseFolderName(newest, out var newestUtc))
+        {
+            var adjusted = SyncSnapshotLayout.FormatFolderName(newestUtc.AddSeconds(1));
+            // Two runs within the same second are normal; an existing snapshot from the
+            // future means the clock went back, which the user should know about.
+            if (newestUtc > runStartUtc.AddMinutes(1))
+                Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotNameAdjusted", null, "The snapshot folder {0} would not sort after the existing snapshot {1}; using {2} instead. Check the system clock.", name, newest, adjusted);
+            else
+                Logging.Log.WriteInformationMessage(LOGTAG, "SnapshotNameAdjusted", "The snapshot folder {0} would not sort after the existing snapshot {1}; using {2} instead.", name, newest, adjusted);
+            name = adjusted;
+        }
+
+        // BlindlyUpload uploads everything and never looks at what the destination holds,
+        // so it has no previous snapshot to link from.
+        var previous = stateMode == SyncRemoteState.BlindlyUpload ? null : root.Latest;
+
+        if (isDryRun)
+        {
+            Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would create snapshot folder: {0}", name);
+        }
+        else
+        {
+            await mgr.BackendManager.EnsureFolderAsync(name, ct).ConfigureAwait(false);
+            foreach (var src in m_sources)
+            {
+                var relRoot = GetSourceRelativeRoot(src, m_sources);
+                if (!string.IsNullOrEmpty(relRoot))
+                    await mgr.BackendManager.EnsureFolderAsync(SyncSnapshotLayout.Combine(name, relRoot), ct).ConfigureAwait(false);
+            }
+        }
+
+        Logging.Log.WriteInformationMessage(LOGTAG, "SnapshotStarted", "Writing snapshot {0}; previous snapshot: {1}", name, previous ?? "none");
+        return new SnapshotRunState { Name = name, Previous = previous, Root = root, LinksUnavailable = m_options.SyncSnapshotDisableHardlinks };
+    }
+
+    /// <summary>
+    /// Records which source roots exist in the previous snapshot, so that the folder loop
+    /// lists only previous folders that exist. With one source the snapshot folder itself
+    /// is the source root; with several, each source has its own sub-folder.
+    /// </summary>
+    /// <param name="backendManager">The destination</param>
+    /// <param name="snapshot">The snapshot state of the run</param>
+    /// <param name="sources">The sources of the run</param>
+    /// <param name="ct">The cancellation token</param>
+    private static async Task SeedPreviousFoldersAsync(IBackendManager backendManager, SnapshotRunState snapshot, string[] sources, CancellationToken ct)
+    {
+        if (snapshot.Previous == null)
+            return;
+
+        if (sources.Length == 1)
+        {
+            snapshot.PreviousFolders.Add("");
+            return;
+        }
+
+        foreach (var entry in await backendManager.ListAsync(snapshot.Previous, ct).ConfigureAwait(false))
+        {
+            var name = entry.Name?.TrimEnd('/');
+            if (entry.IsFolder && IsValidEntryName(name))
+                snapshot.PreviousFolders.Add(name!);
+        }
+    }
+
+    /// <summary>
+    /// Applies the already-enumerated local state of a single folder to one destination
+    /// in snapshot mode. The folder in this run's snapshot starts empty, so every
+    /// sub-folder is created and every file is placed: a file that is unchanged since the
+    /// previous snapshot is hard linked from it when the destination can link, and every
+    /// other file is uploaded. Nothing is ever deleted inside a snapshot.
+    /// </summary>
+    private static async Task ProcessSnapshotFolderForBackendAsync(
+        string folderRelPath,
+        Dictionary<string, (ISourceProviderEntry Entry, long Size, DateTime ModifiedUtc)> localFiles,
+        List<(ISourceProviderEntry Entry, string RelativePath)> enqueuedSubfolders,
+        BackendRunState bs,
+        SnapshotRunState snapshot,
+        SyncResults results,
+        StringComparer nameComparer,
+        bool isDryRun,
+        bool verifyHash,
+        PlanSummary planSummary,
+        CancellationToken ct)
+    {
+        var (backendManager, db, stateMode, maintainInventory, _) = bs;
+
+        // 1. What the previous snapshot holds in this folder, keyed by name. Under
+        // UseRemoteState the previous folder is listed (when it is known to exist); under
+        // UseLocalState the inventory rows of the previous snapshot are read.
+        var previousFiles = new Dictionary<string, RemoteChild>(nameComparer);
+        if (snapshot.Previous != null)
+        {
+            var previousFolder = SyncSnapshotLayout.Combine(snapshot.Previous, folderRelPath);
+            if (stateMode == SyncRemoteState.UseRemoteState && snapshot.PreviousFolders.Contains(folderRelPath))
+            {
+                foreach (var re in await backendManager.ListAsync(previousFolder, ct).ConfigureAwait(false))
+                {
+                    var name = re.Name;
+                    if (re.IsFolder && name != null && name.Length > 1 && name[^1] == '/')
+                        name = name[..^1];
+                    if (string.IsNullOrWhiteSpace(name) || !IsValidEntryName(name))
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "InvalidRemoteName", null, "Skipping remote entry with an unsafe name (contains path separators or parent-directory segments): {0}", name);
+                        continue;
+                    }
+
+                    if (re.IsFolder)
+                        snapshot.PreviousFolders.Add(string.IsNullOrEmpty(folderRelPath) ? name : folderRelPath + "/" + name);
+                    else
+                        previousFiles[name] = new RemoteChild(name, Math.Max(re.Size, 0), re.LastModification.ToUniversalTime(), null);
+                }
+
+                // The listing has no hashes; the inventory remembers the hashes of files
+                // this job uploaded, which a hash re-check needs.
+                if (verifyHash && maintainInventory)
+                    await foreach (var inv in db.GetInventoryItemsInFolderAsync(previousFolder, ct).ConfigureAwait(false))
+                    {
+                        var invName = GetEntryName(inv.RelativePath);
+                        if (!string.IsNullOrEmpty(inv.ContentHash) && previousFiles.TryGetValue(invName, out var rc) && rc.Size == inv.Size)
+                            previousFiles[invName] = rc with { ContentHash = inv.ContentHash };
+                    }
+            }
+            else if (stateMode == SyncRemoteState.UseLocalState)
+            {
+                await foreach (var inv in db.GetInventoryItemsInFolderAsync(previousFolder, ct).ConfigureAwait(false))
+                {
+                    var name = GetEntryName(inv.RelativePath);
+                    if (!string.IsNullOrEmpty(name))
+                        previousFiles[name] = new RemoteChild(name, inv.Size, inv.LastModified, inv.ContentHash);
+                }
+            }
+        }
+
+        // 2. The folder in this run's snapshot is new, so every sub-folder is created.
+        foreach (var (_, subRelPath) in enqueuedSubfolders)
+        {
+            var target = SyncSnapshotLayout.Combine(snapshot.Name, subRelPath);
+            if (isDryRun)
+                Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would create folder: {0}", target);
+            else
+                await backendManager.EnsureFolderAsync(target, ct).ConfigureAwait(false);
+            planSummary.FoldersCreated++;
+        }
+
+        // 3. Place every file: link the unchanged ones, upload the rest.
+        foreach (var (relPath, (entry, size, modifiedUtc)) in localFiles)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var name = GetEntryName(relPath);
+            var targetPath = SyncSnapshotLayout.Combine(snapshot.Name, relPath);
+            previousFiles.TryGetValue(name, out var previous);
+
+            var unchanged = previous != null && previous.Size == size && previous.LastModified >= modifiedUtc;
+            if (unchanged && verifyHash && !string.IsNullOrEmpty(previous!.ContentHash))
+            {
+                try
+                {
+                    using var stream = await entry.OpenRead(ct).ConfigureAwait(false);
+                    using var hasher = HashFactory.CreateHasher("SHA256");
+                    unchanged = Convert.ToBase64String(hasher.ComputeHash(stream)) == previous.ContentHash;
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "FailedToReadFileHash", ex, "Failed to read local file hash for: {0}", relPath);
+                    unchanged = false;
+                }
+            }
+
+            if (unchanged && backendManager.SupportsHardLinks && !snapshot.LinksUnavailable
+                && TryBuildSafeRelativePath(SyncSnapshotLayout.Combine(snapshot.Previous!, folderRelPath), previous!.Name, out var previousPath))
+            {
+                if (isDryRun)
+                {
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would link: {0}", targetPath);
+                    planSummary.Linked++;
+                    planSummary.UnchangedFiles++;
+                    continue;
+                }
+
+                try
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "SyncLink", "Linking unchanged file {0} to {1}", targetPath, previousPath);
+                    await backendManager.CreateHardLinkAsync(previousPath, targetPath, ct).ConfigureAwait(false);
+                    if (maintainInventory)
+                        await db.UpsertInventoryAsync(targetPath, previous.Size, previous.LastModified, previous.ContentHash, ct).ConfigureAwait(false);
+                    planSummary.Linked++;
+                    planSummary.UnchangedFiles++;
+                    results.OperationProgressUpdater.UpdatefilesProcessed(planSummary.Upload + planSummary.Update + planSummary.UnchangedFiles, planSummary.SizeOfUploadedFiles);
+                    continue;
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException && Library.Utility.ExceptionExtensions.FlattenException(ex).Any(x => x is HardLinkNotSupportedException))
+                {
+                    snapshot.LinksUnavailable = true;
+                    Logging.Log.WriteWarningMessage(LOGTAG, "HardLinksUnavailable", ex, "The destination cannot create hard links, so unchanged files are copied into the snapshot again: {0}", ex.Message);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "LinkFailed", ex, "Failed to link {0} from the previous snapshot; uploading it instead", relPath);
+                }
+            }
+
+            // A file the previous snapshot has in a changed version is an update; a new
+            // file, or an unchanged file that could not be linked, is an upload.
+            var operation = previous != null && !unchanged ? SyncOperation.Update : SyncOperation.Upload;
+            var label = operation == SyncOperation.Update ? "Updating" : "Uploading";
+            try
+            {
+                await UploadOrUpdateAsync(db, backendManager, results, targetPath, entry, operation, label, verifyHash, maintainInventory, isDryRun, planSummary, ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                planSummary.Failed++;
+                Logging.Log.WriteWarningMessage(LOGTAG, "UploadFailed", ex, "Failed to {0} file: {1}", label, targetPath);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Completes a snapshot-style run on one destination: marks this run's snapshot as the
+    /// latest, drops the inventory rows of every other snapshot, and removes the folders
+    /// of interrupted runs and the snapshots beyond <paramref name="keepSnapshots"/>.
+    /// Nothing is removed when a file of this run failed, so a damaged snapshot never
+    /// pushes a good one out.
+    /// </summary>
+    /// <param name="bs">The destination state</param>
+    /// <param name="planSummary">The run counters</param>
+    /// <param name="isDryRun">Whether this is a dry run</param>
+    /// <param name="keepSnapshots">The number of snapshots to keep; zero keeps all</param>
+    /// <param name="ct">The cancellation token</param>
+    private static async Task FinishSnapshotAsync(BackendRunState bs, PlanSummary planSummary, bool isDryRun, int keepSnapshots, CancellationToken ct)
+    {
+        var snapshot = bs.Snapshot;
+        if (snapshot == null)
+            return;
+
+        if (isDryRun)
+        {
+            Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would mark snapshot {0} as the latest", snapshot.Name);
+        }
+        else
+        {
+            await SyncSnapshotLayout.WriteMarkerAsync(bs.BackendManager, snapshot.Name, ct).ConfigureAwait(false);
+            await bs.Database.RemoveInventoryOutsideFolderAsync(snapshot.Name, ct).ConfigureAwait(false);
+        }
+
+        // Folders newer than the latest completed snapshot belong to runs that stopped
+        // before they finished.
+        var latestBefore = snapshot.Root.Latest;
+        var aborted = latestBefore == null
+            ? []
+            : snapshot.Root.Snapshots.Where(x => string.CompareOrdinal(x, latestBefore) > 0).ToList();
+
+        var completed = snapshot.Root.CompletedSnapshots.Append(snapshot.Name).ToList();
+        var expired = keepSnapshots > 0 && completed.Count > keepSnapshots
+            ? completed.Take(completed.Count - keepSnapshots).ToList()
+            : [];
+
+        if (aborted.Count == 0 && expired.Count == 0)
+            return;
+
+        if (planSummary.Failed > 0)
+        {
+            Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotRetentionSkipped", null, "{0} files could not be written to snapshot {1}, so no older snapshot is removed in this run.", planSummary.Failed, snapshot.Name);
+            return;
+        }
+
+        foreach (var folder in aborted.Concat(expired))
+        {
+            var reason = aborted.Contains(folder) ? "incomplete" : "expired";
+            if (isDryRun)
+            {
+                Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would delete {0} snapshot: {1}", reason, folder);
+                planSummary.FoldersDeleted++;
+                continue;
+            }
+
+            try
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "SnapshotDeleted", "Deleting {0} snapshot {1}", reason, folder);
+                await SyncSnapshotLayout.DeleteSnapshotAsync(bs.BackendManager, folder, ct).ConfigureAwait(false);
+                planSummary.FoldersDeleted++;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotDeleteFailed", ex, "Failed to delete snapshot {0}: {1}", folder, ex.Message);
             }
         }
     }
@@ -997,7 +1435,7 @@ internal class SyncHandler
     /// (relative root ""); for multiple sources each source contributes its own name
     /// as a top-level sub-folder.
     /// </summary>
-    private static string GetSourceRelativeRoot(string sourcePath, string[] sources)
+    internal static string GetSourceRelativeRoot(string sourcePath, string[] sources)
     {
         if (sources.Length == 1)
             return "";
@@ -1101,7 +1539,10 @@ internal class SyncHandler
         public long Update;
         public long Delete;
         public long FoldersCreated;
+        public long FoldersDeleted;
         public long UnchangedFiles;
+        public long Linked;
+        public long Failed;
         public long SourceFiles;
         public long SizeOfSourceFiles;
         public long SizeOfUploadedFiles;
@@ -1130,6 +1571,46 @@ internal class SyncHandler
         IBackendManager BackendManager,
         LocalSyncDatabase Database,
         SyncRemoteState StateMode,
-        bool MaintainInventory
+        bool MaintainInventory,
+        SnapshotRunState? Snapshot
     );
+
+    /// <summary>
+    /// Per-backend state of a snapshot-style run (<see cref="Options.SyncSnapshotFolders"/>).
+    /// Every remote path of the run is below <see cref="Name"/>; the previous snapshot is
+    /// the baseline that decides which files are unchanged and can be linked.
+    /// </summary>
+    private sealed class SnapshotRunState
+    {
+        /// <summary>
+        /// The snapshot folder this run writes into
+        /// </summary>
+        public required string Name { get; init; }
+
+        /// <summary>
+        /// The latest completed snapshot before this run, or <c>null</c> if there is none
+        /// or the state mode has no remote state to compare with
+        /// </summary>
+        public required string? Previous { get; init; }
+
+        /// <summary>
+        /// The destination root as it was before this run
+        /// </summary>
+        public required SyncSnapshotLayout.RootState Root { get; init; }
+
+        /// <summary>
+        /// The folders (relative to the snapshot) that a listing has shown to exist in the
+        /// previous snapshot. A folder is listed only when it is known to exist there,
+        /// since listing a missing folder fails after the backend's retries.
+        /// </summary>
+        public HashSet<string> PreviousFolders { get; } = new HashSet<string>(StringComparer.Ordinal);
+
+        /// <summary>
+        /// Set when hard links are turned off with
+        /// <see cref="Options.SYNC_SNAPSHOT_DISABLE_HARDLINKS_OPTION"/>, or once the
+        /// destination has refused a hard link; unchanged files are then uploaded again
+        /// for the rest of the run.
+        /// </summary>
+        public bool LinksUnavailable { get; set; }
+    }
 }

@@ -348,6 +348,112 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
     }
 
     /// <summary>
+    /// Returns true if the <c>RemoteInventory</c> cache has any row below the folder,
+    /// at any depth. Snapshot-style sync stores each snapshot's rows under the snapshot
+    /// folder name, so this tells whether the cache describes a given snapshot.
+    /// </summary>
+    /// <param name="folder">The relative path of the folder; must not be empty.</param>
+    /// <param name="cancellationToken">Cancellation token to monitor for cancellation requests.</param>
+    public async Task<bool> HasAnyInventoryBelowFolderAsync(string folder, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(folder))
+            throw new ArgumentException("A folder is required", nameof(folder));
+
+        // The same index-backed range as GetInventoryItemsInFolderAsync: every path
+        // below the folder sorts between "{folder}/" and "{folder}0".
+        using var cmd = m_connection.CreateCommand();
+        cmd.CommandText = @"SELECT EXISTS(SELECT 1 FROM ""RemoteInventory"" WHERE ""RelativePath"" >= @lower AND ""RelativePath"" < @upper);";
+        cmd.Parameters.AddWithValue("@lower", folder + "/");
+        cmd.Parameters.AddWithValue("@upper", folder + "0");
+        return Convert.ToInt32(await cmd.ExecuteScalarAsync(writeLog: false, cancellationToken)) > 0;
+    }
+
+    /// <summary>
+    /// Returns the names of the sub-folders directly below the folder that the
+    /// <c>RemoteInventory</c> cache knows of. The cache holds file rows only, so a
+    /// sub-folder is known when some file at any depth below it is cached.
+    /// </summary>
+    /// <param name="folder">The relative path of the folder, or null/empty for the backend root.</param>
+    /// <param name="cancellationToken">Cancellation token to monitor for cancellation requests.</param>
+    /// <returns>The distinct sub-folder names.</returns>
+    public async Task<IReadOnlyList<string>> GetInventorySubfolderNamesAsync(string? folder, CancellationToken cancellationToken)
+    {
+        // "rest" is the path below the folder; a row in a sub-folder has a '/' in it and
+        // the sub-folder name is the part before that '/'. The nested branch uses the
+        // same index-backed range as GetInventoryItemsInFolderAsync.
+        using var cmd = m_connection.CreateCommand();
+        if (string.IsNullOrEmpty(folder))
+        {
+            cmd.CommandText = @"
+                SELECT DISTINCT substr(""RelativePath"", 1, instr(""RelativePath"", '/') - 1)
+                FROM ""RemoteInventory""
+                WHERE instr(""RelativePath"", '/') > 0;";
+        }
+        else
+        {
+            var lower = folder + "/";
+            cmd.CommandText = @"
+                SELECT DISTINCT substr(""Rest"", 1, instr(""Rest"", '/') - 1)
+                FROM (
+                    SELECT substr(""RelativePath"", @prefixlen + 1) AS ""Rest""
+                    FROM ""RemoteInventory""
+                    WHERE ""RelativePath"" >= @lower AND ""RelativePath"" < @upper
+                )
+                WHERE instr(""Rest"", '/') > 0;";
+            cmd.Parameters.AddWithValue("@lower", lower);
+            cmd.Parameters.AddWithValue("@upper", folder + "0");
+            cmd.Parameters.AddWithValue("@prefixlen", lower.Length);
+        }
+
+        var names = new List<string>();
+        await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, cancellationToken).ConfigureAwait(false);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var name = reader.GetString(0);
+            if (!string.IsNullOrEmpty(name))
+                names.Add(name);
+        }
+        return names;
+    }
+
+    /// <summary>
+    /// Removes every <c>RemoteInventory</c> row below the folder, at any depth, after
+    /// the folder was deleted from the destination.
+    /// </summary>
+    /// <param name="folder">The relative path of the folder; must not be empty.</param>
+    /// <param name="cancellationToken">Cancellation token to monitor for cancellation requests.</param>
+    public async Task RemoveInventoryBelowFolderAsync(string folder, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(folder))
+            throw new ArgumentException("A folder is required", nameof(folder));
+
+        using var cmd = m_connection.CreateCommand();
+        cmd.CommandText = @"DELETE FROM ""RemoteInventory"" WHERE ""RelativePath"" >= @lower AND ""RelativePath"" < @upper;";
+        cmd.Parameters.AddWithValue("@lower", folder + "/");
+        cmd.Parameters.AddWithValue("@upper", folder + "0");
+        await cmd.ExecuteNonQueryAsync(writeLog: false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Removes every <c>RemoteInventory</c> row that is not below the folder. After a
+    /// completed snapshot-style sync only the newest snapshot is the baseline for the
+    /// next run, so the rows of older and aborted snapshots are dropped.
+    /// </summary>
+    /// <param name="folder">The relative path of the folder to keep; must not be empty.</param>
+    /// <param name="cancellationToken">Cancellation token to monitor for cancellation requests.</param>
+    public async Task RemoveInventoryOutsideFolderAsync(string folder, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(folder))
+            throw new ArgumentException("A folder is required", nameof(folder));
+
+        using var cmd = m_connection.CreateCommand();
+        cmd.CommandText = @"DELETE FROM ""RemoteInventory"" WHERE NOT (""RelativePath"" >= @lower AND ""RelativePath"" < @upper);";
+        cmd.Parameters.AddWithValue("@lower", folder + "/");
+        cmd.Parameters.AddWithValue("@upper", folder + "0");
+        await cmd.ExecuteNonQueryAsync(writeLog: false, cancellationToken);
+    }
+
+    /// <summary>
     /// Returns true if the <c>PendingOperation</c> intent journal has any rows,
     /// i.e. there are in-flight operations left over from a previous run that
     /// should be reconciled before proceeding.
@@ -455,6 +561,22 @@ public class LocalSyncDatabase : IDisposable, IBackendManagerDatabase
         cmd.Parameters.AddWithValue("@type", Local.LocalDatabase.ResultLogType);
         cmd.Parameters.AddWithValue("@message", new JsonFormatSerializer().SerializeResults(result));
         await cmd.ExecuteNonQueryAsync(writeLog: false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets the time of the newest run result in the <c>LogData</c> table, or <c>null</c>
+    /// when no run has been recorded.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token to monitor for cancellation requests.</param>
+    public async Task<DateTime?> GetLastResultTimeAsync(CancellationToken cancellationToken)
+    {
+        using var cmd = m_connection.CreateCommand();
+        cmd.CommandText = @"SELECT MAX(""Timestamp"") FROM ""LogData"" WHERE ""Type"" = @type;";
+        cmd.Parameters.AddWithValue("@type", Local.LocalDatabase.ResultLogType);
+        var value = await cmd.ExecuteScalarAsync(writeLog: false, cancellationToken);
+        return value == null || value is DBNull
+            ? null
+            : Library.Utility.Utility.EPOCH.AddSeconds(Convert.ToInt64(value));
     }
 
     /// <summary>

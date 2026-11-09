@@ -348,4 +348,31 @@ public interface IController : IDisposable
     /// <param name="filter">The filter to apply</param>
     /// <returns>The sync results</returns>
     Task<ISyncResults> SyncAsync(string[] sourcePaths, IFilter? filter = null);
+
+    /// <summary>
+    /// Lists the versions a sync job has on its destination: one per snapshot folder,
+    /// newest first, or a single version for a mirror
+    /// </summary>
+    /// <returns>The versions, in the shape of a backup's filesets</returns>
+    Task<IListFilesetResults> ListSyncVersionsAsync();
+
+    /// <summary>
+    /// Lists a folder of a sync job's version, selected by the <c>time</c> or <c>version</c>
+    /// option, with the paths of the original sources
+    /// </summary>
+    /// <param name="sourcePaths">The source folders of the sync job</param>
+    /// <param name="folders">The folder to list, or none for the source folders</param>
+    /// <param name="offset">The number of entries to skip</param>
+    /// <param name="limit">The maximum number of entries to return</param>
+    /// <returns>The folder contents</returns>
+    Task<IListFolderResults> ListSyncFolderAsync(string[] sourcePaths, string[]? folders, long offset, long limit);
+
+    /// <summary>
+    /// Restores files and folders from a sync job's version, selected by the <c>time</c>
+    /// or <c>version</c> option, to their original location or the <c>restore-path</c> folder
+    /// </summary>
+    /// <param name="sourcePaths">The source folders of the sync job</param>
+    /// <param name="paths">The files and folders to restore; a folder ends with a separator, optionally followed by <c>*</c></param>
+    /// <returns>The restore results</returns>
+    Task<IRestoreResults> SyncRestoreAsync(string[] sourcePaths, string[]? paths);
 }

@@ -86,6 +86,9 @@ namespace Duplicati.Library.Common.IO
             File.Delete(path);
         }
 
+        public void FileCreateHardLink(string existingPath, string newPath)
+            => PosixFile.CreateHardLink(existingPath, newPath);
+
         public void FileSetLastWriteTimeUtc(string path, DateTime time)
         {
             File.SetLastWriteTimeUtc(path, time);

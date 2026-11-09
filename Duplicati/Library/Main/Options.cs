@@ -46,6 +46,26 @@ namespace Duplicati.Library.Main
         /// The default block hash algorithm
         /// </summary>
         private const string DEFAULT_BLOCK_HASH_ALGORITHM = "SHA256";
+
+        /// <summary>
+        /// The name of the option that makes a sync write each run into its own dated snapshot folder
+        /// </summary>
+        public const string SYNC_SNAPSHOT_FOLDERS_OPTION = "sync-snapshot-folders";
+
+        /// <summary>
+        /// The name of the option that sets how many snapshot folders a snapshot sync keeps
+        /// </summary>
+        public const string SYNC_KEEP_SNAPSHOTS_OPTION = "sync-keep-snapshots";
+
+        /// <summary>
+        /// The name of the option that makes a snapshot sync copy unchanged files instead of hard linking them
+        /// </summary>
+        public const string SYNC_SNAPSHOT_DISABLE_HARDLINKS_OPTION = "sync-snapshot-disable-hardlinks";
+
+        /// <summary>
+        /// The name of the option that makes a sync delete remote files that no longer exist locally
+        /// </summary>
+        public const string SYNC_THEN_DELETE_OPTION = "sync-then-delete";
         /// <summary>
         /// The default file hash algorithm
         /// </summary>
@@ -637,9 +657,12 @@ namespace Duplicati.Library.Main
             new CommandLineArgument(Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING, CommandLineArgument.ArgumentType.Boolean, Strings.Options.ReducedReportingShort, Strings.Options.ReducedReportingLong, "false"),
 
             new CommandLineArgument("sync-recheck", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncRecheckShort, Strings.Options.SyncRecheckLong, "false"),
-            new CommandLineArgument("sync-then-delete", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncThenDeleteShort, Strings.Options.SyncThenDeleteLong, "false"),
+            new CommandLineArgument(SYNC_THEN_DELETE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncThenDeleteShort, Strings.Options.SyncThenDeleteLong, "false"),
             new CommandLineArgument("sync-verify-hash", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncVerifyHashShort, Strings.Options.SyncVerifyHashLong, "false"),
             new CommandLineArgument("sync-remote-state", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SyncRemoteStateShort, Strings.Options.SyncRemoteStateLong, Enum.GetName(typeof(SyncRemoteState), SyncRemoteState.UseRemoteState), null, Enum.GetNames(typeof(SyncRemoteState))),
+            new CommandLineArgument(SYNC_SNAPSHOT_FOLDERS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncSnapshotFoldersShort, Strings.Options.SyncSnapshotFoldersLong(SYNC_THEN_DELETE_OPTION, SYNC_KEEP_SNAPSHOTS_OPTION, SYNC_SNAPSHOT_DISABLE_HARDLINKS_OPTION), "false"),
+            new CommandLineArgument(SYNC_SNAPSHOT_DISABLE_HARDLINKS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncSnapshotDisableHardlinksShort, Strings.Options.SyncSnapshotDisableHardlinksLong(SYNC_SNAPSHOT_FOLDERS_OPTION), "false"),
+            new CommandLineArgument(SYNC_KEEP_SNAPSHOTS_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.Options.SyncKeepSnapshotsShort, Strings.Options.SyncKeepSnapshotsLong(SYNC_SNAPSHOT_FOLDERS_OPTION), "0"),
 
             new CommandLineArgument("restore-test-mode", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.RestoreTestModeShort, Strings.Options.RestoreTestModeLong("restore-test-sample-count", "restore-test-sample-percent", "restore-test-rolling-window"), Enum.GetName(typeof(RestoreTestMode), RestoreTestMode.RandomFiles), null, Enum.GetNames(typeof(RestoreTestMode))),
             new CommandLineArgument("restore-test-sample-count", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreTestSampleCountShort, Strings.Options.RestoreTestSampleCountLong, DEFAULT_RESTORE_TEST_SAMPLE_COUNT.ToString()),
@@ -2191,7 +2214,7 @@ namespace Duplicati.Library.Main
         /// <summary>
         /// Deletes files on the remote that no longer exist locally.
         /// </summary>
-        public bool SyncThenDelete => GetBool("sync-then-delete");
+        public bool SyncThenDelete => GetBool(SYNC_THEN_DELETE_OPTION);
 
         /// <summary>
         /// Verifies file content using SHA-256 hashes when size and time match.
@@ -2204,6 +2227,23 @@ namespace Duplicati.Library.Main
         /// blindly. See <see cref="SyncRemoteState"/> for the trade-offs.
         /// </summary>
         public SyncRemoteState SyncRemoteState => GetEnum("sync-remote-state", SyncRemoteState.UseRemoteState);
+
+        /// <summary>
+        /// Writes each sync run into its own dated snapshot folder below the destination
+        /// instead of mirroring into the destination root.
+        /// </summary>
+        public bool SyncSnapshotFolders => GetBool(SYNC_SNAPSHOT_FOLDERS_OPTION);
+
+        /// <summary>
+        /// The number of snapshot folders a snapshot sync keeps; zero keeps all of them.
+        /// </summary>
+        public int SyncKeepSnapshots => Math.Max(0, GetInt(SYNC_KEEP_SNAPSHOTS_OPTION, 0));
+
+        /// <summary>
+        /// Makes a snapshot sync copy unchanged files into each snapshot instead of hard
+        /// linking them from the previous snapshot.
+        /// </summary>
+        public bool SyncSnapshotDisableHardlinks => GetBool(SYNC_SNAPSHOT_DISABLE_HARDLINKS_OPTION);
 
         /// <summary>
         /// Class for handling a single RetentionPolicy timeframe-interval-pair
