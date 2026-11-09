@@ -24,9 +24,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Duplicati.Library.Modules.Builtin;
 using NUnit.Framework;
@@ -46,9 +48,27 @@ public class ReportPathRedactionTests
 
     /// <summary>
     /// Sends the report of a backup of <see cref="SecretPath"/> through the send-http module and
-    /// returns the message a local receiver got
+    /// returns the message parameter of the form a local receiver got
     /// </summary>
-    private static async Task<string> ReceiveHttpReportAsync(Dictionary<string, string> options, Exception? error = null)
+    private static async Task<string> ReceiveHttpFormReportAsync(Dictionary<string, string> options)
+        => Uri.UnescapeDataString((await ReceiveHttpReportAsync(options, new Exception("Failed"))).Replace('+', ' '));
+
+    /// <summary>
+    /// Sends the report of a backup of <see cref="SecretPath"/> as JSON through the send-http module
+    /// and returns the document a local receiver got
+    /// </summary>
+    private static async Task<JsonNode> ReceiveHttpJsonReportAsync(Dictionary<string, string> options, Exception error)
+    {
+        options["send-http-result-output-format"] = "Json";
+        var body = await ReceiveHttpReportAsync(options, error);
+        return JsonNode.Parse(body) ?? throw new AssertionException("The report is not JSON: " + body);
+    }
+
+    /// <summary>
+    /// Sends the report of a backup of <see cref="SecretPath"/> through the send-http module and
+    /// returns the body a local receiver got
+    /// </summary>
+    private static async Task<string> ReceiveHttpReportAsync(Dictionary<string, string> options, Exception error)
     {
         var probe = new TcpListener(IPAddress.Loopback, 0);
         probe.Start();
@@ -79,16 +99,16 @@ public class ReportPathRedactionTests
         var url = "file:///not-used";
         var paths = new[] { SecretPath };
         module.OnStart("Backup", ref url, ref paths);
-        module.OnFinish(null, error ?? new Exception("Failed"));
+        module.OnFinish(null, error);
 
         Assert.That(await Task.WhenAny(received, Task.Delay(TimeSpan.FromSeconds(30))), Is.SameAs(received), "The receiver got no report");
-        return Uri.UnescapeDataString((await received).Replace('+', ' '));
+        return await received;
     }
 
     [Test]
     public async Task APathPutIntoAnHttpReportIsRedactedAsync()
     {
-        var message = await ReceiveHttpReportAsync(new() { ["send-http-message"] = "Source: %LOCALPATH%" });
+        var message = await ReceiveHttpFormReportAsync(new() { ["send-http-message"] = "Source: %LOCALPATH%" });
 
         Assert.That(message, Does.Contain("Source: -redacted-"));
         Assert.That(message, Does.Not.Contain("secret"));
@@ -97,18 +117,87 @@ public class ReportPathRedactionTests
     [Test]
     public async Task APathInAJsonHttpReportIsRedactedAsync()
     {
-        var message = await ReceiveHttpReportAsync(
-            new() { ["send-http-result-output-format"] = "Json" },
-            new Exception($"Cannot read {SecretPath}/file.txt"));
+        var report = await ReceiveHttpJsonReportAsync(new(), new Exception($"Cannot read {SecretPath}/file.txt"));
 
-        Assert.That(message, Does.Contain("Cannot read -redacted-"));
+        Assert.That(report["Exception"]?.GetValue<string>(), Does.Contain("Cannot read -redacted-"));
+        Assert.That(report.ToJsonString(), Does.Not.Contain("secret"));
+    }
+
+    /// <summary>
+    /// The paths were found in the compact JSON text, where a path also took the closing quote and
+    /// the properties after it up to the next space, so those properties were lost
+    /// </summary>
+    [Test]
+    public async Task RedactingAJsonReportKeepsTheOtherValuesAsync()
+    {
+        var report = await ReceiveHttpJsonReportAsync(new()
+        {
+            ["backup-name"] = "/srv/backup",
+            ["machine-name"] = "Office machine",
+            ["machine-id"] = "machine-1"
+        }, new Exception("Failed"));
+
+        var extra = report["Extra"];
+        Assert.That(extra?["backup-name"]?.GetValue<string>(), Is.EqualTo("-redacted-"));
+        Assert.That(extra?["machine-name"]?.GetValue<string>(), Is.EqualTo("Office machine"));
+        Assert.That(extra?["machine-id"]?.GetValue<string>(), Is.EqualTo("machine-1"));
+    }
+
+    /// <summary>
+    /// A reduced JSON report keeps the full set of keys, while a path in a value is redacted
+    /// </summary>
+    [Test]
+    public async Task AReducedJsonReportKeepsItsKeysAsync()
+    {
+        var report = await ReceiveHttpJsonReportAsync(new()
+        {
+            [Duplicati.Library.Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING] = "true",
+            ["backup-name"] = "/srv/backup",
+            ["machine-name"] = "Office machine"
+        }, new Exception($"Cannot read {SecretPath}/file.txt"));
+
+        var extra = report["Extra"]!.AsObject();
+        Assert.That(extra.Select(x => x.Key), Is.EquivalentTo(ReportHelper.EXTRA_TEMPLATE_KEYS.Append(Duplicati.Library.Logging.ReducedReportFormat.REPORT_MODE_KEY)));
+        Assert.That(extra["backup-name"]?.GetValue<string>(), Is.EqualTo("-redacted-"));
+        Assert.That(extra["machine-name"]?.GetValue<string>(), Is.EqualTo("Office machine"));
+        Assert.That(report.ToJsonString(), Does.Not.Contain("secret"));
+    }
+
+    /// <summary>
+    /// A reduced report carries no file names, so a path written in the template is also redacted
+    /// </summary>
+    [Test]
+    public async Task AReducedReportRedactsThePathsInTheTemplateAsync()
+    {
+        var message = await ReceiveHttpFormReportAsync(new()
+        {
+            [Duplicati.Library.Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING] = "true",
+            ["send-http-message"] = "Backup of /srv/data from [%LOCALPATH%]: %PARSEDRESULT%"
+        });
+
+        Assert.That(message, Does.Contain("Backup of -redacted- from []: Fatal"));
+        Assert.That(message, Does.Not.Contain("/srv/data"));
         Assert.That(message, Does.Not.Contain("secret"));
+    }
+
+    /// <summary>
+    /// A body that names a template file which cannot be read was sent as it was, so the path of the
+    /// file was the report; the default body is sent instead
+    /// </summary>
+    [Test]
+    public async Task ABodyFileThatCannotBeReadIsNotSentAsync()
+    {
+        var missing = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "report-template.txt");
+        var message = await ReceiveHttpFormReportAsync(new() { ["send-http-message"] = missing });
+
+        Assert.That(message, Does.StartWith("message=Duplicati Backup report for"));
+        Assert.That(message, Does.Not.Contain("report-template"));
     }
 
     [Test]
     public async Task PathsAreKeptWhenAllowedAsync()
     {
-        var message = await ReceiveHttpReportAsync(new()
+        var message = await ReceiveHttpFormReportAsync(new()
         {
             ["send-http-message"] = "Source: %LOCALPATH%",
             ["allow-paths-in-log-messages"] = "true"
@@ -195,7 +284,7 @@ public class ReportPathRedactionTests
     [Test]
     public async Task APathWrittenInTheTemplateIsKeptAsync()
     {
-        var message = await ReceiveHttpReportAsync(new() { ["send-http-message"] = "Backup of /srv/data: %PARSEDRESULT%" });
+        var message = await ReceiveHttpFormReportAsync(new() { ["send-http-message"] = "Backup of /srv/data: %PARSEDRESULT%" });
 
         Assert.That(message, Does.Contain("Backup of /srv/data: Fatal"));
     }

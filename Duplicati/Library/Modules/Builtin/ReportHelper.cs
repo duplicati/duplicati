@@ -257,6 +257,33 @@ namespace Duplicati.Library.Modules.Builtin
             => m_allowPathsInLogMessages ? text : SensitiveDataFilter.RedactPaths(text);
 
         /// <summary>
+        /// Redacts the paths in the string values of a JSON report, unless paths are allowed in log messages.
+        /// The values are redacted one by one, as the path detection on the compact JSON text would also
+        /// take the quotes and the following properties as part of a path.
+        /// </summary>
+        /// <param name="json">The JSON report.</param>
+        /// <returns>The JSON report, with the paths in its values redacted unless paths are allowed.</returns>
+        private string RedactJsonPathsUnlessAllowed(string json)
+        {
+            if (m_allowPathsInLogMessages || string.IsNullOrEmpty(json))
+                return json;
+
+            // Dates and numbers are kept as they were written
+            using var reader = new Newtonsoft.Json.JsonTextReader(new System.IO.StringReader(json))
+            {
+                DateParseHandling = Newtonsoft.Json.DateParseHandling.None,
+                FloatParseHandling = Newtonsoft.Json.FloatParseHandling.Decimal
+            };
+            var root = Newtonsoft.Json.Linq.JToken.ReadFrom(reader);
+            var tokens = root is Newtonsoft.Json.Linq.JContainer container ? container.DescendantsAndSelf() : [root];
+            foreach (var value in tokens.OfType<Newtonsoft.Json.Linq.JValue>().ToList())
+                if (value.Type == Newtonsoft.Json.Linq.JTokenType.String)
+                    value.Value = SensitiveDataFilter.RedactPaths((string)value.Value);
+
+            return root.ToString(Newtonsoft.Json.Formatting.None);
+        }
+
+        /// <summary>
         /// This method is the interception where the module can interact with the execution environment and modify the settings.
         /// </summary>
         /// <param name="commandlineOptions">A set of commandline options passed to Duplicati</param>
@@ -595,7 +622,7 @@ namespace Duplicati.Library.Modules.Builtin
                             : GetDefaultValue(key);
                     extra[Logging.ReducedReportFormat.REPORT_MODE_KEY] = Logging.ReducedReportFormat.REDUCED_REPORT_MODE;
 
-                    return RedactPathsUnlessAllowed(resultFormatSerializer.Serialize(result, exception, LogLines, extra));
+                    return RedactJsonPathsUnlessAllowed(resultFormatSerializer.Serialize(result, exception, LogLines, extra));
                 }
 
                 // Add the default values, if found in the template
@@ -617,8 +644,8 @@ namespace Duplicati.Library.Modules.Builtin
                     foreach (var v in m_extraValues)
                         extra[v.Key] = v.Value;
 
-                // The template is not used, so the whole result is redacted
-                return RedactPathsUnlessAllowed(resultFormatSerializer.Serialize(result, exception, LogLines, extra));
+                // The template is not used, so every value in the result is redacted
+                return RedactJsonPathsUnlessAllowed(resultFormatSerializer.Serialize(result, exception, LogLines, extra));
             }
             else
             {
@@ -678,10 +705,14 @@ namespace Duplicati.Library.Modules.Builtin
                 input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
 
                 // Text in the template that only looks like a marker is left as it is
-                return Regex.Replace(input, $"{VALUE_MARKER_START}(\\d+){VALUE_MARKER_END}",
+                var expanded = Regex.Replace(input, $"{VALUE_MARKER_START}(\\d+){VALUE_MARKER_END}",
                     m => int.TryParse(m.Groups[1].Value, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var index) && index < values.Count
                         ? values[index]
                         : m.Value);
+
+                // A reduced report carries no file names, including the ones written in the template,
+                // as reduced reporting may be required by someone else than the author of the template
+                return m_reducedReporting ? RedactPathsUnlessAllowed(expanded) : expanded;
             }
         }
 
@@ -748,16 +779,18 @@ namespace Duplicati.Library.Modules.Builtin
             {
                 string body = m_body;
                 string subject = m_subject;
-                if (body != DEFAULT_BODY)
+                // A body that is a single rooted path, without template keys, names a file with the template
+                if (body != DEFAULT_BODY && System.IO.Path.IsPathRooted(body) && body.IndexOfAny(['\r', '\n', '%']) < 0)
                 {
                     try
                     {
-                        if (System.IO.File.Exists(body) && System.IO.Path.IsPathRooted(body))
-                            body = System.IO.File.ReadAllText(body);
+                        body = System.IO.File.ReadAllText(body);
                     }
                     catch (Exception ex)
                     {
+                        // The path of the file is not the report, and would be sent as it is
                         Logging.Log.WriteWarningMessage(LOGTAG, "ReportSubmitError", ex, "Invalid path, or unable to read file given as body");
+                        body = DEFAULT_BODY;
                     }
                 }
 
