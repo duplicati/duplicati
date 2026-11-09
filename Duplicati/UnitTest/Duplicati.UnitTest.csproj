@@ -53,6 +53,13 @@
     <ProjectReference Include="..\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The SharePoint backend references this directly, so it does not flow to the tests -->
+    <Reference Include="SharePointPnP.Client">
+      <HintPath>..\..\thirdparty\SharePointPnP-Sites-Core\SharePointPnP.Client.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
   <!-- Copy in WindowsModules for easier debug, or if we are targeting Windows -->
   <Target Name="CopyWindowsModulesRuntime" AfterTargets="Build" Condition="'$(OS)' == 'Windows_NT'">
     <ItemGroup>
