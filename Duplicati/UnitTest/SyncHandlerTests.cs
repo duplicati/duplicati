@@ -2474,10 +2474,11 @@ public class SnapshotSyncHandlerTests : BasicSetupHelper
                 return false;
         }
 
-        var original = File.ReadAllText(b);
+        var originalA = File.ReadAllText(a);
+        var originalB = File.ReadAllText(b);
         File.AppendAllText(a, "!");
-        var same = File.ReadAllText(b) == original + "!";
-        File.WriteAllText(a, original);
+        var same = File.ReadAllText(b) == originalB + "!";
+        File.WriteAllText(a, originalA);
         return same;
     }
 
