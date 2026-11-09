@@ -261,6 +261,7 @@ namespace Duplicati.Library.Backend
                 Logging.Log.WriteErrorMessage(Logtag, "ErrorPuttingObjectMinio", null,
                     "Error putting object {0} to {1} using Minio: {2}",
                     keyName, bucketName, e.ToString());
+                throw;
             }
         }
 
