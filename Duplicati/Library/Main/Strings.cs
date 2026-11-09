@@ -505,6 +505,16 @@ namespace Duplicati.Library.Main.Strings
                 : LC.L(@"Failed to create a snapshot. This may be caused by insufficient permissions. Try running Duplicati with elevated privileges. Error message: {0}", message);
         }
         public static string BackupReadNotAvailable { get { return LC.L(@"Failed to activate BackupRead as the current process does not have sufficient permissions"); } }
+        /// <summary>
+        /// The message for a remote volume whose compression module cannot be loaded.
+        /// 7z volumes get their own message, as 7z was removed and the files can only be converted with an older release.
+        /// </summary>
+        /// <param name="module">The compression module named by the file</param>
+        /// <param name="filename">The name of the remote volume</param>
+        public static string CompressionModuleNotLoaded(string module, string filename)
+            => string.Equals(module, "7z", StringComparison.OrdinalIgnoreCase)
+                ? LC.L(@"The file {0} is compressed with 7z, which Duplicati no longer reads: 7z was removed in version 2.1.0.2. Recompress the 7z files to zip with the ""recompress"" command of the RecoveryTool in Duplicati 2.0.8.1, the last release with 7z, then run the operation again.", filename)
+                : LC.L(@"Failed to load compression module: {0}", module);
     }
 
     internal static class BackendMananger

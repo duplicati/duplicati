@@ -497,7 +497,7 @@ namespace Duplicati.Library.Main.Operation
                         using var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions);
                         await using var recreatedb = await LocalRecreateDatabase.CreateAsync(db, m_options, null, cancellationToken).ConfigureAwait(false);
                         if (compressor == null)
-                            throw new UserInformationException(string.Format("Failed to load compression module: {0}", parsed.CompressionModule), "FailedToLoadCompressionModule");
+                            throw new UserInformationException(Strings.Common.CompressionModuleNotLoaded(parsed.CompressionModule, remoteVolume.Name), "FailedToLoadCompressionModule");
 
                         var filesetid = await db
                             .CreateFilesetAsync(remoteVolume.ID, parsed.Time, cancellationToken)
@@ -1465,7 +1465,7 @@ namespace Duplicati.Library.Main.Operation
                 using var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read);
                 using var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions);
                 if (compressor == null)
-                    throw new UserInformationException(string.Format("Failed to load compression module: {0}", parsed.CompressionModule), "FailedToLoadCompressionModule");
+                    throw new UserInformationException(Strings.Common.CompressionModuleNotLoaded(parsed.CompressionModule, volume.Name), "FailedToLoadCompressionModule");
 
                 // Clear out the old fileset
                 await db
