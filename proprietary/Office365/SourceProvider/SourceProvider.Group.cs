@@ -2,6 +2,7 @@
 
 using System.CommandLine;
 using System.Net.Http.Headers;
+using Duplicati.Library.Interface;
 
 namespace Duplicati.Proprietary.Office365;
 
@@ -244,6 +245,29 @@ partial class SourceProvider
                 $"&$top={APIHelper.GENERAL_PAGE_SIZE}";
 
             return provider.GetAllGraphItemsAsync<GraphDrive>(url, ct);
+        }
+
+        /// <summary>
+        /// Gets the default document library of a group's site
+        /// </summary>
+        /// <param name="groupId">The group ID</param>
+        /// <param name="ct">The cancellation token</param>
+        /// <returns>The group's default drive</returns>
+        internal async Task<GraphDrive> GetGroupPrimaryDriveAsync(string groupId, CancellationToken ct)
+        {
+            var baseUrl = provider.GraphBaseUrl.TrimEnd('/');
+            var group = Uri.EscapeDataString(groupId);
+
+            var select = GraphSelectBuilder.BuildSelect<GraphDrive>();
+            var url =
+                $"{baseUrl}/v1.0/groups/{group}/drive" +
+                $"?$select={Uri.EscapeDataString(select)}";
+
+            var drive = await provider.GetGraphItemAsync<GraphDrive>(url, ct).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(drive.Id))
+                throw new UserInformationException("Failed to read group's primary drive.", nameof(SourceProvider));
+
+            return drive;
         }
     }
 

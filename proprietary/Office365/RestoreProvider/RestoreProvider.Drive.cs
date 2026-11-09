@@ -19,6 +19,14 @@ partial class RestoreProvider
         private string? _cachedDefaultFolderId;
         private bool _defaultDriveIdChecked;
 
+        /// <summary>
+        /// Gets the drive and folder that drive items are restored into when they are not below
+        /// a restored drive, such as a single file selected for restore. A folder chosen as the
+        /// target is used as it is; for other targets a "Restored" folder is made in the root of
+        /// the target's default drive.
+        /// </summary>
+        /// <param name="cancel">The cancellation token</param>
+        /// <returns>The drive and folder IDs, or nulls if the target has no drive</returns>
         public async Task<(string? DriveId, string? FolderId)> GetDefaultDriveAndFolder(CancellationToken cancel)
         {
             if (_defaultDriveIdChecked)
@@ -32,6 +40,21 @@ partial class RestoreProvider
 
             string? driveId = null;
 
+            if (target.Type == SourceItemType.DriveFolder)
+            {
+                var folderId = target.Metadata.GetValueOrDefault("o365:Id");
+                var folderDriveId = GetDriveIdFromParentReference(target.Metadata.GetValueOrDefault("o365:ParentReference"));
+                if (string.IsNullOrWhiteSpace(folderId) || string.IsNullOrWhiteSpace(folderDriveId))
+                {
+                    Log.WriteWarningMessage(LOGTAG, "GetDefaultDriveIdMissingFolderDrive", null, $"Could not determine the drive of the target folder {target.Path}");
+                    return (null, null);
+                }
+
+                _cachedDefaultDriveId = folderDriveId;
+                _cachedDefaultFolderId = folderId;
+                return (_cachedDefaultDriveId, _cachedDefaultFolderId);
+            }
+
             if (target.Type == SourceItemType.Drive)
             {
                 driveId = target.Metadata.GetValueOrDefault("o365:Id");
@@ -40,6 +63,7 @@ partial class RestoreProvider
             {
                 string? targetUserId = null;
                 string? targetSiteId = null;
+                string? targetGroupId = null;
 
                 if (target.Type == SourceItemType.User)
                 {
@@ -49,8 +73,24 @@ partial class RestoreProvider
                 {
                     targetSiteId = target.Metadata.GetValueOrDefault("o365:Id");
                 }
+                else if (target.Type == SourceItemType.Group || target.Type == SourceItemType.GroupFiles)
+                {
+                    targetGroupId = target.Metadata.GetValueOrDefault("o365:Id");
+                }
 
-                if (!string.IsNullOrWhiteSpace(targetUserId))
+                if (!string.IsNullOrWhiteSpace(targetGroupId))
+                {
+                    try
+                    {
+                        var primaryDrive = await Provider.SourceProvider.GroupDriveApi.GetGroupPrimaryDriveAsync(targetGroupId, cancel);
+                        driveId = primaryDrive.Id;
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteErrorMessage(LOGTAG, "GetDefaultDriveIdFailed", ex, $"Failed to get group primary drive");
+                    }
+                }
+                else if (!string.IsNullOrWhiteSpace(targetUserId))
                 {
                     try
                     {
@@ -99,6 +139,26 @@ partial class RestoreProvider
             }
 
             return (_cachedDefaultDriveId, _cachedDefaultFolderId);
+        }
+
+        /// <summary>
+        /// Reads the drive ID from the serialized parent reference of a drive item
+        /// </summary>
+        /// <param name="parentReferenceJson">The parent reference as JSON</param>
+        /// <returns>The drive ID, or null if it is not present</returns>
+        private static string? GetDriveIdFromParentReference(string? parentReferenceJson)
+        {
+            if (string.IsNullOrWhiteSpace(parentReferenceJson))
+                return null;
+
+            try
+            {
+                return JsonSerializer.Deserialize<GraphDriveItemParentReference>(parentReferenceJson)?.DriveId;
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
         }
     }
 

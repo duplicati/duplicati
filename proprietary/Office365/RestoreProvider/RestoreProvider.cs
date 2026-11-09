@@ -94,6 +94,16 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
     private readonly ConcurrentDictionary<string, string> _restoredDriveFolderMap = new();
 
     /// <summary>
+    /// Paths of the drive folders that are part of the restore, whether or not they could be restored
+    /// </summary>
+    private readonly HashSet<string> _driveFolderPathsInRestore = new();
+
+    /// <summary>
+    /// Paths of files the restore read from the target tenant to compare with the backup
+    /// </summary>
+    private readonly ConcurrentDictionary<string, bool> _readFromTarget = new();
+
+    /// <summary>
     /// Map of restored planner buckets to their corresponding IDs
     /// </summary>
     private readonly ConcurrentDictionary<string, string> _restoredPlannerBucketMap = new();
@@ -151,15 +161,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         _restorePath = uri.HostAndPath;
 
         var parsedOptions = OptionsHelper.ParseAndValidateOptions(url, options);
-        _apiHelper = APIHelper.Create(
-            tenantId: parsedOptions.TenantId,
-            authOptions: parsedOptions.AuthOptions,
-            graphBaseUrl: parsedOptions.GraphBaseUrl,
-            certificatePath: parsedOptions.CertificatePath,
-            certificatePassword: parsedOptions.CertificatePassword,
-            timeouts: TimeoutOptionsHelper.Parse(options),
-            scope: parsedOptions.Scope
-        );
+        _apiHelper = SourceProvider.CreateApiHelper(parsedOptions, TimeoutOptionsHelper.Parse(options));
 
         _ignoreExisting = Utility.ParseBoolOption(options, OptionsHelper.OFFICE_IGNORE_EXISTING_OPTION);
         _hasSetOverwriteOption = Utility.ParseBoolOption(options, "overwrite");
@@ -295,7 +297,10 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
 
         var entry = await SourceProvider.GetEntryAsync(path, isFolder: false, cancel).ConfigureAwait(false);
         if (entry != null)
+        {
+            _readFromTarget[path] = true;
             return await entry.OpenRead(cancel).ConfigureAwait(false);
+        }
 
         throw new FileNotFoundException($"File not found: {path}");
     }
@@ -829,6 +834,7 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                 case SourceItemType.UserContacts:
                 case SourceItemType.Calendar:
                 case SourceItemType.Drive:
+                case SourceItemType.GroupFiles:
                     toRemove.Add(kv.Key);
                     break;
 
@@ -1040,6 +1046,37 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         if (RestoreTarget.Type == SourceItemType.Site)
             return;
 
+        // A group's document libraries are matched by name; the contents of a library
+        // without a match go to the default folder of the group's default library
+        if (RestoreTarget.Type == SourceItemType.Group || RestoreTarget.Type == SourceItemType.GroupFiles)
+        {
+            var targetGroupId = RestoreTarget.Metadata.GetValueOrDefault("o365:Id");
+            if (string.IsNullOrWhiteSpace(targetGroupId))
+            {
+                Log.WriteWarningMessage(LOGTAG, "RestoreGroupDrivesMissingId", null, "Target group ID is missing, cannot restore group drives.");
+                return;
+            }
+
+            try
+            {
+                var targetDrives = await SourceProvider.GroupDriveApi.ListGroupDrivesAsync(targetGroupId, cancel).ToListAsync(cancel).ConfigureAwait(false);
+                foreach (var driveSource in driveSources)
+                {
+                    var sourceName = driveSource.Value.GetValueOrDefault("o365:Name");
+                    var match = targetDrives.FirstOrDefault(d => string.Equals(d.Name, sourceName, StringComparison.OrdinalIgnoreCase));
+                    if (match != null)
+                        _restoredDriveMap[driveSource.Key] = match.Id;
+                    else
+                        Log.WriteWarningMessage(LOGTAG, "RestoreGroupDrivesNoMatch", null, $"Could not find a document library named '{sourceName}' in the target group, its contents are restored to the default document library.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.WriteErrorMessage(LOGTAG, "RestoreGroupDrivesFailed", ex, $"Failed to list the document libraries of the target group");
+            }
+            return;
+        }
+
         string? targetUserId = null;
         if (RestoreTarget.Type == SourceItemType.User)
         {
@@ -1075,12 +1112,8 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         // Sort folders by path length to ensure parents are created before children
         var sortedFolders = folders.OrderBy(k => k.Key.Split(Path.DirectorySeparatorChar).Length).ToList();
 
-        var restoreTarget = await DriveRestore.GetDefaultDriveAndFolder(cancel);
-        if (!string.IsNullOrWhiteSpace(restoreTarget.FolderId))
-        {
-            var rootFolderPath = Util.AppendDirSeparator(Path.GetDirectoryName(sortedFolders.First().Key.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
-            _restoredDriveFolderMap.AddOrUpdate(rootFolderPath, restoreTarget.FolderId, (k, v) => v);
-        }
+        foreach (var folder in sortedFolders)
+            _driveFolderPathsInRestore.Add(folder.Key);
 
         foreach (var folder in sortedFolders)
         {
@@ -1114,8 +1147,9 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
             }
             else
             {
-                driveId = restoreTarget.DriveId;
-                if (restoreTarget.FolderId != null) defaultRootId = restoreTarget.FolderId;
+                var defaults = await DriveRestore.GetDefaultDriveAndFolder(cancel);
+                driveId = defaults.DriveId;
+                if (defaults.FolderId != null) defaultRootId = defaults.FolderId;
             }
 
             if (driveId == null)
@@ -1124,21 +1158,11 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                 continue;
             }
 
-            // Determine parent folder ID
-            var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
-            var parentId = defaultRootId;
-
-            if (parentPath != null && (drivePath == null || parentPath.TrimEnd(Path.DirectorySeparatorChar) != drivePath.TrimEnd(Path.DirectorySeparatorChar)))
+            var parentId = GetDriveItemParentId(originalPath, defaultRootId);
+            if (parentId == null)
             {
-                if (_restoredDriveFolderMap.TryGetValue(parentPath, out var mappedParentId))
-                {
-                    parentId = mappedParentId;
-                }
-                else
-                {
-                    Log.WriteWarningMessage(LOGTAG, "RestoreDriveFoldersMissingParent", null, $"Could not find parent folder for {originalPath}, skipping.");
-                    continue;
-                }
+                Log.WriteWarningMessage(LOGTAG, "RestoreDriveFoldersMissingParent", null, $"Could not find parent folder for {originalPath}, skipping.");
+                continue;
             }
 
             try
@@ -1175,6 +1199,25 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
         }
     }
 
+    /// <summary>
+    /// Gets the ID of the drive folder a restored drive item is placed in. An item whose parent
+    /// folder is not part of the restore, because the parent is a drive or the item was
+    /// selected on its own, is placed in the default folder.
+    /// </summary>
+    /// <param name="itemPath">The path of the item being restored</param>
+    /// <param name="defaultFolderId">The ID of the folder to use when the parent is not restored</param>
+    /// <returns>The parent folder ID, or null if the parent folder is part of the restore but was not restored</returns>
+    private string? GetDriveItemParentId(string itemPath, string defaultFolderId)
+    {
+        var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(itemPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
+        if (_restoredDriveFolderMap.TryGetValue(parentPath, out var mappedParentId))
+            return mappedParentId;
+
+        return _driveFolderPathsInRestore.Contains(parentPath)
+            ? null
+            : defaultFolderId;
+    }
+
     private async Task RestoreDriveFiles(CancellationToken cancel)
     {
         if (RestoreTarget == null)
@@ -1196,6 +1239,15 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
 
                 if (contentEntry == null)
                 {
+                    // The restore writes no content when the file at the target path already
+                    // has the content from the backup
+                    if (_readFromTarget.ContainsKey(originalPath))
+                    {
+                        Log.WriteVerboseMessage(LOGTAG, "RestoreDriveFilesSkipUnchanged", $"Skipping file {originalPath}, the target already has the same content");
+                        _metadata.TryRemove(originalPath, out _);
+                        continue;
+                    }
+
                     Log.WriteWarningMessage(LOGTAG, "RestoreDriveFilesMissingContent", null, $"Missing file content for {originalPath}, skipping.");
                     continue;
                 }
@@ -1226,21 +1278,11 @@ public partial class RestoreProvider : IRestoreDestinationProviderModule
                     continue;
                 }
 
-                // Determine parent folder ID
-                var parentPath = Util.AppendDirSeparator(Path.GetDirectoryName(originalPath.TrimEnd(Path.DirectorySeparatorChar)) ?? "");
-                var parentId = defaultRootId;
-
-                if (parentPath != null && (drivePath == null || parentPath.TrimEnd(Path.DirectorySeparatorChar) != drivePath.TrimEnd(Path.DirectorySeparatorChar)))
+                var parentId = GetDriveItemParentId(originalPath, defaultRootId);
+                if (parentId == null)
                 {
-                    if (_restoredDriveFolderMap.TryGetValue(parentPath, out var mappedParentId))
-                    {
-                        parentId = mappedParentId;
-                    }
-                    else
-                    {
-                        Log.WriteWarningMessage(LOGTAG, "RestoreDriveFilesMissingParent", null, $"Could not find parent folder for {originalPath}, skipping.");
-                        continue;
-                    }
+                    Log.WriteWarningMessage(LOGTAG, "RestoreDriveFilesMissingParent", null, $"Could not find parent folder for {originalPath}, skipping.");
+                    continue;
                 }
 
                 var displayName = file.Value.GetValueOrDefault("o365:Name") ?? Path.GetFileName(originalPath);
