@@ -92,6 +92,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         BackupEnableDisableExtension,
         SyncSnapshotsExtension,
         SyncRestoreExtension,
+        "v2:backup:purge-files:suppress-compact",
 
         // "v1:subscribe:scheduler",
     ];

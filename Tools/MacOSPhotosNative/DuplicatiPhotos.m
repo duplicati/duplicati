@@ -400,12 +400,18 @@ static const NSUInteger kDuplicatiPhotosMaxBufferBytes = 8 * 1024 * 1024;
 
 - (void)close {
     DLog(@"DuplicatiPhotos: DuplicatiPhotosReader close called");
+    // The data-received handler reads `cancelled` under the lock, so set it
+    // under the lock too. The lock is not held while cancelling the request,
+    // since PhotoKit may call the completion handler, which takes the lock.
+    [self.condition lock];
     if (self.cancelled) {
+        [self.condition unlock];
         DLog(@"DuplicatiPhotos: Already cancelled, skipping close");
         return;
     }
-
     self.cancelled = YES;
+    [self.condition unlock];
+
     if (self.requestId != PHInvalidAssetResourceDataRequestID)
     {
         PHAssetResourceManager *manager = [PHAssetResourceManager defaultManager];
@@ -414,6 +420,11 @@ static const NSUInteger kDuplicatiPhotosMaxBufferBytes = 8 * 1024 * 1024;
 
     [self.condition lock];
     self.completed = YES;
+    // Release any unread data now (up to kDuplicatiPhotosMaxBufferBytes) rather
+    // than when the reader is deallocated, which can be later if a PhotoKit
+    // handler still holds a reference when the asset is closed mid-read.
+    self.buffer = [NSMutableData data];
+    self.readOffset = 0;
     [self.condition broadcast];
     [self.condition unlock];
 }
@@ -556,10 +567,19 @@ ssize_t DuplicatiPhotosReadAsset(void *handle, uint8_t *buffer, size_t bufferLen
         return -1;
     }
 
-    DuplicatiPhotosReader *reader = (__bridge DuplicatiPhotosReader *)handle;
-    ssize_t result = [reader readInto:buffer length:bufferLength error:errorMessageOut];
-    DLog(@"DuplicatiPhotos: DuplicatiPhotosReadAsset returning: %zd", result);
-    return result;
+    if (errorMessageOut) {
+        *errorMessageOut = NULL;
+    }
+
+    // The caller is a managed thread that has no autorelease pool which ever
+    // drains, so anything autoreleased while reading would otherwise stay
+    // alive for the life of the process.
+    @autoreleasepool {
+        DuplicatiPhotosReader *reader = (__bridge DuplicatiPhotosReader *)handle;
+        ssize_t result = [reader readInto:buffer length:bufferLength error:errorMessageOut];
+        DLog(@"DuplicatiPhotos: DuplicatiPhotosReadAsset returning: %zd", result);
+        return result;
+    }
 }
 
 int DuplicatiPhotosGetAssetSize(void *handle, int64_t *sizeOut, char **errorMessageOut) {
@@ -608,8 +628,11 @@ void DuplicatiPhotosCloseAsset(void *handle) {
         return;
     }
 
-    DuplicatiPhotosReader *reader = (__bridge_transfer DuplicatiPhotosReader *)handle;
-    [reader close];
+    // See DuplicatiPhotosReadAsset: the managed caller has no draining pool
+    @autoreleasepool {
+        DuplicatiPhotosReader *reader = (__bridge_transfer DuplicatiPhotosReader *)handle;
+        [reader close];
+    }
 }
 
 void DuplicatiPhotosFreeString(char *value) {

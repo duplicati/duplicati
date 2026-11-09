@@ -232,7 +232,9 @@ public class FileRestoreDestinationProvider(string mountedPath, bool allowRestor
         else if (isDirTarget && !SystemIO.IO_OS.DirectoryExists(targetpath))
             SystemIO.IO_OS.DirectoryCreate(targetpath);
 
-        // Avoid setting restoring symlink metadata, as that writes the symlink target, not the symlink itself
+        // Do not apply metadata to symlinks unless --restore-symlink-metadata is set. What is applied is set on
+        // the link itself; outside Windows the permissions and the file attributes of a link are skipped,
+        // as chmod would change the file or folder the link points to
         if (!restoreSymlinkMetadata && SystemIO.IO_OS.IsSymlink(targetpath))
         {
             // The owner is set with lchown, which does not follow the link, so it is restored with the permissions alone

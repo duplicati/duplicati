@@ -687,10 +687,21 @@ public static partial class Command
             if (!File.Exists(templateDmg))
                 throw new FileNotFoundException($"Decompressed dmg template file not found: {templateDmg}");
 
-            await ProcessHelper.ExecuteAll([
-                ["hdiutil", "resize", "-size", "300M", templateDmg],
-                ["hdiutil", "attach", templateDmg, "-noautoopen", "-quiet", "-mountpoint", mountDir]
-            ], workingDirectory: buildRoot);
+            // `hdiutil resize` is deprecated on newer macOS in favor of `diskutil image resize`.
+            // Older macOS versions do not have `diskutil image`, so fall back to hdiutil there.
+            // Note: hdiutil reads "300M" as MiB, diskutil as MB, so "300MiB" keeps the size the same.
+            var diskutilResizeExitCode = 0;
+            await ProcessHelper.Execute(["diskutil", "image", "resize", "--size", "300MiB", templateDmg],
+                workingDirectory: buildRoot, codeIsError: code => { diskutilResizeExitCode = code; return false; });
+
+            if (diskutilResizeExitCode != 0)
+            {
+                Console.WriteLine($"diskutil image resize failed with exit code {diskutilResizeExitCode}, falling back to hdiutil resize");
+                await ProcessHelper.Execute(["hdiutil", "resize", "-size", "300M", templateDmg], workingDirectory: buildRoot);
+            }
+
+            await ProcessHelper.Execute(["hdiutil", "attach", templateDmg, "-noautoopen", "-quiet", "-mountpoint", mountDir],
+                workingDirectory: buildRoot);
 
             // Change the dmg name
             var dmgname = $"Duplicati {rtcfg.ReleaseInfo.ReleaseName}";

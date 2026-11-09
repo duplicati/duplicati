@@ -1583,6 +1583,64 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         }).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// The server opened, created or upgraded its database before it checked that no other
+    /// server was running. Two servers started at the same time, such as from two startup
+    /// entries, then upgraded the same database at once, and the one that failed copied its
+    /// copy of the old database back over it (forum 22694: "no such column: OperationType").
+    /// A second server must stop before it touches the database.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task ASecondServerDoesNotTouchTheDatabaseAsync()
+    {
+        // The test holds the instance lock and starts the second server in its own process.
+        // On Linux and macOS the lock is a POSIX record lock (lockf), which belongs to the
+        // process, so a second lock from the same process does not conflict and the server
+        // would start. On Windows the lock is a file opened with FileShare.None, which
+        // conflicts within one process as well. The order checked here is the same everywhere.
+        if (!OperatingSystem.IsWindows())
+            Assert.Ignore("The instance lock does not conflict within one process outside Windows.");
+
+        var serverDataFolder = Path.Combine(BASEFOLDER, $"server-data-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(serverDataFolder);
+        var databasePath = Path.Combine(serverDataFolder, DataFolderManager.SERVER_DATABASE_FILENAME);
+
+        var previousDataFolderEnv = Environment.GetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME);
+        Environment.SetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME, serverDataFolder);
+        var portableModeEnvName = $"{AutoUpdateSettings.AppName}__{DataFolderManager.PORTABLE_MODE_OPTION.Replace('-', '_')}".ToUpperInvariant();
+        var previousPortableModeEnv = Environment.GetEnvironmentVariable(portableModeEnvName);
+        Environment.SetEnvironmentVariable(portableModeEnvName, "false");
+
+        try
+        {
+            // The server that is already running
+            using var running = new SingleInstance(serverDataFolder);
+            Assert.That(running.IsFirstInstance, Is.True);
+
+            // Any origin but the server itself, so that the second server throws instead of exiting the process
+            var applicationSettings = new ApplicationSettings { Origin = "Test" };
+            string[] serverArgs =
+            [
+                $"--{WebServerLoader.OPTION_PORT}={GetFreeTcpPort()}",
+                $"--{WebServerLoader.OPTION_INTERFACE}=127.0.0.1",
+                $"--{DataFolderManager.SERVER_DATAFOLDER_OPTION}={serverDataFolder}",
+                "--webservice-api-only=true"
+            ];
+
+            Assert.ThrowsAsync<SingleInstance.MultipleInstanceException>(
+                () => RunServerInBackgroundAsync(applicationSettings, serverArgs).WaitAsync(TimeSpan.FromSeconds(60)));
+            Assert.That(File.Exists(databasePath), Is.False, "The second server created or opened the database before it found the running one");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME, previousDataFolderEnv);
+            Environment.SetEnvironmentVariable(portableModeEnvName, previousPortableModeEnv);
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            SafeDeleteDirectory(serverDataFolder);
+        }
+    }
+
     private Task WithAuthenticatedServerAsync(Func<HttpClient, Task> testBody, string? ports = null, string listenInterface = "127.0.0.1")
         => WithAuthenticatedServerAsync(testBody, ports, listenInterface, []);
 
@@ -1679,6 +1737,82 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         var result = await response.Content.ReadFromJsonAsync<AccessTokenOutputDto>(JsonOptions).ConfigureAwait(false)
                      ?? throw new InvalidOperationException("Authentication response was empty");
         httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", result.AccessToken);
+    }
+
+    /// <summary>
+    /// The purge-files endpoint passes SuppressCompact on to the task as no-auto-compact, only when it is set,
+    /// and only for this operation. The value given for the operation overrides the setting of the backup,
+    /// and the stored settings of the backup are not changed (duplicati/ngclient#216).
+    /// </summary>
+    /// <param name="requestValue">The JSON value of SuppressCompact in the request, or an empty string to leave it out</param>
+    /// <param name="jobNoAutoCompact">The no-auto-compact setting stored on the backup, if any</param>
+    /// <param name="expectedEffective">The no-auto-compact value the purge runs with, or <c>null</c> if it is not set</param>
+    [Test]
+    [Category("Integration")]
+    [TestCase("", null, null)]
+    [TestCase("null", null, null)]
+    [TestCase("true", null, true)]
+    [TestCase("false", null, false)]
+    [TestCase("false", "true", false)]
+    [TestCase("", "true", true)]
+    public async Task PurgeFilesPassesSuppressCompactToItsTaskOnly_Async(string requestValue, string? jobNoAutoCompact, bool? expectedEffective)
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var provider = ServerProgram.DuplicatiWebserver.Provider;
+            var queueRunner = (IQueueRunnerService)provider.GetService(typeof(IQueueRunnerService))!;
+            var connection = (Duplicati.Server.Database.Connection)provider.GetService(typeof(Duplicati.Server.Database.Connection))!;
+
+            var backupId = await CreateBackupAsync(httpClient, "integration-passphrase",
+                extraSettings: jobNoAutoCompact == null
+                    ? null
+                    : [new BackupAndScheduleInputDto.SettingInputDto { Name = "no-auto-compact", Value = jobNoAutoCompact }]).ConfigureAwait(false);
+
+            // Keep the task in the queue, so its options can be read before it runs
+            (await httpClient.PostAsync("/api/v1/serverstate/pause", null).ConfigureAwait(false)).EnsureSuccessStatusCode();
+
+            var path = Path.Combine(this.DATAFOLDER, "purged.txt");
+            var suppressCompact = requestValue == "" ? "" : $",\"SuppressCompact\":{requestValue}";
+            var body = $"{{\"BackupId\":{JsonSerializer.Serialize(backupId)},\"Filters\":[{JsonSerializer.Serialize(path)}],\"Versions\":[0,2]{suppressCompact}}}";
+            var response = await httpClient.PostAsync("/api/v2/backup/purge-files",
+                new StringContent(body, System.Text.Encoding.UTF8, "application/json")).ConfigureAwait(false);
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+
+            var task = queueRunner.GetCurrentTasks().OfType<Runner.IRunnerData>()
+                .Single(t => t.BackupID == backupId && t.Operation == Duplicati.Server.Serialization.DuplicatiOperation.PurgeFiles);
+
+            Assert.That(task.FilterStrings, Is.EqualTo(new[] { path }));
+            Assert.That(task.ExtraOptions?["version"], Is.EqualTo("0,2"));
+
+            if (requestValue is "" or "null")
+                Assert.That(task.ExtraOptions!.ContainsKey("no-auto-compact"), Is.False, "An unset SuppressCompact must not add an option");
+            else
+                Assert.That(Utility.ParseBool(task.ExtraOptions!["no-auto-compact"], !bool.Parse(requestValue)), Is.EqualTo(bool.Parse(requestValue)));
+
+            // The options the task runs with: the backup's settings, then the task's own options, as Runner does
+            var backup = connection.GetBackup(backupId)!;
+            var options = Runner.ApplyOptions(connection, backup, Runner.GetCommonOptions(connection), out _);
+            foreach (var option in task.ExtraOptions!)
+                options[option.Key] = option.Value;
+
+            if (expectedEffective == null)
+                Assert.That(options.ContainsKey("no-auto-compact"), Is.False);
+            else
+                Assert.That(Utility.ParseBool(options["no-auto-compact"], !expectedEffective.Value), Is.EqualTo(expectedEffective.Value));
+
+            // The stored settings of the backup stay as they were
+            var stored = backup.Settings.Where(s => s.Name == "no-auto-compact").Select(s => s.Value).ToArray();
+            Assert.That(stored, Is.EqualTo(jobNoAutoCompact == null ? Array.Empty<string>() : new[] { jobNoAutoCompact }));
+
+            (await httpClient.PostAsync("/api/v1/serverstate/resume", null).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            var stopwatch = Stopwatch.StartNew();
+            while (queueRunner.GetCurrentTasks().Count > 0 || queueRunner.GetCurrentTask() != null)
+            {
+                if (stopwatch.Elapsed > TimeSpan.FromMinutes(1))
+                    Assert.Fail("The queue did not empty");
+                await Task.Delay(100).ConfigureAwait(false);
+            }
+        }).ConfigureAwait(false);
     }
 
     private string BuildFileBackendUrl(string folder)
