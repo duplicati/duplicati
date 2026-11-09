@@ -215,7 +215,8 @@ public class Office365RestoreProviderTests
         using (Log.StartIsolatingScope(true))
         using (Log.StartScope(messages.Add, x => x.Level >= LogMessageType.Warning))
         using (Office365TestSupport.UseGraphHandler(graph))
-        using (var provider = new RestoreProvider($"office365://groups/{GROUP_ID}/", options))
+        // The target path uses the platform separator and is encoded, as the restore page sends it
+        using (var provider = new RestoreProvider($"office365://{Uri.EscapeDataString(P(true, "groups", GROUP_ID))}", options))
         {
             await provider.Initialize(CancellationToken.None);
             Assert.That(provider.RestoreTarget?.Type.ToString(), Is.EqualTo("Group"), "The restore target is the group");
