@@ -11,6 +11,7 @@
     <ProjectReference Include="..\Backend\DrimeCloud\Duplicati.Library.Backend.DrimeCloud.csproj" />
     <ProjectReference Include="..\Backend\Filejump\Duplicati.Library.Backend.Filejump.csproj" />
     <ProjectReference Include="..\Backend\Filen\Duplicati.Library.Backend.Filen.csproj" />
+    <ProjectReference Include="..\Backend\Internxt\Duplicati.Library.Backend.Internxt.csproj" />
     <ProjectReference Include="..\Backend\AzureBlob\Duplicati.Library.Backend.AzureBlob.csproj" />
     <ProjectReference Include="..\Backend\Backblaze\Duplicati.Library.Backend.Backblaze.csproj" />
     <ProjectReference Include="..\Backend\Box\Duplicati.Library.Backend.Box.csproj" />

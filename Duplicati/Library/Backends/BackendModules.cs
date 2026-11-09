@@ -93,6 +93,7 @@ public static class BackendModules
         new Backend.Filen.FilenBackend(),
         new Backend.Filejump(),
         new Backend.DrimeCloud.DrimeBackend(),
+        new Backend.Internxt.InternxtBackend(),
     }
     .Concat(Proprietary.LoaderHelper.BackendModules.LicensedBackendModules)
 

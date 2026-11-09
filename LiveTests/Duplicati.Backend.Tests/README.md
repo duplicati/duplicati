@@ -32,6 +32,7 @@ NUMBER_OF_FILES  default is 20
 | IDrive2        | Planned          | Live      |
 | backBlaze      | Planned          | Live      |
 | Filen          | Planned          | Live      |
+| Internxt       | Planned          |           |
 | Jottacloud     | Pannned          | Live      |
 | GCS            | Planned          | Live      |
 | OpenStack      | Planned          | Live      |
@@ -97,6 +98,18 @@ TESTCREDENTIAL_FILEJUMP_TOKEN
 TESTCREDENTIAL_FILEN_FOLDER
 TESTCREDENTIAL_FILEN_USERNAME
 TESTCREDENTIAL_FILEN_PASSWORD
+```
+
+## Internxt
+
+The account must be on a plan that allows CLI/rclone access, otherwise the login is refused with HTTP 402.
+The two-factor variable is optional and only works for a single run, because each code is valid once.
+
+```
+TESTCREDENTIAL_INTERNXT_FOLDER
+TESTCREDENTIAL_INTERNXT_USERNAME
+TESTCREDENTIAL_INTERNXT_PASSWORD
+TESTCREDENTIAL_INTERNXT_TWOFACTOR
 ```
 
 ## Box.com
