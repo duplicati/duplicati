@@ -429,13 +429,44 @@ namespace Duplicati.Library.SQLiteHelper
                 }
                 else if (versions.Count > dbversion)
                 {
+                    // In some cases (mostly test setups)
+                    // the database upgrades can happen within a second of each other
+                    // causing the upgrades to fail. This scheme adds up to 15 seconds
+                    // delay, making room for multiple rapid upgrade calls
+                    var backupfile = string.Empty;
+                    var backupfolder = System.IO.Path.GetDirectoryName(sourcefile);
+                    if (!System.IO.Directory.Exists(backupfolder))
+                        System.IO.Directory.CreateDirectory(backupfolder);
+
+                    // Keep a backup. This must happen before the transaction starts: the transaction
+                    // holds an fcntl write lock, and on macOS that blocks the flock File.Copy takes.
+                    // Another process may be copying to the same name, so a name taken meanwhile
+                    // moves on to the next one.
+                    for (var i = 0; ; i++)
+                    {
+                        backupfile = System.IO.Path.Combine(
+                            backupfolder,
+                            Strings.DatabaseUpgrader.BackupFilenamePrefix + " " + System.IO.Path.GetFileNameWithoutExtension(sourcefile) + " " + (DateTime.Now + TimeSpan.FromSeconds(i * 1.5)).ToString("yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture) + ".sqlite");
+
+                        if (i < 9 && System.IO.File.Exists(backupfile))
+                            continue;
+
+                        try
+                        {
+                            System.IO.File.Copy(sourcefile, backupfile, false);
+                            break;
+                        }
+                        catch (System.IO.IOException) when (i < 9 && System.IO.File.Exists(backupfile))
+                        {
+                        }
+                    }
+
                     // A script that begins and commits a transaction of its own, or vacuums, cannot
                     // run inside one, so an upgrade through such a script runs without one, as before
                     var transaction = Enumerable.Range(dbversion, versions.Count - dbversion).Any(i => ManagesItsOwnTransaction(versions[i]))
                         ? null
                         : connection.BeginTransaction();
 
-                    var backupfile = string.Empty;
                     try
                     {
                         if (transaction != null)
@@ -449,29 +480,10 @@ namespace Duplicati.Library.SQLiteHelper
                             ";
                             dbversion = Convert.ToInt32(cmd.ExecuteScalar());
                             preparserVars["db_version"] = dbversion;
-                        }
 
-                        if (dbversion < versions.Count)
-                        {
-                            // In some cases (mostly test setups)
-                            // the database upgrades can happen within a second of each other
-                            // causing the upgrades to fail. This scheme adds up to 15 seconds
-                            // delay, making room for multiple rapid upgrade calls
-                            for (var i = 0; i < 10; i++)
-                            {
-                                backupfile = System.IO.Path.Combine(
-                                    System.IO.Path.GetDirectoryName(sourcefile),
-                                    Strings.DatabaseUpgrader.BackupFilenamePrefix + " " + System.IO.Path.GetFileNameWithoutExtension(sourcefile) + " " + (DateTime.Now + TimeSpan.FromSeconds(i * 1.5)).ToString("yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture) + ".sqlite");
-
-                                if (!System.IO.File.Exists(backupfile))
-                                    break;
-                            }
-
-                            if (!System.IO.Directory.Exists(System.IO.Path.GetDirectoryName(backupfile)))
-                                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(backupfile));
-
-                            //Keep a backup
-                            System.IO.File.Copy(sourcefile, backupfile, false);
+                            // The other process upgraded the database and kept its own backup
+                            if (dbversion >= versions.Count)
+                                System.IO.File.Delete(backupfile);
                         }
 
                         for (int i = dbversion; i < versions.Count; i++)
