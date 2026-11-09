@@ -311,18 +311,27 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
         MailDeltaEnabled = parsedOptions.MailDelta;
         DriveDeltaEnabled = parsedOptions.DriveDelta;
         DriveDeltaMaxItems = parsedOptions.DriveDeltaMaxItems;
-        _apiHelper = apiHelper
-            ?? _apiHelperFactory.Value?.Invoke(parsedOptions, _timeouts)
-            ?? APIHelper.Create(
-            tenantId: parsedOptions.TenantId,
-            authOptions: parsedOptions.AuthOptions,
-            graphBaseUrl: parsedOptions.GraphBaseUrl,
-            timeouts: _timeouts,
-            certificatePath: parsedOptions.CertificatePath,
-            certificatePassword: parsedOptions.CertificatePassword,
-            scope: parsedOptions.Scope
-        );
+        _apiHelper = apiHelper ?? CreateApiHelper(parsedOptions, _timeouts);
     }
+
+    /// <summary>
+    /// Builds an API helper from the options, using the factory set for the current
+    /// asynchronous flow when there is one
+    /// </summary>
+    /// <param name="parsedOptions">The parsed options</param>
+    /// <param name="timeouts">The timeouts to use</param>
+    /// <returns>The API helper</returns>
+    internal static APIHelper CreateApiHelper(OptionsHelper.ParsedOptions parsedOptions, TimeoutOptionsHelper.Timeouts timeouts)
+        => _apiHelperFactory.Value?.Invoke(parsedOptions, timeouts)
+            ?? APIHelper.Create(
+                tenantId: parsedOptions.TenantId,
+                authOptions: parsedOptions.AuthOptions,
+                graphBaseUrl: parsedOptions.GraphBaseUrl,
+                timeouts: timeouts,
+                certificatePath: parsedOptions.CertificatePath,
+                certificatePassword: parsedOptions.CertificatePassword,
+                scope: parsedOptions.Scope
+            );
 
     /// <inheritdoc />
     public string Key => OptionsHelper.ModuleKey;
