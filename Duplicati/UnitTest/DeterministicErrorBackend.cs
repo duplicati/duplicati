@@ -52,6 +52,9 @@ namespace Duplicati.UnitTest
         // return true to throw exception, parameters: (action, remotename)
         public static Func<BackendAction, string, bool> ErrorGenerator = null;
 
+        // return true to leave the file out of a listing, parameters: (remotename)
+        public static Func<string, bool> ListingFilter = null;
+
         public static string WrappedBackend { get; set; }
 
         private IStreamingBackend m_backend;
@@ -91,7 +94,9 @@ namespace Duplicati.UnitTest
         #region IBackend implementation
         public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancelToken)
         {
-            return m_backend.ListAsync(cancelToken);
+            var filter = ListingFilter;
+            var list = m_backend.ListAsync(cancelToken);
+            return filter == null ? list : list.Where(x => !filter(x.Name));
         }
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
