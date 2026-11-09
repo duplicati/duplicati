@@ -155,22 +155,22 @@ public class RenameAfterErrorTests : BasicSetupHelper
     }
 
     /// <summary>
-    /// Runs the operation with the first upload of a name that <paramref name="failName"/> accepts failing, then checks
-    /// that each version still has its own dlist file, before and after a database recreate.
+    /// Runs the operation with the first upload of a name that <paramref name="failName"/> accepts failing, for up to
+    /// <paramref name="failures"/> names, then checks that each version still has its own dlist file, before and after
+    /// a database recreate.
     /// </summary>
-    private async Task RunWithOneFailedUploadAsync(Func<string, bool> failName, Func<Library.Main.Controller, Task> operation, string[] expectedContents)
+    private async Task RunWithOneFailedUploadAsync(Func<string, bool> failName, Func<Library.Main.Controller, Task> operation, string[] expectedContents, int failures = 1)
     {
         var before = await GetFilesetsAsync();
         var namesBefore = DlistFiles;
 
         Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
         var target = new DeterministicErrorBackend().ProtocolKey + "://" + TARGETFOLDER;
-        var failed = false;
+        var failedNames = new HashSet<string>();
         DeterministicErrorBackend.ErrorGenerator = (action, remotename) =>
         {
-            if (!failed && action == DeterministicErrorBackend.BackendAction.PutBefore && failName(remotename))
-                return failed = true;
-            return false;
+            lock (failedNames)
+                return failedNames.Count < failures && action == DeterministicErrorBackend.BackendAction.PutBefore && failName(remotename) && failedNames.Add(remotename);
         };
 
         Exception? operationError = null;
@@ -195,7 +195,7 @@ public class RenameAfterErrorTests : BasicSetupHelper
         }
 
         var report = $"dlist before: {string.Join(", ", namesBefore)}{Environment.NewLine}dlist after:  {string.Join(", ", DlistFiles)}{Environment.NewLine}error: {operationError?.GetType().Name}: {operationError?.Message}{Environment.NewLine}{await DumpAsync()}";
-        Assert.That(failed, Is.True, $"No upload failed{Environment.NewLine}{report}");
+        Assert.That(failedNames.Count, Is.EqualTo(failures), $"Not every upload failed{Environment.NewLine}{report}");
 
         // A rename after a failed upload leaves a placeholder for the failed name, which the
         // next verification of the destination removes
@@ -368,5 +368,29 @@ public class RenameAfterErrorTests : BasicSetupHelper
         var recreated = await GetFilesetsAsync();
         report += $"{Environment.NewLine}versions recreated: {Describe(recreated)}";
         Assert.That(recreated.Select(x => x.IsFull), Is.EqualTo(after.Select(x => x.IsFull)), report);
+    }
+
+    [Test]
+    [Category("Targeted")]
+    public async Task RepairRetriesOfTwoDlistsDoNotTakeTheSameNameAsync()
+    {
+        await SetUpTwoVersionsAsync(1);
+
+        // Without a registered dlist volume, the repair uploads a dlist for each version under
+        // its own time, one second apart, and only writes the renames of the retries to the
+        // database after both uploads. Fail the first upload of both: the older retry skips the
+        // newer version's name, and the newer retry must not take the name the older one got.
+        foreach (var name in DlistFiles)
+            File.Delete(Path.Combine(TARGETFOLDER, name));
+        using (var con = await SQLiteLoader.LoadConnectionAsync(DBFILE))
+        using (var cmd = con.CreateCommand())
+        {
+            cmd.CommandText = @"DELETE FROM ""Remotevolume"" WHERE ""Type"" = 'Files'";
+            Assert.That(await cmd.ExecuteNonQueryAsync(), Is.EqualTo(2));
+        }
+
+        await RunWithOneFailedUploadAsync(name => name.Contains(".dlist.", StringComparison.Ordinal),
+            async c => TestUtils.AssertResults(await c.RepairAsync()),
+            ["a.txt b.txt", "a.txt b.txt c.txt"], 2);
     }
 }

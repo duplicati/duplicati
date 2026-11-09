@@ -470,7 +470,10 @@ namespace Duplicati.Library.Main.Operation
                             Logging.Log.WriteDryrunMessage(LOGTAG, "WouldReUploadFileset", "would re-upload fileset {0}", fsw.RemoteFilename);
                             continue;
                         }
-                        await backendManager.PutAsync(fsw, null, null, false, null, cancellationToken).ConfigureAwait(false);
+                        // A dlist name is only the time, and the next fileset can be one second
+                        // later. Upload one at a time, and write a rename after a failed upload to
+                        // the database right away, so the next name and the next retry see it.
+                        await backendManager.PutAsync(fsw, null, null, true, () => backendManager.FlushPendingMessagesAsync(db, cancellationToken), cancellationToken).ConfigureAwait(false);
                     }
 
                     if (anyDlistUploads)
