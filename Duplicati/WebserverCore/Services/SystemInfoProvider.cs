@@ -78,6 +78,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v2:systemstatus",
         "v2:backup:restore-test",
         BackupEnableDisableExtension,
+        "v2:backup:purge-files:suppress-compact",
 
         // "v1:subscribe:scheduler",
     ];
