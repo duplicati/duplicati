@@ -37,6 +37,7 @@ Command: {1} {2}", message, executable, arguments); }
     internal static class USNHelper {
         public static string PathResolveError { get { return LC.L(@"Unable to determine full file path for USN entry"); } }
         public static string JournalEntriesDeleted { get { return LC.L(@"USN journal entries were purged since last scan"); } }
+        public static string JournalEntriesPurged(string volume, string maximumsize) { return LC.L(@"USN journal entries were purged since last scan. The USN journal of {0} holds at most {1}, which does not reach back to the previous backup. To use the USN journal, make it larger, for example with ""fsutil usn createjournal m=1073741824 a=134217728 {0}"".", volume, maximumsize); }
         public static string EmptyResponseError { get { return LC.L(@"Unexpected empty response while enumerating"); } }
         public static string LinuxNotSupportedError { get { return LC.L(@"USN is not supported on Linux"); } }
         public static string SafeGuardError { get { return LC.L(@"The number of files returned by USN was zero. This is likely an error. To remedy this, USN has been disabled."); } }
