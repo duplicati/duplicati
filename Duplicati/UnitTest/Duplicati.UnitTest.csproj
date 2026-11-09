@@ -55,6 +55,13 @@
     <ProjectReference Include="..\GUI\Duplicati.GUI.TrayIcon\Duplicati.GUI.TrayIcon.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The SharePoint backend references this directly, so it does not flow to the tests -->
+    <Reference Include="SharePointPnP.Client">
+      <HintPath>..\..\thirdparty\SharePointPnP-Sites-Core\SharePointPnP.Client.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
   <!-- Copy in WindowsModules on Windows so the tests can load the snapshot providers -->
   <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
     <_CopyWinModules>True</_CopyWinModules>
