@@ -46,27 +46,35 @@ public class DrimePaginationTests
     private const string FolderHash = "folder-hash";
     private static readonly DateTimeOffset BaseDate = new(2026, 9, 1, 0, 0, 0, TimeSpan.Zero);
 
-    private sealed record StubEntry(long Id, string Name, DateTimeOffset CreatedAt, string? DeletedAt = null);
+    private sealed record StubEntry(long Id, string Name, DateTimeOffset CreatedAt, string? DeletedAt = null, string Type = "file");
 
     private sealed class StubHandler : HttpMessageHandler
     {
         private readonly IReadOnlyList<StubEntry> _entries;
         private readonly long _count;
         private readonly bool _trashBoundaryOnFilteredListing;
+        private readonly Func<IEnumerable<StubEntry>, IEnumerable<StubEntry>> _order;
+        private readonly bool _ignoreFilter;
 
         public List<int> UnfilteredPages { get; } = new();
         public List<int> FilteredPages { get; } = new();
         public List<string> DecodedFilters { get; } = new();
         public int CountRequests { get; private set; }
 
+        /// <param name="order">The order the server returns a window in; by creation time when not given</param>
+        /// <param name="ignoreFilter">Return every entry, as if the created_at filter was not applied</param>
         public StubHandler(
             IEnumerable<StubEntry>? entries = null,
             long? count = null,
-            bool trashBoundaryOnFilteredListing = false)
+            bool trashBoundaryOnFilteredListing = false,
+            Func<IEnumerable<StubEntry>, IEnumerable<StubEntry>>? order = null,
+            bool ignoreFilter = false)
         {
-            _entries = (entries ?? CreateActiveEntries(21)).OrderBy(entry => entry.CreatedAt).ToList();
+            _entries = (entries ?? CreateActiveEntries(21)).ToList();
             _count = count ?? _entries.LongCount(entry => string.IsNullOrWhiteSpace(entry.DeletedAt));
             _trashBoundaryOnFilteredListing = trashBoundaryOnFilteredListing;
+            _order = order ?? (window => window.OrderBy(entry => entry.CreatedAt));
+            _ignoreFilter = ignoreFilter;
         }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -105,11 +113,11 @@ public class DrimePaginationTests
 
             (filtered ? FilteredPages : UnfilteredPages).Add(page);
             var perPage = int.Parse(query["perPage"], CultureInfo.InvariantCulture);
-            var windowEntries = _entries
-                .Where(entry => !lower.HasValue || entry.CreatedAt >= lower.Value)
+            var windowEntries = _order(_entries
+                .Where(entry => _ignoreFilter || !lower.HasValue || entry.CreatedAt >= lower.Value)
                 .Select(entry => filtered && _trashBoundaryOnFilteredListing && entry.Id == 20
                     ? entry with { DeletedAt = "2026-09-30T00:00:00.000000Z" }
-                    : entry)
+                    : entry))
                 .ToList();
             var pageEntries = windowEntries.Skip((page - 1) * perPage).Take(perPage).ToList();
             var lastPage = Math.Max(1, (windowEntries.Count + perPage - 1) / perPage);
@@ -117,7 +125,7 @@ public class DrimePaginationTests
             {
                 id = entry.Id,
                 name = entry.Name,
-                type = "file",
+                type = entry.Type,
                 hash = $"hash-{entry.Id}",
                 file_size = entry.Id,
                 parent_id = FolderId,
@@ -324,6 +332,97 @@ public class DrimePaginationTests
         CollectionAssert.AreEqual(new[] { "active-file" }, listed);
         Assert.Greater(handler.UnfilteredPages.Count + handler.FilteredPages.Count, 1000);
         Assert.AreEqual(2, handler.CountRequests);
+    }
+
+    /// <summary>
+    /// A sub-folder created after the files, listed ahead of them (#7737)
+    /// </summary>
+    private static List<StubEntry> CreateFilesAndNewerFolder(int files)
+        => CreateActiveEntries(files)
+            .Append(new StubEntry(500, "nested", BaseDate.AddDays(files + 10), Type: "folder"))
+            .ToList();
+
+    private static IEnumerable<StubEntry> FoldersFirst(IEnumerable<StubEntry> window)
+        => window.OrderByDescending(entry => entry.Type == "folder").ThenBy(entry => entry.CreatedAt);
+
+    private static async Task<List<string>> ListNamesAsync(StubHandler handler, string pageSize)
+    {
+        using var backend = new DrimeBackend(
+            "drimecloud://backup",
+            new Dictionary<string, string?> { ["api-token"] = "test-token", ["page-size"] = pageSize },
+            handler);
+
+        var listed = new List<string>();
+        await foreach (var entry in backend.ListAsync(CancellationToken.None))
+            listed.Add(entry.Name);
+        return listed;
+    }
+
+    [Test]
+    [Category("Backend")]
+    public async Task FolderListingAcceptsSubFolderListedAheadOfOlderFiles()
+    {
+        using var handler = new StubHandler(CreateFilesAndNewerFolder(11), order: FoldersFirst);
+
+        var listed = await ListNamesAsync(handler, "100");
+
+        CollectionAssert.AreEquivalent(Enumerable.Range(1, 11).Select(id => $"file-{id}"), listed);
+    }
+
+    [Test]
+    [Category("Backend")]
+    public async Task FolderListingAcceptsSubFolderListedAheadOfOlderFilesAcrossWindows()
+    {
+        using var handler = new StubHandler(CreateFilesAndNewerFolder(21), order: FoldersFirst);
+
+        var listed = await ListNamesAsync(handler, "1");
+
+        CollectionAssert.AreEquivalent(Enumerable.Range(1, 21).Select(id => $"file-{id}"), listed);
+        Assert.IsNotEmpty(handler.FilteredPages);
+    }
+
+    [Test]
+    [Category("Backend")]
+    public async Task FolderListingAcceptsEntriesNotOrderedByCreationTime()
+    {
+        using var handler = new StubHandler(CreateActiveEntries(11), order: window => window.OrderByDescending(entry => entry.CreatedAt));
+
+        var listed = await ListNamesAsync(handler, "100");
+
+        CollectionAssert.AreEquivalent(Enumerable.Range(1, 11).Select(id => $"file-{id}"), listed);
+    }
+
+    /// <summary>
+    /// In newest-first order the next window starts after the oldest file, which is never listed
+    /// </summary>
+    [Test]
+    [Category("Backend")]
+    public async Task FolderListingFailsInsteadOfSkippingEntriesBehindTheWindowBoundary()
+    {
+        using var handler = new StubHandler(order: window => window.OrderByDescending(entry => entry.CreatedAt));
+        using var backend = new DrimeBackend(
+            "drimecloud://backup",
+            new Dictionary<string, string?> { ["api-token"] = "test-token", ["page-size"] = "1" },
+            handler);
+
+        var exception = await CaptureListingExceptionAsync(backend);
+
+        StringAssert.Contains("20 active and 20 observed IDs, but the separate folder count was 21", exception.Message);
+    }
+
+    [Test]
+    [Category("Backend")]
+    public async Task FolderListingRejectsEntriesOlderThanTheWindowBoundary()
+    {
+        using var handler = new StubHandler(ignoreFilter: true);
+        using var backend = new DrimeBackend(
+            "drimecloud://backup",
+            new Dictionary<string, string?> { ["api-token"] = "test-token", ["page-size"] = "1" },
+            handler);
+
+        var exception = await CaptureListingExceptionAsync(backend);
+
+        StringAssert.Contains("Drime ignored the date boundary", exception.Message);
     }
 
     private static async Task<Exception> CaptureListingExceptionAsync(DrimeBackend backend)
