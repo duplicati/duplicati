@@ -69,7 +69,7 @@ public class RemoteControlRestoreTestCommandTests
         _queue = new FakeQueueRunnerService();
 
         // The http client, token provider and application settings are only used for forwarded commands
-        _handler = new RemoteControllerHandler(_connection, null!, null!, null!, _queue);
+        _handler = new RemoteControllerHandler(_connection, null!, null!, null!, _queue, new FakeUpdateInstallService());
     }
 
     [TearDown]

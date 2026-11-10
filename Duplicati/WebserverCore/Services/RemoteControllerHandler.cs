@@ -35,8 +35,18 @@ namespace Duplicati.WebserverCore.Services;
 /// <param name="connection">The connection to the database</param>
 /// <param name="httpClientFactory">The HTTP client factory</param>
 /// <param name="jwtTokenProvider">The JWT token provider</param>
-public class RemoteControllerHandler(Connection connection, IHttpClientFactory httpClientFactory, IJWTTokenProvider jwtTokenProvider, IApplicationSettings applicationSettings, IQueueRunnerService queueRunnerService) : IRemoteControllerHandler
+public class RemoteControllerHandler(Connection connection, IHttpClientFactory httpClientFactory, IJWTTokenProvider jwtTokenProvider, IApplicationSettings applicationSettings, IQueueRunnerService queueRunnerService, IUpdateInstallService updateInstallService) : IRemoteControllerHandler
 {
+    /// <summary>
+    /// The connect metadata key set to "true" when the console can ask this client to install an update
+    /// </summary>
+    public const string UpdateInstallFeatureKey = "feature:update-install";
+
+    /// <summary>
+    /// How long the update check of the install update command may take; the console waits for the answer
+    /// </summary>
+    private static readonly TimeSpan UpdateCheckTimeout = TimeSpan.FromSeconds(25);
+
     /// <summary>
     /// The log tag for this class.
     /// </summary>
@@ -59,6 +69,9 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
             : connection.ApplicationSettings.ReducedReporting ? "local" : "off";
         // The console can queue restore tests with the restore test control command
         metadata["feature:restore-test"] = "true";
+        // The console can ask for the newest update to be installed with the install update command
+        if (CanInstallUpdateForConsole())
+            metadata[UpdateInstallFeatureKey] = "true";
         if (connection.Settings != null)
         {
             var lookup = connection.Settings
@@ -100,19 +113,58 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// True when the console may ask this client to install updates: console control is allowed and the
+    /// installation can update itself
+    /// </summary>
+    private bool CanInstallUpdateForConsole()
+    {
+        if (connection.ApplicationSettings.DisableConsoleControl)
+            return false;
+
+        try
+        {
+            return updateInstallService.Support.Supported;
+        }
+        catch (Exception ex)
+        {
+            Log.WriteMessage(LogMessageType.Warning, LOGTAG, "UpdateInstallSupport", ex, "Failed to determine whether updates can be installed automatically");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Checks for an update and installs it, now or when the client is idle
+    /// </summary>
+    /// <returns>The response values for the console</returns>
+    private async Task<Dictionary<string, string?>> InstallUpdateAsync()
+    {
+        if (connection.ApplicationSettings.DisableConsoleControl)
+            throw new InvalidOperationException("Remote control is disabled.");
+
+        using var timeout = new CancellationTokenSource(UpdateCheckTimeout);
+        var outcome = await updateInstallService.InstallLatestForConsoleAsync(timeout.Token).ConfigureAwait(false);
+        return new Dictionary<string, string?>
+        {
+            [ControlResponseMessage.UpdateStatusKey] = outcome.Status.ToString().ToLowerInvariant(),
+            [ControlResponseMessage.UpdateVersionKey] = outcome.Version
+        };
+    }
+
     /// <inheritdoc/>
     public async Task OnControlAsync(KeepRemoteConnection.ControlMessage message)
     {
-        // Make method async
-        await Task.CompletedTask;
-
         Dictionary<string, string?>? result = null;
         var refreshSettingsBy = DateTimeOffset.MinValue;
 
         Log.WriteMessage(LogMessageType.Verbose, LOGTAG, "OnControl", "Received control message: {0}", message);
         try
         {
-            if (string.Equals(message.ControlRequestMessage.Command, ControlRequestMessage.RestoreTestCommand, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(message.ControlRequestMessage.Command, ControlRequestMessage.InstallUpdateCommand, StringComparison.OrdinalIgnoreCase))
+            {
+                result = await InstallUpdateAsync();
+            }
+            else if (string.Equals(message.ControlRequestMessage.Command, ControlRequestMessage.RestoreTestCommand, StringComparison.OrdinalIgnoreCase))
             {
                 result = new Dictionary<string, string?>
                 {

@@ -47,6 +47,15 @@ public class UpdateInstallService : IUpdateInstallService
     /// How long a supervised server waits to be stopped before concluding the helper failed
     /// </summary>
     private static readonly TimeSpan SupervisedStopTimeout = TimeSpan.FromMinutes(10);
+    /// <summary>
+    /// How long the console cannot ask again for a version whose install failed, so a failing install
+    /// does not repeat on every reconnect
+    /// </summary>
+    internal static readonly TimeSpan FailedVersionRetryDelay = TimeSpan.FromHours(24);
+    /// <summary>
+    /// How often a console requested install checks whether the queue has become idle
+    /// </summary>
+    private static readonly TimeSpan IdlePollInterval = TimeSpan.FromSeconds(30);
 
     private readonly Connection _connection;
     private readonly UpdatePollThread _updatePollThread;
@@ -57,6 +66,14 @@ public class UpdateInstallService : IUpdateInstallService
     private CancellationTokenSource? _cts;
     private readonly Lazy<HostEnvironment> _host;
     private readonly Lazy<UpdateInstallSupport> _support;
+    /// <summary>
+    /// The version whose install last failed, and when; guarded by <see cref="_lock"/>
+    /// </summary>
+    private (string Version, DateTime At)? _lastFailure;
+    /// <summary>
+    /// The version a console requested install waits for an idle queue to install; guarded by <see cref="_lock"/>
+    /// </summary>
+    private string? _waitingForIdleVersion;
 
     public UpdateInstallService(Connection connection, UpdatePollThread updatePollThread, IQueueRunnerService queueRunnerService, LiveControls liveControls, IApplicationSettings applicationSettings)
     {
@@ -106,6 +123,142 @@ public class UpdateInstallService : IUpdateInstallService
 
         Log.WriteInformationMessage(LOGTAG, "UpdateInstallStarted", "Installing update {0}; host: {1}", update.Displayname, Host.Describe());
         Task.Run(() => RunInstallAsync(update, package, cts.Token));
+    }
+
+    public async Task<ConsoleUpdateInstallResult> InstallLatestForConsoleAsync(CancellationToken cancellationToken)
+    {
+        if (!Support.Supported)
+            throw new ConflictException(Support.Reason ?? "Automatic installation is not supported");
+
+        lock (_lock)
+        {
+            if (InProgress)
+                return new ConsoleUpdateInstallResult(ConsoleUpdateInstallStatus.Installing, _connection.ApplicationSettings.UpdatedVersion?.Version ?? "");
+            if (_waitingForIdleVersion != null)
+                return new ConsoleUpdateInstallResult(ConsoleUpdateInstallStatus.WaitingForIdle, _waitingForIdleVersion);
+        }
+
+        UpdateInfo? update;
+        try
+        {
+            update = await Task.Run(CheckForNewerUpdate).WaitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException ex)
+        {
+            throw new UpdateInstallException("Checking for updates took too long", ex);
+        }
+        var selfVersion = UpdaterManager.SelfVersion.Version ?? "";
+        if (update == null)
+            return new ConsoleUpdateInstallResult(ConsoleUpdateInstallStatus.UpToDate, selfVersion);
+
+        if (update.FindPackage() == null)
+            throw new ConflictException($"The update {update.Displayname} has no package for this installation");
+
+        lock (_lock)
+        {
+            if (_lastFailure is { } failure
+                && string.Equals(failure.Version, update.Version, StringComparison.Ordinal)
+                && failure.At + FailedVersionRetryDelay > DateTime.UtcNow)
+                throw new ConflictException($"The install of {update.Displayname} failed at {failure.At:u}; it is not retried before {failure.At + FailedVersionRetryDelay:u}");
+
+            if (_waitingForIdleVersion != null)
+                return new ConsoleUpdateInstallResult(ConsoleUpdateInstallStatus.WaitingForIdle, _waitingForIdleVersion);
+
+            if (IsBusy())
+            {
+                _waitingForIdleVersion = update.Version ?? "";
+                Log.WriteInformationMessage(LOGTAG, "UpdateInstallWaitingForIdle", "The console asked to install {0}; waiting for the running tasks to finish", update.Displayname);
+                Task.Run(InstallWhenIdleAsync);
+                return new ConsoleUpdateInstallResult(ConsoleUpdateInstallStatus.WaitingForIdle, _waitingForIdleVersion);
+            }
+        }
+
+        Log.WriteInformationMessage(LOGTAG, "UpdateInstallRequestedByConsole", "The console asked to install {0}", update.Displayname);
+        BeginInstall();
+        return new ConsoleUpdateInstallResult(ConsoleUpdateInstallStatus.Installing, update.Version ?? "");
+    }
+
+    /// <summary>
+    /// Checks the configured update channel, and records the update the same way the poll thread does
+    /// </summary>
+    /// <returns>The update when it is newer than the running version, otherwise null</returns>
+    private UpdateInfo? CheckForNewerUpdate()
+    {
+        if (!Enum.TryParse<Duplicati.Library.AutoUpdater.ReleaseType>(_connection.ApplicationSettings.UpdateChannel, true, out var channel)
+            || channel == Duplicati.Library.AutoUpdater.ReleaseType.Unknown)
+            channel = AutoUpdateSettings.DefaultUpdateChannel;
+
+        var lastError = (Exception?)null;
+        Action<Exception> onError = ex => lastError = ex;
+        UpdateInfo? update;
+        UpdaterManager.OnError += onError;
+        try
+        {
+            update = UpdaterManager.CheckForUpdate(channel);
+        }
+        finally
+        {
+            UpdaterManager.OnError -= onError;
+        }
+
+        if (update == null)
+        {
+            // Every manifest url failing reads as "no update"; that must not be reported to the console as up to date
+            if (lastError != null)
+                throw new UpdateInstallException($"Checking for updates failed: {lastError.Message}", lastError);
+            return null;
+        }
+
+        if (UpdaterManager.TryParseVersion(update.Version) <= UpdaterManager.TryParseVersion(UpdaterManager.SelfVersion.Version))
+            return null;
+
+        _connection.ApplicationSettings.UpdatedVersion = update;
+        return update;
+    }
+
+    /// <summary>
+    /// True when a task runs or waits in the queue, so an install would interrupt or delay a backup
+    /// </summary>
+    private bool IsBusy()
+        => _queueRunnerService.GetCurrentTask() != null || _queueRunnerService.GetCurrentTasks().Count > 0;
+
+    /// <summary>
+    /// Starts the install requested by the console once the queue is idle
+    /// </summary>
+    private async Task InstallWhenIdleAsync()
+    {
+        try
+        {
+            while (!_applicationSettings.ApplicationExit.IsCancellationRequested)
+            {
+                await Task.Delay(IdlePollInterval, _applicationSettings.ApplicationExit).ConfigureAwait(false);
+                if (IsBusy() || InProgress)
+                    continue;
+
+                try
+                {
+                    BeginInstall();
+                    return;
+                }
+                catch (ConflictException) when (IsBusy())
+                {
+                    // A task started between the check and the install; wait for it as well
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            Log.WriteWarningMessage(LOGTAG, "UpdateInstallFailed", ex, "The update install requested by the console failed: {0}", ex.Message);
+            RegisterFailure(ex.Message);
+        }
+        finally
+        {
+            lock (_lock)
+                _waitingForIdleVersion = null;
+        }
     }
 
     public void CancelInstall()
@@ -233,6 +386,9 @@ public class UpdateInstallService : IUpdateInstallService
         {
             Log.WriteWarningMessage(LOGTAG, "UpdateInstallFailed", ex, "The update install failed: {0}", ex.Message);
             RegisterFailure(ex.Message);
+            // A task that started while the helper was prepared aborts the install without anything being wrong with the version
+            if (!IsBusy())
+                RecordFailedVersion(update.Version);
             exiting = false;
         }
         finally
@@ -345,6 +501,7 @@ public class UpdateInstallService : IUpdateInstallService
                 else
                 {
                     Log.WriteWarningMessage(LOGTAG, "UpdateInstallFailed", null, "The update to {0} failed in stage {1}: {2}", record.TargetVersion, result.Stage, result.Error);
+                    RecordFailedVersion(record.TargetVersion);
                     RegisterFailure($"{result.Error} (stage: {result.Stage}{(result.RolledBack ? ", the previous version was restored" : "")}); the log is in {result.LogFile}");
                 }
             }
@@ -353,6 +510,18 @@ public class UpdateInstallService : IUpdateInstallService
                 Log.WriteWarningMessage(LOGTAG, "UpdateInstallCompletionFailed", ex, "Failed to complete a pending update install: {0}", ex.Message);
             }
         });
+    }
+
+    /// <summary>
+    /// Remembers that the install of a version failed, so the console does not start it again right away
+    /// </summary>
+    /// <param name="version">The version that failed to install</param>
+    private void RecordFailedVersion(string? version)
+    {
+        if (string.IsNullOrWhiteSpace(version))
+            return;
+        lock (_lock)
+            _lastFailure = (version, DateTime.UtcNow);
     }
 
     private void SetState(UpdatePollerStates state, double progress)
