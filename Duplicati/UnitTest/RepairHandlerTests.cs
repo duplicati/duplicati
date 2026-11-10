@@ -817,5 +817,68 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(File.Exists(dbpath), "The database is gone");
             Assert.IsEmpty(Directory.GetFiles(BASEFOLDER, Path.GetFileNameWithoutExtension(dbpath) + ".backup*"), "The database was renamed");
         }
+
+        /// <summary>
+        /// A repair that cannot read the local database sets it aside and recreates it from the remote files.
+        /// In #2265 the database could not be upgraded ("table Operation already exists"), and setting it aside
+        /// then failed because the failed read still had the file open.
+        /// </summary>
+        [Test]
+        [Category("RepairHandler")]
+        [TestCase("garbage")]
+        [TestCase("tables-without-version")]
+        public async Task RepairSetsAsideAnUnreadableDatabaseAndRecreatesItAsync(string damage)
+        {
+            File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "file"), [1, 2, 3]);
+            using (var c = new Controller("file://" + this.TARGETFOLDER, this.TestOptions, null))
+                TestUtils.AssertResults(await c.BackupAsync([this.DATAFOLDER]));
+
+            // A database of its own, as the teardown does not delete the .backup files a repair leaves
+            var dbpath = Path.Combine(BASEFOLDER, $"unreadable-{damage}-{Guid.NewGuid():N}.sqlite");
+            if (damage == "garbage")
+            {
+                File.WriteAllText(dbpath, "This is not a database, but it is long enough to have a header of one. " + new string('x', 200));
+            }
+            else
+            {
+                // A schema without the version table, as a database stopped half way through being created has
+                using var con = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={dbpath};Pooling=false");
+                con.Open();
+                using var cmd = con.CreateCommand();
+                cmd.CommandText = @"CREATE TABLE ""Operation"" (""ID"" INTEGER PRIMARY KEY, ""Description"" TEXT NOT NULL, ""Timestamp"" INTEGER NOT NULL)";
+                cmd.ExecuteNonQuery();
+            }
+            var original = File.ReadAllBytes(dbpath);
+
+            var options = new Dictionary<string, string>(this.TestOptions) { ["dbpath"] = dbpath };
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var results = await c.RepairAsync();
+                Assert.That(results.Errors, Is.Empty, "The repair recreated the database");
+            }
+
+            var setAside = Directory.GetFiles(BASEFOLDER, Path.GetFileNameWithoutExtension(dbpath) + ".backup*");
+            Assert.That(setAside, Has.Length.EqualTo(1), "The unreadable database was set aside");
+            if (damage == "garbage")
+            {
+                Assert.That(File.ReadAllBytes(setAside[0]), Is.EqualTo(original), "The set aside file is unchanged");
+            }
+            else
+            {
+                // Opening the database may switch its journal mode, so the bytes can differ but the tables cannot
+                using var con = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={setAside[0]};Pooling=false;Mode=ReadOnly");
+                con.Open();
+                using var cmd = con.CreateCommand();
+                cmd.CommandText = @"SELECT ""name"" FROM ""sqlite_master"" WHERE ""type"" = 'table'";
+                using var rd = cmd.ExecuteReader();
+                var tables = new List<string>();
+                while (rd.Read())
+                    tables.Add(rd.GetString(0));
+                Assert.That(tables, Is.EqualTo(new[] { "Operation" }), "The set aside database has the tables it had");
+            }
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.TestAsync(int.MaxValue));
+        }
     }
 }
