@@ -177,6 +177,7 @@ public class Filesystem : IEndpointV1
                     leaf = x.leaf,
                     hidden = x.hidden,
                     symlink = x.symlink,
+                    symlinkTarget = x.symlinkTarget,
                     temporary = x.temporary,
                     systemFile = x.systemFile,
                     fileSize = x.fileSize,
@@ -323,7 +324,10 @@ public class Filesystem : IEndpointV1
                     leaf = isLeaf,
                     cls = isFolder ? "folder" : "file",
                     check = false,
-                    resolvedpath = isSymlink ? SystemIO.IO_OS.GetSymlinkTarget(s) : null
+                    // resolvedpath is the path of the entry when it is listed below a special folder
+                    // such as %HOME%, and is not needed otherwise, so the link target has its own field
+                    resolvedpath = null,
+                    symlinkTarget = isSymlink ? SystemIO.IO_OS.GetSymlinkTarget(s) : null
                 };
             }
             catch

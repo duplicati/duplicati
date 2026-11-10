@@ -111,6 +111,97 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         }
     }
 
+    /// <summary>
+    /// A link in a folder listing keeps its own path, and its target is reported in symlinkTarget
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task AListedLinkReportsItsTargetSeparately_Async()
+    {
+        var folder = Path.Combine(this.DATAFOLDER, "links");
+        var target = Path.Combine(folder, "target");
+        var link = Path.Combine(folder, "link");
+        Directory.CreateDirectory(Path.Combine(target, "sub"));
+        MakeFolderLink(link, target);
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var nodes = await ListFolderAsync(httpClient, Util.AppendDirSeparator(folder)).ConfigureAwait(false);
+            var node = nodes.Single(x => x.GetProperty("text").GetString() == "link");
+
+            Assert.That(node.GetProperty("symlink").GetBoolean(), Is.True);
+            Assert.That(node.GetProperty("id").GetString(), Is.EqualTo(Util.AppendDirSeparator(link)));
+            Assert.That(node.TryGetProperty("symlinkTarget", out var symlinkTarget) ? symlinkTarget.GetString() : null,
+                Is.Not.Null.And.EqualTo(target).Or.EqualTo(Util.AppendDirSeparator(target)));
+            Assert.That(node.GetProperty("resolvedpath").ValueKind, Is.EqualTo(JsonValueKind.Null),
+                "The path of the link must not be replaced by its target");
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Below a special folder, resolvedpath is the path of each entry, also for a link, and the
+    /// link target is reported in symlinkTarget. The home folder is only read, not changed.
+    /// A Windows profile has compatibility junctions such as Application Data
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task ALinkBelowTheHomeFolderKeepsItsOwnResolvedPath_Async()
+    {
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        if (string.IsNullOrEmpty(home) || !Directory.EnumerateFileSystemEntries(home).Any(x => new FileInfo(x).LinkTarget != null))
+            Assert.Ignore("The home folder holds no link");
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var nodes = await ListFolderAsync(httpClient, "%HOME%" + Path.DirectorySeparatorChar).ConfigureAwait(false);
+            var links = nodes.Where(x => x.GetProperty("symlink").GetBoolean()).ToList();
+            Assert.That(links, Is.Not.Empty);
+
+            foreach (var node in links)
+            {
+                var name = node.GetProperty("text").GetString()!;
+                var resolved = node.GetProperty("resolvedpath").GetString();
+                Assert.That(resolved?.TrimEnd(Path.DirectorySeparatorChar), Is.EqualTo(Path.Combine(home, name)),
+                    $"The resolved path of {name} must be its own path");
+                Assert.That(node.TryGetProperty("symlinkTarget", out var symlinkTarget) ? symlinkTarget.GetString() : null,
+                    Is.Not.Null.And.Not.Empty, $"The target of {name} must be reported");
+            }
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Lists a folder with the filesystem endpoint, including the hidden entries
+    /// </summary>
+    /// <param name="httpClient">The authenticated client</param>
+    /// <param name="path">The folder to list</param>
+    /// <returns>The listed nodes</returns>
+    private static async Task<List<JsonElement>> ListFolderAsync(HttpClient httpClient, string path)
+    {
+        var response = await httpClient.PostAsJsonAsync("/api/v1/filesystem?onlyFolders=true&showHidden=true", new { path }, JsonOptions).ConfigureAwait(false);
+        var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+        using var document = JsonDocument.Parse(body);
+        return document.RootElement.EnumerateArray().Select(x => x.Clone()).ToList();
+    }
+
+    /// <summary>
+    /// Makes a link to a folder: a junction on Windows, which needs no privilege, and a symbolic link elsewhere
+    /// </summary>
+    /// <param name="path">The path of the link</param>
+    /// <param name="target">The folder the link points to</param>
+    private static void MakeFolderLink(string path, string target)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Directory.CreateSymbolicLink(path, target);
+            return;
+        }
+
+        using var p = Process.Start(new ProcessStartInfo("cmd.exe", $"/c mklink /J \"{path}\" \"{target}\"") { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true })!;
+        p.WaitForExit();
+        Assert.That(p.ExitCode, Is.EqualTo(0), p.StandardError.ReadToEnd());
+    }
+
     [Test]
     [Category("Integration")]
     public async Task ImportSupportsProvidingPassphraseOverride_Async()
