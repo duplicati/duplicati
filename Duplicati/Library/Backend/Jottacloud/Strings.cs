@@ -39,4 +39,6 @@ internal static class Jottacloud
     public static string ThreadsShort => LC.L(@"Number of threads for restore operations");
     public static string ChunksizeLong => LC.L(@"The chunk size for simultaneous downloading. These chunks will be held in memory, so keep it as low as possible.");
     public static string ChunksizeShort => LC.L(@"The chunk size for simultaneous downloading");
+    public static string LegacyUploadShort => LC.L(@"Use the legacy upload method");
+    public static string LegacyUploadLong => LC.L(@"Upload each file with a single request to the legacy upload service instead of allocating the upload first, as the Jottacloud clients do. Use this only if uploads fail with the default method.");
 }
