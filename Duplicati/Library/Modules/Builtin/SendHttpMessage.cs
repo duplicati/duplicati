@@ -355,24 +355,38 @@ namespace Duplicati.Library.Modules.Builtin
                 data = Encoding.UTF8.GetBytes(sb.ToString());
             }
 
+            // HttpClient ignores the user and password in a URL, so send them as Basic authentication,
+            // and keep them out of the request and the log
+            var uri = new Uri(target.Url);
+            AuthenticationHeaderValue authorization = null;
+            if (!string.IsNullOrEmpty(uri.UserInfo))
+            {
+                var userinfo = uri.UserInfo.Split(new[] { ':' }, 2);
+                var credentials = Uri.UnescapeDataString(userinfo[0]) + ":" + (userinfo.Length > 1 ? Uri.UnescapeDataString(userinfo[1]) : string.Empty);
+                authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes(credentials)));
+                uri = new UriBuilder(uri) { UserName = string.Empty, Password = string.Empty }.Uri;
+            }
+
+            var displayUrl = uri.ToString();
             Exception lastEx = null;
 
             await RetryHelper.Retry(async () =>
             {
                 var request = new HttpRequestMessage
                 {
-                    RequestUri = new Uri(target.Url),
+                    RequestUri = uri,
                     Method = new HttpMethod(target.Verb),
                     Content = new ByteArrayContent(data)
                 };
                 request.Content.Headers.ContentType = contenttype;
+                request.Headers.Authorization = authorization;
 
                 var response = await client.SendAsync(request);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
                 Logging.Log.WriteVerboseMessage(LOGTAG, "HttpResponseMessage",
                     "HTTP Response to {0}: {1} - {2}: {3}",
-                    target.Url,
+                    displayUrl,
                     ((int)response.StatusCode).ToString(),
                     response.ReasonPhrase,
                     responseContent
@@ -382,7 +396,7 @@ namespace Duplicati.Library.Modules.Builtin
                 lastEx = null;
             }, (ex, retry) =>
             {
-                Logging.Log.WriteWarningMessage(LOGTAG, "HttpResponseError", ex, "HTTP Response request attempt {0} of {1} failed for: {2}", retry, m_retries, target.Url);
+                Logging.Log.WriteWarningMessage(LOGTAG, "HttpResponseError", ex, "HTTP Response request attempt {0} of {1} failed for: {2}", retry, m_retries, displayUrl);
                 lastEx = ex;
             }, m_retries, m_retryDelay, CancellationToken.None);
 
