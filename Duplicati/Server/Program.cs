@@ -102,6 +102,10 @@ namespace Duplicati.Server
         /// The exit code for init password failure
         /// </summary>
         public const int EXITCODE_INITPASSWORD_FAILED = 103;
+        /// <summary>
+        /// The exit code when the server crashed, the same code a crash while starting returns
+        /// </summary>
+        public const int EXITCODE_CRASHED = 100;
 
         /// <summary>
         /// The name used in the secret provider for the database encryption key
@@ -255,6 +259,8 @@ namespace Duplicati.Server
 
             var crashed = false;
             var terminated = false;
+            // Set when the webserver stops with an exception after it was started
+            var webserverFailed = false;
             IQueueRunnerService queueRunner = null;
             UpdatePollThread updatePollThread = null;
             EventPollNotify eventPollNotify = null;
@@ -363,6 +369,7 @@ namespace Duplicati.Server
                 {
                     if (t.Exception != null)
                     {
+                        webserverFailed = true;
                         Log.WriteWarningMessage(LOGTAG, "ServerCrashed", t.Exception, Strings.Program.ServerCrashed(t.Exception.Message));
                         logMessageToConsole(Strings.Program.ServerStartedSignin(Strings.Program.ServerCrashed(t.Exception.ToString())));
                     }
@@ -400,7 +407,7 @@ namespace Duplicati.Server
                 if (!writeToConsoleOnException) throw;
 
                 Console.WriteLine(Strings.Program.SeriousError(mex.ToString()));
-                return 100;
+                return EXITCODE_CRASHED;
             }
             catch (Exception ex)
             {
@@ -410,7 +417,7 @@ namespace Duplicati.Server
                 if (writeToConsoleOnException)
                 {
                     Console.WriteLine(Strings.Program.SeriousError(ex.ToString()));
-                    return 100;
+                    return EXITCODE_CRASHED;
                 }
                 else
                     throw new Exception(Strings.Program.SeriousError(ex.ToString()), ex);
@@ -456,7 +463,8 @@ namespace Duplicati.Server
                 }
             }
 
-            return 0;
+            // A host such as the Windows service must be able to tell a crash from a requested exit
+            return webserverFailed ? EXITCODE_CRASHED : 0;
         }
 
         /// <summary>

@@ -33,7 +33,7 @@ namespace Duplicati.Service
         private volatile bool m_softstop = false;
         private System.Diagnostics.Process m_process;
         private readonly Action m_onStartedAction;
-        private readonly Action m_onStoppedAction;
+        private readonly Action<int?> m_onStoppedAction;
         private readonly Action<string, bool> m_reportMessage;
         private readonly Action<System.Diagnostics.ProcessStartInfo> m_onBeforeFirstStart;
 
@@ -52,7 +52,7 @@ namespace Duplicati.Service
             string[] cmdargs,
             bool inProcess,
             Action onStartedAction = null,
-            Action onStoppedAction = null,
+            Action<int?> onStoppedAction = null,
             Action<string, bool> logMessage = null,
             Action<System.Diagnostics.ProcessStartInfo> onBeforeFirstStart = null
         )
@@ -75,6 +75,10 @@ namespace Duplicati.Service
 
         private void RunInProcess()
         {
+            // The exit code passed to the stopped callback when the run ended on its own with an
+            // error, that is, without being asked to stop; null otherwise. A run that ends on its
+            // own with code 0 (for example to let an update replace the files) is not a failure
+            int? failedExitCode = null;
             try
             {
                 m_reportMessage(string.Format("Starting in-process {0} with cmd args {1}", m_executable, string.Join(Environment.NewLine, m_cmdargs ?? new string[0])), false);
@@ -82,27 +86,37 @@ namespace Duplicati.Service
                 m_onBeforeFirstStart?.Invoke(null);
                 m_onStartedAction?.Invoke();
 
+                var exitCode = 0;
                 if (!m_terminate && !m_softstop)
                 {
                     if (m_executable == PackageHelper.NamedExecutable.Server)
-                        Server.Program.Main(m_cmdargs ?? []);
+                        exitCode = Server.Program.Main(m_cmdargs ?? []);
                     else if (m_executable == PackageHelper.NamedExecutable.Agent)
-                        Agent.Program.MainAsync(m_cmdargs ?? []).ConfigureAwait(false).GetAwaiter().GetResult();
+                        exitCode = Agent.Program.MainAsync(m_cmdargs ?? []).ConfigureAwait(false).GetAwaiter().GetResult();
                     else
                         throw new NotImplementedException($"In-process execution of {m_executable} is not implemented");
                 }
 
                 if (!m_terminate && !m_softstop)
-                    m_reportMessage("In-process execution ended unexpectedly", true);
+                {
+                    if (exitCode != 0)
+                        failedExitCode = exitCode;
+                    m_reportMessage($"In-process execution ended unexpectedly with exit code {exitCode}", true);
+                }
             }
             catch (Exception ex)
             {
                 m_reportMessage(string.Format("In-process execution has failed with error message: {0}", ex), true);
+
+                // An exception thrown before the server or agent could turn it into an exit code
+                // is a failure too, unless the run was asked to stop
+                if (!m_terminate && !m_softstop)
+                    failedExitCode = Server.Program.EXITCODE_CRASHED;
                 throw;
             }
             finally
             {
-                m_onStoppedAction?.Invoke();
+                m_onStoppedAction?.Invoke(failedExitCode);
             }
         }
 
@@ -206,7 +220,7 @@ namespace Duplicati.Service
             finally
             {
                 if (m_onStoppedAction != null)
-                    m_onStoppedAction();
+                    m_onStoppedAction(null);
             }
         }
 
