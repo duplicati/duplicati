@@ -261,37 +261,59 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (m_disposed)
                 return;
 
-            if (m_shouldFlush && m_fileDescriptor >= 0)
+            // A read or write that is still running uses the aligned buffer, so the buffer
+            // is only freed once it is done. One that does not end is not waited for long,
+            // and its buffer is then left allocated rather than freed under it.
+            var idle = m_ioLock.Wait(DisposeIoWaitTimeout);
+            try
             {
-                // Use BLKFLSBUF on Linux to flush the block device buffer cache
-                if (ioctl_no_arg(m_fileDescriptor, BLKFLSBUF) < 0)
+                if (m_disposed)
+                    return;
+                m_disposed = true;
+
+                if (m_shouldFlush && m_fileDescriptor >= 0)
                 {
-                    int errorCode = Marshal.GetLastWin32Error();
-                    string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode); ;
-                    Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "dispose", null, $"Failed to flush data: {errorMessage} (errno: {errorCode})");
+                    // Use BLKFLSBUF on Linux to flush the block device buffer cache
+                    if (ioctl_no_arg(m_fileDescriptor, BLKFLSBUF) < 0)
+                    {
+                        int errorCode = Marshal.GetLastWin32Error();
+                        string errorMessage = Marshal.GetPInvokeErrorMessage(errorCode); ;
+                        Duplicati.Library.Logging.Log.WriteWarningMessage(LOGTAG, "dispose", null, $"Failed to flush data: {errorMessage} (errno: {errorCode})");
+                    }
+                }
+
+                if (m_fileDescriptor >= 0)
+                {
+                    close(m_fileDescriptor);
+                    m_fileDescriptor = -1;
+                }
+
+                if (idle)
+                {
+                    unsafe
+                    {
+                        if (m_allignedBufferPtr is not null)
+                        {
+                            NativeMemory.AlignedFree(m_allignedBufferPtr);
+                            m_allignedBufferPtr = null;
+                            m_allignedBufferSize = 0;
+                        }
+                    }
                 }
             }
-
-            if (m_fileDescriptor >= 0)
+            finally
             {
-                close(m_fileDescriptor);
-                m_fileDescriptor = -1;
+                // The lock is not disposed, so a read or write waiting for it gets it and stops
+                // on the disposed disk instead of waiting for ever
+                if (idle)
+                    m_ioLock.Release();
             }
-
-            unsafe
-            {
-                if (m_allignedBufferPtr is not null)
-                {
-                    NativeMemory.AlignedFree(m_allignedBufferPtr);
-                    m_allignedBufferPtr = null;
-                    m_allignedBufferSize = 0;
-                }
-            }
-
-            m_ioLock.Dispose();
-
-            m_disposed = true;
         }
+
+        /// <summary>
+        /// How long <see cref="Dispose"/> waits for a read or write that is still running
+        /// </summary>
+        private static readonly TimeSpan DisposeIoWaitTimeout = TimeSpan.FromSeconds(30);
 
         /// <inheritdoc />
         public Task<bool> FinalizeAsync(CancellationToken cancellationToken)
@@ -354,6 +376,9 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             await m_ioLock.WaitAsync(cancellationToken);
             try
             {
+                // The disk may have been disposed while this waited for the lock
+                ObjectDisposedException.ThrowIf(m_disposed, this);
+
                 // Use pread for atomic position + read
                 int totalBytesRead = 0;
                 unsafe
@@ -432,6 +457,9 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             await m_ioLock.WaitAsync(cancellationToken);
             try
             {
+                // The disk may have been disposed while this waited for the lock
+                ObjectDisposedException.ThrowIf(m_disposed, this);
+
                 // Ensure we have an aligned buffer for O_DIRECT writes
                 EnsureAllignedBuffer((int)alignedLength);
 
