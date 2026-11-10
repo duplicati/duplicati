@@ -47,14 +47,6 @@ namespace Duplicati.Service
 
         private readonly bool m_inProcess;
 
-        /// <summary>
-        /// The exit code of an in-process run that ended on its own with a non-zero code,
-        /// that is, without being asked to stop; <c>null</c> otherwise.
-        /// A run that ends on its own with code 0 (for example to let an update replace the
-        /// files) is not a failure.
-        /// </summary>
-        public int? FailedExitCode { get; private set; }
-
         public Runner(
             PackageHelper.NamedExecutable executable,
             string[] cmdargs,
@@ -83,6 +75,10 @@ namespace Duplicati.Service
 
         private void RunInProcess()
         {
+            // The exit code passed to the stopped callback when the run ended on its own with an
+            // error, that is, without being asked to stop; null otherwise. A run that ends on its
+            // own with code 0 (for example to let an update replace the files) is not a failure
+            int? failedExitCode = null;
             try
             {
                 m_reportMessage(string.Format("Starting in-process {0} with cmd args {1}", m_executable, string.Join(Environment.NewLine, m_cmdargs ?? new string[0])), false);
@@ -104,18 +100,23 @@ namespace Duplicati.Service
                 if (!m_terminate && !m_softstop)
                 {
                     if (exitCode != 0)
-                        FailedExitCode = exitCode;
+                        failedExitCode = exitCode;
                     m_reportMessage($"In-process execution ended unexpectedly with exit code {exitCode}", true);
                 }
             }
             catch (Exception ex)
             {
                 m_reportMessage(string.Format("In-process execution has failed with error message: {0}", ex), true);
+
+                // An exception thrown before the server or agent could turn it into an exit code
+                // is a failure too, unless the run was asked to stop
+                if (!m_terminate && !m_softstop)
+                    failedExitCode = Server.Program.EXITCODE_CRASHED;
                 throw;
             }
             finally
             {
-                m_onStoppedAction?.Invoke(FailedExitCode);
+                m_onStoppedAction?.Invoke(failedExitCode);
             }
         }
 
@@ -219,7 +220,7 @@ namespace Duplicati.Service
             finally
             {
                 if (m_onStoppedAction != null)
-                    m_onStoppedAction(FailedExitCode);
+                    m_onStoppedAction(null);
             }
         }
 
