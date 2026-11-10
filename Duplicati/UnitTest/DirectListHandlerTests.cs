@@ -429,6 +429,122 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
+        /// Backs up a folder with four files twice, with every file changed in between,
+        /// so the folder lists four entries and each file is in two versions.
+        /// </summary>
+        /// <returns>The folder and the four files, in path order</returns>
+        private async Task<(string Folder, string[] Files)> BackUpFourFilesTwiceAsync(Dictionary<string, string> options)
+        {
+            var folder = Path.Combine(this.DATAFOLDER, "paged");
+            Directory.CreateDirectory(folder);
+            var files = new[] { "a.txt", "b.txt", "c.txt", "d.txt" }.Select(x => Path.Combine(folder, x)).ToArray();
+
+            for (var i = 0; i < 2; i++)
+            {
+                foreach (var file in files)
+                    File.WriteAllText(file, $"{file} {i}");
+                using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                    TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+                // Fileset timestamps have a resolution of one second
+                if (i == 0)
+                    await Task.Delay(1500);
+            }
+
+            return (Library.Common.IO.Util.AppendDirSeparator(folder), files);
+        }
+
+        /// <summary>
+        /// Checks the paging numbers of each page and that the pages together hold every entry once.
+        /// The first page reports the total entries and pages, also when the page is full;
+        /// later pages report -1 for both, as the total is only counted for the first page.
+        /// </summary>
+        private static async Task AssertPagesAsync<T>(Func<int, Task<Library.Interface.IPaginatedResults<T>>> getPage, int pageSize, long expectedTotal, int expectedPages, IEnumerable<T> all)
+        {
+            var seen = new List<T>();
+            for (var page = 0; page < expectedPages; page++)
+            {
+                var result = await getPage(page);
+                Assert.That(result.Page, Is.EqualTo(page));
+                Assert.That(result.PageSize, Is.EqualTo(pageSize));
+                if (page == 0)
+                {
+                    Assert.That(result.TotalCount, Is.EqualTo(expectedTotal), "Total on the first page");
+                    Assert.That(result.TotalPages, Is.EqualTo(expectedPages), "Pages on the first page");
+                }
+                else
+                {
+                    Assert.That(result.TotalCount, Is.EqualTo(-1), "Later pages do not count the total");
+                    Assert.That(result.TotalPages, Is.EqualTo(-1), "Later pages do not know the pages");
+                }
+                seen.AddRange(result.Items);
+            }
+
+            Assert.That(seen, Is.EquivalentTo(all), "The pages together hold every entry once");
+        }
+
+        [Test]
+        [TestCase(1, 4)]
+        [TestCase(3, 2)]
+        [TestCase(4, 1)]
+        [TestCase(5, 1)]
+        public async Task ListFolder_FirstPageReportsTheTotalAsync(int pageSize, int expectedPages)
+        {
+            var options = new Dictionary<string, string>(this.TestOptions);
+            var (folder, files) = await BackUpFourFilesTwiceAsync(options);
+
+            using var c = new Controller("file://" + this.TARGETFOLDER, options, null);
+            var all = (await c.ListFolderAsync(new[] { folder }, 0, 0, false)).Entries;
+            Assert.That(all.Items.Select(x => x.Path), Is.EqualTo(files), "A listing without a limit returns everything");
+            Assert.That(all.TotalCount, Is.EqualTo(4));
+            Assert.That(all.TotalPages, Is.EqualTo(1), "Everything is on one page");
+
+            await AssertPagesAsync(
+                async page => (await c.ListFolderAsync(new[] { folder }, page * pageSize, pageSize, false)).Entries,
+                pageSize, 4, expectedPages, all.Items);
+        }
+
+        [Test]
+        [TestCase(1, 4)]
+        [TestCase(3, 2)]
+        [TestCase(4, 1)]
+        [TestCase(5, 1)]
+        public async Task ListFileVersions_FirstPageReportsTheTotalAsync(int pageSize, int expectedPages)
+        {
+            var options = new Dictionary<string, string>(this.TestOptions) { ["all-versions"] = "true" };
+            var (_, files) = await BackUpFourFilesTwiceAsync(options);
+            var paths = files.Take(2).ToArray();
+
+            using var c = new Controller("file://" + this.TARGETFOLDER, options, null);
+            var all = (await c.ListFileVersionsAsync(paths, 0, 0)).FileVersions;
+            Assert.That(all.Items.Count(), Is.EqualTo(4), "Two files in two versions");
+            Assert.That(all.TotalCount, Is.EqualTo(4));
+            Assert.That(all.TotalPages, Is.EqualTo(1), "Everything is on one page");
+
+            await AssertPagesAsync(
+                async page => (await c.ListFileVersionsAsync(paths, page * pageSize, pageSize)).FileVersions,
+                pageSize, 4, expectedPages, all.Items);
+        }
+
+        /// <summary>
+        /// The total of the first page of file versions is counted for the selected versions only.
+        /// </summary>
+        [Test]
+        public async Task ListFileVersions_FirstPageTotalUsesTheVersionsAsync()
+        {
+            var allVersions = new Dictionary<string, string>(this.TestOptions) { ["all-versions"] = "true" };
+            var (_, files) = await BackUpFourFilesTwiceAsync(allVersions);
+            var paths = files.Take(2).ToArray();
+
+            var latestOnly = new Dictionary<string, string>(this.TestOptions) { ["version"] = "0" };
+            using var c = new Controller("file://" + this.TARGETFOLDER, latestOnly, null);
+            var latest = (await c.ListFileVersionsAsync(paths, 0, 1)).FileVersions;
+            Assert.That(latest.TotalCount, Is.EqualTo(2), "Two files in the latest version");
+            Assert.That(latest.TotalPages, Is.EqualTo(2));
+            Assert.That(latest.Items.Single().Version, Is.EqualTo(0));
+        }
+
+        /// <summary>
         /// A search limited to folders covers those folders and everything below them,
         /// and nothing beside them: "f10" is not below "f1".
         /// </summary>
