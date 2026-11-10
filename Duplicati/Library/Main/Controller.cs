@@ -1648,6 +1648,9 @@ namespace Duplicati.Library.Main
             // Filters may name the content of a prefix-based source provider the same way as the sources do
             filter = SourceProviderFactory.TranslatePrefixedFilters(filter);
 
+            // What the filter names at the root of a drive is also at the root of a share
+            filter = SourceProviderFactory.AddDriveRootEntriesForRemoteSources(filter, inputsources);
+
             DriveInfo[] drives = null;
 
             //Make sure they all have the same format and exist
