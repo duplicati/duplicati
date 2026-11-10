@@ -894,7 +894,32 @@ namespace Duplicati.UnitTest
             var err = p.StandardError.ReadToEnd();
             p.WaitForExit();
             Assert.AreEqual(0, p.ExitCode, "hdiutil create failed: " + err);
+
+            // The image can still be locked for a moment after hdiutil has exited, and opening it
+            // then fails with "being used by another process", as .NET takes a shared lock to read
+            WaitUntilReadable(dmg, TimeSpan.FromSeconds(60));
             return dmg;
+        }
+
+        /// <summary>
+        /// Waits until a file can be opened for reading
+        /// </summary>
+        private static void WaitUntilReadable(string path, TimeSpan timeout)
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            while (true)
+            {
+                try
+                {
+                    using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    return;
+                }
+                catch (IOException ex) when (sw.Elapsed < timeout)
+                {
+                    TestContext.Progress.WriteLine($"Waiting for {path} to be readable: {ex.Message}");
+                    Thread.Sleep(250);
+                }
+            }
         }
 
         [Test]
