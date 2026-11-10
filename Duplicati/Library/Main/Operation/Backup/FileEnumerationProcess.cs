@@ -299,10 +299,11 @@ namespace Duplicati.Library.Main.Operation.Backup
                 // Listing a folder and reading the attributes of an entry are synchronous calls that
                 // do not look at a cancellation token. One that is stuck, as on a network share that
                 // stopped answering, would hold up the backup, so the listing runs on its own and is
-                // no longer waited for once the operation is aborted, or the listing is no longer
-                // wanted. It only writes to the output channel, which is retired by then, so a
-                // listing that ends later stops there.
-                using var stopWaiting = CancellationTokenSource.CreateLinkedTokenSource(token, taskreader.ProgressToken);
+                // no longer waited for once the operation is aborted. It only writes to the output
+                // channel, which is retired by then, so a listing that ends later stops there.
+                // A listing that is only no longer wanted, as the file counter's is when the backup
+                // is done, is waited for: it stops at the next entry, and the source it reads is
+                // disposed once the backup returns.
                 await Task.Run(async () =>
                 {
                     var source = EnumerateAsync(sourceProvider, journalService, fileAttributeFilter, emitfilter, symlinkPolicy, hardlinkPolicy, disableBackupExclusionXattr, excludeemptyfolders, keepEmptyFolder, ignorenames, blacklistPaths, changedfilelist, token);
@@ -327,7 +328,7 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                         await self.Output.WriteAsync(s);
                     }
-                }).UntilCancelledAsync(stopWaiting.Token).ConfigureAwait(false);
+                }).UntilCancelledAsync(taskreader.ProgressToken).ConfigureAwait(false);
             });
         }
 
