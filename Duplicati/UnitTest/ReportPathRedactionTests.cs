@@ -181,6 +181,44 @@ public class ReportPathRedactionTests
     }
 
     /// <summary>
+    /// Reduced reporting can be enforced for the machine, so allowing paths in log messages for a backup
+    /// does not let the paths in the template or the values into a reduced report
+    /// </summary>
+    [Test]
+    public async Task AReducedReportRedactsPathsWhenPathsAreAllowedAsync()
+    {
+        var message = await ReceiveHttpFormReportAsync(new()
+        {
+            [Duplicati.Library.Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING] = "true",
+            ["allow-paths-in-log-messages"] = "true",
+            ["backup-name"] = "/srv/backup",
+            ["send-http-message"] = "Backup %backup-name% of /srv/data from [%LOCALPATH%]: %PARSEDRESULT%"
+        });
+
+        Assert.That(message, Does.Contain("Backup -redacted- of -redacted- from []: Fatal"));
+        Assert.That(message, Does.Not.Contain("/srv/"));
+        Assert.That(message, Does.Not.Contain("secret"));
+    }
+
+    /// <summary>
+    /// A reduced JSON report redacts the paths in its values, also when paths are allowed in log messages
+    /// </summary>
+    [Test]
+    public async Task AReducedJsonReportRedactsPathsWhenPathsAreAllowedAsync()
+    {
+        var report = await ReceiveHttpJsonReportAsync(new()
+        {
+            [Duplicati.Library.Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING] = "true",
+            ["allow-paths-in-log-messages"] = "true",
+            ["backup-name"] = "/srv/backup"
+        }, new Exception($"Cannot read {SecretPath}/file.txt"));
+
+        Assert.That(report["Extra"]?["backup-name"]?.GetValue<string>(), Is.EqualTo("-redacted-"));
+        Assert.That(report.ToJsonString(), Does.Not.Contain("/srv/backup"));
+        Assert.That(report.ToJsonString(), Does.Not.Contain("secret"));
+    }
+
+    /// <summary>
     /// A body that names a template file which cannot be read was sent as it was, so the path of the
     /// file was the report; the default body is sent instead
     /// </summary>
