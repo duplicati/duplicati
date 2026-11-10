@@ -209,27 +209,49 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             if (m_disposed)
                 return;
 
-            if (m_shouldFlush)
+            // A read or write that is still running copies through the aligned buffer, so the
+            // buffer is only freed once it is done. One that does not end is not waited for
+            // long, and its buffer is then left allocated rather than freed under it.
+            var idle = m_ioLock.Wait(DisposeIoWaitTimeout);
+            try
             {
-                var flushed = FlushFileBuffers(m_deviceHandle);
-                if (!flushed)
+                if (m_disposed)
+                    return;
+                m_disposed = true;
+
+                if (m_shouldFlush)
                 {
-                    var error = Marshal.GetLastWin32Error();
-                    var msg = new System.ComponentModel.Win32Exception(error).Message;
-                    Console.WriteLine($"Warning: Failed to flush file buffers. Win32 Error Code: {error}. Message: {msg}");
+                    var flushed = FlushFileBuffers(m_deviceHandle);
+                    if (!flushed)
+                    {
+                        var error = Marshal.GetLastWin32Error();
+                        var msg = new System.ComponentModel.Win32Exception(error).Message;
+                        Console.WriteLine($"Warning: Failed to flush file buffers. Win32 Error Code: {error}. Message: {msg}");
+                    }
+                }
+                m_deviceHandle?.Dispose();
+                m_deviceHandle = null;
+
+                if (idle)
+                {
+                    m_alignedBuffer?.Dispose();
+                    m_alignedBuffer = null;
+                    m_alignedBufferSize = 0;
                 }
             }
-            m_deviceHandle?.Dispose();
-            m_deviceHandle = null;
-
-            m_alignedBuffer?.Dispose();
-            m_alignedBuffer = null;
-            m_alignedBufferSize = 0;
-
-            m_ioLock.Dispose();
-
-            m_disposed = true;
+            finally
+            {
+                // The lock is not disposed, so a read or write waiting for it gets it and stops
+                // on the disposed disk instead of waiting for ever
+                if (idle)
+                    m_ioLock.Release();
+            }
         }
+
+        /// <summary>
+        /// How long <see cref="Dispose"/> waits for a read or write that is still running
+        /// </summary>
+        private static readonly TimeSpan DisposeIoWaitTimeout = TimeSpan.FromSeconds(30);
 
         /// <inheritdoc />
         public Task<bool> FinalizeAsync(CancellationToken cancellationToken)
@@ -292,6 +314,9 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             await m_ioLock.WaitAsync(cancellationToken);
             try
             {
+                // The disk may have been disposed while this waited for the lock
+                ObjectDisposedException.ThrowIf(m_disposed, this);
+
                 // Ensure reusable buffer is large enough
                 EnsureAlignedBuffer((int)alignedLength);
 
@@ -378,6 +403,9 @@ namespace Duplicati.Proprietary.DiskImage.Disk
             await m_ioLock.WaitAsync(cancellationToken);
             try
             {
+                // The disk may have been disposed while this waited for the lock
+                ObjectDisposedException.ThrowIf(m_disposed, this);
+
                 // Ensure reusable buffer is large enough
                 EnsureAlignedBuffer((int)alignedLength);
 
