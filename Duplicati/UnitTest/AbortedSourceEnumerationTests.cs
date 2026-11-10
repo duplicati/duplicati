@@ -28,6 +28,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using CoCoL;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using NUnit.Framework;
@@ -179,6 +180,88 @@ public class AbortedSourceEnumerationTests : BasicSetupHelper
 
             // The local database is closed once the backup has returned
             using var fs = new FileStream(options["dbpath"], FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+        }
+        finally
+        {
+            s_stuckOn = "";
+            Release.Set();
+        }
+    }
+
+    /// <summary>
+    /// The listing of the file counter is no longer wanted once the backup is done, which
+    /// cancels its token. It was not waited for then either, so the backup returned and disposed
+    /// the source while the listing was still reading it: a disk image source then copied from
+    /// memory it had freed, which crashed the process. Only an aborted operation stops waiting.
+    /// </summary>
+    [TestCase(false)]
+    [TestCase(true)]
+    [Category("Targeted")]
+    public async Task AListingIsWaitedForUnlessTheOperationIsAbortedAsync(bool abort)
+    {
+        Release.Reset();
+        s_stuck = 0;
+        s_stuckOn = "listing";
+
+        try
+        {
+            var mountPoint = Path.Combine(Path.GetTempPath(), "stuck") + Path.DirectorySeparatorChar;
+            using var provider = new StuckListingProvider("test-stuck-listing://source", mountPoint, new());
+            var channels = new Library.Main.Operation.Backup.Channels();
+            using var taskControl = new Library.Main.Operation.Common.TaskControl();
+            using var listingNoLongerWanted = new CancellationTokenSource();
+
+            var listing = Library.Main.Operation.Backup.FileEnumerationProcess.RunAsync(
+                channels, provider, null, default, new Library.Utility.FilterExpression(),
+                Options.SymlinkStrategy.Store, Options.HardlinkStrategy.First, false, false, null, null,
+                new HashSet<string>(), null, taskControl, null, listingNoLongerWanted.Token);
+
+            var output = channels.SourcePaths.AsRead();
+            var drain = Task.Run(async () =>
+            {
+                try
+                {
+                    while (true)
+                        await output.ReadAsync();
+                }
+                catch
+                {
+                    // The output is retired when the process ends
+                }
+            });
+
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            while (s_stuck == 0 && sw.Elapsed < TimeSpan.FromSeconds(30) && !listing.IsCompleted)
+                await Task.Delay(50);
+            Assert.That(s_stuck, Is.GreaterThan(0), "The listing did not get stuck");
+
+            if (abort)
+            {
+                taskControl.Terminate();
+                var returned = await Task.WhenAny(listing, Task.Delay(TimeSpan.FromSeconds(10))) == listing;
+                Assert.That(returned, Is.True, "An aborted operation should stop waiting for a stuck listing");
+            }
+            else
+            {
+                listingNoLongerWanted.Cancel();
+                await Task.Delay(1000);
+                Assert.That(listing.IsCompleted, Is.False, "The process returned while the listing was still reading the source");
+
+                Release.Set();
+                var returned = await Task.WhenAny(listing, Task.Delay(TimeSpan.FromSeconds(10))) == listing;
+                Assert.That(returned, Is.True, "The listing should stop at the next entry once it is released");
+            }
+
+            try
+            {
+                await listing;
+            }
+            catch (OperationCanceledException)
+            {
+            }
+
+            Release.Set();
+            await drain.WaitAsync(TimeSpan.FromSeconds(10));
         }
         finally
         {
