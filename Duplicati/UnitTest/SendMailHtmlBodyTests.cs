@@ -198,6 +198,98 @@ public class SendMailHtmlBodyTests
         Assert.That(message, Does.Contain("</p>"));
     }
 
+    /// <summary>
+    /// A reduced report carries no file names from the template, also not the ones in the markup,
+    /// split by a tag or written with character references
+    /// </summary>
+    [Test]
+    [Category("Targeted")]
+    [TestCase("<a href=\"/home/someone/secret\">link</a>")]
+    [TestCase("<a href='file:///C:/Users/someone/secret.txt'>link</a>")]
+    [TestCase("<img src=/home/someone/secret.png>")]
+    [TestCase("<td style=\"background:url(/home/someone/secret.png)\">x</td>")]
+    [TestCase("<!-- /home/someone/secret -->")]
+    [TestCase("Backup of <C:\\Users\\someone\\secret>")]
+    [TestCase("Backup of < /home/someone/secret >")]
+    [TestCase("<p>C:\\Users\\someone\\<b>secret</b></p>")]
+    [TestCase("<p>\\\\server\\<i>secret</i></p>")]
+    [TestCase("<p>file:///home/<b>secret</b></p>")]
+    [TestCase("<p>/home/<wbr>someone/secret</p>")]
+    [TestCase("<p>Backup</p><p>/home/someone/secret</p>")]
+    [TestCase("<p>&#47;home&#47;someone&#47;secret</p>")]
+    [TestCase("<p>&#47home&#47someone&#47secret</p>")]
+    [TestCase("<p>&#x2F;home&#x2f;someone&#X2F;secret</p>")]
+    [TestCase("<p>&sol;home&sol;someone&sol;secret</p>")]
+    [TestCase("<p>C&colon;&bsol;Users&bsol;secret</p>")]
+    [TestCase("<a title=\"&#47;home&#47;someone&#47;secret\">x</a>")]
+    public async Task PathsInTheMarkupOfAnHtmlBodyAreRedactedWithReducedReportingAsync(string body)
+    {
+        var message = await SendReportAsync(new()
+        {
+            ["send-mail-body-html"] = "true",
+            ["reduced-reporting"] = "true",
+            ["send-mail-body"] = body
+        });
+
+        Assert.That(message, Does.Not.Contain("secret"));
+        Assert.That(message, Does.Contain("redacted"));
+    }
+
+    /// <summary>
+    /// Allowing paths in log messages for a backup does not let paths into a reduced report
+    /// </summary>
+    [Test]
+    [Category("Targeted")]
+    [TestCase("true")]
+    [TestCase("false")]
+    public async Task PathsAreRedactedWithReducedReportingWhenPathsAreAllowedAsync(string html)
+    {
+        var message = await SendReportAsync(new()
+        {
+            ["send-mail-body-html"] = html,
+            ["reduced-reporting"] = "true",
+            ["allow-paths-in-log-messages"] = "true",
+            ["backup-name"] = "/srv/backup",
+            ["send-mail-body"] = "<p>%backup-name% <a href=\"/home/someone/secret\">/home/someone/secret</a></p>"
+        });
+
+        Assert.That(message, Does.Not.Contain("secret"));
+        Assert.That(message, Does.Not.Contain("/srv/backup"));
+        Assert.That(message, Does.Contain("redacted"));
+    }
+
+    /// <summary>
+    /// The markup without paths, such as links and self-closing tags, is kept in a reduced report
+    /// </summary>
+    [Test]
+    [Category("Targeted")]
+    public async Task TheMarkupWithoutPathsIsKeptWithReducedReportingAsync()
+    {
+        var body = "<!DOCTYPE html><p class=\"x\">%OPERATIONNAME%<br/><a href=\"https://example.com/a/b?c=d&amp;e=f\">x</a> &amp; &lt;y&gt;</p><img src=\"cid:logo\" /><pre>%RESULT%</pre>";
+        var message = await SendReportAsync(new()
+        {
+            ["send-mail-body-html"] = "true",
+            ["reduced-reporting"] = "true",
+            ["send-mail-body"] = body
+        });
+
+        Assert.That(message, Does.Contain("<!DOCTYPE html><p class=\"x\">Backup<br/><a href=\"https://example.com/a/b?c=d&amp;e=f\">x</a> &amp; &lt;y&gt;</p><img src=\"cid:logo\" /><pre>"));
+        Assert.That(message, Does.Contain("</pre>"));
+        Assert.That(message, Does.Not.Contain("redacted"));
+    }
+
+    /// <summary>
+    /// The paths are replaced in the HTML text, and the tags around and in them are kept
+    /// </summary>
+    [Test]
+    [Category("Targeted")]
+    public void TheTagsAroundAndInAPathAreKept()
+    {
+        var html = Library.Utility.SensitiveDataFilter.RedactPathsInHtml("<a href=\"/home/x\">C:\\a\\<b>b</b> and &#47;c&#47;d.</a></p>");
+
+        Assert.That(html, Is.EqualTo("<a href=\"-redacted-\">-redacted-<b>-redacted-</b> and -redacted-</a></p>"));
+    }
+
     [Test]
     [Category("Targeted")]
     public async Task PathsInTheValuesOfAnHtmlBodyAreStillRedactedAsync()

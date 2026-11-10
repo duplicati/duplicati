@@ -301,8 +301,8 @@ namespace Duplicati.Library.Modules.Builtin
 
             m_options = commandlineOptions.AsReadOnly();
             m_isConfigured = true;
-            m_allowPathsInLogMessages = Utility.Utility.ParseBoolOption(m_options, OPTION_ALLOW_PATHS_IN_LOG_MESSAGES);
             m_reducedReporting = Utility.Utility.ParseBoolOption(m_options, Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING);
+            m_allowPathsInLogMessages = !m_reducedReporting && Utility.Utility.ParseBoolOption(m_options, OPTION_ALLOW_PATHS_IN_LOG_MESSAGES);
             m_options.TryGetValue(SubjectOptionName, out m_subject);
             m_options.TryGetValue(BodyOptionName, out m_body);
             m_options.TryGetValue(ExtraDataOptionName, out var extraData);
@@ -724,12 +724,10 @@ namespace Duplicati.Library.Modules.Builtin
                 if (!m_reducedReporting)
                     return expanded;
 
-                // The tags of an HTML body are not text, and their slashes would be taken for paths,
-                // so only the text between them is redacted. The values are escaped, so a tag is
-                // always from the template
+                // The slashes of the closing tags in an HTML body would be taken for paths, so the paths are
+                // detected in the text the body shows, and in its attributes and comments
                 if (!subjectline && BodyIsHtml)
-                    return string.Concat(Regex.Split(expanded, "(<[^<>]*>)")
-                        .Select((part, index) => index % 2 == 1 ? part : RedactPathsUnlessAllowed(part)));
+                    return m_allowPathsInLogMessages ? expanded : SensitiveDataFilter.RedactPathsInHtml(expanded);
 
                 return RedactPathsUnlessAllowed(expanded);
             }
