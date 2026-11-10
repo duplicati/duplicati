@@ -665,6 +665,34 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Utility")]
+        [TestCase("s3://my-bucket/folder?s3-server-name=s3.eu-central-1.wasabisys.com&use-ssl=true", ".wasabisys.com")]
+        [TestCase("s3://my-bucket?use-ssl=true&s3-server-name=ams3.digitaloceanspaces.com", ".digitaloceanspaces.com")]
+        [TestCase("s3://my-bucket/folder?s3-server-name=ns.compat.objectstorage.eu-frankfurt-1.oci.customer-oci.com", ".customer-oci.com")]
+        [TestCase("s3://my-bucket?S3-Server-Name=FSN1.YOUR-OBJECTSTORAGE.COM", ".your-objectstorage.com")]
+        [TestCase("s3://my-bucket?s3-server-name=https%3A%2F%2Fs3.gra.io.cloud.ovh.net%2F", ".cloud.ovh.net")]
+        [TestCase("s3://my-bucket?s3-server-name=sos-ch-gva-2.exo.io:443", ".exo.io")]
+        [TestCase("s3://my-bucket/folder?use-ssl=true", ".amazonaws.com")]
+        public static void GuessHostSuffixSafeUsesS3ServerName(string url, string expected)
+        {
+            Assert.AreEqual(expected, Utility.GuessHostSuffixSafe(url));
+        }
+
+        [Test]
+        [Category("Utility")]
+        [TestCase("s3://my-bucket/folder?s3-server-name=minio.internal.example")]
+        [TestCase("s3://bucket.wasabisys.com/folder?s3-server-name=minio.internal.example")]
+        [TestCase("s3://my-bucket?s3-server-name=wasabisys.com.attacker.example")]
+        [TestCase("ftp://ftp.wasabisys.com/folder")]
+        [TestCase("")]
+        [TestCase(null)]
+        public static void GuessHostSuffixSafeIgnoresUnknownHosts(string url)
+        {
+            // The bucket name is never reported, even if it looks like a known host
+            Assert.IsNull(Utility.GuessHostSuffixSafe(url));
+        }
+
+        [Test]
+        [Category("Utility")]
         public static void GetUrlWithoutCredentialsRemovesCredentialsFromMalformedUrls()
         {
             // An unencoded '@' in the password makes the relaxed parser read
