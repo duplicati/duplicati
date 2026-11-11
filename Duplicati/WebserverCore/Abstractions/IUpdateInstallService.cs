@@ -59,4 +59,39 @@ public interface IUpdateInstallService
     /// Completes an install started by a previous instance, if one is pending; runs in the background
     /// </summary>
     void CompletePendingInstall();
+
+    /// <summary>
+    /// Checks the configured update channel and installs the newest update, as asked by the console.
+    /// The install starts right away when no task is running, and otherwise as soon as the queue is idle.
+    /// Throws if the update cannot be installed, for example when the same version failed to install recently.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the update check</param>
+    /// <returns>What the service did with the request</returns>
+    Task<ConsoleUpdateInstallResult> InstallLatestForConsoleAsync(CancellationToken cancellationToken);
 }
+
+/// <summary>
+/// What the update service did with an install request from the console
+/// </summary>
+public enum ConsoleUpdateInstallStatus
+{
+    /// <summary>
+    /// The running version is the newest on the update channel
+    /// </summary>
+    UpToDate,
+    /// <summary>
+    /// The update is being downloaded and installed
+    /// </summary>
+    Installing,
+    /// <summary>
+    /// The update is installed once the running and queued tasks have finished
+    /// </summary>
+    WaitingForIdle
+}
+
+/// <summary>
+/// The outcome of an install request from the console
+/// </summary>
+/// <param name="Status">What the service did</param>
+/// <param name="Version">The version being installed, or the running version when it is up to date</param>
+public sealed record ConsoleUpdateInstallResult(ConsoleUpdateInstallStatus Status, string Version);

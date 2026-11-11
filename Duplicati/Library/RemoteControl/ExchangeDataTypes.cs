@@ -100,6 +100,10 @@ public sealed record ControlRequestMessage(string Command, Dictionary<string, st
     /// </summary>
     public const string BackupIdsKey = "backupids";
     /// <summary>
+    /// The command to check the update channel and download and install the newest update, now or once the client is idle
+    /// </summary>
+    public const string InstallUpdateCommand = "installupdate";
+    /// <summary>
     /// The key that contains the reporting URL
     /// </summary>
     public const string ReportUrlKey = "reportingurl";
@@ -173,6 +177,16 @@ public sealed record ControlResponseMessage(bool Success, Dictionary<string, str
     /// The key used for reporting the comma separated backup ids a restore test was queued for
     /// </summary>
     public const string QueuedBackupIdsKey = "queuedbackupids";
+    /// <summary>
+    /// The key used for reporting what the client did with the install update command: <c>uptodate</c>,
+    /// <c>installing</c> or <c>waitingforidle</c>. Absent when the client does not know the command,
+    /// as old clients answer unknown commands with success.
+    /// </summary>
+    public const string UpdateStatusKey = "updatestatus";
+    /// <summary>
+    /// The key used for reporting the version the install update command installs, or the running version when it is up to date
+    /// </summary>
+    public const string UpdateVersionKey = "updateversion";
 }
 
 /// <summary>
