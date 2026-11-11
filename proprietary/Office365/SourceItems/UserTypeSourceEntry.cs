@@ -369,12 +369,31 @@ internal class UserTypeSourceEntry(SourceProvider provider, string path, GraphUs
         }
     }
 
+    /// <summary>
+    /// Lists the chats the user takes part in. A chat hosted by another tenant, such as a
+    /// meeting organized by an external party, is listed for the user, but Graph refuses the
+    /// application token access to its messages with HTTP 403, so such chats are skipped.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The chat entries</returns>
     private async IAsyncEnumerable<ISourceProviderEntry> ChatsEntries([EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        var ownTenantId = await provider.ChatApi.GetOwnTenantIdAsync(cancellationToken).ConfigureAwait(false);
+
         await foreach (var chat in provider.ChatApi.ListUserChatsAsync(user.Id, cancellationToken).ConfigureAwait(false))
         {
             if (cancellationToken.IsCancellationRequested)
                 yield break;
+
+            if (ownTenantId != null && !string.IsNullOrWhiteSpace(chat.TenantId) && !string.Equals(chat.TenantId, ownTenantId, StringComparison.OrdinalIgnoreCase))
+            {
+                if (provider.ShouldWarnOnce("ForeignTenantChatSkipped"))
+                    Log.WriteInformationMessage(LOGTAG, "ForeignTenantChatSkipped", $"Chats hosted by another tenant, such as meetings organized by external parties, cannot be read with the application token and are skipped. The first one is chat '{chat.Id}' of user '{user.Id}', hosted by tenant '{chat.TenantId}'; the rest are reported as verbose messages.");
+                else
+                    Log.WriteVerboseMessage(LOGTAG, "ForeignTenantChatSkipped", $"Skipping chat '{chat.Id}' of user '{user.Id}' as it is hosted by another tenant '{chat.TenantId}'");
+
+                continue;
+            }
 
             yield return new ChatSourceEntry(provider, this.Path, user, chat);
         }

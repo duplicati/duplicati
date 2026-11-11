@@ -249,6 +249,53 @@ internal class APIHelper : IDisposable
     }
 
     /// <summary>
+    /// Gets the id of the tenant the application is signed in to. The configured tenant may
+    /// be a domain name instead of an id, in which case the id is read from the access token.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The tenant id, or <c>null</c> if it cannot be determined</returns>
+    public async Task<string?> GetTenantIdAsync(CancellationToken cancellationToken)
+    {
+        if (Guid.TryParse(_tenantId, out var configured))
+            return configured.ToString("D");
+
+        if (string.IsNullOrWhiteSpace(_graphAccessToken))
+            _graphAccessToken = await AcquireAccessTokenAsync(false, cancellationToken).ConfigureAwait(false);
+
+        return TryReadTenantIdFromToken(_graphAccessToken);
+    }
+
+    /// <summary>
+    /// Reads the tenant id from the <c>tid</c> claim of an access token, without validating
+    /// the token; the value is only used to tell the tenant's own items from foreign ones.
+    /// </summary>
+    /// <param name="accessToken">The access token</param>
+    /// <returns>The tenant id, or <c>null</c> if the token is not a JWT carrying one</returns>
+    internal static string? TryReadTenantIdFromToken(string? accessToken)
+    {
+        var parts = accessToken?.Split('.');
+        if (parts == null || parts.Length != 3)
+            return null;
+
+        try
+        {
+            var payload = parts[1].Replace('-', '+').Replace('_', '/');
+            payload = payload.PadRight(payload.Length + (4 - payload.Length % 4) % 4, '=');
+            using var doc = JsonDocument.Parse(Convert.FromBase64String(payload));
+            return doc.RootElement.ValueKind == JsonValueKind.Object
+                && doc.RootElement.TryGetProperty("tid", out var tid)
+                && tid.ValueKind == JsonValueKind.String
+                && Guid.TryParse(tid.GetString(), out var parsed)
+                    ? parsed.ToString("D")
+                    : null;
+        }
+        catch (Exception ex) when (ex is FormatException or JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Parses the response JSON.
     /// </summary>
     /// <typeparam name="T">The type to deserialize to</typeparam>

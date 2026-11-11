@@ -203,6 +203,63 @@ public class Office365DeltaTests
         }
     }
 
+    private const string OwnTenant = "11111111-1111-1111-1111-111111111111";
+    private const string OtherTenant = "22222222-2222-2222-2222-222222222222";
+
+    /// <summary>
+    /// Builds an unsigned token in the JWT layout, carrying the given payload
+    /// </summary>
+    private static string FakeJwt(string payloadJson)
+        => "e30." + Convert.ToBase64String(Encoding.UTF8.GetBytes(payloadJson)).TrimEnd('=').Replace('+', '-').Replace('/', '_') + ".sig";
+
+    [Test]
+    [Category("Office365")]
+    public void TenantIdIsReadFromTheAccessToken()
+    {
+        Assert.That(APIHelper.TryReadTenantIdFromToken(FakeJwt($"{{\"aud\":\"https://graph.microsoft.com\",\"tid\":\"{OwnTenant}\"}}")), Is.EqualTo(OwnTenant));
+        Assert.That(APIHelper.TryReadTenantIdFromToken(FakeJwt("{\"aud\":\"x\"}")), Is.Null);
+        Assert.That(APIHelper.TryReadTenantIdFromToken("test-token"), Is.Null);
+        Assert.That(APIHelper.TryReadTenantIdFromToken("a.!!.c"), Is.Null);
+        Assert.That(APIHelper.TryReadTenantIdFromToken(null), Is.Null);
+    }
+
+    [Test]
+    [Category("Office365")]
+    public async Task ChatsHostedByAnotherTenantAreSkippedAsync()
+    {
+        var handler = new FakeGraphHandler()
+            .Json("/users/u1/chats", Page(
+                $"{{\"id\":\"19:own@thread.v2\",\"chatType\":\"group\",\"tenantId\":\"{OwnTenant}\"}}," +
+                $"{{\"id\":\"19:meeting_a@thread.v2\",\"chatType\":\"meeting\",\"tenantId\":\"{OtherTenant}\"}}," +
+                $"{{\"id\":\"19:meeting_b@thread.v2\",\"chatType\":\"meeting\",\"tenantId\":\"{OtherTenant}\"}}," +
+                "{\"id\":\"19:unknown@thread.v2\",\"chatType\":\"group\"}"));
+
+        // The tenant is configured by its domain name, so its id comes from the token
+        var timeouts = new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+        var authOptions = AuthOptionsHelper.ParseWithAlias(new Dictionary<string, string?>(), "test", "test", "test-user", "test-pass");
+        var api = new APIHelper(new HttpClient(handler, disposeHandler: false), authOptions, "contoso.example", GRAPH, timeouts, null, null, "https://graph.microsoft.com/.default", FakeJwt($"{{\"tid\":\"{OwnTenant}\"}}"));
+        var provider = new SourceProvider("office365://tenant", Mount, new Dictionary<string, string?>
+        {
+            ["office365-tenant-id"] = "contoso.example",
+            ["office365-client-id"] = "client",
+            ["office365-client-secret"] = "secret",
+            ["office365-graph-base-url"] = GRAPH,
+        }, api);
+
+        var messages = CaptureLog(out var scope);
+        List<ISourceProviderEntry> entries;
+        using (scope)
+            entries = await CollectAsync(new UserTypeSourceEntry(provider, D(Mount, "users", "u1"), User, Office365UserType.Chats), false);
+
+        var root = D(Mount, "users", "u1", "chats");
+        Assert.That(entries.Select(x => x.Path), Is.EqualTo(new[] { D(root, "19:own@thread.v2"), D(root, "19:unknown@thread.v2") }), "A chat without a tenant id is kept, as it cannot be judged");
+        Assert.That(handler.Requests.Single(x => x.Contains("/users/u1/chats", StringComparison.Ordinal)), Does.Contain("tenantId"), "The tenant id must be requested");
+
+        var skipped = messages.Where(x => x.Id == "ForeignTenantChatSkipped").ToList();
+        Assert.That(skipped.Select(x => x.Level), Is.EqualTo(new[] { LogMessageType.Information, LogMessageType.Verbose }), "Only the first skipped chat is reported above the verbose level");
+        Assert.That(messages.Where(x => x.Level is LogMessageType.Warning or LogMessageType.Error), Is.Empty);
+    }
+
     [Test]
     [Category("Office365")]
     public async Task SkipPagingThatDoesNotAdvanceStopsTheListingAsync()
