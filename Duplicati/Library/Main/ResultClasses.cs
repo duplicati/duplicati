@@ -292,7 +292,7 @@ namespace Duplicati.Library.Main
 
         // ReSharper disable once UnusedMember.Global
         // This is referenced in the logs.
-        public int MessagesActualLength { get { return Messages == null ? 0 : Messages.Count(); } }
+        public int MessagesActualLength { get { return m_messages == null ? 0 : (int)Math.Min(int.MaxValue, m_messages.Count); } }
 
         [System.Text.Json.Serialization.JsonIgnore]
         [Newtonsoft.Json.JsonIgnore]
@@ -300,7 +300,7 @@ namespace Duplicati.Library.Main
 
         // ReSharper disable once UnusedMember.Global
         // This is referenced in the logs.
-        public int WarningsActualLength { get { return Warnings == null ? 0 : Warnings.Count(); } }
+        public int WarningsActualLength { get { return m_warnings == null ? 0 : (int)Math.Min(int.MaxValue, m_warnings.Count); } }
 
         [System.Text.Json.Serialization.JsonIgnore]
         [Newtonsoft.Json.JsonIgnore]
@@ -308,7 +308,7 @@ namespace Duplicati.Library.Main
 
         // ReSharper disable once UnusedMember.Global
         // This is referenced in the logs.
-        public int ErrorsActualLength { get { return Errors == null ? 0 : Errors.Count(); } }
+        public int ErrorsActualLength { get { return m_errors == null ? 0 : (int)Math.Min(int.MaxValue, m_errors.Count); } }
 
         [JsonProperty(PropertyName = "Messages")]
         [JsonPropertyName("Messages")]

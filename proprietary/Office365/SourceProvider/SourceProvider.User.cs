@@ -990,6 +990,14 @@ partial class SourceProvider
     internal ChatApiImpl ChatApi => new ChatApiImpl(_apiHelper);
     internal class ChatApiImpl(APIHelper provider)
     {
+        /// <summary>
+        /// Gets the id of the tenant being backed up, which the chats it hosts carry
+        /// </summary>
+        /// <param name="ct">The cancellation token</param>
+        /// <returns>The tenant id, or <c>null</c> if it cannot be determined</returns>
+        internal Task<string?> GetOwnTenantIdAsync(CancellationToken ct)
+            => provider.GetTenantIdAsync(ct);
+
         internal IAsyncEnumerable<GraphChat> ListUserChatsAsync(string userIdOrUpn, CancellationToken ct)
         {
             var baseUrl = provider.GraphBaseUrl.TrimEnd('/');

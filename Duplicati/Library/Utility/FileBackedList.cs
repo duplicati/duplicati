@@ -34,39 +34,37 @@ namespace Duplicati.Library.Utility
     /// </summary>
     public abstract class FileBackedList<T> : IEnumerable<T>, IDisposable
     {
+        /// <summary>
+        /// Enumerates the items the list held when the enumerator was created. The list only
+        /// grows, so the items added while enumerating are left out instead of failing the
+        /// enumeration; a result that is being reported while log messages still arrive
+        /// would otherwise fail to serialize.
+        /// </summary>
         private class StreamEnumerator : IEnumerator<T>, System.Collections.IEnumerator
         {
-            private Stream m_stream;
-            private readonly Func<Stream, long, T> m_deserialize;
             private long m_position;
             private readonly byte[] m_sizebuffer;
-            private readonly long m_expectedCount;
+            /// <summary>The stream offset where the items present at creation end</summary>
+            private readonly long m_end;
             private readonly FileBackedList<T> m_parent;
             private T m_current;
 
-            public StreamEnumerator(Stream stream, Func<Stream, long, T> deserialize, FileBackedList<T> parent)
+            public StreamEnumerator(FileBackedList<T> parent)
             {
-                m_stream = stream;
-                m_deserialize = deserialize;
                 m_sizebuffer = new byte[8];
                 m_parent = parent;
-                m_expectedCount = m_parent.Count;
+                lock (m_parent.m_lock)
+                    m_end = m_parent.m_stream?.Length ?? 0;
                 this.Reset();
             }
 
             public T Current
             {
-                get
-                {
-                    if (m_expectedCount != m_parent.Count)
-                        throw new Exception("Collection modified");
-                    return m_current;
-                }
+                get { return m_current; }
             }
 
             public void Dispose()
             {
-                m_stream = null;
             }
 
             object System.Collections.IEnumerator.Current
@@ -76,21 +74,28 @@ namespace Duplicati.Library.Utility
 
             public bool MoveNext()
             {
-                if (m_position >= m_stream.Length)
+                if (m_position >= m_end)
                 {
                     m_current = default(T);
                     return false;
                 }
-                    
-                if (m_expectedCount != m_parent.Count)
-                    throw new Exception("Collection modified");
-                    
-                m_stream.Position = m_position;
-                if (Utility.ForceStreamRead(m_stream, m_sizebuffer, m_sizebuffer.Length) != m_sizebuffer.Length)
-                    throw new IOException("Unexpected EOS");
-                var len = BitConverter.ToInt64(m_sizebuffer, 0);
-                m_current = m_deserialize(m_stream, len);
-                m_position += m_sizebuffer.Length + len;
+
+                // The stream and the buffers are shared with Add and other enumerators,
+                // and the stream is replaced when the list moves to a file
+                lock (m_parent.m_lock)
+                {
+                    var stream = m_parent.m_stream;
+                    if (stream == null)
+                        throw new ObjectDisposedException(nameof(FileBackedList<T>));
+
+                    stream.Position = m_position;
+                    if (Utility.ForceStreamRead(stream, m_sizebuffer, m_sizebuffer.Length) != m_sizebuffer.Length)
+                        throw new IOException("Unexpected EOS");
+                    var len = BitConverter.ToInt64(m_sizebuffer, 0);
+                    m_current = m_parent.Deserialize(stream, len);
+                    m_position += m_sizebuffer.Length + len;
+                }
+
                 return true;
             }
 
@@ -104,7 +109,12 @@ namespace Duplicati.Library.Utility
         private Library.Utility.TempFile m_file;
         private Stream m_stream;
         private long m_count;
-                
+        /// <summary>
+        /// Guards the stream, the count and the serialization buffers, so items can be added
+        /// from several threads while the list is enumerated
+        /// </summary>
+        private readonly object m_lock = new object();
+
         public bool IsFileBacked { get { return !(m_stream is MemoryStream); } }
         public long SwitchToFileLimit { get; set; }
         
@@ -118,6 +128,12 @@ namespace Duplicati.Library.Utility
         }
 
         public void Add(T value)
+        {
+            lock (m_lock)
+                AddUnderLock(value);
+        }
+
+        private void AddUnderLock(T value)
         {
             long size = GetSize(value);
             if (m_stream is MemoryStream && (m_stream.Length + size) > this.SwitchToFileLimit)
@@ -141,7 +157,7 @@ namespace Duplicati.Library.Utility
             m_count++;
         }
 
-        public long Count { get { return m_count; } }
+        public long Count { get { lock (m_lock) return m_count; } }
 
         public void Dispose()
         {
@@ -158,18 +174,21 @@ namespace Duplicati.Library.Utility
             if (disposing)
                 GC.SuppressFinalize(this);
 
-            if (m_stream != null)
+            lock (m_lock)
             {
-                m_stream.Dispose();
-                m_stream = null;
-            }
+                if (m_stream != null)
+                {
+                    m_stream.Dispose();
+                    m_stream = null;
+                }
 
-            if (m_file != null)
-            {
-                m_file.Dispose();
-                m_file = null;
+                if (m_file != null)
+                {
+                    m_file.Dispose();
+                    m_file = null;
+                }
             }
-        }
+}
         
         protected abstract long GetSize(T value);
         protected abstract void Serialize(T value, Stream stream);
@@ -179,7 +198,7 @@ namespace Duplicati.Library.Utility
 
         public IEnumerator<T> GetEnumerator()
         {
-            return new StreamEnumerator(m_stream, this.Deserialize, this);
+            return new StreamEnumerator(this);
         }
 
         #endregion
