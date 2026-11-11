@@ -75,6 +75,7 @@ public class OpenStackStorage : IStreamingBackend, IRenameEnabledBackend
 
     public static readonly KeyValuePair<string, string?>[] KnownOpenstackProviders =
     [
+        new("Blomp Cloud Storage", "https://authenticate.blomp.com/v2.0"),
         new("Rackspace US", "https://identity.api.rackspacecloud.com/v2.0"),
         new("Rackspace UK", "https://lon.identity.api.rackspacecloud.com/v2.0"),
         new("OVH Cloud Storage", "https://auth.cloud.ovh.net/v3"),
