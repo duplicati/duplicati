@@ -1970,6 +1970,7 @@ namespace Duplicati.Library.Utility
             ".myhuaweicloud.com",
             ".myhuaweicloud.eu",
             ".myqcloud.com",
+            ".dosya.dev",
         ], StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
