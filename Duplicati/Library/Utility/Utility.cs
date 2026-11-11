@@ -1897,6 +1897,16 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// The S3 backend option holding the server hostname (or a URL with it).
+        /// </summary>
+        private const string S3_SERVER_NAME_OPTION = "s3-server-name";
+
+        /// <summary>
+        /// The server the S3 backend uses when no server name is given.
+        /// </summary>
+        private const string DEFAULT_S3_HOST = "s3.amazonaws.com";
+
+        /// <summary>
         /// Regex used to extract the host from a URL.
         /// </summary>
         private static readonly Regex hostSuffixRegex = new Regex(@"^(?:[a-zA-Z][a-zA-Z0-9+\-.]*://)?([^/:]+)", RegexOptions.Compiled);
@@ -1949,6 +1959,17 @@ namespace Duplicati.Library.Utility
             ".srvstorage.kz",
             ".relaix.net",
             ".neon.tech",
+            ".oraclecloud.com",
+            ".customer-oci.com",
+            ".cloud-object-storage.appdomain.cloud",
+            ".your-objectstorage.com",
+            ".cloud.ovh.net",
+            ".ionoscloud.com",
+            ".exo.io",
+            ".synologyc2.net",
+            ".myhuaweicloud.com",
+            ".myhuaweicloud.eu",
+            ".myqcloud.com",
         ], StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
@@ -1971,7 +1992,15 @@ namespace Duplicati.Library.Utility
 
             try
             {
-                var hostname = hostSuffixRegex.Match(url).Groups[1].Value;
+                // The host part of an S3 url is the bucket; the server is in the s3-server-name option
+                var queryIndex = url.IndexOf('?');
+                var query = queryIndex < 0 ? "" : url[(queryIndex + 1)..];
+                var serverName = UrlEncoding.ParseQueryString(query, true)[S3_SERVER_NAME_OPTION]?.Trim();
+
+                // Without a server name, the S3 backend connects to Amazon
+                var hostname = string.IsNullOrEmpty(serverName)
+                    ? DEFAULT_S3_HOST
+                    : hostSuffixRegex.Match(serverName).Groups[1].Value;
                 if (string.IsNullOrEmpty(hostname))
                     return null;
 
