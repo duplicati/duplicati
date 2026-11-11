@@ -255,21 +255,35 @@ namespace Duplicati.Library.Snapshots.USN
 
                 if (volumeData.Files != null)
                 {
-                    foreach (var filePath in volumeData.Files)
+                    // The folder of a source file is recorded too, as in a scan without the journal (#6863)
+                    foreach (var entry in ParentFolderSourceEntry.WithFoldersOfFileSources(m_snapshot, GetSourceFiles(volumeData.Files)))
                     {
                         if (token.IsCancellationRequested)
                             yield break;
 
-                        var file = m_snapshot.GetFilesystemEntry(filePath, false);
-                        if (file != null)
-                            yield return file;
-                        else
-                            Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FolderLookupError", null, "No entry while locating source file {0}", filePath);
+                        yield return entry;
                     }
                 }
             }
         }
 
+
+        /// <summary>
+        /// Returns the entries of the given source files, and logs the ones that cannot be found
+        /// </summary>
+        /// <param name="filePaths">The paths of the source files</param>
+        /// <returns>The entries of the source files</returns>
+        private IEnumerable<ISourceProviderEntry> GetSourceFiles(IEnumerable<string> filePaths)
+        {
+            foreach (var filePath in filePaths)
+            {
+                var file = m_snapshot.GetFilesystemEntry(filePath, false);
+                if (file != null)
+                    yield return file;
+                else
+                    Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "FolderLookupError", null, "No entry while locating source file {0}", filePath);
+            }
+        }
 
         /// <summary>
         /// Filters sources, returning sub-set having been modified since last
