@@ -28,6 +28,7 @@ namespace Duplicati.CommandLine.Strings
         public static string WrongNumberOfCommandsError_v2(int actualcommands, int expectedcommands, string[] commands) { return LC.L(@"Found {0} commands but expected {1}, commands: 
 {2}", actualcommands, expectedcommands, string.Join(System.Environment.NewLine, commands ?? new string[0])); }
         public static string InvalidCommandError(string commandname) { return LC.L(@"Command not supported: {0}", commandname); }
+        public static string InvalidTestSampleCountError(string value) { return LC.L(@"The number of samples to test must be a number, or ""all"", but was: {0}", value); }
         public static string NoFilesetsMatching { get { return LC.L(@"No filesets matched the criteria."); } }
         public static string WouldDeleteBackups { get { return LC.L(@"The following filesets would be deleted:"); } }
         public static string DeletedBackups { get { return LC.L(@"These filesets were deleted:"); } }
