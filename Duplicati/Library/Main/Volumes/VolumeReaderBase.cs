@@ -49,6 +49,9 @@ namespace Duplicati.Library.Main.Volumes
                 if (stream is FileStream fileStream)
                     name = fileStream.Name;
 
+                if (string.Equals(compressor, "7z", StringComparison.OrdinalIgnoreCase))
+                    throw new UserInformationException(Strings.Common.CompressionModuleNotLoaded(compressor, Path.GetFileName(name)), "FailedToLoadCompressionModule");
+
                 throw new Exception(string.Format("Unable to create {0} decompressor on file {1}", compressor, name));
             }
 
