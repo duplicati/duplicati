@@ -887,6 +887,13 @@ internal sealed class GraphChat
     [JsonPropertyName("chatType")]
     public string? ChatType { get; set; } // oneOnOne, group, meeting
 
+    /// <summary>
+    /// The id of the tenant the chat was created in. A chat a user takes part in may be
+    /// hosted by another tenant, such as a meeting organized by an external party.
+    /// </summary>
+    [JsonPropertyName("tenantId")]
+    public string? TenantId { get; set; }
+
     [JsonPropertyName("topic")]
     public string? Topic { get; set; }
 
