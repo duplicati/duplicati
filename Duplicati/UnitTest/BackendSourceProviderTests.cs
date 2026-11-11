@@ -386,7 +386,7 @@ public class BackendSourceProviderTests
     [Category("SourceProvider")]
     public async Task RootMetadataDescribesBackendAsync()
     {
-        var (provider, root) = await GetRootAsync("s3://mybucket.s3.amazonaws.com/path?auth-username=user");
+        var (provider, root) = await GetRootAsync("s3://mybucket/path?auth-username=user&s3-server-name=s3.eu-west-1.amazonaws.com");
         using (provider)
         {
             var metadata = await root.GetMinorMetadata(CancellationToken.None);
@@ -406,7 +406,7 @@ public class BackendSourceProviderTests
     [Category("SourceProvider")]
     public async Task RootMetadataOmitsUnknownS3HostAsync()
     {
-        var (provider, root) = await GetRootAsync("s3://nas.internal.example.com/path");
+        var (provider, root) = await GetRootAsync("s3://mybucket/path?s3-server-name=nas.internal.example.com");
         using (provider)
         {
             var metadata = await root.GetMinorMetadata(CancellationToken.None);
