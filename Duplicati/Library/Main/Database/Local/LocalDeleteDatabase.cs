@@ -1088,14 +1088,12 @@ namespace Duplicati.Library.Main.Database.Local
                         DELETE FROM ""DuplicateBlock""
                         WHERE
                             (
-                                ""DuplicateBlock"".""BlockID""
-                                || ':'
-                                || ""DuplicateBlock"".""VolumeID""
+                                ""DuplicateBlock"".""BlockID"",
+                                ""DuplicateBlock"".""VolumeID""
                             ) IN (
                                 SELECT
-                                    ""RB"".""BlockID""
-                                    || ':'
-                                    || ""RB"".""VolumeID""
+                                    ""RB"".""BlockID"",
+                                    ""RB"".""VolumeID""
                                 FROM ""{replacementBlocks}"" ""RB""
                             )
                     ", token)
