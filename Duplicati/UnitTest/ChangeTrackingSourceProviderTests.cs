@@ -354,6 +354,40 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
 
     [Test]
     [Category("ChangeTracking")]
+    public async Task ItemsDifferingOnlyByCaseAreAllBackedUpAsync()
+    {
+        // Remote sources name their items by case-sensitive ids, so two items in a folder
+        // may differ only by casing, also where the local filesystem ignores case
+        var options = Prepare();
+        Scenario.Current = new Scenario
+        {
+            Children = m =>
+            [
+                Folder(m, "box",
+                    File(m, Path.Combine("box", "AAMkYldDd=.json"), "1"),
+                    File(m, Path.Combine("box", "AAMkYlddD=.json"), "2"),
+                    File(m, Path.Combine("box", "AAMkYlddd=.json"), "3"),
+                    Folder(m, Path.Combine("box", "AAMkYldYg="), File(m, Path.Combine("box", "AAMkYldYg=", "content.eml"), "upper")),
+                    Folder(m, Path.Combine("box", "AAMkYldyg="), File(m, Path.Combine("box", "AAMkYldyg=", "content.eml"), "lower")))
+            ]
+        };
+        await RunBackupAsync(options);
+
+        var paths = await ListPathsAsync(options);
+        Assert.That(paths, Is.SupersetOf(new[]
+        {
+            P(Path.Combine("box", "AAMkYldDd=.json")),
+            P(Path.Combine("box", "AAMkYlddD=.json")),
+            P(Path.Combine("box", "AAMkYlddd=.json")),
+            D(Path.Combine("box", "AAMkYldYg=")),
+            P(Path.Combine("box", "AAMkYldYg=", "content.eml")),
+            D(Path.Combine("box", "AAMkYldyg=")),
+            P(Path.Combine("box", "AAMkYldyg=", "content.eml")),
+        }));
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
     public async Task SecondRunCarriesUnchangedFilesForwardAsync()
     {
         var options = Prepare();

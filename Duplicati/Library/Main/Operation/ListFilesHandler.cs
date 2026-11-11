@@ -189,7 +189,8 @@ namespace Duplicati.Library.Main.Operation
                                             lst.Add(y.Size);
                                             return lst;
                                         },
-                                        Library.Utility.Utility.ClientFilenameStringComparer
+                                        // The paths are told apart by their exact casing, as in the database
+                                        System.StringComparer.Ordinal
                                   );
                         }
                 }

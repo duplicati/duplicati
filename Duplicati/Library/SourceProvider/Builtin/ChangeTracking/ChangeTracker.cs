@@ -124,9 +124,12 @@ public sealed class ChangeTracker
     private static readonly char SEPARATOR = System.IO.Path.DirectorySeparatorChar;
 
     /// <summary>
-    /// The marks by path. Folder paths end with the separator.
+    /// The marks by path. Folder paths end with the separator. The paths are compared with
+    /// their exact casing, on any operating system: they are built from the ids of remote
+    /// items, which are case-sensitive, so two items may differ only by casing and a mark
+    /// on one must not count for the other.
     /// </summary>
-    private readonly ConcurrentDictionary<string, Mark> _marks = new(Library.Utility.Utility.ClientFilenameStringComparer);
+    private readonly ConcurrentDictionary<string, Mark> _marks = new(StringComparer.Ordinal);
 
     /// <summary>
     /// The ids a tree reported, matched against the segments of the paths below the tree
@@ -144,7 +147,7 @@ public sealed class ChangeTracker
     /// items that live in another tree, such as a user's My Drive feed reporting activity on a
     /// shared drive item as a removal, so an id only counts below the tree it was reported for
     /// </summary>
-    private readonly ConcurrentDictionary<string, IdScope> _idScopes = new(Library.Utility.Utility.ClientFilenameStringComparer);
+    private readonly ConcurrentDictionary<string, IdScope> _idScopes = new(StringComparer.Ordinal);
 
     /// <summary>
     /// The state loaded from the previous backup

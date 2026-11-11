@@ -349,11 +349,23 @@ namespace Duplicati.Library.Main.Operation.Backup
         }
 
         /// <summary>
+        /// Checks if a folder is below another folder. The paths are compared with the casing
+        /// rules of the client filesystem, but a path that is not longer than the parent is never
+        /// below it: two folders whose paths differ only by casing are siblings, which a remote
+        /// source can list as it names items by case-sensitive ids.
+        /// </summary>
+        /// <param name="path">The folder path to check</param>
+        /// <param name="parent">The path of the potential parent folder</param>
+        /// <returns><c>true</c> if the folder is below the parent, <c>false</c> otherwise</returns>
+        private static bool IsFolderBelow(string path, string parent)
+            => path.Length > parent.Length && path.StartsWith(parent, Library.Utility.Utility.ClientFilenameStringComparison);
+
+        /// <summary>
         /// Excludes empty folders.
         /// </summary>
         /// <returns>The list without empty folders.</returns>
         /// <param name="source">The list with potential empty folders.</param>
-        private static async IAsyncEnumerable<ISourceProviderEntry> ExcludeEmptyFoldersAsync(IAsyncEnumerable<ISourceProviderEntry> source, Func<string, bool>? keepEmptyFolder, [EnumeratorCancellation] CancellationToken cancellationToken)
+        internal static async IAsyncEnumerable<ISourceProviderEntry> ExcludeEmptyFoldersAsync(IAsyncEnumerable<ISourceProviderEntry> source, Func<string, bool>? keepEmptyFolder, [EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var pathstack = new Stack<DirectoryStackEntry>();
 
@@ -362,7 +374,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 // Keep track of directories
                 if (s.IsFolder)
                 {
-                    while (pathstack.Count > 0 && !s.Path.StartsWith(pathstack.Peek().Item.Path, Library.Utility.Utility.ClientFilenameStringComparison))
+                    while (pathstack.Count > 0 && !IsFolderBelow(s.Path, pathstack.Peek().Item.Path))
                     {
                         var e = pathstack.Pop();
                         // A folder enumerated incrementally lists only what changed, so it
@@ -379,7 +391,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                             Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingEmptyFolder", "Excluding empty folder {0}", e.Item);
                     }
 
-                    if (pathstack.Count == 0 || s.Path.StartsWith(pathstack.Peek().Item.Path, Library.Utility.Utility.ClientFilenameStringComparison))
+                    if (pathstack.Count == 0 || IsFolderBelow(s.Path, pathstack.Peek().Item.Path))
                     {
                         pathstack.Push(new DirectoryStackEntry() { Item = s, AnyEntries = false });
                         continue;
@@ -455,8 +467,12 @@ namespace Duplicati.Library.Main.Operation.Backup
 #endif
                     try
                     {
-                        // Guard against duplicate paths from the source provider
-                        var known = new HashSet<string>(Library.Utility.Utility.ClientFilenameStringComparer);
+                        // Guard against duplicate paths from the source provider.
+                        // The comparison is exact, as the database tells paths apart by their exact
+                        // casing, and remote sources name items by case-sensitive ids: comparing
+                        // without case on Windows drops every item whose id differs from another
+                        // only by casing
+                        var known = new HashSet<string>(StringComparer.Ordinal);
 
                         // We only filter new items, as we assume the input is already filtered
                         await foreach (var r in e.Enumerate(cancellationToken).ConfigureAwait(false))
