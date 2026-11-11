@@ -76,6 +76,11 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
     private SMBShareConnection? _sharedConnection;
 
     /// <summary>
+    /// Creates the connection; replaced by tests that have no server
+    /// </summary>
+    internal Func<CancellationToken, Task<SMBShareConnection>>? ConnectionFactory { get; init; }
+
+    /// <summary>
     /// Read buffer size for SMB operations (will be capped automatically by SMB negotiated values)
     /// </summary>
     private const string READ_BUFFER_SIZE_OPTION = "read-buffer-size";
@@ -360,7 +365,16 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
     /// </summary>
     /// <returns>An SMB connection that can be used for file operations</returns>
     private async Task<SMBShareConnection> GetConnectionAsync(CancellationToken cancellationToken)
-        => _sharedConnection ??= await SMBShareConnection.CreateAsync(_connectionParameters, _timeouts, cancellationToken).ConfigureAwait(false);
+    {
+        // A connection is closed for good when an operation on it timed out
+        if (_sharedConnection?.IsBroken == true)
+        {
+            _sharedConnection.Dispose();
+            _sharedConnection = null;
+        }
+
+        return _sharedConnection ??= await (ConnectionFactory?.Invoke(cancellationToken) ?? SMBShareConnection.CreateAsync(_connectionParameters, _timeouts, cancellationToken)).ConfigureAwait(false);
+    }
 
 
 
