@@ -110,12 +110,12 @@ public class TestEmptyBlockVolumeTests : BasicSetupHelper
         await BackupAsync();
 
         // Purging the broken large file leaves its blocklist block in another volume, but no
-        // version refers to it, so the next backup sends its blocklist hash in a volume of its own
+        // version refers to it, so the next backup sends its blocklist hash in a volume of its own.
+        // Nothing else changes, as a new block that arrived after the hash would go into that volume.
         MoveAwayLargeFileVolume();
         using (var c = new Controller("file://" + TARGETFOLDER, Options, null))
             TestUtils.AssertResults(await c.PurgeBrokenFilesAsync(null));
 
-        WriteFile("small.bin", 2000, 3);
         await BackupAsync();
 
         Assert.That(QueryCount(@"SELECT COUNT(*) FROM ""Remotevolume"" WHERE ""Type"" = 'Blocks' AND ""State"" IN ('Uploaded', 'Verified') AND NOT EXISTS (SELECT 1 FROM ""Block"" WHERE ""Block"".""VolumeID"" = ""Remotevolume"".""ID"")"),
