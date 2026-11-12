@@ -129,8 +129,15 @@ namespace Duplicati.Library.Utility
         /// </summary>
         /// <param name="Start">The position of the part in the HTML text</param>
         /// <param name="Length">The length of the part in the HTML text</param>
-        /// <param name="Text">The text shown for the part, or <c>null</c> for a tag</param>
-        private readonly record struct HtmlPart(int Start, int Length, string Text);
+        /// <param name="Text">The text shown for a character reference, or <c>null</c> for a tag or a character,
+        /// which is shown as itself; a body can be megabytes, so a string is not made for each character</param>
+        /// <param name="IsTag"><c>true</c> if the part is a tag</param>
+        private readonly record struct HtmlPart(int Start, int Length, string Text, bool IsTag);
+
+        /// <summary>
+        /// The characters an HTML text needs to show or carry a path: a path separator, or the start of a character reference
+        /// </summary>
+        private static readonly char[] HtmlPathTriggers = new[] { '/', '\\', '&' };
 
         /// <summary>
         /// Replaces the file system paths shown by an HTML text with "-redacted-", and keeps the markup.
@@ -145,12 +152,17 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrEmpty(html))
                 return html;
 
+            // Every detected path has a slash or a backslash, which can also be written as a character
+            // reference; without them nothing is redacted. This keeps the many tags without paths cheap.
+            if (html.IndexOfAny(HtmlPathTriggers) < 0)
+                return html;
+
             var parts = new System.Collections.Generic.List<HtmlPart>();
             var position = 0;
             foreach (Match tag in HtmlTagRegex.Matches(html))
             {
                 AddHtmlTextParts(parts, html, position, tag.Index);
-                parts.Add(new HtmlPart(tag.Index, tag.Length, null));
+                parts.Add(new HtmlPart(tag.Index, tag.Length, null, true));
                 position = tag.Index + tag.Length;
             }
             AddHtmlTextParts(parts, html, position, html.Length);
@@ -158,14 +170,14 @@ namespace Duplicati.Library.Utility
             // A tag can join two words of the shown text (<b>) or separate them (<p>), so the paths are
             // detected both ways and every part that is in a path either way is redacted
             var redact = new bool[parts.Count];
-            MarkHtmlPathParts(parts, redact, null);
-            MarkHtmlPathParts(parts, redact, " ");
+            MarkHtmlPathParts(html, parts, redact, null);
+            MarkHtmlPathParts(html, parts, redact, " ");
 
             var result = new System.Text.StringBuilder(html.Length);
             for (var i = 0; i < parts.Count; i++)
             {
                 var part = parts[i];
-                if (part.Text == null)
+                if (part.IsTag)
                     result.Append(RedactHtmlTag(html.Substring(part.Start, part.Length)));
                 else if (!redact[i])
                     result.Append(html, part.Start, part.Length);
@@ -194,12 +206,12 @@ namespace Duplicati.Library.Utility
 
                 if (reference.Success)
                 {
-                    parts.Add(new HtmlPart(position, reference.Length, DecodeHtmlCharacterReference(reference.Value)));
+                    parts.Add(new HtmlPart(position, reference.Length, DecodeHtmlCharacterReference(reference.Value), false));
                     position += reference.Length;
                 }
                 else
                 {
-                    parts.Add(new HtmlPart(position, 1, html.Substring(position, 1)));
+                    parts.Add(new HtmlPart(position, 1, null, false));
                     position++;
                 }
             }
@@ -232,22 +244,42 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Marks the parts that are in a path of the shown text
         /// </summary>
+        /// <param name="html">The HTML text</param>
         /// <param name="parts">The parts of the HTML text</param>
         /// <param name="redact">The marks, one for each part</param>
         /// <param name="tagText">The text a tag is shown as, or <c>null</c> if a tag is not shown</param>
-        private static void MarkHtmlPathParts(System.Collections.Generic.List<HtmlPart> parts, bool[] redact, string tagText)
+        private static void MarkHtmlPathParts(string html, System.Collections.Generic.List<HtmlPart> parts, bool[] redact, string tagText)
         {
-            var text = new System.Text.StringBuilder();
-            var owners = new System.Collections.Generic.List<int>();
+            var length = 0;
+            foreach (var part in parts)
+                length += part.IsTag ? tagText?.Length ?? 0 : part.Text?.Length ?? 1;
+
+            // The part each character of the shown text comes from, or -1 for a tag
+            var text = new System.Text.StringBuilder(length);
+            var owners = new int[length];
+            var position = 0;
             for (var i = 0; i < parts.Count; i++)
             {
-                var shown = parts[i].Text ?? tagText;
-                if (shown == null)
-                    continue;
-
-                text.Append(shown);
-                for (var j = 0; j < shown.Length; j++)
-                    owners.Add(parts[i].Text == null ? -1 : i);
+                var part = parts[i];
+                if (part.IsTag)
+                {
+                    if (tagText == null)
+                        continue;
+                    text.Append(tagText);
+                    for (var j = 0; j < tagText.Length; j++)
+                        owners[position++] = -1;
+                }
+                else if (part.Text == null)
+                {
+                    text.Append(html[part.Start]);
+                    owners[position++] = i;
+                }
+                else
+                {
+                    text.Append(part.Text);
+                    for (var j = 0; j < part.Text.Length; j++)
+                        owners[position++] = i;
+                }
             }
 
             foreach (Match match in PathDetectionRegex.Matches(text.ToString()))
