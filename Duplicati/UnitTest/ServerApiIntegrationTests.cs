@@ -298,6 +298,84 @@ public class ServerApiIntegrationTests : BasicSetupHelper
         }
     }
 
+    /// <summary>
+    /// A folder that may not be listed, such as the compatibility junctions of a Windows profile
+    /// (Everyone is denied List folder on Cookies and Application Data), is reported as forbidden,
+    /// and a folder next to it is still listed
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task ListingAFolderThatMayNotBeListedIsForbidden_Async()
+    {
+        var deniedFolder = Path.Combine(this.DATAFOLDER, "cannot-list");
+        var openFolder = Path.Combine(this.DATAFOLDER, "can-list");
+        Directory.CreateDirectory(Path.Combine(deniedFolder, "sub"));
+        Directory.CreateDirectory(Path.Combine(openFolder, "sub"));
+
+        DenyListing(deniedFolder, true);
+        try
+        {
+            try
+            {
+                Directory.GetFileSystemEntries(deniedFolder);
+                Assert.Ignore("The folder can still be listed, so the test cannot deny it (running as root?)");
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+
+            await WithAuthenticatedServerAsync(async httpClient =>
+            {
+                var denied = await httpClient.PostAsJsonAsync("/api/v1/filesystem?onlyFolders=true&showHidden=true", new { path = Util.AppendDirSeparator(deniedFolder) }, JsonOptions).ConfigureAwait(false);
+                var deniedBody = await denied.Content.ReadAsStringAsync().ConfigureAwait(false);
+                Assert.That(denied.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), deniedBody);
+                using (var error = JsonDocument.Parse(deniedBody))
+                {
+                    Assert.That(error.RootElement.GetProperty("Code").GetInt32(), Is.EqualTo(403));
+                    Assert.That(error.RootElement.GetProperty("Error").GetString(), Does.Contain(deniedFolder));
+                }
+
+                var open = await httpClient.PostAsJsonAsync("/api/v1/filesystem?onlyFolders=true&showHidden=true", new { path = Util.AppendDirSeparator(openFolder) }, JsonOptions).ConfigureAwait(false);
+                var openBody = await open.Content.ReadAsStringAsync().ConfigureAwait(false);
+                Assert.That(open.StatusCode, Is.EqualTo(HttpStatusCode.OK), openBody);
+                Assert.That(openBody, Does.Contain("\"text\":\"sub\""));
+            }).ConfigureAwait(false);
+        }
+        finally
+        {
+            DenyListing(deniedFolder, false);
+        }
+    }
+
+    /// <summary>
+    /// Denies or allows listing a folder that the test created, for the account that runs the test
+    /// </summary>
+    /// <param name="folder">The folder</param>
+    /// <param name="deny"><c>true</c> to deny listing the folder, <c>false</c> to allow it again</param>
+    private static void DenyListing(string folder, bool deny)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            var directory = new DirectoryInfo(folder);
+            var security = directory.GetAccessControl();
+            var rule = new System.Security.AccessControl.FileSystemAccessRule(
+                System.Security.Principal.WindowsIdentity.GetCurrent().User!,
+                System.Security.AccessControl.FileSystemRights.ListDirectory,
+                System.Security.AccessControl.AccessControlType.Deny);
+            if (deny)
+                security.AddAccessRule(rule);
+            else
+                security.RemoveAccessRule(rule);
+            directory.SetAccessControl(security);
+        }
+        else
+        {
+            File.SetUnixFileMode(folder, deny
+                ? UnixFileMode.None
+                : UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+    }
+
     [Test]
     [Category("Integration")]
     public async Task ServerBackupListMasksTargetUrl_Async()

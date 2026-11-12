@@ -188,6 +188,10 @@ public class Filesystem : IEndpointV1
 
             return res.ToList();
         }
+        catch (UserReportedHttpException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             throw new Exception($"Failed to process the path: {ex.Message}", ex);
@@ -275,7 +279,20 @@ public class Filesystem : IEndpointV1
             return -1;
         };
 
-        foreach (var s in SystemIO.IO_OS.EnumerateFileSystemEntries(entrypath)
+        List<string> entries;
+        try
+        {
+            entries = SystemIO.IO_OS.EnumerateFileSystemEntries(entrypath).ToList();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // The folder may not be listed. The compatibility junctions in a Windows profile, such as
+            // Cookies and Application Data, deny List folder to Everyone, so they cannot be expanded.
+            // The listing of the parent already reports such a folder as locked
+            throw new ForbiddenException($"Access to the folder is denied: {entrypath}");
+        }
+
+        foreach (var s in entries
             // Group directories first
             .OrderByDescending(f => SystemIO.IO_OS.GetFileAttributes(f) & FileAttributes.Directory)
             // Sort both groups (directories and files) alphabetically
