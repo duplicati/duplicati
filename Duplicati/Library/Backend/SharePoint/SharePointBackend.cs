@@ -74,6 +74,9 @@ namespace Duplicati.Library.Backend
         /// <summary> Creates the context; replaced by tests that have no server. </summary>
         internal Func<ClientContext>? ContextFactory { get; init; }
 
+        /// <summary> Receives each chunk stream an upload sends; for tests whose context never reads it. </summary>
+        internal Action<Stream>? ChunkStreamCreated { get; init; }
+
         /// <summary> The chunk size for uploading files. </summary>
         private readonly int m_fileChunkSize = 4 << 20; // Default: 4MB
 
@@ -448,6 +451,33 @@ namespace Duplicati.Library.Backend
         }
 
         /// <summary>
+        /// Runs the pending query, which sends the given chunk, until nothing has happened for
+        /// the timeout: the chunk is not being read, and no answer has come. A slow but steady
+        /// upload is not cut off. A query that times out keeps running on the context, so the
+        /// context is not handed out again.
+        /// </summary>
+        /// <param name="ctx">The context with the pending query</param>
+        /// <param name="chunk">The chunk the query sends, observing the gaps between reads</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        private async Task ExecuteQueryWithIdleTimeoutAsync(ClientContext ctx, TimeoutObservingStream chunk, CancellationToken cancelToken)
+        {
+            // The chunk's token is cancelled when the chunk has not been read for the timeout,
+            // which is also the case before the first read and after the last one
+            var idleToken = chunk.TimeoutToken;
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(idleToken, cancelToken);
+            try
+            {
+                await ctx.ExecuteQueryAsync().WaitAsync(cts.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (idleToken.IsCancellationRequested && !cancelToken.IsCancellationRequested)
+            {
+                if (ReferenceEquals(m_spContext, ctx))
+                    m_spContext = null;
+                throw new TimeoutException();
+            }
+        }
+
+        /// <summary>
         /// Helper method to inject the custom webrequest provider that sets the UserAgent
         /// </summary>
         /// <returns>The new context.</returns>
@@ -640,7 +670,7 @@ namespace Duplicati.Library.Backend
         /// Upload in chunks to bypass filesize limit.
         /// https://msdn.microsoft.com/en-us/library/office/dn904536.aspx
         /// </summary>
-        private async Task<SP.File> UploadFileSlicePerSlice(ClientContext ctx, Folder folder, Stream sourceFileStream, string fileName, CancellationToken cancelToken)
+        internal async Task<SP.File> UploadFileSlicePerSlice(ClientContext ctx, Folder folder, Stream sourceFileStream, string fileName, CancellationToken cancelToken)
         {
             // Each sliced upload requires a unique ID.
             var uploadId = Guid.NewGuid();
@@ -667,8 +697,9 @@ namespace Duplicati.Library.Backend
                     bufCnt += lastreadsize;
 
                 using (var contentChunk = new MemoryStream(buf, 0, bufCnt, false))
-                using (var timeoutStream = contentChunk.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap))
+                using (var timeoutStream = (TimeoutObservingStream)contentChunk.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap))
                 {
+                    ChunkStreamCreated?.Invoke(timeoutStream);
                     ClientResult<long>? bytesUploaded = null;
                     if (uploadFile == null)
                     {
@@ -702,7 +733,7 @@ namespace Duplicati.Library.Backend
                     if (bytesUploaded == null)
                         ctx.Load(uploadFile, f => f.Length);
 
-                    await ctx.ExecuteQueryAsync().ConfigureAwait(false);
+                    await ExecuteQueryWithIdleTimeoutAsync(ctx, timeoutStream, cancelToken).ConfigureAwait(false);
                     // Check consistency and update fileoffset for the next slice.
                     if (bytesUploaded != null)
                     {
