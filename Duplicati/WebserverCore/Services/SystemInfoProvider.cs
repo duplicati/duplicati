@@ -188,6 +188,16 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         public required string PackageTypeId { get; init; }
 
         /// <summary>
+        /// Gets or sets the name of the entry assembly.
+        /// </summary>
+        public required string EntryAssembly { get; init; }
+
+        /// <summary>
+        /// Gets or sets the installation folder.
+        /// </summary>
+        public required string InstallationFolder { get; init; }
+
+        /// <summary>
         /// Gets or sets the user name.
         /// </summary>
         public required string UserName { get; init; }
@@ -316,6 +326,8 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             CaseSensitiveFilesystem = Library.Utility.Utility.IsFSCaseSensitive,
             MachineName = Environment.MachineName,
             PackageTypeId = UpdaterManager.PackageTypeId,
+            EntryAssembly = Library.Utility.Utility.getEntryAssembly().GetName().Name ?? string.Empty,
+            InstallationFolder = UpdaterManager.INSTALLATIONDIR,
             UserName = OperatingSystem.IsWindows() ? System.Security.Principal.WindowsIdentity.GetCurrent().Name : Environment.UserName,
             NewLine = Environment.NewLine,
             CLRVersion = Environment.Version.ToString(),
@@ -406,6 +418,9 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             CaseSensitiveFilesystem = systeminfo.CaseSensitiveFilesystem,
             MachineName = systeminfo.MachineName,
             PackageTypeId = systeminfo.PackageTypeId,
+            EntryAssembly = systeminfo.EntryAssembly,
+            InstallationFolder = systeminfo.InstallationFolder,
+            DataFolder = applicationSettings.DataFolder,
             UpdateInstallSupported = updateInstallService.Support.Supported,
             UpdateInstallUnsupportedReason = updateInstallService.Support.Reason,
             UserName = systeminfo.UserName,
