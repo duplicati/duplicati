@@ -74,6 +74,37 @@ public static class QuerystringMasking
     }
 
     /// <summary>
+    /// Removes the properties listed in protectedProperties and the password in the user info from the given URL,
+    /// keeping the rest of the URL as it is written.
+    /// </summary>
+    /// <param name="urlstring">The URL to remove the properties from.</param>
+    /// <param name="protectedProperties">The set of property names to remove (case-insensitive).</param>
+    /// <returns>The URL without the sensitive properties.</returns>
+    public static string Remove(string urlstring, IReadOnlySet<string> protectedProperties)
+    {
+        if (string.IsNullOrEmpty(urlstring))
+            return urlstring;
+
+        // user:password@host becomes user@host
+        if (TryGetUserInfoPassword(urlstring, out var userInfo))
+            urlstring = userInfo.Groups["before"].Value[..^1] + urlstring.Substring(userInfo.Length);
+
+        if (!TrySplitQuery(urlstring, out var beforeQuery, out var parameters))
+            return urlstring;
+
+        var kept = parameters
+            .Where(x => !protectedProperties.Contains(GetKey(x), StringComparer.OrdinalIgnoreCase))
+            .ToList();
+
+        if (kept.Count == parameters.Length)
+            return urlstring;
+
+        return kept.Count == 0
+            ? beforeQuery[..^1]
+            : beforeQuery + string.Join("&", kept);
+    }
+
+    /// <summary>
     /// Unmasks sensitive properties in the <paramref name="newUrl"/> by copying values from the <paramref name="previousUrl"/>
     /// </summary>
     /// <param name="newUrl">The new URL which may contain masked properties.</param>
