@@ -712,8 +712,10 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(l1);
             Directory.CreateDirectory(l2);
 
-            // Generate test data: 5 files of ~1KB each, total ~5KB
-            await GenerateTestDataAsync(l1, 5, 0, 0, 2048).ConfigureAwait(false);
+            // 5 files of 2 KiB, 10 KiB in all. The sizes are fixed, as random ones
+            // can add up to less than the free quota, and the synchronization then succeeds
+            for (var i = 0; i < 5; i++)
+                await File.WriteAllBytesAsync(Path.Combine(l1, $"file_{i}.txt"), new byte[2048]).ConfigureAwait(false);
 
             // Register the test backend
             Library.DynamicLoader.BackendLoader.AddBackend(new FileBackendWith1Kb());
