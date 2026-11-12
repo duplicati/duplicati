@@ -214,7 +214,7 @@ public class AbortedSourceEnumerationTests : BasicSetupHelper
             var listing = Library.Main.Operation.Backup.FileEnumerationProcess.RunAsync(
                 channels, provider, null, default, new Library.Utility.FilterExpression(),
                 Options.SymlinkStrategy.Store, Options.HardlinkStrategy.First, false, false, null, null,
-                new HashSet<string>(), null, taskControl, null, listingNoLongerWanted.Token);
+                new HashSet<string>(), null, null, taskControl, null, listingNoLongerWanted.Token);
 
             var output = channels.SourcePaths.AsRead();
             var drain = Task.Run(async () =>

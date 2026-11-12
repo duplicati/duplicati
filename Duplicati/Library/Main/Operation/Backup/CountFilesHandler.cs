@@ -52,7 +52,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     channels, sources, journalService, options.FileAttributeFilter, filter,
                     options.SymlinkPolicy, options.HardlinkPolicy, options.DisableBackupExclusionXattr,
                     options.ExcludeEmptyFolders, null, options.IgnoreFilenames,
-                    blacklistPaths, options.ChangedFilelist, taskreader, null, token);
+                    blacklistPaths, options.ChangedFilelist, null, taskreader, null, token);
 
                 var counterTask = AutomationExtensions.RunTask(new
                 {

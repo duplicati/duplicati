@@ -24,6 +24,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Duplicati.Library.ChangeTracking;
 using Duplicati.Library.Interface;
 using Duplicati.Server.Serialization;
 using Duplicati.Library.RestAPI;
@@ -945,15 +946,15 @@ namespace Duplicati.Server
             return parts.ToArray();
         }
 
-        public static Task<IBasicResults?> RunAsync(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IApplicationSettings applicationSettings, IQueuedTask data, bool fromQueue)
+        public static Task<IBasicResults?> RunAsync(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IApplicationSettings applicationSettings, IChangeTrackingService? changeTracking, IQueuedTask data, bool fromQueue)
         {
             if (data is IRunnerData runnerData)
-                return RunInternalAsync(databaseConnection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, runnerData, fromQueue);
+                return RunInternalAsync(databaseConnection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, changeTracking, runnerData, fromQueue);
 
             throw new ArgumentException("Invalid task type", nameof(data));
         }
 
-        private static async Task<IBasicResults?> RunInternalAsync(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IApplicationSettings applicationSettings, IRunnerData data, bool fromQueue)
+        private static async Task<IBasicResults?> RunInternalAsync(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IApplicationSettings applicationSettings, IChangeTrackingService? changeTracking, IRunnerData data, bool fromQueue)
         {
             data.TaskStarted = DateTime.Now;
             if (data is CustomRunnerTask task)
@@ -1036,6 +1037,11 @@ namespace Duplicati.Server
                     foreach (var k in data.ExtraOptions)
                         options[k.Key] = k.Value;
 
+                // The file watcher is a server concern; the engine must not see the option. It is
+                // opt-in per backup, so a server-wide default or an option for one run does not count
+                var useFileWatcher = IsFileWatcherEnabled(backup);
+                options.Remove(FILE_WATCHER_OPTION);
+
                 // Map AdditionalTargetURLs to remote-sync-json-config option for backup operations
                 if (data.Operation == DuplicatiOperation.BackupOrSync)
                     ApplyAdditionalTargetUrls(databaseConnection, backup, options);
@@ -1103,9 +1109,31 @@ namespace Duplicati.Server
 
                                 IBasicResults r;
                                 if (backup.OperationType == OperationType.Sync)
+                                {
                                     r = await controller.SyncAsync(sources, filter).ConfigureAwait(false);
+                                }
                                 else
-                                    r = await controller.BackupAsync(sources, filter).ConfigureAwait(false);
+                                {
+                                    // The handoff closes the recording when the engine asks for the
+                                    // list, after the snapshot exists, so it is installed before the run
+                                    var handoff = await PrepareChangeTrackingAsync(changeTracking, backup, sources, filter, options, useFileWatcher).ConfigureAwait(false);
+
+                                    IBackupResults? backupResults = null;
+                                    try
+                                    {
+                                        if (handoff != null)
+                                            await controller.SetChangeListProviderAsync(handoff).ConfigureAwait(false);
+
+                                        backupResults = await controller.BackupAsync(sources, filter).ConfigureAwait(false);
+                                    }
+                                    finally
+                                    {
+                                        if (handoff != null && changeTracking != null)
+                                            await CompleteChangeTrackingAsync(changeTracking, handoff, backupResults, Utility.ParseBoolOption(options, "dry-run")).ConfigureAwait(false);
+                                    }
+
+                                    r = backupResults;
+                                }
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
                                 return r;
                             }
@@ -1215,6 +1243,7 @@ namespace Duplicati.Server
                                             System.IO.File.Delete(dbpath);
                                     }
                                 }
+                                // The connection tells the change tracking service, which stops the watcher
                                 databaseConnection.DeleteBackup(backup);
                                 (data as RunnerData)?.AfterTaskFinished?.Invoke(data);
                                 return null;
@@ -1310,6 +1339,165 @@ namespace Duplicati.Server
                 data.SetController(null);
                 data.TaskFinished = DateTime.Now;
                 eventPollNotify.SignalProgressUpdate(progressStateProviderService?.GenerateProgressState);
+            }
+        }
+
+        /// <summary>
+        /// The server-only option that enables the file system watcher for a backup
+        /// </summary>
+        public const string FILE_WATCHER_OPTION = "use-file-watcher";
+
+        /// <summary>
+        /// Prepares the change tracking handoff for a backup run, when the watcher applies to it
+        /// </summary>
+        /// <param name="changeTracking">The change tracking service, if any</param>
+        /// <param name="backup">The backup</param>
+        /// <param name="sources">The expanded sources</param>
+        /// <param name="filter">The filter in use</param>
+        /// <param name="options">The options the engine will see</param>
+        /// <param name="useFileWatcher">Whether the backup has the watcher enabled</param>
+        /// <returns>The handoff to install on the controller, or null to scan everything</returns>
+        private static async Task<Handoff?> PrepareChangeTrackingAsync(IChangeTrackingService? changeTracking, IBackup backup, string[] sources, Library.Utility.IFilter? filter, Dictionary<string, string?> options, bool useFileWatcher)
+        {
+            if (changeTracking == null || !changeTracking.Enabled)
+                return null;
+
+            // The engine compares listed paths with full paths, so the watcher is given those
+            var localSources = sources
+                .Where(Library.Main.Operation.Common.SourceProviderFactory.IsLocalFileSource)
+                .Select(GetWatchedPath)
+                .ToList();
+
+            string? skipReason = null;
+            if (!useFileWatcher)
+                skipReason = "it is not enabled for the backup";
+            else if (new Library.Main.Options(options).GetChangeListUnsupportedReason() is string unsupported)
+                skipReason = unsupported;
+            else if (!string.IsNullOrWhiteSpace(options.GetValueOrDefault("changed-files")) || !string.IsNullOrWhiteSpace(options.GetValueOrDefault("changed-files-list")))
+                skipReason = "a change list is supplied by option";
+            else if (localSources.Count == 0)
+                skipReason = "the backup has no local file sources";
+
+            if (skipReason != null)
+            {
+                // A watcher left from an earlier run records changes nobody reads, so it is stopped
+                if (await changeTracking.StopAsync(backup.ID, CancellationToken.None).ConfigureAwait(false) || useFileWatcher)
+                    Library.Logging.Log.WriteInformationMessage(LOGTAG, "FileWatcherSkipped", "The file watcher is not used for backup {0} because {1}", backup.ID, skipReason);
+                return null;
+            }
+
+            try
+            {
+                return await changeTracking.PrepareHandoffAsync(backup.ID, localSources, ComputeChangeTrackingHash(sources, filter, options), CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Library.Logging.Log.WriteWarningMessage(LOGTAG, "FileWatcherPrepareFailed", ex, "Could not prepare the file watcher for backup {0}, scanning all files", backup.ID);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Whether the backup itself has the file watcher enabled. The watcher is opt-in per
+        /// backup, so only the backup's own settings are read.
+        /// </summary>
+        /// <param name="backup">The backup</param>
+        /// <returns>True if the backup has the watcher enabled</returns>
+        internal static bool IsFileWatcherEnabled(IBackup backup)
+        {
+            // As when options are applied, an override with the prefix wins over a plain setting
+            var settings = backup.Settings ?? [];
+            var setting = settings.LastOrDefault(x => string.Equals(x.Name, "--" + FILE_WATCHER_OPTION, StringComparison.Ordinal))
+                ?? settings.LastOrDefault(x => string.Equals(x.Name, FILE_WATCHER_OPTION, StringComparison.Ordinal));
+            return setting != null && Utility.ParseBool(setting.Value, true);
+        }
+
+        /// <summary>
+        /// Options that change with every run and decide nothing about what a backup scans
+        /// </summary>
+        private static readonly HashSet<string> CHANGE_TRACKING_HASH_IGNORED_OPTIONS = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "next-scheduled-run",
+            "control-files",
+        };
+
+        /// <summary>
+        /// Gets the full path the watcher watches for a source
+        /// </summary>
+        /// <param name="source">The source</param>
+        /// <returns>The full path, or the source if it cannot be expanded</returns>
+        internal static string GetWatchedPath(string source)
+        {
+            try
+            {
+                // As the engine does, a bare drive means the root of the drive, not its current folder
+                return System.IO.Path.GetFullPath(Library.Common.IO.Util.ExpandBareDriveRoot(source));
+            }
+            catch
+            {
+                return source;
+            }
+        }
+
+        /// <summary>
+        /// The key for the settings hash. The hash covers every option, secrets included, and
+        /// is stored in the tracking database; a key that only lives in this process keeps it
+        /// from being tested against guesses. The database is recreated on every start, so a
+        /// stored hash never needs to outlive the key.
+        /// </summary>
+        private static readonly byte[] CHANGE_TRACKING_HASH_SALT = System.Security.Cryptography.RandomNumberGenerator.GetBytes(32);
+
+        /// <summary>
+        /// Hashes everything that decides what a backup scans: the sources, the filter and
+        /// every option. Any change forces a full scan, which is coarse but safe.
+        /// </summary>
+        /// <param name="sources">The expanded sources</param>
+        /// <param name="filter">The filter in use</param>
+        /// <param name="options">The options the engine will see</param>
+        /// <returns>The hash</returns>
+        internal static string ComputeChangeTrackingHash(string[] sources, Library.Utility.IFilter? filter, IReadOnlyDictionary<string, string?> options)
+        {
+            var sb = new System.Text.StringBuilder();
+            foreach (var source in sources)
+                sb.Append("source:").Append(source).Append('\n');
+            if (filter != null)
+                foreach (var expression in Library.Utility.FilterExpression.Serialize(filter))
+                    sb.Append("filter:").Append(expression).Append('\n');
+            foreach (var (key, value) in options.OrderBy(x => x.Key, StringComparer.Ordinal))
+            {
+                // These change with every run and decide nothing about the scan: the scheduler
+                // passes the next run time, and the stored task configuration is a new temporary file
+                if (CHANGE_TRACKING_HASH_IGNORED_OPTIONS.Contains(key))
+                    continue;
+                sb.Append("option:").Append(key).Append('=').Append(value).Append('\n');
+            }
+
+            return Convert.ToHexString(System.Security.Cryptography.HMACSHA256.HashData(CHANGE_TRACKING_HASH_SALT, System.Text.Encoding.UTF8.GetBytes(sb.ToString())));
+        }
+
+        /// <summary>
+        /// Finishes the change tracking handoff after the run. Only a run that produced a
+        /// complete fileset lets the closed recording go.
+        /// </summary>
+        /// <param name="changeTracking">The change tracking service</param>
+        /// <param name="handoff">The handoff</param>
+        /// <param name="results">The results, or null if the run threw</param>
+        /// <param name="dryRun">Whether the run was a dry run, which stores nothing</param>
+        private static async Task CompleteChangeTrackingAsync(IChangeTrackingService changeTracking, Handoff handoff, IBackupResults? results, bool dryRun)
+        {
+            // A dry run leaves the previous fileset as the base, so its list is kept for the next run
+            var success = results != null
+                && results.ParsedResult is ParsedResultType.Success or ParsedResultType.Warning
+                && !results.PartialBackup
+                && !dryRun;
+
+            try
+            {
+                await changeTracking.CompleteHandoffAsync(handoff, success, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Library.Logging.Log.WriteWarningMessage(LOGTAG, "FileWatcherCompleteFailed", ex, "Could not finish the file watcher handoff for backup {0}", handoff.BackupId);
             }
         }
 

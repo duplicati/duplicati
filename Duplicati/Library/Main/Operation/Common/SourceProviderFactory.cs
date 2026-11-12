@@ -331,6 +331,20 @@ namespace Duplicati.Library.Main.Operation.Common
         }
 
         /// <summary>
+        /// Checks if a source is a plain local path that is handled by the local file source
+        /// </summary>
+        /// <param name="source">The source to check</param>
+        /// <returns>True if the source is a local file or folder</returns>
+        public static bool IsLocalFileSource(string source)
+        {
+            if (string.IsNullOrWhiteSpace(source) || source.StartsWith("@"))
+                return false;
+            if (SourceProviders.SourceProviderModules.BuiltInPrefixSourceProviderModules.Any(m => m.MatchesSource(source)))
+                return false;
+            return "file".Equals(Duplicati.Library.Utility.Utility.GuessScheme(source) ?? "file", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
         /// Gets all source providers for the given sources
         /// </summary>
         /// <param name="sources">The sources to get providers for</param>

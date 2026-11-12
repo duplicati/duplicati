@@ -271,6 +271,13 @@ public interface IController : IDisposable
     Task SetSecretProviderAsync(ISecretProvider? secretProvider);
 
     /// <summary>
+    /// Sets the provider that supplies a backup with the list of paths that changed
+    /// since the previous backup, or <c>null</c> to scan everything
+    /// </summary>
+    /// <param name="changeListProvider">The change list provider to use</param>
+    Task SetChangeListProviderAsync(IChangeListProvider? changeListProvider);
+
+    /// <summary>
     /// Sets the throttle speeds for uploads and downloads
     /// </summary>
     /// <param name="maxUploadPrSecond">Maximum upload speed in bytes per second</param>

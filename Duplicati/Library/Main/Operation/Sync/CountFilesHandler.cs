@@ -98,6 +98,7 @@ internal static class CountFilesHandler
                 ignoreNames,
                 blacklistPaths,
                 changedfilelist: null,
+                changeList: null,
                 token).ConfigureAwait(false))
             {
                 if (token.IsCancellationRequested)

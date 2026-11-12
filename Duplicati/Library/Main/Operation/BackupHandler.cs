@@ -58,14 +58,43 @@ namespace Duplicati.Library.Main.Operation
 
         private readonly BackupResults m_result;
         private readonly ITaskReader m_taskReader;
+        /// <summary>
+        /// The provider of the paths that changed since the previous backup, or null to scan everything
+        /// </summary>
+        private readonly IChangeListProvider m_changeListProvider;
+        /// <summary>
+        /// The longest time the change list provider may take to hand over the list
+        /// </summary>
+        private static readonly TimeSpan CHANGE_LIST_DRAIN_TIMEOUT = TimeSpan.FromMinutes(5);
+        /// <summary>
+        /// The scope of the state a change list provider's token is stored under
+        /// </summary>
+        private const string CHANGE_LIST_STATE_SCOPE = "change-list-provider";
+        /// <summary>
+        /// The key of the token in the stored state
+        /// </summary>
+        private const string CHANGE_LIST_TOKEN_KEY = "token";
+        /// <summary>
+        /// The key prefix of a path the run failed on, to be looked at again by the next run
+        /// </summary>
+        private const string CHANGE_LIST_RETRY_PREFIX = "retry:";
+        /// <summary>
+        /// The number of failed paths above which the next run scans everything instead of retrying them
+        /// </summary>
+        private const int MAX_RETRY_PATHS = 100000;
+        /// <summary>
+        /// The normalized change list of this run, if any
+        /// </summary>
+        private TempFile m_normalizedChangeList;
 
         public readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
-        public BackupHandler(Options options, BackupResults results)
+        public BackupHandler(Options options, BackupResults results, IChangeListProvider changeListProvider)
         {
             m_options = options;
             m_result = results;
             m_taskReader = results.TaskControl;
+            m_changeListProvider = changeListProvider;
 
             if (options.AllowPassphraseChange)
                 throw new UserInformationException(Strings.Common.PassphraseChangeUnsupported, "PassphraseChangeUnsupported");
@@ -154,6 +183,222 @@ namespace Duplicati.Library.Main.Operation
             else
                 Logging.Log.WriteInformationMessage(LOGTAG, "SkipUsnForVolume",
                     "Performing full scan for volume \"{0}\": {1}", volume, exception?.Message);
+        }
+
+        /// <summary>
+        /// Rejects option combinations that would make two mechanisms decide what is copied from the previous fileset
+        /// </summary>
+        private void ValidateChangeListOptions()
+        {
+            var listPath = m_options.ChangedFilesList;
+            var hasInlineList = m_options.ChangedFilelist is { Length: > 0 };
+
+            if (m_changeListProvider != null && (hasInlineList || listPath != null))
+                throw new UserInformationException("The options --changed-files and --changed-files-list cannot be used when the change list is supplied by the host", "ChangeListOptionWithProvider");
+            if (listPath != null && hasInlineList)
+                throw new UserInformationException("The option --changed-files-list cannot be combined with --changed-files", "ChangedFilesListWithChangedFiles");
+            if (listPath != null && m_options.UsnStrategy != Options.OptimizationStrategy.Off)
+                throw new UserInformationException("A change list cannot be combined with the USN change journal. Disable the USN journal with --usn-policy=off.", "ChangeListWithUsn");
+            if (listPath != null && !System.IO.File.Exists(listPath))
+                throw new UserInformationException($"The change list file \"{listPath}\" does not exist", "ChangeListFileMissing");
+            if (listPath != null && m_options.GetChangeListUnsupportedReason() is string reason)
+                throw new UserInformationException($"The option --changed-files-list cannot be used because {reason}", "ChangeListNotSupported");
+        }
+
+        /// <summary>
+        /// Asks the change list provider, if any, for the change list of this run. Called right
+        /// after the source provider, so the snapshot exists, and so the provider closes its
+        /// recording at that point.
+        /// </summary>
+        /// <param name="source">The source provider</param>
+        /// <param name="referenceTimeUtc">The time taken before the source provider was created</param>
+        /// <returns>The handoff, or null if there is none</returns>
+        private async Task<ChangeListHandoff> DrainChangeListAsync(ISourceProvider source, DateTime referenceTimeUtc)
+        {
+            if (m_changeListProvider == null && m_options.ChangedFilesList == null)
+                return null;
+
+            // Both mechanisms decide which paths are copied from the previous fileset, and they
+            // are not combined. A list given by option is refused
+            var trackingSource = Backup.FileEnumerationProcess.GetProviders(source).OfType<IChangeTrackingSourceProvider>().Any(x => !string.IsNullOrWhiteSpace(x.MountedPath));
+            if (trackingSource && m_changeListProvider == null)
+                throw new UserInformationException("A change list cannot be combined with a source that tracks its own changes.", "ChangeListWithChangeTrackingSource");
+
+            if (m_changeListProvider == null)
+                return null;
+
+            // A list offered by the host is still asked for, so its recording moves on, but
+            // it is not used
+            if (trackingSource)
+            {
+                var drained = await DrainFromProviderAsync(referenceTimeUtc).ConfigureAwait(false);
+                Log.WriteInformationMessage(LOGTAG, "ChangeListNotUsedWithChangeTrackingSource", "A source tracks its own changes, so the change list is not used and all files are scanned");
+                return drained == null ? null : drained with { ListPath = null };
+            }
+
+            return await DrainFromProviderAsync(referenceTimeUtc).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Asks the change list provider for the change list, with a time limit
+        /// </summary>
+        /// <param name="referenceTimeUtc">The time taken before the source provider was created</param>
+        /// <returns>The handoff, or null if there is none</returns>
+        private async Task<ChangeListHandoff> DrainFromProviderAsync(DateTime referenceTimeUtc)
+        {
+            // The provider is cancelled when it takes too long, so it can put its recording back
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(m_taskReader.ProgressToken);
+            cts.CancelAfter(CHANGE_LIST_DRAIN_TIMEOUT);
+            try
+            {
+                return await m_changeListProvider
+                    .DrainChangeListAsync(referenceTimeUtc, cts.Token)
+                    .WaitAsync(cts.Token)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!m_taskReader.ProgressToken.IsCancellationRequested)
+            {
+                // A host that cannot deliver the list must not fail or block the backup
+                Log.WriteWarningMessage(LOGTAG, "ChangeListDrainFailed", ex, "The change list could not be obtained, scanning all files");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Prepares the change list of this run, from the host's handoff or from the option.
+        /// A list from the host is only used when the previous fileset carries a token the
+        /// list was recorded against, so a list never applies to a fileset that was cut short,
+        /// deleted, purged or recreated. The paths the previous run failed on are added.
+        /// </summary>
+        /// <param name="db">The database</param>
+        /// <param name="source">The source provider</param>
+        /// <param name="sources">The expanded sources</param>
+        /// <param name="handoff">The host's handoff, or null</param>
+        /// <param name="lastfilesetid">The previous fileset, or a negative value if there is none</param>
+        /// <returns>The normalized change list, or null to scan everything</returns>
+        private async Task<Backup.ChangeList> PrepareChangeListAsync(Backup.BackupDatabase db, ISourceProvider source, string[] sources, ChangeListHandoff handoff, long lastfilesetid)
+        {
+            var listPath = m_options.ChangedFilesList ?? handoff?.ListPath;
+            if (listPath == null)
+            {
+                if (handoff != null)
+                    Log.WriteInformationMessage(LOGTAG, "ChangeListNotAvailable", "No change list is available, scanning all files");
+                return null;
+            }
+
+            if (lastfilesetid < 0)
+            {
+                Log.WriteInformationMessage(LOGTAG, "ChangeListWithoutPreviousBackup", "There is no previous backup to copy unchanged files from, scanning all files");
+                return null;
+            }
+
+            if (handoff != null && m_options.GetChangeListUnsupportedReason() is string reason)
+            {
+                Log.WriteInformationMessage(LOGTAG, "ChangeListNotSupported", "The change list is not used because {0}, scanning all files", reason);
+                return null;
+            }
+
+            IEnumerable<string> retryPaths = [];
+            if (handoff != null)
+            {
+                if (!System.IO.File.Exists(listPath))
+                {
+                    Log.WriteWarningMessage(LOGTAG, "ChangeListFileMissing", null, "The change list file \"{0}\" does not exist, scanning all files", listPath);
+                    return null;
+                }
+
+                var state = await db.GetSourceProviderStateAsync(lastfilesetid, CHANGE_LIST_STATE_SCOPE, m_taskReader.ProgressToken).ConfigureAwait(false);
+                string token = null;
+                if (state == null || !state.Rows.TryGetValue(CHANGE_LIST_TOKEN_KEY, out token) || !handoff.BaseTokens.Contains(token, StringComparer.Ordinal))
+                {
+                    Log.WriteInformationMessage(LOGTAG, "ChangeListBaseMismatch", "The change list was not recorded against the previous backup, scanning all files");
+                    return null;
+                }
+
+                retryPaths = state.Rows.Keys
+                    .Where(x => x.StartsWith(CHANGE_LIST_RETRY_PREFIX, StringComparison.Ordinal))
+                    .Select(x => x.Substring(CHANGE_LIST_RETRY_PREFIX.Length))
+                    .ToList();
+            }
+
+            Log.WriteInformationMessage(LOGTAG, "UsingChangeList", "Examining only the paths in the change list \"{0}\"", listPath);
+
+            m_normalizedChangeList = new TempFile();
+            var fileRoots = sources.Where(SourceProviderFactory.IsLocalFileSource).ToList();
+            try
+            {
+                return await NormalizeChangeListAsync(db, source, listPath, retryPaths, fileRoots, handoff != null, lastfilesetid).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (handoff != null && !m_taskReader.ProgressToken.IsCancellationRequested)
+            {
+                // A list from the host that cannot be processed must not fail the backup
+                Log.WriteWarningMessage(LOGTAG, "ChangeListNotProcessed", ex, "The change list could not be processed, scanning all files");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Normalizes a change list for this run
+        /// </summary>
+        /// <param name="db">The database</param>
+        /// <param name="source">The source provider</param>
+        /// <param name="listPath">The raw change list</param>
+        /// <param name="retryPaths">The paths the previous run failed on</param>
+        /// <param name="fileRoots">The local file source roots</param>
+        /// <param name="fromHost">Whether the list comes from the host</param>
+        /// <param name="lastfilesetid">The previous fileset</param>
+        /// <returns>The normalized change list, or null to scan everything</returns>
+        private async Task<Backup.ChangeList> NormalizeChangeListAsync(Backup.BackupDatabase db, ISourceProvider source, string listPath, IEnumerable<string> retryPaths, List<string> fileRoots, bool fromHost, long lastfilesetid)
+        {
+            // The Photos library is backed up as an export the list cannot describe
+            var photosLibraryIsVirtual = OperatingSystem.IsMacOS() && m_options.HandleMacOSPhotoLibrary != Snapshots.MacOS.MacOSPhotosHandling.LibraryOnly;
+            return await Backup.FileEnumerationProcess.NormalizeChangeListAsync(
+                listPath,
+                retryPaths,
+                fileRoots,
+                m_normalizedChangeList,
+                fromHost,
+                photosLibraryIsVirtual,
+                source,
+                path => db.IsFolderOrDescendantInFilesetAsync(path, lastfilesetid, m_taskReader.ProgressToken),
+                path => db.IsPathInFilesetAsync(path, lastfilesetid, m_taskReader.ProgressToken),
+                m_options.FileAttributeFilter,
+                m_filter,
+                m_options.SymlinkPolicy,
+                m_options.HardlinkPolicy,
+                m_options.DisableBackupExclusionXattr,
+                m_options.IgnoreFilenames,
+                GetBlacklistedPaths(m_options),
+                m_taskReader.ProgressToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Stores the change list provider's token with the new fileset, together with the
+        /// paths the run failed on, so the next run can check its list against this fileset
+        /// and look at those paths again. A run that was cut short stores nothing, as its
+        /// fileset lacks what the stop left out, so the next run scans everything.
+        /// </summary>
+        /// <param name="database">The database</param>
+        /// <param name="token">The token to store</param>
+        /// <param name="failedPaths">The paths the run failed on</param>
+        /// <param name="partial">Whether the run was cut short</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        private static async Task StoreChangeListTokenAsync(Backup.BackupDatabase database, string token, Backup.FailedPathRecorder failedPaths, bool partial, CancellationToken cancellationToken)
+        {
+            if (partial)
+                Log.WriteInformationMessage(LOGTAG, "ChangeListTokenNotStored", "The backup was cut short, so the next backup scans all files");
+            else if (failedPaths.Overflowed)
+                Log.WriteInformationMessage(LOGTAG, "ChangeListTooManyFailures", "Too many files could not be processed to retry them individually, so the next backup scans all files");
+            else
+            {
+                var rows = new Dictionary<string, string> { [CHANGE_LIST_TOKEN_KEY] = token };
+                foreach (var path in failedPaths.GetPaths())
+                    rows[CHANGE_LIST_RETRY_PREFIX + path] = string.Empty;
+
+                await database.CreateSourceProviderStateAsync(CHANGE_LIST_STATE_SCOPE, CHANGE_LIST_STATE_SCOPE, rows, cancellationToken).ConfigureAwait(false);
+            }
+
+            await database.PruneSourceProviderStateAsync(Backup.ChangeTrackingCoordinator.STATE_FILESETS_TO_KEEP, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -405,7 +650,7 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Performs the bulk of work by starting all relevant processes
         /// </summary>
-        private static async Task RunMainOperationAsync(Backup.Channels channels, ISourceProvider source, UsnJournalService journalService, Backup.ChangeTrackingCoordinator changeTracking, Backup.BackupDatabase database, IBackendManager backendManager, Backup.BackupStatsCollector stats, Options options, IFilter filter, BackupResults result, ITaskReader taskreader, long filesetid, long lastfilesetid)
+        private static async Task RunMainOperationAsync(Backup.Channels channels, ISourceProvider source, UsnJournalService journalService, Backup.ChangeTrackingCoordinator changeTracking, Backup.ChangeList changeList, string changeListToken, Backup.FailedPathRecorder failedPaths, Backup.BackupDatabase database, IBackendManager backendManager, Backup.BackupStatsCollector stats, Options options, IFilter filter, BackupResults result, ITaskReader taskreader, long filesetid, long lastfilesetid)
         {
             using (new Logging.Timer(LOGTAG, "BackupMainOperation", "BackupMainOperation"))
             {
@@ -423,7 +668,7 @@ namespace Duplicati.Library.Main.Operation
                                     options.HardlinkPolicy, options.DisableBackupExclusionXattr, options.ExcludeEmptyFolders,
                                     changeTracking != null && changeTracking.HasLoadedState ? changeTracking.IsIncrementallyEnumeratedFolder : null,
                                     options.IgnoreFilenames,
-                                    GetBlacklistedPaths(options), options.ChangedFilelist, taskreader,
+                                    GetBlacklistedPaths(options), options.ChangedFilelist, changeList, taskreader,
                                     () => result.PartialBackup = true, CancellationToken.None),
                                 Backup.FilePreFilterProcess.RunAsync(channels, options, stats, database, taskreader),
                                 Backup.MetadataPreProcess.RunAsync(channels, options, database, lastfilesetid, taskreader),
@@ -450,7 +695,33 @@ namespace Duplicati.Library.Main.Operation
 
                 await all.ConfigureAwait(false);
 
-                if (options.ChangedFilelist != null && options.ChangedFilelist.Length >= 1)
+                if (changeList != null)
+                {
+                    // The providers other than the file source are not covered by the change list,
+                    // so they were enumerated in full, and nothing below them comes from the previous fileset
+                    var fullyEnumeratedRoots = Backup.FileEnumerationProcess.GetNonFileProviders(source)
+                        .Select(x => x.MountedPath)
+                        .Where(x => !string.IsNullOrWhiteSpace(x))
+                        .Select(x => (Path: Backup.ChangeList.NormalizePath(x), Recurse: true))
+                        .ToAsyncEnumerable();
+
+                    var exclusions = changeList.ReadAsync(taskreader.ProgressToken)
+                        .Select(x => (x.Path, x.Recurse))
+                        .Concat(fullyEnumeratedRoots);
+
+                    // The roots of the providers enumerated in full are kept: their previous
+                    // entries were all excluded above, and the copy must not drop anything else
+                    var sourceRoots = changeList.FileSourceRoots
+                        .Concat(Backup.FileEnumerationProcess.GetNonFileProviders(source).Select(x => x.MountedPath).Where(x => !string.IsNullOrWhiteSpace(x)))
+                        .ToList();
+
+                    var (carriedCount, carriedSize) = await database
+                        .AppendFilesFromPreviousSetExcludingListAsync(exclusions, sourceRoots, lastfilesetid, taskreader.ProgressToken)
+                        .ConfigureAwait(false);
+                    await stats.AddExaminedFilesAsync(carriedCount, carriedSize).ConfigureAwait(false);
+                    Log.WriteInformationMessage(LOGTAG, "ChangeListCarryForward", "Copied {0} files from the previous backup that were not in the change list", carriedCount);
+                }
+                else if (options.ChangedFilelist != null && options.ChangedFilelist.Length >= 1)
                 {
                     await database
                         .AppendFilesFromPreviousSetAsync(options.DeletedFilelist, taskreader.ProgressToken)
@@ -536,6 +807,9 @@ namespace Duplicati.Library.Main.Operation
                     // lacks what the stop left out, so the next run walks everything
                     await changeTracking.StoreStateAsync(database, result.PartialBackup, taskreader.ProgressToken).ConfigureAwait(false);
                 }
+
+                if (changeListToken != null)
+                    await StoreChangeListTokenAsync(database, changeListToken, failedPaths, result.PartialBackup, taskreader.ProgressToken).ConfigureAwait(false);
 
                 if (result.PartialBackup)
                 {
@@ -748,6 +1022,9 @@ namespace Duplicati.Library.Main.Operation
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);
 
+            // Only reads the options, so it refuses a bad combination before the database is opened
+            ValidateChangeListOptions();
+
             // Do a remote verification, unless disabled
             var (database, lastTempFilelist) = await PreBackupVerifyAsync(m_options, m_result, backendManager)
                 .ConfigureAwait(false);
@@ -764,6 +1041,9 @@ namespace Duplicati.Library.Main.Operation
 
             // If there is no filter, we set an empty filter to simplify the code
             m_filter = filter ?? new Library.Utility.FilterExpression();
+
+            // Collects the paths this run fails on, so a run driven by a change list can retry them
+            var failedPaths = Backup.FailedPathRecorder.Start(MAX_RETRY_PATHS);
 
             // Warn about a likely misconfigured filter that excludes everything but has no includes
             if (Library.Utility.FilterExpression.IsExcludeAllBeforeIncludes(m_filter))
@@ -790,8 +1070,13 @@ namespace Duplicati.Library.Main.Operation
                     // A stop before the files are processed leaves the fileset without any of them
                     var stoppedBeforeProcessing = false;
                     using var counterToken = CancellationTokenSource.CreateLinkedTokenSource(m_taskReader.ProgressToken);
+                    // Everything the run reads reflects the file system at or after this instant,
+                    // which the change list provider needs to know what to report to the next run
+                    var referenceTime = DateTime.UtcNow;
                     using (var source = await GetSourceProviderAsync(sources, m_options, m_taskReader.ProgressToken).ConfigureAwait(false))
                     {
+                        // The snapshot exists now, so the host's recording is closed here
+                        var changeListHandoff = await DrainChangeListAsync(source, referenceTime).ConfigureAwait(false);
                         try
                         {
                             // If the previous backup was interrupted, send a synthetic list
@@ -833,6 +1118,8 @@ namespace Duplicati.Library.Main.Operation
                                     .UpdateFilesetLabelAsync(filesetid, m_options.VersionName, m_taskReader.ProgressToken)
                                     .ConfigureAwait(false);
 
+                            var changeList = await PrepareChangeListAsync(db, source, sources, changeListHandoff, lastfilesetid).ConfigureAwait(false);
+
                             var journalService = GetJournalService(source, filter, lastfilesetid);
                             changeTracking = await GetChangeTrackingAsync(source, filter, sources, lastfilesetid, journalService != null).ConfigureAwait(false);
 
@@ -843,7 +1130,7 @@ namespace Duplicati.Library.Main.Operation
                             if (changeTracking != null && !m_options.DisableFileScanner)
                                 Log.WriteVerboseMessage(LOGTAG, "FileScannerDisabledForChangeTracking", "The parallel file count is not run because a source tracks its own changes; the count of the previous backup is shown instead, less what the source reports as carried forward");
 
-                            if (m_options.DisableFileScanner || changeTracking != null)
+                            if (m_options.DisableFileScanner || changeTracking != null || changeList != null)
                             {
                                 var d = await m_database
                                     .GetLastBackupFileCountAndSizeAsync(lastfilesetid, m_result.TaskControl.ProgressToken)
@@ -867,7 +1154,7 @@ namespace Duplicati.Library.Main.Operation
                             if (await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                             {
                                 var stats = new Backup.BackupStatsCollector(m_result);
-                                await RunMainOperationAsync(channels, source, journalService, changeTracking, db, backendManager, stats, m_options, m_filter, m_result, m_result.TaskControl, filesetid, lastfilesetid).ConfigureAwait(false);
+                                await RunMainOperationAsync(channels, source, journalService, changeTracking, changeList, changeListHandoff?.Token, failedPaths, db, backendManager, stats, m_options, m_filter, m_result, m_result.TaskControl, filesetid, lastfilesetid).ConfigureAwait(false);
                             }
                             else
                             {
@@ -1047,6 +1334,9 @@ namespace Duplicati.Library.Main.Operation
         {
             if (m_result.EndTime.Ticks == 0)
                 m_result.EndTime = DateTime.UtcNow;
+
+            m_normalizedChangeList?.Dispose();
+            m_normalizedChangeList = null;
         }
     }
 }

@@ -22,6 +22,8 @@ using Duplicati.Library.IO;
 using Duplicati.Library.RestAPI;
 using Duplicati.Server;
 using Duplicati.Server.Database;
+using Duplicati.Library.ChangeTracking;
+using Duplicati.Library.Utility;
 using Duplicati.Server.Serialization;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Abstractions.Notifications;
@@ -35,7 +37,7 @@ namespace Duplicati.WebserverCore.Extensions;
 
 public static class ServiceCollectionsExtensions
 {
-    public static IServiceCollection AddDuplicati(this IServiceCollection services, Connection connection, ILogWriteHandler logWriteHandler, IApplicationSettings applicationSettings)
+    public static IServiceCollection AddDuplicati(this IServiceCollection services, Connection connection, ILogWriteHandler logWriteHandler, IApplicationSettings applicationSettings, ChangeTrackingSettings changeTrackingSettings)
     {
         //old part
         services
@@ -84,7 +86,14 @@ public static class ServiceCollectionsExtensions
             .AddTransient<IFolderStatusService, FolderStatusService>()
             .AddSingleton<IWebsocketAuthenticator, WebsocketAuthenticator>()
             .AddSingleton(logWriteHandler)
-            .AddSingleton(applicationSettings);
+            .AddSingleton(applicationSettings)
+            // Creating the service recreates the tracking database, so it happens once, at startup
+            .AddSingleton<IChangeTrackingService>(_ =>
+            {
+                var changeTracking = ChangeTrackingService.CreateAsync(changeTrackingSettings, FileSystemWatcherEventSource.Create, CancellationToken.None).Await();
+                ChangeTrackingBackupListener.Attach(connection, changeTracking);
+                return changeTracking;
+            });
 
         return services;
     }

@@ -19,6 +19,7 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+using Duplicati.Library.ChangeTracking;
 using Duplicati.Library.Interface;
 using Duplicati.Library.RestAPI;
 using Duplicati.Library.Utility;
@@ -38,7 +39,8 @@ public class QueueRunnerService(
     INotificationUpdateService notificationUpdateService,
     IProgressStateProviderService progressStateProviderService,
     IApplicationSettings applicationSettings,
-    IDatabaseLockTracker databaseLockTracker) : IQueueRunnerService, IDisposable
+    IDatabaseLockTracker databaseLockTracker,
+    IChangeTrackingService changeTracking) : IQueueRunnerService, IDisposable
 {
     /// <summary>
     /// The tag used for logging
@@ -156,7 +158,7 @@ public class QueueRunnerService(
 
             dbLock = await AcquireDatabaseLockAsync(task, lockCts.Token).ConfigureAwait(false);
 
-            var result = await Runner.RunAsync(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, task, true).ConfigureAwait(false);
+            var result = await Runner.RunAsync(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, changeTracking, task, true).ConfigureAwait(false);
 
             // If the task is completed, don't call OnFinished again
             completed = true;
@@ -271,7 +273,7 @@ public class QueueRunnerService(
 
         try
         {
-            return await Runner.RunAsync(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, task, false).ConfigureAwait(false);
+            return await Runner.RunAsync(connection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, changeTracking, task, false).ConfigureAwait(false);
         }
         finally
         {

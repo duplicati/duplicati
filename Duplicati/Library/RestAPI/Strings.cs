@@ -77,6 +77,18 @@ Error message: {0}", error); }
         public static string ForcelocaleLong { get { return LC.L(@"By default, your system locale and culture settings will be used. In some cases you may prefer to run with another locale, for example to get messages in another language. Use this option to set the locale. Supply a blank string to choose the ""Invariant Culture""."); } }
         public static string ForcelocaleShort { get { return LC.L(@"Force the locale setting"); } }
         public static string FailedForceLocaleError(string option, string locale, string exMsg) { return LC.L(@"Failed to apply the --{0} setting with the value ""{1}"", using the system locale instead. Exception was: ""{2}""", option, locale, exMsg); }
+        public static string UsefilewatcherShort { get { return LC.L(@"Track changed files between backups"); } }
+        public static string UsefilewatcherLong { get { return LC.L(@"Keeps a file system watcher on the local source folders between backups, so a backup examines only the paths that changed since the previous one and copies everything else from the previous backup. Off by default, and only read from the backup's own settings, not from the default options for all backups. The first backup after the server starts, after the backup was edited, and after any event the watcher cannot vouch for scans all files. Not used when the USN journal is enabled, symlinks are followed, empty folders are excluded, alternate data streams are backed up, or the hardlink policy is not ""all""."); } }
+        public static string DisablefilewatcherShort { get { return LC.L(@"Disable the file watcher for all backups"); } }
+        public static string DisablefilewatcherLong { get { return LC.L(@"Turns off change tracking with a file system watcher for every backup, regardless of the per-backup setting."); } }
+        public static string FilewatcherflushintervalShort { get { return LC.L(@"File watcher flush interval"); } }
+        public static string FilewatcherflushintervalLong { get { return LC.L(@"How often the file watcher writes the changes it holds in memory to its tracking database."); } }
+        public static string FilewatcherhighwaterShort { get { return LC.L(@"File watcher in-memory limit"); } }
+        public static string FilewatcherhighwaterLong { get { return LC.L(@"The number of changed paths the file watcher holds in memory before writing them to its tracking database ahead of the flush interval."); } }
+        public static string FilewatchermaxchangesShort { get { return LC.L(@"File watcher change limit"); } }
+        public static string FilewatchermaxchangesLong { get { return LC.L(@"The number of changed paths recorded between two backups above which the next backup scans all files instead of using the list."); } }
+        public static string FilewatchergracedelayShort { get { return LC.L(@"File watcher grace delay"); } }
+        public static string FilewatchergracedelayLong { get { return LC.L(@"How long a backup waits for late file system events after closing the recording, before it reads the change list. Changes observed within this window before the snapshot are reported to both the current and the next backup."); } }
         public static string WebserverResetJwtConfigDescription { get { return LC.L(@"Reset the JWT configuration, invalidating any issued login tokens"); } }
         public static string WebserverEnableForeverTokenDescription { get { return LC.L(@"Enable the use of long-lived access tokens"); } }
         public static string WebserverApiOnlyDescription { get { return LC.L(@"Disable the web interface and only allow API access"); } }

@@ -61,6 +61,11 @@ public static class LogExceptionHelper
         // so the exception (and its stack trace) is not attached: it would only bloat the logs
         // (issue #6426). The fallback below keeps the exception so genuinely unexpected failures
         // remain fully debuggable.
+        // A run driven by a change list retries the paths that failed; a skip decided by the
+        // provider is final, and a full scan would skip the entry again, so it is not retried
+        if (ex is not SourceEntrySkippedException)
+            FailedPathRecorder.Record(path);
+
         // The provider decided the entry is to be left out, for a reason that is final and
         // expected, so the user is informed and not warned
         if (ex is SourceEntrySkippedException)

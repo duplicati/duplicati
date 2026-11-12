@@ -46,6 +46,11 @@ namespace Duplicati.Server.Database
     public class Connection : IDisposable
     {
         /// <summary>
+        /// The tag used for logging
+        /// </summary>
+        private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<Connection>();
+
+        /// <summary>
         /// The placeholder for passwords in the UI
         /// </summary>
         public const string PASSWORD_PLACEHOLDER = "***************";
@@ -114,6 +119,32 @@ namespace Duplicati.Server.Database
         /// The service provider is used to resolve dependencies
         /// </summary>
         internal IServiceProvider? ServiceProvider => m_serviceProvider;
+
+        /// <summary>
+        /// Raised with the id of a backup after it was saved or deleted, once the change is
+        /// committed. Handlers run on the caller's thread, which may hold the connection lock,
+        /// so they must return quickly.
+        /// </summary>
+        public event Action<string>? BackupChanged;
+
+        /// <summary>
+        /// Raises <see cref="BackupChanged"/>; a failing handler does not fail the change
+        /// </summary>
+        /// <param name="backupId">The backup id</param>
+        private void OnBackupChanged(string? backupId)
+        {
+            if (string.IsNullOrWhiteSpace(backupId))
+                return;
+
+            try
+            {
+                BackupChanged?.Invoke(backupId);
+            }
+            catch (Exception ex)
+            {
+                Library.Logging.Log.WriteWarningMessage(LOGTAG, "BackupChangedHandlerFailed", ex, "A handler failed for the change of backup {0}", backupId);
+            }
+        }
 
         /// <summary>
         /// Set the service provider to be used for resolving dependencies
@@ -242,6 +273,7 @@ namespace Duplicati.Server.Database
         {
             lock (m_lock)
                 m_temporaryBackups.Remove(backup.ID);
+            OnBackupChanged(backup.ID);
         }
 
         public (IBackup Backup, ISchedule? Schedule)? GetTemporaryBackup(string id)
@@ -996,6 +1028,8 @@ namespace Duplicati.Server.Database
                     m_eventPollNotifyer?.SignalBackupListUpdate();
                 }
             }
+
+            OnBackupChanged(item.ID);
         }
 
         internal void AddOrUpdateSchedule(ISchedule item)
@@ -1074,6 +1108,7 @@ namespace Duplicati.Server.Database
             m_notificationUpdateService?.IncrementLastDataUpdateId();
             m_eventPollNotifyer?.SignalNewEvent();
             m_eventPollNotifyer?.SignalBackupListUpdate();
+            OnBackupChanged(ID.ToString(CultureInfo.InvariantCulture));
         }
 
         public void DeleteBackup(IBackup backup)

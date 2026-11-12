@@ -21,6 +21,7 @@
 
 using System.Collections.Concurrent;
 using System.Net;
+using Duplicati.Library.ChangeTracking;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Text.Json;
@@ -116,7 +117,13 @@ public class DuplicatiWebserver
             Server.Strings.Program.StoretaskconfigLong,
             StoreTaskConfigMode.Auto.ToString(),
             null,
-            Enum.GetNames(typeof(StoreTaskConfigMode)))
+            Enum.GetNames(typeof(StoreTaskConfigMode))),
+        new CommandLineArgument(
+            Server.Runner.FILE_WATCHER_OPTION,
+            CommandLineArgument.ArgumentType.Boolean,
+            Server.Strings.Program.UsefilewatcherShort,
+            Server.Strings.Program.UsefilewatcherLong,
+            "false")
     ];
 
     /// <summary>
@@ -140,7 +147,8 @@ public class DuplicatiWebserver
         int TokenLifetimeInMinutes,
         IEnumerable<string> SPAPaths,
         IEnumerable<string> CorsOrigins,
-        IReadOnlySet<string> PreAuthTokens
+        IReadOnlySet<string> PreAuthTokens,
+        ChangeTrackingSettings ChangeTracking
     );
 
     /// <summary>
@@ -301,7 +309,7 @@ public class DuplicatiWebserver
         builder.Services.AddHealthChecks()
             .AddCheck("Basic", () => HealthCheckResult.Healthy("Service is running"));
 
-        builder.Services.AddDuplicati(connection, logWriteHandler, applicationSettings);
+        builder.Services.AddDuplicati(connection, logWriteHandler, applicationSettings, settings.ChangeTracking);
 
         // Prevent logs from spamming the console, but allow enabling for debugging
         if (Environment.GetEnvironmentVariable("DUPLICATI_WEBSERVER_LOGGING") != "1")
