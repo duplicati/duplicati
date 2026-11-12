@@ -135,7 +135,7 @@ public class SnapshotSourceFileEntry(ISnapshotService service, string path, bool
     public Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken) => Task.FromResult(service.GetMetadata(path, IsSymlink));
 
     /// <inheritdoc/>
-    public IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken) => service.EnumerateFilesystemEntries(this).ToAsyncEnumerable();
+    public virtual IAsyncEnumerable<ISourceProviderEntry> Enumerate(CancellationToken cancellationToken) => service.EnumerateFilesystemEntries(this).ToAsyncEnumerable();
     /// <inheritdoc/>
     public Task<bool> FileExists(string filename, CancellationToken cancellationToken) => Task.FromResult(service.FileExists(System.IO.Path.Combine(path, filename)));
 }

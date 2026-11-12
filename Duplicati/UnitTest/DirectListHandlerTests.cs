@@ -106,15 +106,14 @@ namespace Duplicati.UnitTest
             {
                 using (var c = new Controller("file://" + this.TARGETFOLDER, options.Expand(new { version = version }), null))
                 {
+                    // The source file1 brings its folder, which holds the other sources, so that
+                    // folder is the only root (#6863), and the sources are listed in it
                     var files = await c.ListFolderAsync([""], 0, 0, false);
-                    var roots = rootItems(round).Select(x => Path.Combine(this.DATAFOLDER, x.Replace("/", Path.DirectorySeparatorChar.ToString()))).ToArray();
+                    var root = Library.Common.IO.Util.AppendDirSeparator(this.DATAFOLDER);
+                    Assert.That(files.Entries.Items.Select(x => x.Path), Is.EqualTo(new[] { root }));
+                    Assert.That(files.Entries.Items.Single().IsDirectory, Is.True);
 
-                    Assert.That(files.Entries.Items.Count(), Is.EqualTo(roots.Length));
-                    Assert.That(files.Entries.Items.Count(x => x.IsDirectory), Is.EqualTo(roots.Count(x => x.EndsWith(Path.DirectorySeparatorChar))));
-                    Assert.That(files.Entries.Items.Count(x => !x.IsDirectory), Is.EqualTo(roots.Count(x => !x.EndsWith(Path.DirectorySeparatorChar))));
-                    Assert.That(files.Entries.Items.Count(x => roots.Any(y => x.Path.EndsWith(y))), Is.EqualTo(roots.Length));
-
-                    var work = new Queue<string>(roots);
+                    var work = new Queue<string>(new[] { root });
                     while (work.Count > 0)
                     {
                         var path = work.Dequeue();
@@ -129,7 +128,7 @@ namespace Duplicati.UnitTest
                         Assert.That(files2.Entries.Items.Count(x => matches.Contains(x.Path)), Is.EqualTo(matches.Length));
 
                         foreach (var match in matches)
-                            if (match.EndsWith("/"))
+                            if (match.EndsWith(Path.DirectorySeparatorChar))
                                 work.Enqueue(match);
                     }
                 }
@@ -735,8 +734,9 @@ namespace Duplicati.UnitTest
                 Assert.That(searchNotes.FileVersions.Items.First().Path.EndsWith("notes.txt"));
 
                 // Simple Search for NOT 'notes'
+                // The folder of the file source file1.txt is recorded too (#6863)
                 var searchNotNotes = await c.SearchEntriesAsync(null, ParseFilters("-notes"), false, 0, 0, false, false);
-                Assert.That(searchNotNotes.FileVersions.Items.Count(), Is.EqualTo(5));
+                Assert.That(searchNotNotes.FileVersions.Items.Count(), Is.EqualTo(6));
                 Assert.That(searchNotNotes.FileVersions.Items.All(x => !x.Path.Contains("notes")), Is.True);
 
                 // Simple Search for 'folder1' folder contents
@@ -751,13 +751,15 @@ namespace Duplicati.UnitTest
                 // Mixed include and exclude
                 var searchMixed = await c.SearchEntriesAsync(null, ParseFilters("+file;-file2"), false, 0, 0, false, false);
                 // Include has precedence over exclude, but we include non-matches as well
-                Assert.That(searchMixed.FileVersions.Items.Count(), Is.EqualTo(6));
+                // (with the folder of file1.txt, #6863)
+                Assert.That(searchMixed.FileVersions.Items.Count(), Is.EqualTo(7));
                 Assert.That(searchMixed.FileVersions.Items.Any(x => x.Path.Contains("file2")), Is.True);
 
                 // Mixed include and exclude
                 var searchMixed2 = await c.SearchEntriesAsync(null, ParseFilters("+file2;-file"), false, 0, 0, false, false);
                 // Include has precedence over exclude, but we include non-matches as well
-                Assert.That(searchMixed2.FileVersions.Items.Count(), Is.EqualTo(4));
+                // (with the folder of file1.txt, #6863)
+                Assert.That(searchMixed2.FileVersions.Items.Count(), Is.EqualTo(5));
                 Assert.That(searchMixed2.FileVersions.Items.Any(x => x.Path.Contains("file2")), Is.True);
 
                 // Mixed include and exclude, wildcards
@@ -995,8 +997,15 @@ namespace Duplicati.UnitTest
 
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
             {
+                // The folder of the file sources is recorded too (#6863), so it is the root, and
+                // the sources are listed in it. The roots of the older form, with the files as
+                // roots, are covered by GetMinimalUniquePrefixEntries_FileRootsDoNotAbsorbLongerNamesAsync
                 var roots = await c.ListFolderAsync(null, 0, 0, false);
-                var byPath = roots.Entries.Items.ToDictionary(x => x.Path);
+                var root = Library.Common.IO.Util.AppendDirSeparator(this.DATAFOLDER);
+                Assert.That(roots.Entries.Items.Select(x => x.Path), Is.EqualTo(new[] { root }));
+
+                var listed = await c.ListFolderAsync(new[] { root }, 0, 0, false);
+                var byPath = listed.Entries.Items.ToDictionary(x => x.Path);
 
                 Assert.That(byPath.Keys, Is.EquivalentTo(new[] { notes, notesOld, Library.Common.IO.Util.AppendDirSeparator(folder) }));
                 Assert.That(byPath.Values.Where(x => x.IsDirectory).Select(x => x.Path), Is.EqualTo(new[] { Library.Common.IO.Util.AppendDirSeparator(folder) }));

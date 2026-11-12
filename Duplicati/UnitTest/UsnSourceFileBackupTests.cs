@@ -93,4 +93,50 @@ public class UsnSourceFileBackupTests : BasicSetupHelper
             Assert.That(list.Files.Select(f => f.Path), Has.Member(file), "the latest version should hold the file");
         }
     }
+
+    /// <summary>
+    /// The folder of a source file is recorded with the journal too, as in a scan without it, and
+    /// is kept when the next backup takes the changes from the journal (#6863)
+    /// </summary>
+    [Test]
+    [Category("USN")]
+    [SupportedOSPlatform("windows")]
+    public async Task TheFolderOfASourceFileIsRecordedWithTheJournal()
+    {
+        if (!OperatingSystem.IsWindows())
+            Assert.Ignore("The USN journal is Windows only");
+        if (!IsElevated())
+            Assert.Ignore("Reading the USN journal needs an elevated process");
+
+        var folder = Path.Combine(DATAFOLDER, "usnfolder");
+        Directory.CreateDirectory(folder);
+        var file = Path.Combine(folder, "A.txt");
+        File.WriteAllText(file, "A");
+        File.WriteAllText(Path.Combine(folder, "other.txt"), "other");
+        var folderPath = Library.Common.IO.Util.AppendDirSeparator(folder);
+
+        var options = new Dictionary<string, string>(TestOptions)
+        {
+            ["usn-policy"] = "required",
+            ["snapshot-policy"] = "off"
+        };
+
+        // The first backup scans the source, as there is no journal data yet
+        using (var c = new Controller("file://" + TARGETFOLDER, options, null))
+        {
+            TestUtils.AssertResults(await c.BackupAsync([file]));
+            var list = await c.ListAsync("*");
+            Assert.That(list.Files.Select(f => f.Path), Is.EquivalentTo(new[] { folderPath, file }));
+        }
+
+        File.WriteAllText(file, "AB");
+
+        // The second backup takes the changed file from the journal
+        using (var c = new Controller("file://" + TARGETFOLDER, options, null))
+        {
+            TestUtils.AssertResults(await c.BackupAsync([file]));
+            var list = await c.ListAsync("*");
+            Assert.That(list.Files.Select(f => f.Path), Is.EquivalentTo(new[] { folderPath, file }));
+        }
+    }
 }
