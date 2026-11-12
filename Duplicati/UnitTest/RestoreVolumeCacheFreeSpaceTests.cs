@@ -52,15 +52,36 @@ namespace Duplicati.UnitTest
 
             var expected = new Dictionary<string, byte[]>();
             var rnd = new Random(6606);
-            for (var i = 0; i < 6; i++)
+            byte[] RandomBytes(int size)
             {
-                var data = new byte[90 * 1024];
+                var data = new byte[size];
                 rnd.NextBytes(data);
-                var path = Path.Combine(this.DATAFOLDER, $"file{i}.bin");
-                File.WriteAllBytes(path, data);
-                expected[$"file{i}.bin"] = data;
+                return data;
             }
 
+            async Task BackupAsync(string name, byte[] data)
+            {
+                File.WriteAllBytes(Path.Combine(this.DATAFOLDER, name), data);
+                expected[name] = data;
+                using var c = new Controller("file://" + this.TARGETFOLDER, options, null);
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+            }
+
+            // Each backup starts a volume of its own, so the first two files are in two volumes.
+            // The other files hold a block of each of them, so both volumes stay in use until the
+            // end, and the volume with the rest of a file is downloaded while both are cached.
+            // This does not depend on how far the restore has come when the volume is requested.
+            var first = RandomBytes(90 * 1024);
+            var second = RandomBytes(90 * 1024);
+            await BackupAsync("file0.bin", first);
+            await BackupAsync("file1.bin", second);
+            for (var i = 2; i < 6; i++)
+            {
+                var name = $"file{i}.bin";
+                var data = first[..(10 * 1024)].Concat(second[..(10 * 1024)]).Concat(RandomBytes(70 * 1024)).ToArray();
+                File.WriteAllBytes(Path.Combine(this.DATAFOLDER, name), data);
+                expected[name] = data;
+            }
             using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
                 TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
             Assert.That(Directory.GetFiles(this.TARGETFOLDER, "*.dblock.zip").Length, Is.GreaterThan(2), "The test needs several volumes");
