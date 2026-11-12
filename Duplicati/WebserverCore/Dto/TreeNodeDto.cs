@@ -70,6 +70,10 @@ public class TreeNodeDto
     /// </summary>
     public required bool symlink { get; init; }
     /// <summary>
+    /// The target of the link, if the element is a symlink or a junction; otherwise null
+    /// </summary>
+    public string? symlinkTarget { get; init; }
+    /// <summary>
     /// Size of the file. -1 if directory or inaccessible
     /// </summary>
     public required long fileSize { get; init; }
