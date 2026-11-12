@@ -80,8 +80,10 @@ internal static class ListFolderHandler
         else
         {
             // A folder is stored as a prefix with a trailing directory separator; add it so a
-            // folder given without one, as a shell user would type it, is found as well
-            var prefixes = folders.Select(Util.AppendDirSeparator);
+            // folder given without one, as a shell user would type it, is found as well.
+            // The separator is the one of the system that made the backup, which is not this
+            // one when a backup is restored on another system, so it is taken from the path
+            var prefixes = folders.Select(x => Util.AppendDirSeparator(x, Util.GuessDirSeparator(x)));
             var entries = await db
                 .ListFolderAsync(
                     db.GetPrefixIdsAsync(prefixes, result.TaskControl.ProgressToken).ToBlockingEnumerable(),

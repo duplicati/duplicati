@@ -209,6 +209,74 @@ namespace Duplicati.UnitTest
             }
         }
 
+        /// <summary>
+        /// A backup made on another operating system keeps the paths and separators of that system.
+        /// Its folders are listed when the database is rebuilt from the remote files, as for a direct
+        /// restore, with or without the trailing separator of that system (ngclient#449)
+        /// </summary>
+        [Test]
+        public async Task ListFolder_BackupFromAnotherOperatingSystem_ListsTheEntriesOfAFolderAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["no-encryption"] = "true"
+            };
+            var sub = Path.Combine(this.DATAFOLDER, "Documents");
+            Directory.CreateDirectory(sub);
+            File.WriteAllText(Path.Combine(sub, "payload.txt"), "payload");
+            File.WriteAllText(Path.Combine(this.DATAFOLDER, "peer.txt"), "peer");
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            // The other system: a Windows path below a drive from here, or a Unix path from Windows
+            var otherSeparator = OperatingSystem.IsWindows() ? "/" : "\\";
+            string ToOtherSystem(string path) => OperatingSystem.IsWindows()
+                ? "/other" + path.Replace(":", "").Replace("\\", "/")
+                : "C:" + path.Replace("/", "\\");
+
+            var dlist = Directory.GetFiles(this.TARGETFOLDER, "*.dlist.zip").Single();
+            using (var zip = System.IO.Compression.ZipFile.Open(dlist, System.IO.Compression.ZipArchiveMode.Update))
+            {
+                var entry = zip.GetEntry("filelist.json")!;
+                System.Text.Json.Nodes.JsonArray list;
+                using (var stream = entry.Open())
+                    list = System.Text.Json.Nodes.JsonNode.Parse(stream)!.AsArray();
+                foreach (var item in list)
+                    item!["path"] = ToOtherSystem(item["path"]!.GetValue<string>());
+                entry.Delete();
+                using var output = zip.CreateEntry("filelist.json").Open();
+                System.Text.Json.JsonSerializer.Serialize(output, list);
+            }
+
+            // A direct restore rebuilds the paths only, from the remote files, as the repairupdate endpoint does
+            File.Delete(this.DBFILE);
+            var repairOptions = new Dictionary<string, string>(options)
+            {
+                ["repair-only-paths"] = "true"
+            };
+            using (var c = new Controller("file://" + this.TARGETFOLDER, repairOptions, null))
+                TestUtils.AssertResults(await c.UpdateDatabaseWithVersionsAsync());
+
+            var root = ToOtherSystem(Library.Common.IO.Util.AppendDirSeparator(this.DATAFOLDER));
+            var expected = new[] { root + "Documents" + otherSeparator, root + "peer.txt" };
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var roots = await c.ListFolderAsync(null, 0, 0, false);
+                Assert.That(roots.Entries.Items.Select(x => x.Path), Is.EqualTo(new[] { root }));
+
+                var listed = await c.ListFolderAsync(new[] { root }, 0, 0, false);
+                Assert.That(listed.Entries.Items.Select(x => x.Path), Is.EquivalentTo(expected), "The root of the other system should list its entries");
+
+                var withoutSeparator = await c.ListFolderAsync(new[] { root.Substring(0, root.Length - 1) }, 0, 0, false);
+                Assert.That(withoutSeparator.Entries.Items.Select(x => x.Path), Is.EquivalentTo(expected), "The root without its trailing separator should list the same entries");
+
+                var nested = await c.ListFolderAsync(new[] { root + "Documents" + otherSeparator }, 0, 0, false);
+                Assert.That(nested.Entries.Items.Select(x => x.Path), Is.EqualTo(new[] { root + "Documents" + otherSeparator + "payload.txt" }));
+            }
+        }
+
         [Test]
         public async Task ListFileVersions_LifecycleTestAsync()
         {
