@@ -120,6 +120,21 @@ public sealed record SystemInfoDto
     public required string PackageTypeId { get; init; }
 
     /// <summary>
+    /// Gets or sets the name of the entry assembly, i.e. the executable that hosts the server.
+    /// </summary>
+    public required string EntryAssembly { get; init; }
+
+    /// <summary>
+    /// Gets or sets the installation folder, i.e. the folder holding the entry assembly.
+    /// </summary>
+    public required string InstallationFolder { get; init; }
+
+    /// <summary>
+    /// Gets or sets the data folder used by the server.
+    /// </summary>
+    public required string DataFolder { get; init; }
+
+    /// <summary>
     /// Gets or sets the user name.
     /// </summary>
     public required string UserName { get; init; }
