@@ -62,6 +62,7 @@ namespace Duplicati.Library.Backend
             { "IBM COS (S3) Public US (legacy SoftLayer)", "s3-api.us-geo.objectstorage.softlayer.net" },
             { "IBM COS (S3) Public US (appdomain)", "s3.us.cloud-object-storage.appdomain.cloud" },
             { "Storadera", "eu-east-1.s3.storadera.com" },
+            { "Blomp Cloud Storage", "storage.blomp.com" },
             { "Wasabi US East 1 (N. Virginia)", "s3.wasabisys.com" },
             { "Wasabi US East 2 (N. Virginia)", "s3.us-east-2.wasabisys.com" },
             { "Wasabi US Central 1 (Texas)", "s3.us-central-1.wasabisys.com" },
