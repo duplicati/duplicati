@@ -169,7 +169,7 @@ namespace Duplicati.Server
         /// <param name="allowedDays">The days the backup is allowed to run</param>
         /// <returns>The next valid date, or throws an exception if no such date can be found</returns>
         public static DateTime GetNextValidTime(DateTime basetime, DateTime firstdate, string repetition,
-            DayOfWeek[] allowedDays, TimeZoneInfo timeZoneInfo)
+            DayOfWeek[]? allowedDays, TimeZoneInfo timeZoneInfo)
         {
             var res = basetime;
             var ts = Timeparser.ParseTimeSpan(repetition);
@@ -509,7 +509,7 @@ namespace Duplicati.Server
         /// <param name="allowedDays">The allowed days</param>
         /// <param name="timeZoneInfo">The time zone info</param>
         /// <returns>True if the backup is allowed to run, false otherwise</returns>
-        private static bool IsDateAllowed(DateTime time, DayOfWeek[] allowedDays, TimeZoneInfo timeZoneInfo)
+        private static bool IsDateAllowed(DateTime time, DayOfWeek[]? allowedDays, TimeZoneInfo timeZoneInfo)
         {
             if (allowedDays == null || allowedDays.Length == 0)
                 return true;
