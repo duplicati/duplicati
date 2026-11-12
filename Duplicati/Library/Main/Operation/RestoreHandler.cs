@@ -245,8 +245,19 @@ namespace Duplicati.Library.Main.Operation
                         throw new InvalidOperationException("Unexpected empty database path");
                     db = await LocalRestoreDatabase.CreateAsync(dbpath, null, m_result.TaskControl.ProgressToken)
                         .ConfigureAwait(false);
+
+                    // A partially recreated database, such as the one rebuilt with the paths only to
+                    // browse a backup for a direct restore, may have no record of the block volumes,
+                    // so it cannot restore. A temporary database is built instead, as when there is none
+                    if (await db.PartiallyRecreatedAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                    {
+                        Logging.Log.WriteInformationMessage(LOGTAG, "PartiallyRecreatedDatabase", "The local database was only partially recreated, building a temporary database");
+                        await db.DisposeAsync().ConfigureAwait(false);
+                        db = null;
+                    }
                 }
-                else
+
+                if (db == null)
                 {
                     Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, building a temporary database");
                     tmpdb = new TempFile();
