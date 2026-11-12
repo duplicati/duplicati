@@ -219,13 +219,38 @@ internal class SyncHandler
             foreach (var src in m_sources)
             {
                 var relRoot = GetSourceRelativeRoot(src, m_sources);
-                var entry = await sourceProvider.GetEntryAsync(src, true, ct).ConfigureAwait(false);
+                var entry = await GetSourceRootAsync(sourceProvider, src, ct).ConfigureAwait(false);
                 if (entry == null || !entry.IsFolder)
                 {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "SourceRootMissing", null, "Source folder could not be resolved, skipping: {0}", src);
+                    Logging.Log.WriteWarningMessage(LOGTAG, "SourceRootMissing", null, "Source folder could not be resolved, skipping: {0}", GetSourceWithoutCredentials(src));
                     continue;
                 }
                 folderQueue.Enqueue(new FolderWorkItem(entry, relRoot));
+            }
+
+            // With several sources, each source root is a sub-folder of the destination
+            // root, and the folder loop below lists it before it puts files in it. Create
+            // the missing ones as the sub-folders of any other folder: process the
+            // destination root with the source roots as its only sub-folders, without
+            // deleting anything, so files and folders next to them are kept. In snapshot
+            // mode the source folders are created with the snapshot folder, and under
+            // BlindlyUpload every folder is created before it is written to.
+            if (m_sources.Length > 1)
+            {
+                var sourceRoots = folderQueue.Select(x => (x.Entry, x.RelativePath)).ToList();
+                foreach (var bs in backendStates.Where(x => x.Snapshot == null && x.StateMode != SyncRemoteState.BlindlyUpload))
+                    await ProcessFolderForBackendAsync(
+                        "",
+                        new Dictionary<string, (ISourceProviderEntry Entry, long Size, DateTime ModifiedUtc)>(),
+                        sourceRoots,
+                        bs,
+                        m_results,
+                        nameComparer,
+                        isDryRun,
+                        false,
+                        verifyHash,
+                        planSummary,
+                        ct).ConfigureAwait(false);
             }
 
             m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Sync_ProcessingFiles);
@@ -1429,16 +1454,67 @@ internal class SyncHandler
     }
 
     /// <summary>
+    /// Finds the folder entry of a source root. A local source is looked up by its path.
+    /// A remote source ("@mountpoint|url") is not a path the providers know: its root is
+    /// the root that the provider mounted at its mount point lists, so the backend is not
+    /// asked to look up a single entry, which some backends (e.g. SSH) cannot do.
+    /// </summary>
+    /// <param name="sourceProvider">The source provider of the run</param>
+    /// <param name="source">The source as given</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>The entry of the source root, or null if it was not found</returns>
+    private static async Task<ISourceProviderEntry?> GetSourceRootAsync(ISourceProvider sourceProvider, string source, CancellationToken ct)
+    {
+        var remoteSource = SourceProviderFactory.ParseRemoteSource(source);
+        if (remoteSource == null)
+            return await sourceProvider.GetEntryAsync(source, true, ct).ConfigureAwait(false);
+
+        var mountpoint = SourceProviderFactory.NormalizeMountpoint(remoteSource.Mountpoint);
+        var providers = sourceProvider is Library.SourceProvider.Combiner combiner
+            ? combiner.Providers
+            : [sourceProvider];
+
+        // A provider that failed to load is not in the list; a warning is logged for it already
+        var provider = providers.FirstOrDefault(x => string.Equals(x.MountedPath, mountpoint, StringComparison.Ordinal));
+        if (provider == null)
+            return null;
+
+        await foreach (var entry in provider.EnumerateAsync(ct).ConfigureAwait(false))
+            if (entry.IsFolder)
+                return entry;
+
+        return null;
+    }
+
+    /// <summary>
+    /// Gets a source as it can be shown in a log message, without the credentials in the URL of a remote source
+    /// </summary>
+    /// <param name="source">The source as given</param>
+    /// <returns>The source without credentials</returns>
+    private static string GetSourceWithoutCredentials(string source)
+    {
+        var remoteSource = SourceProviderFactory.ParseRemoteSource(source);
+        return remoteSource == null
+            ? source
+            : "@" + remoteSource.Mountpoint + "|" + Library.Utility.Utility.GetUrlWithoutCredentials(remoteSource.Url);
+    }
+
+    /// <summary>
     /// Computes the relative root path on the remote destination for a source root,
     /// matching the relative-path convention used throughout the handler. For a
     /// single source the source's contents map directly onto the backend root
     /// (relative root ""); for multiple sources each source contributes its own name
-    /// as a top-level sub-folder.
+    /// as a top-level sub-folder. A remote source ("@mountpoint|url") is named after
+    /// its mount point, as the URL is not a path and may hold credentials.
     /// </summary>
     internal static string GetSourceRelativeRoot(string sourcePath, string[] sources)
     {
         if (sources.Length == 1)
             return "";
+
+        var remoteSource = SourceProviderFactory.ParseRemoteSource(sourcePath);
+        if (remoteSource != null)
+            sourcePath = remoteSource.Mountpoint;
 
         var normalized = sourcePath.Replace('\\', '/').TrimEnd('/');
         var sourceName = Path.GetFileName(normalized);

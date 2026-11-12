@@ -50,10 +50,19 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
     public bool IsRootEntry => isRootEntry;
 
     /// <inheritdoc/>
-    public DateTime CreatedUtc => createdUtc;
+    public DateTime CreatedUtc => ToUtc(createdUtc);
 
     /// <inheritdoc/>
-    public DateTime LastModificationUtc => lastModificationUtc;
+    public DateTime LastModificationUtc => ToUtc(lastModificationUtc);
+
+    /// <summary>
+    /// Converts a time that a backend reports in local time (e.g. the file backend) to UTC,
+    /// so it compares with the UTC times of the other entries. Other times are kept as they are.
+    /// </summary>
+    /// <param name="time">The time from the backend</param>
+    /// <returns>The time in UTC</returns>
+    private static DateTime ToUtc(DateTime time)
+        => time.Kind == DateTimeKind.Local ? time.ToUniversalTime() : time;
 
     /// <inheritdoc/>
     public string Path => SystemIO.IO_OS.PathCombine(parent?.MountedPath, NormalizePathToLocalSystem(path));
