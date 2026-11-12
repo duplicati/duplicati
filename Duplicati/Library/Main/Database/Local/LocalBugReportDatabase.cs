@@ -22,9 +22,13 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
+using Duplicati.Library.Utility;
 
 namespace Duplicati.Library.Main.Database.Local
 {
@@ -123,23 +127,29 @@ namespace Duplicati.Library.Main.Database.Local
                     */
             }
 
-            await cmd.ExecuteNonQueryAsync(@"
-                    UPDATE ""LogData""
-                    SET ""Message"" = 'ERASED!'
-                    WHERE
-                        ""Message"" LIKE '%/%'
-                        OR ""Message"" LIKE '%:\%'
-                ", token)
-                .ConfigureAwait(false);
+            // The logs are kept with their paths redacted, as the logs of the latest operations help to find a problem
+            var logs = new List<(long ID, string? Message, string? Exception)>();
+            await foreach (var rd in cmd.ExecuteReaderEnumerableAsync(@"SELECT ""ID"", ""Message"", ""Exception"" FROM ""LogData"" ", token).ConfigureAwait(false))
+            {
+                var message = rd.ConvertValueToString(1);
+                var exception = rd.ConvertValueToString(2);
+                var redactedMessage = RedactLogMessage(message);
+                var redactedException = RedactLogText(exception);
+                if (redactedMessage != message || redactedException != exception)
+                    logs.Add((rd.ConvertValueToInt64(0), redactedMessage, redactedException));
+            }
 
-            await cmd.ExecuteNonQueryAsync(@"
-                    UPDATE ""LogData""
-                    SET ""Exception"" = 'ERASED!'
-                    WHERE
-                        ""Exception"" LIKE '%/%'
-                        OR ""Exception"" LIKE '%:\%'
-                ", token)
-                .ConfigureAwait(false);
+            await using (var upcmd = m_connection.CreateCommand(m_rtr))
+            {
+                upcmd.SetCommandAndParameters(@"UPDATE ""LogData"" SET ""Message"" = @Message, ""Exception"" = @Exception WHERE ""ID"" = @ID");
+                foreach (var (id, message, exception) in logs)
+                    await upcmd
+                        .SetParameterValue("@ID", id)
+                        .SetParameterValue("@Message", message)
+                        .SetParameterValue("@Exception", exception)
+                        .ExecuteNonQueryAsync(true, token)
+                        .ConfigureAwait(false);
+            }
 
             await cmd.ExecuteNonQueryAsync(@"
                     UPDATE ""Configuration""
@@ -179,6 +189,89 @@ namespace Duplicati.Library.Main.Database.Local
 
             cmd.Transaction = null;
             await cmd.ExecuteNonQueryAsync("VACUUM", token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Redacts the paths in a stored log message. The result of an operation is stored as JSON, and its string
+        /// values are redacted one by one, as the path detection on the compact JSON text would also take the quotes
+        /// and the following properties as part of a path. Other messages are redacted as text.
+        /// </summary>
+        /// <param name="message">The stored message.</param>
+        /// <returns>The message with its paths redacted.</returns>
+        internal static string? RedactLogMessage(string? message)
+        {
+            if (string.IsNullOrEmpty(message))
+                return message;
+
+            var start = message.TrimStart();
+            if (start.StartsWith('{') || start.StartsWith('['))
+            {
+                try
+                {
+                    // Dates and numbers are kept as they were written
+                    using var reader = new Newtonsoft.Json.JsonTextReader(new StringReader(message))
+                    {
+                        DateParseHandling = Newtonsoft.Json.DateParseHandling.None,
+                        FloatParseHandling = Newtonsoft.Json.FloatParseHandling.Decimal
+                    };
+                    var root = Newtonsoft.Json.Linq.JToken.ReadFrom(reader);
+                    var tokens = root is Newtonsoft.Json.Linq.JContainer container ? container.DescendantsAndSelf() : [root];
+                    foreach (var value in tokens.OfType<Newtonsoft.Json.Linq.JValue>().ToList())
+                        if (value.Type == Newtonsoft.Json.Linq.JTokenType.String)
+                            value.Value = RedactLogText((string?)value.Value);
+
+                    return root.ToString(Newtonsoft.Json.Formatting.None);
+                }
+                catch (Newtonsoft.Json.JsonException)
+                {
+                    // Not JSON, so it is redacted as text
+                }
+            }
+
+            return RedactLogText(message);
+        }
+
+        /// <summary>
+        /// Redacts the paths in a log text, more strictly than in a report, as the bug report may be shared in public.
+        /// A path can contain spaces, which ends the path that <see cref="SensitiveDataFilter.RedactPaths"/> finds,
+        /// so the rest of a line after a path is redacted too.
+        /// A word with a path separator that is not found as a path, such as a relative path, may start after a
+        /// name with spaces, so the words before it are redacted as well, back to a word that ends with a colon.
+        /// </summary>
+        /// <param name="text">The text to redact.</param>
+        /// <returns>The text with its paths redacted.</returns>
+        internal static string? RedactLogText(string? text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return text;
+
+            var lines = text.Split('\n');
+            for (var i = 0; i < lines.Length; i++)
+            {
+                var line = lines[i];
+                var lineEnd = line.EndsWith('\r') ? "\r" : string.Empty;
+                line = SensitiveDataFilter.RedactPaths(line.Substring(0, line.Length - lineEnd.Length));
+
+                var path = line.IndexOf(SensitiveDataFilter.REDACTED, StringComparison.Ordinal);
+                if (path >= 0)
+                    line = line.Substring(0, path + SensitiveDataFilter.REDACTED.Length);
+
+                var words = line.Split(' ');
+                var other = Array.FindIndex(words, word => word != SensitiveDataFilter.REDACTED && SensitiveDataFilter.LooksLikePath(word));
+                if (other >= 0)
+                {
+                    // The indentation is kept, as it is the empty words at the start of the line
+                    var indent = Array.FindIndex(words, word => word.Length > 0);
+                    var start = other;
+                    while (start > indent && !words[start - 1].EndsWith(':'))
+                        start--;
+                    line = string.Join(' ', words.Take(start).Append(SensitiveDataFilter.REDACTED));
+                }
+
+                lines[i] = line + lineEnd;
+            }
+
+            return string.Join('\n', lines);
         }
     }
 }
