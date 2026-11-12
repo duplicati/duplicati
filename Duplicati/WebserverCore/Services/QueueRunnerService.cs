@@ -57,6 +57,11 @@ public class QueueRunnerService(
     /// </summary>
     private static readonly int MAX_TASK_RESULT_CACHE_SIZE = 100;
 
+    /// <summary>
+    /// One turn per database for the tasks that run immediately, so they wait for each other
+    /// </summary>
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, SemaphoreSlim> _immediateTurns = new(Library.Utility.Utility.ClientFilenameStringComparer);
+
     private readonly List<IQueuedTask> _tasks = new();
     private (Task? Task, IQueuedTask? QueuedTask, CancellationTokenSource? LockCts) _current;
     private bool _isPaused;
@@ -264,12 +269,25 @@ public class QueueRunnerService(
     public async Task<IBasicResults?> RunImmediatelyAsync(IQueuedTask task)
     {
         IAsyncDisposable? dbLock = null;
+        SemaphoreSlim? turn = null;
         var dbPath = Runner.GetEffectiveDBPath(task);
 
         // If we have a database to work with, make sure we can get the lock
         if (!string.IsNullOrWhiteSpace(dbPath))
-            dbLock = databaseLockTracker.TryAcquire(dbPath)
-                ?? throw new DatabaseLockedException(dbPath);
+        {
+            // Tasks that run immediately, such as the listings of the restore tree, are short, and the UI
+            // can start several at once. They take turns, so they do not fail on each other's lock.
+            // A queued task, such as a backup, can hold the lock for a long time, so that still fails at once.
+            turn = _immediateTurns.GetOrAdd(Path.GetFullPath(dbPath), _ => new SemaphoreSlim(1, 1));
+            await turn.WaitAsync(_terminateCts.Token).ConfigureAwait(false);
+
+            dbLock = databaseLockTracker.TryAcquire(dbPath);
+            if (dbLock == null)
+            {
+                turn.Release();
+                throw new DatabaseLockedException(dbPath);
+            }
+        }
 
         try
         {
@@ -279,6 +297,7 @@ public class QueueRunnerService(
         {
             if (dbLock != null)
                 await dbLock.DisposeAsync().ConfigureAwait(false);
+            turn?.Release();
         }
     }
 
