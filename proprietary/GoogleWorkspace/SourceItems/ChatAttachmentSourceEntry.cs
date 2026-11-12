@@ -8,7 +8,7 @@ using Google.Apis.HangoutsChat.v1;
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class ChatAttachmentSourceEntry(SourceProvider provider, string parentPath, Attachment attachment, HangoutsChatService chatService, DriveService driveService)
-    : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, attachment.ContentName ?? attachment.Name.Split('/').Last()), DateTime.UnixEpoch, DateTime.UnixEpoch)
+    : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, attachment.Name.Split('/').Last()), DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
     public override long Size => -1;
 
