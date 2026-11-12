@@ -40,14 +40,14 @@ partial class RestoreProvider
             }
             else if (target.Type == SourceItemType.UserGmail)
             {
-                _targetUserId = target.Path.TrimStart(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar).Skip(1).FirstOrDefault();
+                _targetUserId = target.Metadata.GetValueOrDefault("gsuite:UserId");
                 if (string.IsNullOrWhiteSpace(_targetUserId))
                     throw new InvalidOperationException("User ID is not set");
                 _targetLabelId = await GetDefaultRestoreTargetLabel(_targetUserId, cancel);
             }
             else if (target.Type == SourceItemType.GmailLabel)
             {
-                _targetUserId = target.Path.TrimStart(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar).Skip(1).FirstOrDefault();
+                _targetUserId = target.Metadata.GetValueOrDefault("gsuite:UserId");
                 _targetLabelId = target.Metadata.GetValueOrDefault("gsuite:Id");
             }
             else

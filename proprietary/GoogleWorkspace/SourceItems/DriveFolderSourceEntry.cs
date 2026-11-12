@@ -164,7 +164,8 @@ internal class DriveFolderSourceEntry : MetaEntryBase
             { "gsuite:v", "1" },
             { "gsuite:Type", SourceItemType.DriveFolder.ToString() },
             { "gsuite:Name", name },
-            { "gsuite:Id", folderId }
+            { "gsuite:Id", folderId },
+            { "gsuite:UserId", userId }
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))
         .ToDictionary(kv => kv.Key, kv => kv.Value));

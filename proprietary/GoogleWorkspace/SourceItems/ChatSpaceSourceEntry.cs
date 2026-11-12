@@ -9,7 +9,7 @@ using Google.Apis.Drive.v3;
 
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
-internal class ChatSpaceSourceEntry(SourceProvider provider, string parentPath, Space space, string userChatName, HangoutsChatService chatService, DriveService driveService)
+internal class ChatSpaceSourceEntry(SourceProvider provider, string parentPath, Space space, string userId, string userChatName, HangoutsChatService chatService, DriveService driveService)
     : MetaEntryBase(Util.AppendDirSeparator(SystemIO.IO_OS.PathCombine(parentPath, space.Name.Split('/').Last())), null, null)
 {
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -45,6 +45,7 @@ internal class ChatSpaceSourceEntry(SourceProvider provider, string parentPath, 
             { "gsuite:Type", SourceItemType.ChatSpace.ToString() },
             { "gsuite:Name", space.DisplayName ?? space.Name },
             { "gsuite:Id", space.Name },
+            { "gsuite:UserId", userId },
             { "gsuite:SpaceType", space.Type },
         }
         .Where(kv => !string.IsNullOrEmpty(kv.Value))

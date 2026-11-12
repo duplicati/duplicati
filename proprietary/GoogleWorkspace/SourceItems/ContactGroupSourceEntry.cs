@@ -7,8 +7,17 @@ using System.Text.Json;
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class ContactGroupSourceEntry(string parentPath, ContactGroup group)
-    : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, (group.FormattedName ?? group.Name) + ".json"), DateTime.UnixEpoch, DateTime.UnixEpoch)
+    : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, EntryName(group) + ".json"), DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
+    /// <summary>
+    /// The name of the entry of a contact group: the last segment of its resource name.
+    /// The path uses the id, as a group name is neither unique nor safe to use in a path.
+    /// </summary>
+    /// <param name="group">The contact group</param>
+    /// <returns>The entry name</returns>
+    internal static string EntryName(ContactGroup group)
+        => group.ResourceName.Split('/').Last();
+
     public override long Size => -1;
 
     public override Task<Stream> OpenRead(CancellationToken cancellationToken)

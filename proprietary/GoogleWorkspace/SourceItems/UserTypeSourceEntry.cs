@@ -160,7 +160,7 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
                 foreach (var taskList in taskLists.Items)
                 {
                     if (cancellationToken.IsCancellationRequested) yield break;
-                    yield return new TaskListSourceEntry(this.Path, taskList, service);
+                    yield return new TaskListSourceEntry(this.Path, userId, taskList, service);
                 }
             }
             nextPageToken = taskLists.NextPageToken;
@@ -202,7 +202,7 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
         foreach (var spaceType in new[] { "SPACE", "GROUP_CHAT", "DIRECT_MESSAGE" })
         {
             if (cancellationToken.IsCancellationRequested) yield break;
-            yield return new ChatSpaceTypeSourceEntry(provider, this.Path, spaceType, $"users/{userDirectoryId}", service, driveService);
+            yield return new ChatSpaceTypeSourceEntry(provider, this.Path, spaceType, userId, $"users/{userDirectoryId}", service, driveService);
         }
     }
 
@@ -212,7 +212,8 @@ internal class UserTypeSourceEntry(SourceProvider provider, string parentPath, s
                 { "gsuite:v", "1" },
                 { "gsuite:Type", type.ToString() },
                 { "gsuite:Name", name },
-                { "gsuite:Id", type.ToString() }
+                { "gsuite:Id", type.ToString() },
+                { "gsuite:UserId", userId }
             }
             .Where(kv => !string.IsNullOrEmpty(kv.Value))
             .ToDictionary(kv => kv.Key, kv => kv.Value));

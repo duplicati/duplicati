@@ -96,6 +96,7 @@ internal class GmailLabelSourceEntry(SourceProvider provider, string userId, str
             { "gsuite:Type", SourceItemType.GmailLabel.ToString() },
             { "gsuite:Name", label.Name },
             { "gsuite:Id", label.Id },
+            { "gsuite:UserId", userId },
             { "gsuite:LabelType", label.Type },
             { "gsuite:LabelListVisibility", label.LabelListVisibility },
             { "gsuite:MessageListVisibility", label.MessageListVisibility }

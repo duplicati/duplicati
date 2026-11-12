@@ -41,7 +41,7 @@ partial class RestoreProvider
             }
             else if (target.Type == SourceItemType.UserDrive)
             {
-                userId = target.Path.TrimStart(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar).Skip(1).FirstOrDefault();
+                userId = target.Metadata.GetValueOrDefault("gsuite:UserId");
             }
             else
             {
@@ -387,7 +387,7 @@ partial class RestoreProvider
         }
         else if (RestoreTarget.Type == SourceItemType.UserDrive)
         {
-            userId = RestoreTarget.Path.TrimStart(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar).Skip(1).FirstOrDefault();
+            userId = RestoreTarget.Metadata.GetValueOrDefault("gsuite:UserId");
         }
         else if (RestoreTarget.Type == SourceItemType.DriveFolder)
         {
@@ -464,7 +464,7 @@ partial class RestoreProvider
         }
         else if (RestoreTarget.Type == SourceItemType.UserDrive)
         {
-            userId = RestoreTarget.Path.TrimStart(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar).Skip(1).FirstOrDefault();
+            userId = RestoreTarget.Metadata.GetValueOrDefault("gsuite:UserId");
         }
         else if (RestoreTarget.Type == SourceItemType.DriveFolder)
         {
@@ -684,7 +684,7 @@ partial class RestoreProvider
         }
         else if (RestoreTarget.Type == SourceItemType.UserDrive)
         {
-            userId = RestoreTarget.Path.TrimStart(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar).Skip(1).FirstOrDefault();
+            userId = RestoreTarget.Metadata.GetValueOrDefault("gsuite:UserId");
         }
         else if (RestoreTarget.Type == SourceItemType.DriveFolder)
         {

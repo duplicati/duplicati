@@ -43,6 +43,7 @@ public static class OptionsHelper
     public const string GOOGLE_AVOID_CALENDAR_ACL_OPTION = "google-ignore-calendar-acl";
     public const string GOOGLE_EXCLUDE_ARCHIVED_USERS_OPTION = "google-exclude-archived-users";
     public const string GOOGLE_EXCLUDE_SUSPENDED_USERS_OPTION = "google-exclude-suspended-users";
+    public const string GOOGLE_USE_USER_IDS_IN_PATHS_OPTION = "google-use-user-ids-in-paths";
     public const string GOOGLE_DISABLE_GMAIL_DELTA_OPTION = "google-disable-gmail-delta";
     public const string GOOGLE_DISABLE_DRIVE_DELTA_OPTION = "google-disable-drive-delta";
     public const string GOOGLE_DISABLE_CALENDAR_DELTA_OPTION = "google-disable-calendar-delta";
@@ -80,6 +81,7 @@ public static class OptionsHelper
         new CommandLineArgument(GOOGLE_AVOID_CALENDAR_ACL_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleAvoidCalendarAclOptionShort, Strings.Options.GoogleAvoidCalendarAclOptionLong),
         new CommandLineArgument(GOOGLE_EXCLUDE_ARCHIVED_USERS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleExcludeArchivedUsersShort, Strings.Options.GoogleExcludeArchivedUsersLong, "false"),
         new CommandLineArgument(GOOGLE_EXCLUDE_SUSPENDED_USERS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleExcludeSuspendedUsersShort, Strings.Options.GoogleExcludeSuspendedUsersLong, "false"),
+        new CommandLineArgument(GOOGLE_USE_USER_IDS_IN_PATHS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleUseUserIdsInPathsShort, Strings.Options.GoogleUseUserIdsInPathsLong, "false"),
         new CommandLineArgument(GOOGLE_DISABLE_GMAIL_DELTA_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleDisableGmailDeltaShort, Strings.Options.GoogleDisableGmailDeltaLong, "false"),
         new CommandLineArgument(GOOGLE_DISABLE_DRIVE_DELTA_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleDisableDriveDeltaShort, Strings.Options.GoogleDisableDriveDeltaLong, "false"),
         new CommandLineArgument(GOOGLE_DISABLE_CALENDAR_DELTA_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.GoogleDisableCalendarDeltaShort, Strings.Options.GoogleDisableCalendarDeltaLong, "false"),
@@ -107,6 +109,11 @@ public static class OptionsHelper
         /// do not consume a seat.
         /// </summary>
         public bool ExcludeSuspendedUsers { get; set; }
+        /// <summary>
+        /// Whether the folder of a user is named by the user id instead of the primary email
+        /// address. Off by default: it changes the path of every item of every user.
+        /// </summary>
+        public bool UseUserIdsInPaths { get; set; }
         /// <summary>
         /// Whether mailboxes are walked from the Gmail history when the provider is used for a backup
         /// </summary>
@@ -173,6 +180,7 @@ public static class OptionsHelper
         result.IncludedUserTypes = Enum.GetValues<GoogleUserType>().Where(n => includedUserTypes.HasFlag(n)).ToArray();
         result.ExcludeArchivedUsers = Library.Utility.Utility.ParseBoolOption(options, GOOGLE_EXCLUDE_ARCHIVED_USERS_OPTION);
         result.ExcludeSuspendedUsers = Library.Utility.Utility.ParseBoolOption(options, GOOGLE_EXCLUDE_SUSPENDED_USERS_OPTION);
+        result.UseUserIdsInPaths = Library.Utility.Utility.ParseBoolOption(options, GOOGLE_USE_USER_IDS_IN_PATHS_OPTION);
         result.GmailDelta = !Library.Utility.Utility.ParseBoolOption(options, GOOGLE_DISABLE_GMAIL_DELTA_OPTION);
         result.DriveDelta = !Library.Utility.Utility.ParseBoolOption(options, GOOGLE_DISABLE_DRIVE_DELTA_OPTION);
         result.CalendarDelta = !Library.Utility.Utility.ParseBoolOption(options, GOOGLE_DISABLE_CALENDAR_DELTA_OPTION);

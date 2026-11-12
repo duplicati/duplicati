@@ -8,7 +8,7 @@ using Task = System.Threading.Tasks.Task;
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class TaskSourceEntry(string parentPath, GTask task)
-    : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, (task.Title ?? task.Id) + ".json"),
+    : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, task.Id + ".json"),
         !string.IsNullOrEmpty(task.Updated) ? DateTime.Parse(task.Updated!) : DateTime.UnixEpoch,
         !string.IsNullOrEmpty(task.Updated) ? DateTime.Parse(task.Updated!) : DateTime.UnixEpoch)
 {
