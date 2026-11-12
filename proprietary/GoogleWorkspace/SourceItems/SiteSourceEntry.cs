@@ -7,7 +7,7 @@ using File = Google.Apis.Drive.v3.Data.File;
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class SiteSourceEntry(SourceProvider provider, string parentPath, File file)
-    : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, file.Name + ".site"), file.CreatedTimeDateTimeOffset.HasValue ? file.CreatedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch, file.ModifiedTimeDateTimeOffset.HasValue ? file.ModifiedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch)
+    : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, file.Id + ".site"), file.CreatedTimeDateTimeOffset.HasValue ? file.CreatedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch, file.ModifiedTimeDateTimeOffset.HasValue ? file.ModifiedTimeDateTimeOffset.Value.UtcDateTime : DateTime.UnixEpoch)
 {
     public override long Size => -1;
 

@@ -1046,7 +1046,8 @@ public class GoogleDeltaTests
         var provider = CreateProvider(handler, new Dictionary<string, string> { [CalendarKey] = "cal-tok-1" });
 
         var entries = await CollectAsync(Calendar(provider), true);
-        var attachment = entries.Single(x => x.Path.EndsWith("doc.pdf"));
+        // The attachment is named by the id of its file, not by its title
+        var attachment = entries.Single(x => x.Path == F(CalendarPath, "e2", "att"));
         Assert.ThrowsAsync<Google.GoogleApiException>(() => attachment.OpenRead(CancellationToken.None));
 
         Assert.That(provider.ExportChangeTrackingState()[CalendarKey], Is.EqualTo("cal-tok-1"));

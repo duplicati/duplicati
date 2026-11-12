@@ -8,8 +8,25 @@ using Google.Apis.Drive.v3;
 namespace Duplicati.Proprietary.GoogleWorkspace.SourceItems;
 
 internal class CalendarEventAttachmentSourceEntry(SourceProvider provider, string? stateKey, string parentPath, EventAttachment attachment, DriveService driveService)
-    : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, attachment.Title), DateTime.UnixEpoch, DateTime.UnixEpoch)
+    : StreamResourceEntryBase(SystemIO.IO_OS.PathCombine(parentPath, EntryName(attachment)), DateTime.UnixEpoch, DateTime.UnixEpoch)
 {
+    /// <summary>
+    /// The name of the entry of an attachment: the id of the Drive file it refers to.
+    /// The path uses the id, as a title is neither unique nor safe to use in a path.
+    /// An attachment that is only a link has no id, so its name is made from the link.
+    /// </summary>
+    /// <param name="attachment">The attachment</param>
+    /// <returns>The entry name</returns>
+    internal static string EntryName(EventAttachment attachment)
+    {
+        if (!string.IsNullOrEmpty(attachment.FileId))
+            return attachment.FileId;
+
+        var source = attachment.FileUrl ?? attachment.Title ?? string.Empty;
+        var hash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(source));
+        return "link-" + Convert.ToHexString(hash, 0, 16).ToLowerInvariant();
+    }
+
     public override long Size => -1;
 
     public override Task<Stream> OpenRead(CancellationToken cancellationToken)
