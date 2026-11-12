@@ -806,7 +806,11 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
             var terminal = result.Last_Page.HasValue && result.Current_Page == result.Last_Page.Value;
             if (terminal)
             {
-                if (!result.Total.HasValue || result.Total.Value < 0 || windowIds.Count != result.Total.Value)
+                // Drime reports a total for a window with a created_at filter that is not the number of entries in it:
+                // a last window of 12 entries reported 2010, after every entry of the folder count was listed (#7474).
+                // So the total is only checked for the first window, which has no filter. The entries of every window
+                // are still checked against the folder count, below and after the listing.
+                if (!lower.HasValue && (!result.Total.HasValue || result.Total.Value < 0 || windowIds.Count != result.Total.Value))
                     throw new DrimePaginationException(
                         $"Terminal page {page} reported total={result.Total?.ToString() ?? "null"}, " +
                         $"but window {window} contained {windowIds.Count} unique IDs.");
