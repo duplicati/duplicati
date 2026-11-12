@@ -204,6 +204,8 @@ public class SyncRemoteSourceTests : BasicSetupHelper
         public bool SupportsStreaming => true;
         public IList<ICommandLineArgument> SupportedCommands => backend.SupportedCommands;
 
+        public bool HasCaseSensitivePaths => false;
+
         public Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
             => Task.FromResult<IFileEntry?>(null);
 
