@@ -456,72 +456,24 @@ namespace Duplicati.Library.Backend
         /// upload is not cut off. A query that times out keeps running on the context, so the
         /// context is not handed out again.
         /// </summary>
-        private async Task ExecuteQueryWithIdleTimeoutAsync(ClientContext ctx, ActivityStream chunk, TimeSpan idleTimeout, CancellationToken cancelToken)
+        /// <param name="ctx">The context with the pending query</param>
+        /// <param name="chunk">The chunk the query sends, observing the gaps between reads</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        private async Task ExecuteQueryWithIdleTimeoutAsync(ClientContext ctx, TimeoutObservingStream chunk, CancellationToken cancelToken)
         {
-            var query = ctx.ExecuteQueryAsync();
-            if (idleTimeout <= TimeSpan.Zero || idleTimeout == Timeout.InfiniteTimeSpan)
+            // The chunk's token is cancelled when the chunk has not been read for the timeout,
+            // which is also the case before the first read and after the last one
+            var idleToken = chunk.TimeoutToken;
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(idleToken, cancelToken);
+            try
             {
-                await query.ConfigureAwait(false);
-                return;
+                await ctx.ExecuteQueryAsync().WaitAsync(cts.Token).ConfigureAwait(false);
             }
-
-            while (true)
+            catch (OperationCanceledException) when (idleToken.IsCancellationRequested && !cancelToken.IsCancellationRequested)
             {
-                var remaining = idleTimeout - chunk.IdleTime;
-                if (remaining <= TimeSpan.Zero)
-                {
-                    if (ReferenceEquals(m_spContext, ctx))
-                        m_spContext = null;
-                    throw new TimeoutException();
-                }
-
-                if (await Task.WhenAny(query, Task.Delay(remaining, cancelToken)).ConfigureAwait(false) == query)
-                {
-                    await query.ConfigureAwait(false);
-                    return;
-                }
-                cancelToken.ThrowIfCancellationRequested();
-            }
-        }
-
-        /// <summary>
-        /// A stream that records when it was last read from
-        /// </summary>
-        private sealed class ActivityStream : Stream
-        {
-            private readonly Stream m_inner;
-            private long m_lastActivity = Environment.TickCount64;
-
-            public ActivityStream(Stream inner) => m_inner = inner;
-
-            /// <summary> The time since the stream was created or last read from. </summary>
-            public TimeSpan IdleTime => TimeSpan.FromMilliseconds(Environment.TickCount64 - Interlocked.Read(ref m_lastActivity));
-
-            private int Touch(int read)
-            {
-                Interlocked.Exchange(ref m_lastActivity, Environment.TickCount64);
-                return read;
-            }
-
-            public override int Read(byte[] buffer, int offset, int count) => Touch(m_inner.Read(buffer, offset, count));
-            public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) => Touch(await m_inner.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false));
-            public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) => Touch(await m_inner.ReadAsync(buffer, cancellationToken).ConfigureAwait(false));
-
-            public override bool CanRead => m_inner.CanRead;
-            public override bool CanSeek => m_inner.CanSeek;
-            public override bool CanWrite => false;
-            public override long Length => m_inner.Length;
-            public override long Position { get => m_inner.Position; set => m_inner.Position = value; }
-            public override void Flush() { }
-            public override long Seek(long offset, SeekOrigin origin) => m_inner.Seek(offset, origin);
-            public override void SetLength(long value) => throw new NotSupportedException();
-            public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-
-            protected override void Dispose(bool disposing)
-            {
-                if (disposing)
-                    m_inner.Dispose();
-                base.Dispose(disposing);
+                if (ReferenceEquals(m_spContext, ctx))
+                    m_spContext = null;
+                throw new TimeoutException();
             }
         }
 
@@ -745,7 +697,7 @@ namespace Duplicati.Library.Backend
                     bufCnt += lastreadsize;
 
                 using (var contentChunk = new MemoryStream(buf, 0, bufCnt, false))
-                using (var timeoutStream = new ActivityStream(contentChunk.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap)))
+                using (var timeoutStream = (TimeoutObservingStream)contentChunk.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap))
                 {
                     ChunkStreamCreated?.Invoke(timeoutStream);
                     ClientResult<long>? bytesUploaded = null;
@@ -781,7 +733,7 @@ namespace Duplicati.Library.Backend
                     if (bytesUploaded == null)
                         ctx.Load(uploadFile, f => f.Length);
 
-                    await ExecuteQueryWithIdleTimeoutAsync(ctx, timeoutStream, m_timeouts.ReadWriteTimeout, cancelToken).ConfigureAwait(false);
+                    await ExecuteQueryWithIdleTimeoutAsync(ctx, timeoutStream, cancelToken).ConfigureAwait(false);
                     // Check consistency and update fileoffset for the next slice.
                     if (bytesUploaded != null)
                     {
