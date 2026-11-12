@@ -316,6 +316,13 @@ public class ServerApiIntegrationTests : BasicSetupHelper
                     Assert.Fail("System info payload did not contain a server version name");
                 Assert.That(serverVersionNameElement.GetString(), Is.Not.Null.And.Not.Empty, "Server version name should be populated");
 
+                Assert.That(GetStringProperty(systemInfo, "entryAssembly"), Is.EqualTo(Duplicati.Library.Utility.Utility.getEntryAssembly().GetName().Name), "System info should report the entry assembly");
+                Assert.That(Path.GetFullPath(GetStringProperty(systemInfo, "installationFolder")!), Is.EqualTo(Path.GetFullPath(Util.AppendDirSeparator(installationRoot))), "System info should report the entry assembly folder as the installation folder");
+
+                var dataFolder = GetStringProperty(systemInfo, "dataFolder");
+                Assert.That(dataFolder, Is.Not.Null.And.Not.Empty, "System info should report the data folder");
+                Assert.That(File.Exists(Path.Combine(dataFolder!, DataFolderManager.SERVER_DATABASE_FILENAME)), Is.True, "The reported data folder should hold the server database");
+
                 var hasOptionsProperty = systemInfo.TryGetProperty("options", out var optionsElement) || systemInfo.TryGetProperty("Options", out optionsElement);
                 Assert.That(hasOptionsProperty && optionsElement.ValueKind == JsonValueKind.Array, Is.True, "System information should include option metadata");
 
