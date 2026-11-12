@@ -236,6 +236,43 @@ public class GoogleDeltaTests
 
     [Test]
     [Category("GoogleWorkspace")]
+    public async Task UserFolderNamedByIdStillGivesTheRestoreTheEmailAsync()
+    {
+        // The restore takes the user to act as from the metadata of the target, so the email
+        // must be there when the user folder is named by the user id
+        const string USER_ID = "100000000000000000001";
+        var idUserPath = D(Mount, "Users", USER_ID);
+        var handler = GmailSettings(new FakeGoogleHandler()
+            .Json("/labels", Labels("INBOX"))
+            .Json("/profile", Profile("100"))
+            .Json("/messages?labelIds=INBOX", MessageList()));
+        var provider = CreateProvider(handler, new Dictionary<string, string>(), o => o["google-use-user-ids-in-paths"] = "true");
+        Assert.That(provider.Options.UseUserIdsInPaths, Is.True);
+
+        var mailbox = new UserTypeSourceEntry(provider, idUserPath, USER, USER_ID, false, "Gmail", SourceItemType.UserGmail);
+        Assert.That(mailbox.Path, Is.EqualTo(D(idUserPath, "UserGmail")));
+        Assert.That((await mailbox.GetMinorMetadata(CancellationToken.None))["gsuite:UserId"], Is.EqualTo(USER));
+
+        var label = (await CollectAsync(mailbox, false)).Single(x => x.Path == D(idUserPath, "UserGmail", "INBOX"));
+        Assert.That((await label.GetMinorMetadata(CancellationToken.None))["gsuite:UserId"], Is.EqualTo(USER));
+    }
+
+    [Test]
+    [Category("GoogleWorkspace")]
+    public async Task TaskListAndChatSpaceTargetsNameTheUserAsync()
+    {
+        // The restore reads the user to act as from the metadata of these targets
+        var provider = CreateProvider(new FakeGoogleHandler(), new Dictionary<string, string>());
+
+        var taskList = new TaskListSourceEntry(D(UserPath, "UserTasks"), USER, new Google.Apis.Tasks.v1.Data.TaskList { Id = "tl1", Title = "List" }, provider.ApiHelper.GetTasksService(USER));
+        Assert.That((await taskList.GetMinorMetadata(CancellationToken.None))["gsuite:UserId"], Is.EqualTo(USER));
+
+        var space = new ChatSpaceSourceEntry(provider, D(UserPath, "UserChat", "SPACE"), new Google.Apis.HangoutsChat.v1.Data.Space { Name = "spaces/s1" }, USER, "users/100000000000000000001", provider.ApiHelper.GetChatService(USER), provider.ApiHelper.GetDriveService(USER));
+        Assert.That((await space.GetMinorMetadata(CancellationToken.None))["gsuite:UserId"], Is.EqualTo(USER));
+    }
+
+    [Test]
+    [Category("GoogleWorkspace")]
     public async Task GmailIncrementalWalkListsTouchedMessagesUnderTheirLabelsAsync()
     {
         // m1 is untouched, m2 is new in both labels, m3 was deleted, m4 lost INBOX and keeps SENT
@@ -716,6 +753,8 @@ public class GoogleDeltaTests
 
         Assert.That(FolderPaths(entries), Is.EqualTo(new[] { D(MyDrivePath, "F1") }), "The renamed folder is listed with no children of its own");
         Assert.That((await entries[0].GetMinorMetadata(CancellationToken.None))["gsuite:Name"], Is.EqualTo("Renamed"));
+        Assert.That((await entries[0].GetMinorMetadata(CancellationToken.None))["gsuite:UserId"], Is.EqualTo(USER), "A folder is a restore target, so it names the user");
+        Assert.That((await MyDrive(provider).GetMinorMetadata(CancellationToken.None))["gsuite:UserId"], Is.EqualTo(USER), "The drive root is a restore target, so it names the user");
         Assert.That(handler.CountRequests("in parents"), Is.EqualTo(0));
         Assert.That(provider.WasPathEnumerated(F(MyDrivePath, "F1", "B", "content")), Is.False, "The children of a renamed folder are carried forward");
         Assert.That(provider.IsIncrementallyEnumeratedFolder(D(MyDrivePath, "F1")), Is.True, "A folder listing only its changes is not excluded as empty");
@@ -1046,7 +1085,6 @@ public class GoogleDeltaTests
         var provider = CreateProvider(handler, new Dictionary<string, string> { [CalendarKey] = "cal-tok-1" });
 
         var entries = await CollectAsync(Calendar(provider), true);
-        // The attachment is named by the id of its file, not by its title
         var attachment = entries.Single(x => x.Path == F(CalendarPath, "e2", "att"));
         Assert.ThrowsAsync<Google.GoogleApiException>(() => attachment.OpenRead(CancellationToken.None));
 

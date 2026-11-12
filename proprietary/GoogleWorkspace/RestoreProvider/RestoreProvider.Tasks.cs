@@ -33,7 +33,7 @@ partial class RestoreProvider
             }
             else if (target.Type == SourceItemType.UserTasks)
             {
-                _targetUserId = target.Path.TrimStart(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar).Skip(1).FirstOrDefault();
+                _targetUserId = target.Metadata.GetValueOrDefault("gsuite:UserId");
             }
             else if (target.Type == SourceItemType.TaskList)
             {

@@ -40,15 +40,13 @@ partial class RestoreProvider
             }
             else if (target.Type == SourceItemType.UserCalendar)
             {
-                _targetUserId = target.Path.TrimStart(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar).Skip(1).FirstOrDefault();
+                _targetUserId = target.Metadata.GetValueOrDefault("gsuite:UserId");
                 if (!string.IsNullOrWhiteSpace(_targetUserId))
                     _targetCalendarId = await GetDefaultRestoreTargetCalendar(_targetUserId, cancel);
             }
             else if (target.Type == SourceItemType.Calendar)
             {
                 _targetUserId = target.Metadata.GetValueOrDefault("gsuite:UserId");
-                if (string.IsNullOrWhiteSpace(_targetUserId))
-                    _targetUserId = target.Path.TrimStart(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar).Skip(1).FirstOrDefault();
                 _targetCalendarId = target.Metadata.GetValueOrDefault("gsuite:Id");
             }
             else
