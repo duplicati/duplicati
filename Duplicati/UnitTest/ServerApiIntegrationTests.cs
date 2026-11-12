@@ -1128,6 +1128,41 @@ public class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
+    public async Task DestinationTestIgnoresTestFileOfAnotherTestV2_Async()
+    {
+        // The folder only holds the test file of another test of the same destination
+        // that is still running, so it should still be reported as empty
+        var folder = Path.Combine(BASEFOLDER, "destination-with-test-file");
+        if (Directory.Exists(folder))
+            Directory.Delete(folder, true);
+        Directory.CreateDirectory(folder);
+        var otherTestFile = Path.Combine(folder,
+            Library.Utility.BackendExtensions.TEST_FILE_PREFIX + "othertest" + Library.Utility.BackendExtensions.TEST_FILE_EXTENSION);
+        File.WriteAllText(otherTestFile, Library.Utility.BackendExtensions.TEST_FILE_CONTENT);
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var request = new DestinationTestRequestDto
+            {
+                DestinationUrl = "file://" + folder,
+                Options = new Dictionary<string, string>(),
+                AutoCreate = false
+            };
+
+            var response = await httpClient.PostAsJsonAsync("/api/v2/destination/test", request, JsonOptions).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadFromJsonAsync<DestinationTestResponseDto>(JsonOptions).ConfigureAwait(false)
+                         ?? throw new InvalidOperationException("destination/test response was empty");
+
+            Assert.That(result.Success, Is.True, $"The test should succeed; got {result.StatusCode}: {result.Error}");
+            Assert.That(result.Data, Is.Not.Null, "The folder state should be reported");
+            Assert.That(result.Data!.FolderIsEmpty, Is.True, "A test file of another test should not count as a file in the folder");
+            Assert.That(File.Exists(otherTestFile), Is.True, "The test file of the other test should be left alone");
+        }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
     public async Task DestinationTestDoesNotCreateWhenReadOnly_Async()
     {
         FolderExistsBackend.Reset();

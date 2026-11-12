@@ -21,6 +21,7 @@
 
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Volumes;
+using Duplicati.Library.Utility;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto.V2;
@@ -100,7 +101,8 @@ public class DestinationVerify : IEndpointV2
                     var anyEncryptedFiles = false;
                     await foreach (var f in b.ListAsync(cancelToken).ConfigureAwait(false))
                     {
-                        if (f.IsFolder)
+                        // A test file may belong to another test of this destination that is still running
+                        if (f.IsFolder || BackendExtensions.IsTestFileName(f.Name))
                             continue;
 
                         anyFiles = true;
