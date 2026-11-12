@@ -559,6 +559,10 @@ namespace Duplicati.Library.Backend.Box
         public string ProtocolKey => "box";
 
         /// <inheritdoc/>
+        // Box does not allow names that differ only by casing
+        public bool HasCaseSensitivePaths => false;
+
+        /// <inheritdoc/>
         public bool SupportsStreaming => true;
 
         /// <inheritdoc/>

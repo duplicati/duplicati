@@ -91,6 +91,10 @@ namespace Duplicati.Library.Backend
         public string ProtocolKey => "dropbox";
 
         /// <inheritdoc/>
+        // Dropbox paths are case-insensitive
+        public bool HasCaseSensitivePaths => false;
+
+        /// <inheritdoc/>
         public bool SupportsStreaming => true;
 
         private IFileEntry ParseEntry(MetaData md)

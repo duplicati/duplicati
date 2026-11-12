@@ -521,14 +521,14 @@ namespace Duplicati.Library.Main.Database.Local
                             .ExecuteNonQueryAsync(true, token)
                             .ConfigureAwait(false);
                     }
-                    else if (Library.Utility.Utility.IsFSCaseSensitive && filter is FilterExpression expression && expression.Type == FilterType.Simple)
+                    else if (filter is FilterExpression expression && expression.CaseSensitive && expression.Type == FilterType.Simple)
                     {
                         using (new Logging.Timer(LOGTAG, "CommitBeforePrepareFileset", "CommitBeforePrepareFileset"))
                             await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
 
                         cmd.SetTransaction(m_rtr);
                         // If we get a list of filenames, the lookup table is faster
-                        // unfortunately we cannot do this if the filesystem is case sensitive as
+                        // unfortunately we cannot do this if the filter is not case-sensitive as
                         // SQLite only supports ASCII compares
                         var p = expression.GetSimpleList();
                         var m_filenamestable = $"Filenames-{m_temptabsetguid}";

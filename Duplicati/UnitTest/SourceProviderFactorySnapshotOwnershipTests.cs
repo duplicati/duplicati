@@ -82,6 +82,8 @@ public class SourceProviderFactorySnapshotOwnershipTests : BasicSetupHelper
         public IList<ICommandLineArgument> SupportedCommands => [];
         public string MountedPath => _mountPoint;
         public bool NeedsStoredMetadata => false;
+        /// <inheritdoc />
+        public bool NeedsCaseSensitiveFilters => false;
 
         public Task<IEnumerable<string>> GetSnapshotPathsAsync(CancellationToken cancellationToken)
             => Task.FromResult<IEnumerable<string>>([_snapshotPath]);

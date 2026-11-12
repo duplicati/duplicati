@@ -244,6 +244,10 @@ namespace Duplicati.Library.Backend
         /// <inheritdoc />
         public virtual string ProtocolKey => "file";
 
+        /// <inheritdoc/>
+        // The local filesystem follows the operating system, which is the default
+        public bool HasCaseSensitivePaths => false;
+
         public bool SupportsStreaming => !m_moveFile;
 
         /// <inheritdoc />

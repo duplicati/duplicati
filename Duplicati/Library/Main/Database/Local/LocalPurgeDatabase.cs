@@ -283,10 +283,10 @@ namespace Duplicati.Library.Main.Database.Local
             /// <returns>A task that completes when the filter has been applied.</returns>
             public async Task ApplyFilterAsync(Library.Utility.IFilter filter, CancellationToken token)
             {
-                if (Library.Utility.Utility.IsFSCaseSensitive && filter is FilterExpression expression && expression.Type == Duplicati.Library.Utility.FilterType.Simple)
+                if (filter is FilterExpression expression && expression.CaseSensitive && expression.Type == FilterType.Simple)
                 {
                     // File list based
-                    // unfortunately we cannot do this if the filesystem is not case-sensitive as
+                    // unfortunately we cannot do this if the filter is not case-sensitive as
                     // SQLite only supports ASCII compares
                     var p = expression.GetSimpleList();
                     var filenamestable = $"Filenames-{Library.Utility.Utility.GetHexGuid()}";

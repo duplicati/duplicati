@@ -126,6 +126,8 @@ public class AbortedSourceEnumerationTests : BasicSetupHelper
         public IList<ICommandLineArgument> SupportedCommands => [];
         public string MountedPath => _mountPoint;
         public bool NeedsStoredMetadata => false;
+        /// <inheritdoc />
+        public bool NeedsCaseSensitiveFilters => false;
 
         public Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
         public Task TestAsync(CancellationToken cancellationToken) => Task.CompletedTask;

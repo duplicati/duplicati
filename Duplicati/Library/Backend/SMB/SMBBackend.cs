@@ -42,6 +42,10 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
     public virtual string ProtocolKey => "smb";
 
     /// <inheritdoc/>
+    // The casing rules are those of the share, which is not known
+    public bool HasCaseSensitivePaths => false;
+
+    /// <inheritdoc/>
     public virtual string DisplayName => Strings.SMBBackend.DisplayName;
 
     /// <inheritdoc/>

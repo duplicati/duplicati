@@ -110,6 +110,8 @@ public sealed class SourceProvider : ISourceProviderModule, ISnapshotAwareModule
 
     /// <inheritdoc />
     public bool NeedsStoredMetadata => true;
+    /// <inheritdoc />
+    public bool NeedsCaseSensitiveFilters => false;
 
     /// <summary>
     /// Gets a value indicating whether to treat filesystems as unknown (force raw block-based backup).

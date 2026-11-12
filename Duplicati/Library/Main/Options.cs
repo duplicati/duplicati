@@ -242,6 +242,25 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// The possible settings for the case-sensitivity of filters
+        /// </summary>
+        public enum FilterCaseSensitivityMode
+        {
+            /// <summary>
+            /// The filters follow the case-sensitivity of the client filesystem
+            /// </summary>
+            Default,
+            /// <summary>
+            /// The filters tell paths apart by their casing
+            /// </summary>
+            Sensitive,
+            /// <summary>
+            /// The filters ignore the casing of paths
+            /// </summary>
+            Insensitive
+        }
+
+        /// <summary>
         /// The possible settings for the symlink strategy
         /// </summary>
         public enum SymlinkStrategy
@@ -526,6 +545,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("profile-all-database-queries", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ProfilealldatabasequeriesShort, Strings.Options.ProfilealldatabasequeriesLong, "false"),
             new CommandLineArgument("long-database-query-threshold", CommandLineArgument.ArgumentType.Timespan, Strings.Options.LongdatabasequerythresholdShort, Strings.Options.LongdatabasequerythresholdLong, DEFAULT_LONG_DATABASE_QUERY_THRESHOLD),
             new CommandLineArgument("store-metadata-content-in-database", CommandLineArgument.ArgumentType.Boolean, Strings.Options.StoremetadatacontentindatabaseShort, Strings.Options.StoremetadatacontentindatabaseLong, "false"),
+            new CommandLineArgument(FILTER_CASE_SENSITIVITY_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.Options.FiltercasesensitivityShort, Strings.Options.FiltercasesensitivityLong, nameof(FilterCaseSensitivityMode.Default).ToLowerInvariant(), null, Enum.GetNames(typeof(FilterCaseSensitivityMode)).Select(x => x.ToLowerInvariant()).ToArray()),
 
             new CommandLineArgument("list-verify-uploads", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListverifyuploadsShort, Strings.Options.ListverifyuploadsLong, "false"),
             new CommandLineArgument("allow-sleep", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowsleepShort, Strings.Options.AllowsleepLong, "false"),
@@ -1279,7 +1299,7 @@ namespace Duplicati.Library.Main
         /// <value>The log file filter.</value>
         public IFilter? LogFileLogFilter
             => FilterExpression.Combine(
-                new FilterExpression(m_options.GetValueOrDefault("log-file-log-ignore")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)?.Select(x => $"*-{x}"), false),
+                new FilterExpression(m_options.GetValueOrDefault("log-file-log-ignore")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)?.Select(x => $"*-{x}"), false, Library.Utility.Utility.IsFSCaseSensitive),
                 FilterExpression.ParseLogFilter(m_options.GetValueOrDefault("log-file-log-filter"))
             );
 
@@ -1289,7 +1309,7 @@ namespace Duplicati.Library.Main
         /// <value>The log file filter.</value>
         public IFilter? ConsoleLogFilter
             => FilterExpression.Combine(
-                new FilterExpression(m_options.GetValueOrDefault("console-log-ignore")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)?.Select(x => $"*-{x}"), false),
+                new FilterExpression(m_options.GetValueOrDefault("console-log-ignore")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)?.Select(x => $"*-{x}"), false, Library.Utility.Utility.IsFSCaseSensitive),
                 FilterExpression.ParseLogFilter(m_options.GetValueOrDefault("console-log-filter"))
             );
 
@@ -1332,6 +1352,31 @@ namespace Duplicati.Library.Main
         /// A value indicating if metadata content should be stored in the database
         /// </summary>
         public bool StoreMetadataContentInDatabase => GetBool("store-metadata-content-in-database");
+
+        /// <summary>
+        /// The name of the option that sets the case-sensitivity of filters
+        /// </summary>
+        public const string FILTER_CASE_SENSITIVITY_OPTION = "filter-case-sensitivity";
+
+        /// <summary>
+        /// Gets the case-sensitivity setting for filters
+        /// </summary>
+        public FilterCaseSensitivityMode FilterCaseSensitivity
+            => m_options.TryGetValue(FILTER_CASE_SENSITIVITY_OPTION, out var value) && Enum.TryParse<FilterCaseSensitivityMode>(value, true, out var mode)
+                ? mode
+                : FilterCaseSensitivityMode.Default;
+
+        /// <summary>
+        /// Gets a value indicating if filters tell paths apart by their casing.
+        /// Unless the option is set, this follows the case-sensitivity of the client filesystem.
+        /// </summary>
+        public bool FilterCaseSensitive
+            => FilterCaseSensitivity switch
+            {
+                FilterCaseSensitivityMode.Sensitive => true,
+                FilterCaseSensitivityMode.Insensitive => false,
+                _ => Library.Utility.Utility.IsFSCaseSensitive
+            };
 
         /// <summary>
         /// Gets the attribute filter used to exclude files and folders.

@@ -481,6 +481,10 @@ namespace Duplicati.Library.Backend.GoogleDrive
         public string ProtocolKey => "googledrive";
 
         /// <inheritdoc/>
+        // Google Drive keeps names that differ only by casing as separate items
+        public bool HasCaseSensitivePaths => true;
+
+        /// <inheritdoc/>
         public bool SupportsStreaming => true;
 
         /// <inheritdoc/>

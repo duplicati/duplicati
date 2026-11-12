@@ -176,6 +176,10 @@ namespace Duplicati.Library.Backend
         public abstract string ProtocolKey { get; }
 
         /// <inheritdoc/>
+        // OneDrive and SharePoint paths are case-insensitive
+        public bool HasCaseSensitivePaths => false;
+
+        /// <inheritdoc/>
         public abstract string DisplayName { get; }
 
         /// <inheritdoc/>

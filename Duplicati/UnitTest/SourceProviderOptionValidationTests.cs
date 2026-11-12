@@ -126,6 +126,8 @@ public class SourceProviderOptionValidationTests : BasicSetupHelper
         ];
         public string MountedPath => _mountPoint;
         public bool NeedsStoredMetadata => false;
+        /// <inheritdoc />
+        public bool NeedsCaseSensitiveFilters => false;
 
         public Task InitializeAsync(CancellationToken cancellationToken)
             => Task.CompletedTask;

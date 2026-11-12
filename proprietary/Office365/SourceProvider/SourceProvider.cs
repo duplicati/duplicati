@@ -350,6 +350,8 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
 
     /// <inheritdoc />
     public bool NeedsStoredMetadata => true;
+    /// <inheritdoc />
+    public bool NeedsCaseSensitiveFilters => true;
 
     /// <inheritdoc />
     public string ChangeTrackingScope => _mountPoint;

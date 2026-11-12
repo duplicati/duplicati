@@ -1941,6 +1941,9 @@ namespace Duplicati.Server
                  select p).ToArray();
             Library.Main.Operation.Common.SourceProviderFactory.EnableMetadataStorageIfRequiredBySources(sources, options);
 
+            // The filters must match the source in every operation, so the same applies to their case-sensitivity
+            Library.Main.Operation.Common.SourceProviderFactory.EnableCaseSensitiveFiltersIfRequiredBySources(sources, options);
+
             // The server hangs if the module is enabled as there is no console attached
             DisableModule("console-password-input", options);
 

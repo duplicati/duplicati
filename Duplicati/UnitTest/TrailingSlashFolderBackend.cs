@@ -106,6 +106,7 @@ namespace Duplicati.UnitTest
 
         public string DisplayName => "Trailing-Slash Folder Backend";
         public string ProtocolKey => "slashfolder";
+        public bool HasCaseSensitivePaths => m_backend.HasCaseSensitivePaths;
 
         public IList<ICommandLineArgument> SupportedCommands
         {

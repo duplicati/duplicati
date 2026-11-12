@@ -65,6 +65,8 @@ public class BackendSourceProvider(IFolderEnabledBackend backend, string mounted
 
     /// <inheritdoc />
     public bool NeedsStoredMetadata => true;
+    /// <inheritdoc />
+    public bool NeedsCaseSensitiveFilters => backend.HasCaseSensitivePaths;
 
     /// <summary>
     /// The metadata key prefix used by this provider

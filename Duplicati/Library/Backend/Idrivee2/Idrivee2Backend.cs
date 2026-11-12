@@ -165,6 +165,10 @@ namespace Duplicati.Library.Backend
         /// <inheritdoc />
         public string ProtocolKey => "e2";
 
+        /// <inheritdoc/>
+        // Object keys are compared byte for byte
+        public bool HasCaseSensitivePaths => true;
+
         /// <inheritdoc />
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
