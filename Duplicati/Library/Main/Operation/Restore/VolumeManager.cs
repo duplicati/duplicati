@@ -25,7 +25,6 @@ using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,10 +51,10 @@ namespace Duplicati.Library.Main.Operation.Restore
         private const int CACHE_PRESSURE_WARNING_THRESHOLD = 5;
 
         /// <summary>
-        /// Returns the free space of the drive that holds the given folder. Tests replace it to
-        /// simulate a disk that is nearly full.
+        /// Returns the free space of the drive that holds the given folder, or <c>null</c> if it
+        /// could not be determined. Tests replace it to simulate a disk that is nearly full.
         /// </summary>
-        internal static Func<string, long> GetAvailableFreeSpace = path => new DriveInfo(path).AvailableFreeSpace;
+        internal static Func<string, long?> GetAvailableFreeSpace = path => Library.Utility.Utility.GetFreeSpaceForPath(path)?.FreeSpace;
 
         /// <summary>
         /// Helper class to read from either of two channels.
@@ -146,7 +145,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     long cache_max = options.RestoreVolumeCacheHint;
                     // Minimum free space (bytes) to maintain in temp dir — used only in unlimited mode.
                     long cache_min_free = options.RestoreVolumeCacheMinFree;
-                    // Temp directory path used for DriveInfo queries in unlimited mode.
+                    // Temp directory path used for free space queries in unlimited mode.
                     string temp_dir = options.TempDir;
                     // Cache of volume readers.
                     Dictionary<long, VolumeWrapper> cache = [];
@@ -182,6 +181,23 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Dictionary<long, List<BlockRequest>> pending_downloads = [];
                     List<long> pending_order = [];
 
+                    // The free space in the temporary folder. When it cannot be determined, it is
+                    // treated as unlimited, so nothing is evicted and no download waits.
+                    bool free_space_unknown_warned = false;
+                    long free_space()
+                    {
+                        var free = GetAvailableFreeSpace(temp_dir);
+                        if (free.HasValue)
+                            return free.Value;
+
+                        if (!free_space_unknown_warned)
+                        {
+                            free_space_unknown_warned = true;
+                            Logging.Log.WriteWarningMessage(LOGTAG, "FreeSpaceUnknown", null, "Could not determine the free space in '{0}'. The restore volume cache will not be limited by disk space.", temp_dir);
+                        }
+                        return long.MaxValue;
+                    }
+
                     // Evicts cached volumes for disk pressure (unlimited cache mode only).
                     long evict_for_disk_pressure()
                     {
@@ -190,7 +206,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                         disk_pressure_evictions++;
                         if (disk_pressure_evictions == CACHE_PRESSURE_WARNING_THRESHOLD)
                             Logging.Log.WriteWarningMessage(LOGTAG, "CachePressure", null, "Restore volume cache has begun evicting cached volumes due to low disk space in '{0}'. Restore performance may be degraded.", temp_dir);
-                        return GetAvailableFreeSpace(temp_dir);
+                        return free_space();
                     }
 
                     // Free space is otherwise only checked when a decrypted volume is added to the
@@ -203,7 +219,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     bool make_room_for_download()
                     {
                         var needed = cache_min_free + (in_flight_downloads.Count + 1) * 2 * volume_size_estimate();
-                        var available_free_space = GetAvailableFreeSpace(temp_dir);
+                        var available_free_space = free_space();
                         // The most recently used volume is kept, as its blocks are likely still
                         // being requested; evicting it would only download it again
                         while (available_free_space < needed && cache_last_touched.Count > 1)
@@ -372,7 +388,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         else
                                         {
                                             // Unlimited mode (cache_max < 0): evict LRU while free space is below the minimum.
-                                            var available_free_space = GetAvailableFreeSpace(temp_dir);
+                                            var available_free_space = free_space();
                                             while (available_free_space < cache_min_free && cache_size > 0)
                                                 available_free_space = evict_for_disk_pressure();
 

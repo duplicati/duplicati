@@ -78,7 +78,7 @@ namespace Duplicati.UnitTest
             };
 
             var original = VolumeManager.GetAvailableFreeSpace;
-            VolumeManager.GetAvailableFreeSpace = _ => free;
+            VolumeManager.GetAvailableFreeSpace = _ => (long?)free;
             try
             {
                 using var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null);
@@ -96,6 +96,67 @@ namespace Duplicati.UnitTest
 
             foreach (var (name, data) in expected)
                 Assert.That(File.ReadAllBytes(Path.Combine(this.RESTOREFOLDER, name)), Is.EqualTo(data), name);
+        }
+
+        [Test]
+        public async Task ADownloadWaitsWhileThereIsNoRoomForItAsync()
+        {
+            var options = new Dictionary<string, string>(this.TestOptions)
+            {
+                ["no-encryption"] = "true",
+                ["dblock-size"] = "100kb",
+                ["blocksize"] = "10kb"
+            };
+
+            // One file that spans several volumes: its blocks are requested in a burst, so
+            // several volumes are requested before the first one is downloaded
+            var data = new byte[600 * 1024];
+            new Random(6606).NextBytes(data);
+            File.WriteAllBytes(Path.Combine(this.DATAFOLDER, "file.bin"), data);
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+            Assert.That(Directory.GetFiles(this.TARGETFOLDER, "*.dblock.zip").Length, Is.GreaterThan(2), "The test needs several volumes");
+
+            // The disk never has room for more than the minimum free space, and evicting does
+            // not help, so only one volume at a time can be in flight and the rest must wait
+            const long free = 100L * 1024 * 1024;
+            var restoreOptions = new Dictionary<string, string>(options)
+            {
+                ["restore-path"] = this.RESTOREFOLDER,
+                ["restore-volume-cache-min-free"] = $"{free - 1024}b",
+                ["restore-channel-buffer-size"] = "64",
+                ["restore-file-processors"] = "1"
+            };
+
+            var waiting = new List<string>();
+            var resumed = new List<string>();
+            var original = VolumeManager.GetAvailableFreeSpace;
+            VolumeManager.GetAvailableFreeSpace = _ => (long?)free;
+            try
+            {
+                using (Library.Logging.Log.StartScope(entry =>
+                {
+                    var message = entry.FormattedMessage;
+                    lock (waiting)
+                        if (message.Contains("waits for room in the temporary folder"))
+                            waiting.Add(message);
+                        else if (message.Contains("which waited for room in the temporary folder"))
+                            resumed.Add(message);
+                }))
+                {
+                    using var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null);
+                    TestUtils.AssertResults(await c.RestoreAsync(new[] { "*" }), "CachePressure");
+                }
+            }
+            finally
+            {
+                VolumeManager.GetAvailableFreeSpace = original;
+            }
+
+            Assert.That(waiting, Is.Not.Empty, "A volume that is requested while another is in flight waits for room");
+            Assert.That(resumed.Count, Is.EqualTo(waiting.Count), "Every volume that waited is downloaded");
+            Assert.That(File.ReadAllBytes(Path.Combine(this.RESTOREFOLDER, "file.bin")), Is.EqualTo(data));
         }
     }
 }
