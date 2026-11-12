@@ -112,6 +112,11 @@ internal class APIHelper : IDisposable
     private readonly TimeoutOptionsHelper.Timeouts _timeouts;
 
     /// <summary>
+    /// The gate that limits the requests sent to each mailbox
+    /// </summary>
+    private readonly MailboxRequestGate _mailboxGate = new();
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="APIHelper"/> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client to use for API requests</param>
@@ -1143,9 +1148,18 @@ internal class APIHelper : IDisposable
 
             HttpResponseMessage? resp = null;
             Exception? transportError = null;
+            string? mailbox = null;
+            MailboxRequestGate.Slot? mailboxSlot = null;
             try
             {
                 using var request = await requestFactory(ct).ConfigureAwait(false);
+
+                // Requests for a mailbox wait for a free slot, and for the end of any
+                // throttling the mailbox has reported. The wait is not part of the timeout.
+                mailbox = MailboxRequestGate.TryGetMailboxKey(request.RequestUri);
+                if (mailbox != null)
+                    mailboxSlot = await _mailboxGate.EnterAsync(mailbox, ct).ConfigureAwait(false);
+
                 if (timeout.HasValue)
                 {
                     resp = await Utility.WithTimeout(timeout.Value, ct, c => client.SendAsync(request, completionOption, c)).ConfigureAwait(false);
@@ -1166,12 +1180,23 @@ internal class APIHelper : IDisposable
                 // transient in practice and worth the same retries as a timeout.
                 transportError = ex;
             }
+            finally
+            {
+                // A response that is handed to the caller keeps the slot until it is
+                // disposed; in all other cases the request is over
+                if (resp == null || !resp.IsSuccessStatusCode)
+                    mailboxSlot?.Dispose();
+            }
 
             var throttled = false;
             if (resp != null)
             {
                 if (resp.IsSuccessStatusCode)
+                {
+                    if (mailboxSlot != null)
+                        MailboxRequestGate.Attach(resp, mailboxSlot);
                     return resp;
+                }
 
                 if (shouldRetry?.Invoke(resp) == false)
                     return resp;
@@ -1228,6 +1253,11 @@ internal class APIHelper : IDisposable
                     return resp!; // let EnsureOfficeApiSuccessAsync throw with details
 
                 throttleWaited += delay;
+
+                // Hold back the other requests for the mailbox as well, as they would be refused too
+                if (mailbox != null)
+                    _mailboxGate.ReportThrottled(mailbox, delay);
+
                 Log.WriteRetryMessage(LOGTAG, "Office365APIThrottled", null, $"Request was throttled (HTTP 429). Waiting {delay.TotalSeconds:0}s before retrying attempt {throttleAttempt} of {MAX_THROTTLE_RETRIES}.");
             }
             else
