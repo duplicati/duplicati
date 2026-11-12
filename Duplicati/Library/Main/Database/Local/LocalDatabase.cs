@@ -3717,12 +3717,14 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
-        /// The path separators on this system.
+        /// The path separators of a Unix path. A backslash is an ordinary character in its names.
         /// </summary>
-        private static readonly char[] _pathseparators = [
-            Path.DirectorySeparatorChar,
-            Path.AltDirectorySeparatorChar,
-        ];
+        private static readonly char[] _unixPathSeparators = ['/'];
+
+        /// <summary>
+        /// The path separators of a Windows path.
+        /// </summary>
+        private static readonly char[] _windowsPathSeparators = ['\\', '/'];
 
         /// <summary>
         /// Helper method that splits a path on the last path separator.
@@ -3734,7 +3736,10 @@ namespace Duplicati.Library.Main.Database.Local
             if (string.IsNullOrEmpty(path))
                 throw new ArgumentException($"Invalid path: {path}", nameof(path));
 
-            int nLast = path.TrimEnd(_pathseparators).LastIndexOfAny(_pathseparators);
+            // A backup keeps the paths of the system that made it, which is not this one when a
+            // backup is restored on another system, so the separators are taken from the path
+            var separators = path.StartsWith('/') ? _unixPathSeparators : _windowsPathSeparators;
+            int nLast = path.TrimEnd(separators).LastIndexOfAny(separators);
             if (nLast >= 0)
                 return new KeyValuePair<string, string>(path.Substring(0, nLast + 1), path.Substring(nLast + 1));
 
