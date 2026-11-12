@@ -50,6 +50,10 @@ public static class QuerystringMasking
         if (string.IsNullOrEmpty(urlstring))
             return urlstring;
 
+        // A password in the user info of the URL (user:password@host) is masked too
+        if (TryGetUserInfoPassword(urlstring, out var userInfo) && userInfo.Groups["password"].Length > 0)
+            urlstring = userInfo.Groups["before"].Value + Connection.PASSWORD_PLACEHOLDER + urlstring.Substring(userInfo.Length);
+
         if (!TrySplitQuery(urlstring, out var beforeQuery, out var parameters))
             return urlstring;
 
@@ -90,8 +94,18 @@ public static class QuerystringMasking
         if (string.IsNullOrEmpty(newUrl))
             throw new ArgumentException("newUrl is null or empty");
 
-        if (!TrySplitQuery(newUrl, out var beforeQuery, out var parameters))
-            return newUrl;
+        var url = newUrl;
+
+        // A masked password in the user info of the URL is restored from the previous URLs
+        if (TryGetUserInfoPassword(url, out var userInfo) && Connection.IsPasswordPlaceholder(userInfo.Groups["password"].Value))
+        {
+            var password = GetPreviousPassword(previousUrls)
+                ?? throw new InvalidOperationException("Missing previous value for the password in the URL.");
+            url = userInfo.Groups["before"].Value + password + url.Substring(userInfo.Length);
+        }
+
+        if (!TrySplitQuery(url, out var beforeQuery, out var parameters))
+            return url;
 
         // If any value of a key contains the mask, the entire set for that key is replaced from the previous URLs
         var maskedKeys = parameters
@@ -101,7 +115,7 @@ public static class QuerystringMasking
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         if (maskedKeys.Count == 0)
-            return newUrl;
+            return url;
 
         var result = new List<string>(parameters.Length);
         var replacedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -112,19 +126,65 @@ public static class QuerystringMasking
                 result.Add(parameter);
             // The previous entries go where the first entry for the key was, the other entries are dropped
             else if (replacedKeys.Add(key))
-                result.AddRange(GetPreviousParameters(key, previousUrls));
+                result.AddRange(GetPreviousParameters(key, GetEncodedKey(parameter), previousUrls));
         }
 
         return beforeQuery + string.Join("&", result);
     }
 
     /// <summary>
+    /// The name of the option that a backend also reads from the user info of its URL
+    /// </summary>
+    private const string AuthPasswordOption = "auth-password";
+
+    /// <summary>
+    /// Checks if a query key is the password option, with or without the leading dashes
+    /// </summary>
+    private static bool IsAuthPassword(string key)
+        => string.Equals(key.TrimStart('-'), AuthPasswordOption, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Finds the password for the user info of a URL in the previous URLs: the password in their user info,
+    /// or else their <c>auth-password</c> parameter, as a UI may have moved it from one to the other.
+    /// </summary>
+    /// <param name="previousUrls">The previous URLs, used as a priority list.</param>
+    /// <returns>The password as it is written in the previous URL, or null if there is none.</returns>
+    private static string? GetPreviousPassword(IReadOnlyList<string>? previousUrls)
+    {
+        foreach (var previousUrl in previousUrls ?? [])
+        {
+            if (string.IsNullOrEmpty(previousUrl))
+                continue;
+
+            if (TryGetUserInfoPassword(previousUrl, out var userInfo))
+            {
+                var password = userInfo.Groups["password"].Value;
+                if (password.Length > 0 && !Connection.IsPasswordPlaceholder(password))
+                    return password;
+            }
+
+            if (TrySplitQuery(previousUrl, out _, out var parameters))
+            {
+                var password = parameters
+                    .Where(x => IsAuthPassword(GetKey(x)))
+                    .Select(GetEncodedValue)
+                    .FirstOrDefault(x => !Connection.IsPasswordPlaceholder(x));
+                if (password != null)
+                    return password;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Finds the entries for a key in the previous URLs, as they are written there.
     /// </summary>
     /// <param name="key">The decoded key to find (case-insensitive).</param>
+    /// <param name="encodedKey">The key as it is written in the new URL.</param>
     /// <param name="previousUrls">The previous URLs, used as a priority list.</param>
     /// <returns>The entries of the first URL that has a value for the key that is not masked.</returns>
-    private static List<string> GetPreviousParameters(string key, IReadOnlyList<string>? previousUrls)
+    private static List<string> GetPreviousParameters(string key, string encodedKey, IReadOnlyList<string>? previousUrls)
     {
         var previous = new List<string>();
 
@@ -145,11 +205,40 @@ public static class QuerystringMasking
             }
         }
 
+        // The password may have been in the user info of the previous URL, and a UI moved it to the query
+        if (previous.Count == 0 && IsAuthPassword(key))
+        {
+            var password = GetPreviousPassword(previousUrls);
+            if (password != null)
+                previous = [encodedKey + "=" + password];
+        }
+
         if (previous.Count == 0)
             throw new InvalidOperationException($"Missing previous value for protected parameter '{key}'.");
 
         return previous;
     }
+
+    /// <summary>
+    /// Finds the password in the user info of a URL (user:password@host), as it is written.
+    /// </summary>
+    /// <param name="url">The URL to look in.</param>
+    /// <param name="match">The match, with the part before the password in the group "before" and the password in the group "password".</param>
+    /// <returns><c>true</c> if the URL has a password in its user info; <c>false</c> otherwise.</returns>
+    private static bool TryGetUserInfoPassword(string url, out System.Text.RegularExpressions.Match match)
+    {
+        match = UserInfoPasswordRegex.Match(url);
+
+        // The pattern follows the parser of RelaxedUri. A path that the parser does not read as a URL,
+        // such as a Windows path with a ':' or '@' (file://c:\@folder), has no user info.
+        return match.Success && new Library.Utility.RelaxedUri(url).Password != null;
+    }
+
+    /// <summary>
+    /// Matches the password in the user info of a URL, as the parser of RelaxedUri reads it
+    /// </summary>
+    private static readonly System.Text.RegularExpressions.Regex UserInfoPasswordRegex =
+        new(@"^(?<before>[^:]+://[^:\?/]+:)(?<password>[^@:\?/]*)(?=@)", System.Text.RegularExpressions.RegexOptions.Compiled);
 
     /// <summary>
     /// Splits a URL into the part up to and including the '?' and the query parameters, as they are written.

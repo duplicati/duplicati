@@ -344,7 +344,7 @@ public class BackupConfigMaskingTests
     [
         new object[] {
             "ssh://fixture-user:fixture-secret@Example.COM:022/archive%2fpart?auth-password=p%2525&buffer-size=64MB&web-timeout=2m&future=a+b&future=two&flag",
-            "ssh://fixture-user:fixture-secret@Example.COM:022/archive%2fpart?auth-password=***************&buffer-size=64MB&web-timeout=2m&future=a+b&future=two&flag"
+            "ssh://fixture-user:***************@Example.COM:022/archive%2fpart?auth-password=***************&buffer-size=64MB&web-timeout=2m&future=a+b&future=two&flag"
         },
         new object[] {
             "ftp://Example.COM/a%2Fb%20c?auth-username=u&empty=&plus=a+b&space=a%20b&double=%2520&auth-password=x%26y%3D&flag&dup=1&dup=2",
@@ -418,6 +418,80 @@ public class BackupConfigMaskingTests
         // A new password replaces the stored one
         var changed = Server.QuerystringMasking.Unmask($"ssh://host:022/archive%2fpart?auth-password=new%2B1&future=a+b&future=two&flag", url);
         Assert.That(changed, Is.EqualTo("ssh://host:022/archive%2fpart?auth-password=new%2B1&future=a+b&future=two&flag"));
+    }
+
+    [Test]
+    [TestCase("ssh://user:se%40cret@Example.COM:022/archive%2fpart?flag", "ssh://user:***************@Example.COM:022/archive%2fpart?flag")]
+    [TestCase("ftp://user:p+w@host/path", "ftp://user:***************@host/path")]
+    [TestCase("ssh://user:pw@host/path?auth-password=other&x=1", "ssh://user:***************@host/path?auth-password=***************&x=1")]
+    public void APasswordInTheUserInfoIsMaskedAndRestored(string url, string expectedMasked)
+    {
+        var masked = Server.QuerystringMasking.Mask(url, Connection.PasswordFieldNames);
+        Assert.That(masked, Is.EqualTo(expectedMasked));
+
+        Assert.That(Server.QuerystringMasking.Unmask(masked, url), Is.EqualTo(url));
+    }
+
+    [Test]
+    [TestCase("ssh://user@host/path?x=1")]
+    [TestCase("ssh://user:@host/path")]
+    [TestCase(@"file://c:\@folder\")]
+    [TestCase("file://C:/path:with@chars/")]
+    public void AUrlWithoutAPasswordInTheUserInfoIsNotChanged(string url)
+    {
+        Assert.That(Server.QuerystringMasking.Mask(url, Connection.PasswordFieldNames), Is.EqualTo(url));
+    }
+
+    [Test]
+    public void AMaskedPasswordIsRestoredWhenTheUIMovedItBetweenTheUserInfoAndTheQuery()
+    {
+        var placeholder = Connection.PASSWORD_PLACEHOLDER;
+
+        // The old UI reads user:password@ into its username and password fields and writes them back to the query
+        Assert.That(
+            Server.QuerystringMasking.Unmask($"ssh://host/path?auth-username=user&auth-password={placeholder}", "ssh://user:se%40cret@host/path"),
+            Is.EqualTo("ssh://host/path?auth-username=user&auth-password=se%40cret"));
+
+        // And the other way around
+        Assert.That(
+            Server.QuerystringMasking.Unmask($"ssh://user:{placeholder}@host/path", "ssh://host/path?auth-password=x%26y"),
+            Is.EqualTo("ssh://user:x%26y@host/path"));
+
+        // A new password in the user info replaces the stored one
+        Assert.That(
+            Server.QuerystringMasking.Unmask("ssh://user:new@host/path", "ssh://user:old@host/path"),
+            Is.EqualTo("ssh://user:new@host/path"));
+
+        // Without a previous password, the masked one cannot be restored
+        Assert.Throws<InvalidOperationException>(() => Server.QuerystringMasking.Unmask($"ssh://user:{placeholder}@host/path", "ssh://host/path"));
+    }
+
+    [Test]
+    public void TheBackupConfigDoesNotShowAPasswordInTheUserInfo()
+    {
+        var url = "ssh://fixture-user:fixture-secret@Example.COM:022/archive%2fpart?auth-password=p%2525";
+        Backup Create() => new Backup
+        {
+            ID = "1",
+            Name = "Test",
+            Description = string.Empty,
+            Tags = Array.Empty<string>(),
+            TargetURL = url,
+            AdditionalTargetURLs = [new TargetUrlEntry { TargetUrlKey = "second", TargetUrl = "ftp://u:second-secret@host/x" }],
+            Sources = Array.Empty<string>(),
+            Settings = Array.Empty<ISetting>(),
+            Filters = Array.Empty<IFilter>(),
+            Metadata = new Dictionary<string, string>()
+        };
+
+        var edited = Create();
+        edited.MaskSensitiveInformation();
+        Assert.That(edited.TargetURL, Does.Not.Contain("fixture-secret").And.Not.Contain("p%2525"));
+        Assert.That(edited.AdditionalTargetURLs.Single().TargetUrl, Does.Not.Contain("second-secret"));
+
+        edited.UnmaskSensitiveInformation(Create(), new Dictionary<long, string>());
+        Assert.That(edited.TargetURL, Is.EqualTo(url));
+        Assert.That(edited.AdditionalTargetURLs.Single().TargetUrl, Is.EqualTo("ftp://u:second-secret@host/x"));
     }
 }
 
