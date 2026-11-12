@@ -103,7 +103,10 @@ namespace Duplicati.Library.Main.Operation.Backup
                 fsw.CreateFilesetFile(false);
                 var newFilesetID = await database.CreateFilesetAsync(fsw.VolumeID, fileTime, taskreader.ProgressToken).ConfigureAwait(false);
                 await database.LinkFilesetToVolumeAsync(newFilesetID, fsw.VolumeID, taskreader.ProgressToken).ConfigureAwait(false);
-                await database.AppendFilesFromPreviousSetAsync(null, newFilesetID, prevId, fileTime, taskreader.ProgressToken).ConfigureAwait(false);
+                // The files the interrupted backup got done, then the files of the previous backup it did not get to
+                await database.AppendFilesFromPreviousSetAsync(null, newFilesetID, incompleteSet.Key, fileTime, taskreader.ProgressToken).ConfigureAwait(false);
+                if (prevId >= 0)
+                    await database.AppendFilesFromPreviousSetAsync(null, newFilesetID, prevId, fileTime, taskreader.ProgressToken).ConfigureAwait(false);
 
                 await database.WriteFilesetAsync(fsw, newFilesetID, taskreader.ProgressToken).ConfigureAwait(false);
 
