@@ -67,6 +67,20 @@ public class ChangeTrackerTests
 
     [Test]
     [Category("ChangeTracking")]
+    public void MarksAreNotSharedByPathsDifferingOnlyByCase()
+    {
+        var tracker = ActiveTracker();
+        var folder = D(Mount, "users", "u1", "mailbox", "f1");
+        tracker.MarkIncremental(folder);
+        tracker.MarkExaminedSubtree(D(folder, "AAMkYldYg="));
+
+        Assert.That(tracker.WasPathEnumerated(F(folder, "AAMkYldYg=", "content.eml")), Is.True);
+        Assert.That(tracker.WasPathEnumerated(D(folder, "AAMkYldyg=")), Is.False, "A message whose id differs only by casing is another message and is carried forward");
+        Assert.That(tracker.WasPathEnumerated(F(folder, "AAMkYldyg=", "content.eml")), Is.False);
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
     public void IncrementalFolderOnlyCountsMarkedPaths()
     {
         var tracker = ActiveTracker();

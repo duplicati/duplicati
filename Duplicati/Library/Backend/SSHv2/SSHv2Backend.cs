@@ -195,6 +195,10 @@ namespace Duplicati.Library.Backend
 
         public string ProtocolKey => "ssh";
 
+        /// <inheritdoc/>
+        // The casing rules are those of the server's filesystem, which is not known
+        public bool HasCaseSensitivePaths => false;
+
         public async Task PutAsync(string remotename, string filename, CancellationToken cancelToken)
         {
             using (var fs = File.Open(filename, FileMode.Open,

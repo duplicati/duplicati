@@ -2895,11 +2895,15 @@ namespace Duplicati.Library.Main.Database.Local
                 var ftt = new FilteredFilenameTable(db);
 
                 var type = FilterType.Regexp;
+                var caseSensitive = FilterExpression.DefaultCaseSensitive;
                 if (filter is FilterExpression expression)
+                {
                     type = expression.Type;
+                    caseSensitive = expression.CaseSensitive;
+                }
 
                 // Bugfix: SQLite does not handle case-insensitive LIKE with non-ascii characters
-                if (type != FilterType.Regexp && !Library.Utility.Utility.IsFSCaseSensitive && filter.ToString()!.Any(x => x > 127))
+                if (type != FilterType.Regexp && !caseSensitive && filter.ToString()!.Any(x => x > 127))
                     type = FilterType.Regexp;
 
                 if (filter.Empty)
@@ -2970,7 +2974,15 @@ namespace Duplicati.Library.Main.Database.Local
                             sb.Append(" OR ");
 
                         var argName = $"@Arg{Library.Utility.Utility.FormatInvariantValue(args.Count)}";
-                        if (type == FilterType.Wildcard)
+                        if (type == FilterType.Wildcard && caseSensitive)
+                        {
+                            // LIKE ignores the casing of ASCII characters, where GLOB compares exactly.
+                            // GLOB uses the same wildcards as the filter, but also reads a bracket
+                            // as the start of a character set, so a bracket is written as a set of itself
+                            sb.Append(@$"""Path"" GLOB {argName}");
+                            args.Add(argName, f.Replace("[", "[[]"));
+                        }
+                        else if (type == FilterType.Wildcard)
                         {
                             sb.Append(@$"""Path"" LIKE {argName}");
                             args.Add(argName, f.Replace('*', '%').Replace('?', '_'));

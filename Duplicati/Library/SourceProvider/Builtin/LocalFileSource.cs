@@ -34,6 +34,8 @@ public class LocalFileSource(ISnapshotService snapshotService) : ISourceProvider
 
     /// <inheritdoc />
     public bool NeedsStoredMetadata => false;
+    /// <inheritdoc />
+    public bool NeedsCaseSensitiveFilters => false;
 
     /// <inheritdoc/>
     public Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;

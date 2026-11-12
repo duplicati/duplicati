@@ -55,6 +55,7 @@ public class BackendSourceProviderTests
     {
         public string DisplayName => "Stub Backend";
         public string ProtocolKey => "stub";
+        public bool HasCaseSensitivePaths { get; set; }
         public string Description => "A testing backend";
         public IList<ICommandLineArgument> SupportedCommands => [];
 
@@ -108,6 +109,7 @@ public class BackendSourceProviderTests
 
         public string DisplayName => "Truncating Backend";
         public string ProtocolKey => "truncating";
+        public bool HasCaseSensitivePaths => false;
         public string Description => "A testing backend";
         public IList<ICommandLineArgument> SupportedCommands => [];
         public bool SupportsStreaming => true;
@@ -160,6 +162,7 @@ public class BackendSourceProviderTests
 
         public string DisplayName => "Stalling Backend";
         public string ProtocolKey => "stalling";
+        public bool HasCaseSensitivePaths => false;
         public string Description => "A testing backend";
         public IList<ICommandLineArgument> SupportedCommands => [];
         public bool SupportsStreaming => true;
@@ -222,6 +225,7 @@ public class BackendSourceProviderTests
 
         public string DisplayName => "Scripted Backend";
         public string ProtocolKey => "scripted";
+        public bool HasCaseSensitivePaths => false;
         public string Description => "A testing backend";
         public IList<ICommandLineArgument> SupportedCommands => [];
         public bool SupportsStreaming => true;
@@ -380,6 +384,31 @@ public class BackendSourceProviderTests
         var provider = new BackendSourceProvider(new StubBackend(), "/mnt/stub/", url);
         var root = await provider.EnumerateAsync(CancellationToken.None).SingleAsync();
         return (provider, root);
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public void CaseSensitiveFiltersFollowTheBackend([Values] bool caseSensitive)
+    {
+        using var provider = new BackendSourceProvider(new StubBackend { HasCaseSensitivePaths = caseSensitive }, "/mnt/stub/", "stub://host/path");
+        Assert.That(provider.NeedsCaseSensitiveFilters, Is.EqualTo(caseSensitive));
+    }
+
+    [Test]
+    [Category("SourceProvider")]
+    public void KnownBackendsReportTheirPathCasing()
+    {
+        var options = new Dictionary<string, string?>
+        {
+            ["aws-access-key-id"] = "key",
+            ["aws-secret-access-key"] = "secret",
+            ["s3-server-name"] = "s3.example.com"
+        };
+        using var s3 = (IFolderEnabledBackend)Library.DynamicLoader.BackendLoader.GetBackend("s3://bucket/prefix", options);
+        Assert.That(s3.HasCaseSensitivePaths, Is.True, "S3 keys are case-sensitive");
+
+        using var file = (IFolderEnabledBackend)Library.DynamicLoader.BackendLoader.GetBackend("file://" + Path.GetTempPath(), new Dictionary<string, string?>());
+        Assert.That(file.HasCaseSensitivePaths, Is.False, "The file backend follows the operating system");
     }
 
     [Test]

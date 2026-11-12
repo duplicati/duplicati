@@ -427,10 +427,10 @@ namespace Duplicati.Library.Main.Database.Local
                         .ExecuteNonQueryAsync(true, token)
                         .ConfigureAwait(false);
                 }
-                else if (Library.Utility.Utility.IsFSCaseSensitive && filter is FilterExpression expression && expression.Type == Duplicati.Library.Utility.FilterType.Simple)
+                else if (filter is FilterExpression expression && expression.CaseSensitive && expression.Type == Duplicati.Library.Utility.FilterType.Simple)
                 {
                     // File list based
-                    // unfortunately we cannot do this if the filesystem is case sensitive as
+                    // unfortunately we cannot do this if the filter is not case-sensitive as
                     // SQLite only supports ASCII compares
                     var p = expression.GetSimpleList();
                     var filenamestable = $"Filenames-{Library.Utility.Utility.GetHexGuid()}";

@@ -383,6 +383,10 @@ namespace Duplicati.Library.Backend
         public string ProtocolKey => "s3";
 
         /// <inheritdoc/>
+        // Object keys are compared byte for byte
+        public bool HasCaseSensitivePaths => true;
+
+        /// <inheritdoc/>
         public bool SupportsStreaming => true;
 
         /// <inheritdoc/>

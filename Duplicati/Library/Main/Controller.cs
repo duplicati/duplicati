@@ -183,6 +183,7 @@ namespace Duplicati.Library.Main
             CheckAutoCompactInterval();
             CheckAutoVacuumInterval();
             SourceProviderFactory.EnableMetadataStorageIfRequiredBySources(inputsources, m_options.RawOptions);
+            SourceProviderFactory.EnableCaseSensitiveFiltersIfRequiredBySources(inputsources, m_options.RawOptions);
 
             return await RunActionAsync(new BackupResults(), inputsources, inputFilter, new { lastRestoreTest = m_lastRestoreTest }, static async config =>
             {
@@ -565,6 +566,7 @@ namespace Duplicati.Library.Main
         {
             m_options.RawOptions["dry-run"] = "true";
             m_options.RawOptions["dbpath"] = "INVALID!";
+            SourceProviderFactory.EnableCaseSensitiveFiltersIfRequiredBySources(paths, m_options.RawOptions);
 
             // Redirect all messages from the filter to the message sink
             var filtertag = Logging.Log.LogTagFromType(typeof(Operation.Backup.FileEnumerationProcess));
@@ -651,6 +653,7 @@ namespace Duplicati.Library.Main
         public async Task<ISyncResults> SyncAsync(string[] sourcePaths, IFilter filter)
         {
             SourceProviderFactory.EnableMetadataStorageIfRequiredBySources(sourcePaths, m_options.RawOptions);
+            SourceProviderFactory.EnableCaseSensitiveFiltersIfRequiredBySources(sourcePaths, m_options.RawOptions);
 
             return await RunActionAsync(new SyncResults(), sourcePaths, filter, false, config =>
                 new Operation.Sync.SyncHandler(config.Paths, config.Options, config.Result, config.BackendUrl)
@@ -765,6 +768,11 @@ namespace Duplicati.Library.Main
                     result.MessageSink = m_messageSink;
                     Logging.Log.WriteInformationMessage(LOGTAG, "StartingOperation", Strings.Controller.StartingOperationMessage(m_options.MainAction));
 
+                    // The filter that was passed in gets the case-sensitivity of the operation,
+                    // and so do the filters that the operation creates from here on
+                    filter = FilterExpression.WithCaseSensitivity(filter, m_options.FilterCaseSensitive);
+
+                    using (FilterExpression.StartCaseSensitivityScope(m_options.FilterCaseSensitive))
                     using (SlowQueryMonitor.StartMonitoring(m_options.SlowQueryThreshold))
                     using (new ProcessController(m_options))
                     using (new Logging.Timer(LOGTAG, string.Format("Run{0}", result.MainOperation), string.Format("Running {0}", result.MainOperation)))

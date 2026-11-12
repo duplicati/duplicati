@@ -34,6 +34,8 @@ public class Combiner(IEnumerable<ISourceProvider> providers) : ISourceProvider
 
     /// <inheritdoc />
     public bool NeedsStoredMetadata => providers.Any(x => x.NeedsStoredMetadata);
+    /// <inheritdoc />
+    public bool NeedsCaseSensitiveFilters => providers.Any(x => x.NeedsCaseSensitiveFilters);
 
     /// <summary>
     /// The providers to combine

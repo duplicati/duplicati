@@ -47,6 +47,15 @@ public interface ISourceProvider : IDisposable
     bool NeedsStoredMetadata { get; }
 
     /// <summary>
+    /// Gets a value indicating whether this provider names its items with paths that are
+    /// told apart by their casing, such as case-sensitive identifiers, so filters must be
+    /// case-sensitive to select a single item (the "filter-case-sensitivity" option).
+    /// When a source uses a provider that returns <c>true</c>, the option is
+    /// automatically set to case-sensitive if the user has not explicitly set it.
+    /// </summary>
+    bool NeedsCaseSensitiveFilters { get; }
+
+    /// <summary>
     /// Initializes the provider, if needed
     /// </summary>
     /// <param name="cancellationToken">The cancellation token</param>

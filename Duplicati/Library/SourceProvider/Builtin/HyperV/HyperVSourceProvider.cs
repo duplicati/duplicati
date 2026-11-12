@@ -160,6 +160,8 @@ namespace Duplicati.Library.SourceProvider.Builtin.HyperV
 
         /// <inheritdoc />
         public bool NeedsStoredMetadata => true;
+        /// <inheritdoc />
+        public bool NeedsCaseSensitiveFilters => false;
 
         /// <summary>
         /// Checks whether the given source path is a Hyper-V source path

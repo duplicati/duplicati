@@ -189,6 +189,8 @@ namespace Duplicati.Library.SourceProvider.Builtin.MSSQL
 
         /// <inheritdoc />
         public bool NeedsStoredMetadata => true;
+        /// <inheritdoc />
+        public bool NeedsCaseSensitiveFilters => false;
 
         /// <summary>
         /// Checks whether the given source path is a MSSQL source path

@@ -58,5 +58,14 @@ public interface IFolderEnabledBackend : IBackend
     /// be used to say that the backend cannot answer.
     /// </remarks>
     Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Flag indicating that the remote location is known to tell paths apart by their casing,
+    /// so two entries can have names that differ only by casing.
+    /// A backend that does not know, or that follows the operating system, returns <c>false</c>.
+    /// When the backend is used as a source, this makes the filters case-sensitive
+    /// unless the user has set the "filter-case-sensitivity" option.
+    /// </summary>
+    bool HasCaseSensitivePaths { get; }
 }
 
