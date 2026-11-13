@@ -55,6 +55,7 @@ public class DrimePaginationTests
         private readonly bool _trashBoundaryOnFilteredListing;
         private readonly Func<IEnumerable<StubEntry>, IEnumerable<StubEntry>> _order;
         private readonly bool _ignoreFilter;
+        private readonly bool _misreportFilteredTotal;
 
         public List<int> UnfilteredPages { get; } = new();
         public List<int> FilteredPages { get; } = new();
@@ -63,18 +64,21 @@ public class DrimePaginationTests
 
         /// <param name="order">The order the server returns a window in; by creation time when not given</param>
         /// <param name="ignoreFilter">Return every entry, as if the created_at filter was not applied</param>
+        /// <param name="misreportFilteredTotal">Report a total that is not the size of a window with a created_at filter, as Drime does (#7474)</param>
         public StubHandler(
             IEnumerable<StubEntry>? entries = null,
             long? count = null,
             bool trashBoundaryOnFilteredListing = false,
             Func<IEnumerable<StubEntry>, IEnumerable<StubEntry>>? order = null,
-            bool ignoreFilter = false)
+            bool ignoreFilter = false,
+            bool misreportFilteredTotal = false)
         {
             _entries = (entries ?? CreateActiveEntries(21)).ToList();
             _count = count ?? _entries.LongCount(entry => string.IsNullOrWhiteSpace(entry.DeletedAt));
             _trashBoundaryOnFilteredListing = trashBoundaryOnFilteredListing;
             _order = order ?? (window => window.OrderBy(entry => entry.CreatedAt));
             _ignoreFilter = ignoreFilter;
+            _misreportFilteredTotal = misreportFilteredTotal;
         }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -139,7 +143,7 @@ public class DrimePaginationTests
                 current_page = page,
                 last_page = lastPage,
                 per_page = perPage,
-                total = windowEntries.Count
+                total = filtered && _misreportFilteredTotal ? _entries.Count : windowEntries.Count
             })));
         }
 
@@ -332,6 +336,40 @@ public class DrimePaginationTests
         CollectionAssert.AreEqual(new[] { "active-file" }, listed);
         Assert.Greater(handler.UnfilteredPages.Count + handler.FilteredPages.Count, 1000);
         Assert.AreEqual(2, handler.CountRequests);
+    }
+
+    /// <summary>
+    /// Drime reports a total for a window with a created_at filter that is not the number of entries in it.
+    /// The listing found every entry of the folder count, so it is complete (#7474).
+    /// </summary>
+    [Test]
+    [Category("Backend")]
+    public async Task FolderListingAcceptsAMisreportedTotalOfAFilteredWindow()
+    {
+        using var handler = new StubHandler(misreportFilteredTotal: true);
+
+        var listed = await ListNamesAsync(handler, "1");
+
+        CollectionAssert.AreEquivalent(Enumerable.Range(1, 21).Select(id => $"file-{id}"), listed);
+        CollectionAssert.AreEqual(new[] { 1, 2 }, handler.FilteredPages);
+    }
+
+    /// <summary>
+    /// Without the check of the total of a filtered window, a listing that misses entries still fails on the folder count
+    /// </summary>
+    [Test]
+    [Category("Backend")]
+    public async Task FolderListingWithAMisreportedFilteredTotalStillRejectsMissingEntries()
+    {
+        using var handler = new StubHandler(count: 22, misreportFilteredTotal: true);
+        using var backend = new DrimeBackend(
+            "drimecloud://backup",
+            new Dictionary<string, string?> { ["api-token"] = "test-token", ["page-size"] = "1" },
+            handler);
+
+        var exception = await CaptureListingExceptionAsync(backend);
+
+        StringAssert.Contains("Trash semantics cannot be reconciled safely", exception.Message);
     }
 
     /// <summary>
