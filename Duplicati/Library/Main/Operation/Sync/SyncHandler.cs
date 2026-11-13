@@ -93,7 +93,7 @@ internal class SyncHandler
 
         using var sourceProvider = await SourceProviderFactory.GetSourceProviderAsync(m_sources, m_options, ct).ConfigureAwait(false);
 
-        var blacklistPaths = BackupHandler.GetBlacklistedPaths(m_options);
+        var blacklistPaths = BackupHandler.GetBlacklistedPaths(m_options, m_sources);
         var fileAttributeFilter = m_options.FileAttributeFilter;
         var symlinkPolicy = m_options.SymlinkPolicy;
         var hardlinkPolicy = m_options.HardlinkPolicy;

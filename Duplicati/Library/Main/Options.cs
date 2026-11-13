@@ -649,6 +649,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("disable-on-battery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableOnBatteryShort, Strings.Options.DisableOnBatteryLong, "false"),
 
             new CommandLineArgument("exclude-empty-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludeemptyfoldersShort, Strings.Options.ExcludeemptyfoldersLong, "false"),
+            new CommandLineArgument("one-file-system", CommandLineArgument.ArgumentType.Boolean, Strings.Options.OnefilesystemShort, Strings.Options.OnefilesystemLong, "false"),
             new CommandLineArgument("ignore-filenames", CommandLineArgument.ArgumentType.Path, Strings.Options.IgnorefilenamesShort, Strings.Options.IgnorefilenamesLong, "CACHEDIR.TAG"),
             new CommandLineArgument("restore-symlink-metadata", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoresymlinkmetadataShort, Strings.Options.RestoresymlinkmetadataLong, "false"),
             new CommandLineArgument("rebuild-missing-dblock-files", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RebuildmissingdblockfilesShort, Strings.Options.RebuildmissingdblockfilesLong, "false"),
@@ -1569,6 +1570,11 @@ namespace Duplicati.Library.Main
         /// Gets a flag indicating if empty folders should be ignored
         /// </summary>
         public bool ExcludeEmptyFolders => GetBool("exclude-empty-folders");
+
+        /// <summary>
+        /// Gets a flag indicating if folders where another file system is mounted should be left out
+        /// </summary>
+        public bool OneFileSystem => GetBool("one-file-system");
 
         /// <summary>
         /// Gets a flag indicating if backup exclusion extended attributes should be ignored
