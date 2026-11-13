@@ -121,8 +121,33 @@ public class Office365MailboxGateTests
     private static APIHelper CreateApi(HttpMessageHandler handler)
         => Office365TestSupport.CreateApiHelper(handler, GRAPH, new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30)));
 
-    private static Task<HttpResponseMessage> SendAsync(APIHelper api, string url)
-        => api.SendWithRetryAsync(_ => Task.FromResult(new HttpRequestMessage(HttpMethod.Get, url)), HttpCompletionOption.ResponseHeadersRead, null, null, CancellationToken.None);
+    private static Task<HttpResponseMessage> SendAsync(APIHelper api, string url, CancellationToken cancellationToken = default)
+        => api.SendWithRetryAsync(_ => Task.FromResult(new HttpRequestMessage(HttpMethod.Get, url)), HttpCompletionOption.ResponseHeadersRead, null, null, cancellationToken);
+
+    /// <summary>
+    /// A fake Graph that throttles the first request for /users/u1/messages/m1 and answers all others
+    /// </summary>
+    private static RecordingHandler ThrottleFirstRequest(TimeSpan retryAfter)
+        => new((url, seen) =>
+        {
+            if (url.EndsWith("/users/u1/messages/m1", StringComparison.Ordinal) && seen == 0)
+            {
+                var throttled = new HttpResponseMessage(HttpStatusCode.TooManyRequests) { Content = new StringContent("{}", Encoding.UTF8, "application/json") };
+                throttled.Headers.RetryAfter = new RetryConditionHeaderValue(retryAfter);
+                return throttled;
+            }
+
+            return Ok();
+        });
+
+    /// <summary>
+    /// Waits until the helper has handled the throttled answer, which it logs after holding back the mailbox
+    /// </summary>
+    private static Task WaitForThrottleAsync(List<string> throttleMessages)
+        => WaitForAsync(() => { lock (throttleMessages) return throttleMessages.Count > 0; }, "the throttled answer to be handled");
+
+    private static IDisposable CaptureThrottleMessages(List<string> throttleMessages)
+        => Library.Logging.Log.StartScope(e => { lock (throttleMessages) throttleMessages.Add(e.FormattedMessage); }, e => e.Id == "Office365APIThrottled");
 
     private static async Task WaitForAsync(Func<bool> condition, string what)
     {
@@ -208,27 +233,16 @@ public class Office365MailboxGateTests
     public async Task ThrottlingHoldsBackAllRequestsForTheMailboxAsync()
     {
         var retryAfter = TimeSpan.FromMilliseconds(600);
-        var handler = new RecordingHandler((url, seen) =>
-        {
-            if (url.EndsWith("/users/u1/messages/m1", StringComparison.Ordinal) && seen == 0)
-            {
-                var throttled = new HttpResponseMessage(HttpStatusCode.TooManyRequests) { Content = new StringContent("{}", Encoding.UTF8, "application/json") };
-                throttled.Headers.RetryAfter = new RetryConditionHeaderValue(retryAfter);
-                return throttled;
-            }
-
-            return Ok();
-        });
+        var handler = ThrottleFirstRequest(retryAfter);
         using var api = CreateApi(handler);
+        var throttleMessages = new List<string>();
+        using var _ = CaptureThrottleMessages(throttleMessages);
 
         var throttledRequest = SendAsync(api, $"{GRAPH}/users/u1/messages/m1");
-        await WaitForAsync(() => handler.Requests.Count == 1, "the throttled answer");
-        await Task.Delay(50);
+        await WaitForThrottleAsync(throttleMessages);
 
         // Sent while the mailbox is throttled
         var heldBack = SendAsync(api, $"{GRAPH}/users/u1/contacts/c1");
-        using (await SendAsync(api, $"{GRAPH}/users/u2/messages/m1")) { }
-        using (await SendAsync(api, $"{GRAPH}/users/u1/drive/items/d1")) { }
 
         using (await heldBack) { }
         using (await throttledRequest) { }
@@ -236,12 +250,42 @@ public class Office365MailboxGateTests
         var throttledAt = handler.Requests[0].At;
         TimeSpan At(string fragment, int index) => handler.Requests.Where(x => x.Url.Contains(fragment, StringComparison.Ordinal)).ElementAt(index).At;
 
-        // Timers may fire a little early, so leave some slack
+        // Timers may fire a little early, so leave some slack. A slow machine only makes the requests later.
         var earliest = throttledAt + retryAfter - TimeSpan.FromMilliseconds(50);
         Assert.That(At("/users/u1/contacts/c1", 0), Is.GreaterThanOrEqualTo(earliest), "Another request for the throttled mailbox waits");
         Assert.That(At("/users/u1/messages/m1", 1), Is.GreaterThanOrEqualTo(earliest), "The throttled request is retried after the wait");
-        Assert.That(At("/users/u2/messages/m1", 0), Is.LessThan(earliest), "Another mailbox is not held back");
-        Assert.That(At("/users/u1/drive/items/d1", 0), Is.LessThan(earliest), "Requests that are not for a mailbox are not held back");
         Assert.That(handler.Requests.Count(x => x.Url.Contains("/users/u1/contacts/c1", StringComparison.Ordinal)), Is.EqualTo(1), "The held back request is not throttled itself");
+    }
+
+    [Test]
+    [Category("Office365")]
+    public async Task ThrottlingDoesNotHoldBackOtherRequestsAsync()
+    {
+        // Long enough that a request held back by the throttling cannot get through during the test
+        var handler = ThrottleFirstRequest(TimeSpan.FromSeconds(60));
+        using var api = CreateApi(handler);
+        var throttleMessages = new List<string>();
+        using var _ = CaptureThrottleMessages(throttleMessages);
+        using var cancel = new CancellationTokenSource();
+
+        var throttledRequest = SendAsync(api, $"{GRAPH}/users/u1/messages/m1", cancel.Token);
+        await WaitForThrottleAsync(throttleMessages);
+        var heldBack = SendAsync(api, $"{GRAPH}/users/u1/contacts/c1", cancel.Token);
+
+        // A request that is held back would only get through after a minute
+        var notHeldBack = TimeSpan.FromSeconds(10);
+        using (await SendAsync(api, $"{GRAPH}/users/u2/messages/m1").WaitAsync(notHeldBack)) { }
+        using (await SendAsync(api, $"{GRAPH}/users/u1/drive/items/d1").WaitAsync(notHeldBack)) { }
+
+        Assert.That(handler.Requests.Select(x => x.Url).ToList(), Is.EqualTo(new[]
+        {
+            $"{GRAPH}/users/u1/messages/m1",
+            $"{GRAPH}/users/u2/messages/m1",
+            $"{GRAPH}/users/u1/drive/items/d1",
+        }), "Another mailbox and requests that are not for a mailbox are answered while the throttled mailbox waits");
+
+        cancel.Cancel();
+        Assert.That(async () => await heldBack, Throws.InstanceOf<OperationCanceledException>());
+        Assert.That(async () => await throttledRequest, Throws.InstanceOf<OperationCanceledException>());
     }
 }
