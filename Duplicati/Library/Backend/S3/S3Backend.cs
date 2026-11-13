@@ -350,6 +350,10 @@ namespace Duplicati.Library.Backend
                 if (m_pointInTime.HasValue)
                     throw S3MinioClient.CreatePointInTimeNotSupportedException();
 
+                // The Minio client signs with the access key, so it would reach the bucket without the role
+                if (!string.IsNullOrWhiteSpace(options.GetValueOrDefault(S3AwsClient.S3_ASSUME_ROLE_ARN_OPTION)))
+                    throw new UserInformationException(Strings.S3Backend.AssumeRoleNotSupportedByMinioError(S3AwsClient.S3_ASSUME_ROLE_ARN_OPTION, S3_CLIENT_OPTION), "S3AssumeRoleNotSupportedByMinio");
+
                 m_s3Client = new S3MinioClient(awsID, awsKey, locationConstraint, hostname, storageClass, useSSL, timeout, options, lockMode, authenticationRegion);
             }
             else
@@ -570,6 +574,10 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(S3_LOCK_MODE_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.DescriptionLockModeShort, Strings.S3Backend.DescriptionLockModeLong, nameof(Amazon.S3.ObjectLockRetentionMode.Governance), null, typeof(Amazon.S3.ObjectLockRetentionMode).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public).Select(x => x.Name).ToArray()),
                     .. PointInTimeOptionsHelper.GetOptions(),
                     new CommandLineArgument(S3_AUTHENTICATION_REGION_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.S3AuthenticationRegionDescriptionShort, Strings.S3Backend.S3AuthenticationRegionDescriptionLong),
+                    new CommandLineArgument(S3AwsClient.S3_ASSUME_ROLE_ARN_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.AssumeRoleArnDescriptionShort, Strings.S3Backend.AssumeRoleArnDescriptionLong(S3_CLIENT_OPTION)),
+                    new CommandLineArgument(S3AwsClient.S3_ASSUME_ROLE_SESSION_NAME_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.AssumeRoleSessionNameDescriptionShort, Strings.S3Backend.AssumeRoleSessionNameDescriptionLong(S3AwsClient.S3_ASSUME_ROLE_ARN_OPTION), S3AssumeRoleCredentials.DEFAULT_SESSION_NAME),
+                    new CommandLineArgument(S3AwsClient.S3_ASSUME_ROLE_EXTERNAL_ID_OPTION, CommandLineArgument.ArgumentType.Password, Strings.S3Backend.AssumeRoleExternalIdDescriptionShort, Strings.S3Backend.AssumeRoleExternalIdDescriptionLong(S3AwsClient.S3_ASSUME_ROLE_ARN_OPTION)),
+                    new CommandLineArgument(S3AwsClient.S3_STS_ENDPOINT_OPTION, CommandLineArgument.ArgumentType.String, Strings.S3Backend.StsEndpointDescriptionShort, Strings.S3Backend.StsEndpointDescriptionLong(S3AwsClient.S3_ASSUME_ROLE_ARN_OPTION)),
                     .. TimeoutOptionsHelper.GetOptions(),
                     .. exts
                 ];

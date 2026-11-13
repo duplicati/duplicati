@@ -64,6 +64,15 @@ namespace Duplicati.Library.Backend.Strings
         public static string S3AuthenticationRegionDescriptionShort { get { return LC.L(@"Specify the authentication region"); } }
         public static string S3AuthenticationRegionDescriptionLong { get { return LC.L(@"Use this option to specify the region used when signing requests. Authentication will use this value or fall back to the location constraint region if not supplied."); } }
         public static string UnknownS3ClientError(string client) { return LC.L(@"Unknown S3 client: {0}", client); }
+        public static string AssumeRoleArnDescriptionShort { get { return LC.L(@"The role to assume"); } }
+        public static string AssumeRoleArnDescriptionLong(string clientoption) { return LC.L(@"Use this option to access the bucket with a role assumed through STS, given by its ARN, such as arn:aws:iam::123456789012:role/backup. The access key is then only used to assume the role, and the requests are signed with the temporary credentials of the role, which are renewed before they expire. Only the aws client supports this, see --{0}.", clientoption); }
+        public static string AssumeRoleSessionNameDescriptionShort { get { return LC.L(@"The name of the role session"); } }
+        public static string AssumeRoleSessionNameDescriptionLong(string roleoption) { return LC.L(@"Use this option to name the session of the role given with --{0}, which shows in the logs of AWS.", roleoption); }
+        public static string AssumeRoleExternalIdDescriptionShort { get { return LC.L(@"The external id of the role"); } }
+        public static string AssumeRoleExternalIdDescriptionLong(string roleoption) { return LC.L(@"Use this option to give the external id that the trust policy of the role given with --{0} requires.", roleoption); }
+        public static string StsEndpointDescriptionShort { get { return LC.L(@"The STS endpoint"); } }
+        public static string StsEndpointDescriptionLong(string roleoption) { return LC.L(@"Use this option to assume the role given with --{0} through another STS endpoint than the one of AWS, such as the one of a MinIO server, given as a URL. Without it, the global endpoint of AWS is used, or the one of the authentication region.", roleoption); }
+        public static string AssumeRoleNotSupportedByMinioError(string roleoption, string clientoption) { return LC.L(@"The option --{0} is only supported by the aws client. Set --{1}=aws to assume a role.", roleoption, clientoption); }
         public static string NoPathAllowedInEndpointError { get { return LC.L(@"No path allowed in endpoint"); } }
     }
 
