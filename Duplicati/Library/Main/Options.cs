@@ -525,6 +525,8 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("throttle-disabled", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablethrottleShort, Strings.Options.DisablethrottleLong, "false"),
             new CommandLineArgument("throttle-disabled-backends", CommandLineArgument.ArgumentType.String, Strings.Options.DisablethrottlebackendsShort, Strings.Options.DisablethrottlebackendsLong("throttle-disabled"), DEFAULT_THROTTLE_DISABLED_BACKENDS),
             new CommandLineArgument("skip-files-larger-than", CommandLineArgument.ArgumentType.Size, Strings.Options.SkipfileslargerthanShort, Strings.Options.SkipfileslargerthanLong),
+            new CommandLineArgument("skip-files-modified-before", CommandLineArgument.ArgumentType.DateTime, Strings.Options.SkipfilesmodifiedbeforeShort, Strings.Options.SkipfilesmodifiedbeforeLong),
+            new CommandLineArgument("skip-files-modified-after", CommandLineArgument.ArgumentType.DateTime, Strings.Options.SkipfilesmodifiedafterShort, Strings.Options.SkipfilesmodifiedafterLong),
 
             new CommandLineArgument("upload-unchanged-backups", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadUnchangedBackupsShort, Strings.Options.UploadUnchangedBackupsLong, "false"),
 
@@ -760,6 +762,56 @@ namespace Duplicati.Library.Main
                     ? long.MaxValue
                     : Library.Utility.Sizeparser.ParseSize(value, "mb");
             }
+        }
+
+        /// <summary>
+        /// Gets the time before which a file must have been modified to be skipped, in UTC, or <c>null</c> to not skip by time
+        /// </summary>
+        public DateTime? SkipFilesModifiedBefore => GetModifiedTimeLimit("skip-files-modified-before");
+
+        /// <summary>
+        /// Gets the time after which a file must have been modified to be skipped, in UTC, or <c>null</c> to not skip by time
+        /// </summary>
+        public DateTime? SkipFilesModifiedAfter => GetModifiedTimeLimit("skip-files-modified-after");
+
+        /// <summary>
+        /// Gets a value indicating if a modification time limit is given relative to now, such as 1W,
+        /// so it moves with every run and a file can cross it without being changed
+        /// </summary>
+        public bool HasMovingModifiedTimeLimit
+            => IsMovingTimeLimit("skip-files-modified-before") || IsMovingTimeLimit("skip-files-modified-after");
+
+        /// <summary>
+        /// Checks if a point in time depends on when it is read
+        /// </summary>
+        /// <param name="name">The name of the option</param>
+        /// <returns><c>true</c> if the option is set to a time relative to now</returns>
+        private bool IsMovingTimeLimit(string name)
+        {
+            var value = m_options.GetValueOrDefault(name);
+            if (string.IsNullOrWhiteSpace(value))
+                return false;
+
+            // "now" is read as the current time, whatever the base time is
+            if (string.Equals(value.Trim(), "now", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // A date is the same from any base time, an interval or a number of seconds is not
+            var start = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Local);
+            return Library.Utility.Timeparser.ParseTimeInterval(value, start, true) != Library.Utility.Timeparser.ParseTimeInterval(value, start.AddDays(1), true);
+        }
+
+        /// <summary>
+        /// Reads a point in time, where an interval such as 1W counts back from now
+        /// </summary>
+        /// <param name="name">The name of the option</param>
+        /// <returns>The time in UTC, or <c>null</c> if the option is not set</returns>
+        private DateTime? GetModifiedTimeLimit(string name)
+        {
+            var value = m_options.GetValueOrDefault(name);
+            return string.IsNullOrWhiteSpace(value)
+                ? null
+                : Library.Utility.Timeparser.ParseTimeInterval(value, DateTime.Now, true).ToUniversalTime();
         }
 
         /// <summary>

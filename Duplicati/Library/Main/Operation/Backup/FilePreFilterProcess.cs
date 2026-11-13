@@ -64,6 +64,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                 if (SKIPFILESLARGERTHAN == long.MaxValue)
                     SKIPFILESLARGERTHAN = 0;
 
+                var SKIPFILESMODIFIEDBEFORE = options.SkipFilesModifiedBefore;
+                var SKIPFILESMODIFIEDAFTER = options.SkipFilesModifiedAfter;
+
                 var DISABLEFILETIMECHECK = options.DisableFiletimeCheck;
                 var CHECKFILETIMEONLY = options.CheckFiletimeOnly;
                 var SKIPMETADATA = options.SkipMetadata;
@@ -96,6 +99,17 @@ namespace Duplicati.Library.Main.Operation.Backup
                     if (tooLargeFile)
                     {
                         Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckTooLarge", "Skipped checking file, because the size exceeds limit {0}", e.Entry.Path);
+                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Entry.Path, Length = filestatsize, Type = EventType.FileSkipped });
+                        continue;
+                    }
+
+                    // A file without a modification time is kept, as it cannot be told apart
+                    var skippedByTime = e.LastWrite.Ticks != 0
+                        && ((SKIPFILESMODIFIEDBEFORE.HasValue && e.LastWrite < SKIPFILESMODIFIEDBEFORE.Value)
+                            || (SKIPFILESMODIFIEDAFTER.HasValue && e.LastWrite > SKIPFILESMODIFIEDAFTER.Value));
+                    if (skippedByTime)
+                    {
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckModifiedTime", "Skipped checking file, because its modification time is outside the limits {0}", e.Entry.Path);
                         await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Entry.Path, Length = filestatsize, Type = EventType.FileSkipped });
                         continue;
                     }

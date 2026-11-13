@@ -65,11 +65,15 @@ namespace Duplicati.Library.Snapshots.USN
         /// <param name="skipFilesLargerThan"></param>
         /// <param name="prevJournalData">Journal-data of previous fileset</param>
         /// <param name="token"></param>
+        /// <param name="extraConfiguration">Further settings that decide which files are backed up. The journal
+        /// is only used when they are the same as for the previous fileset. Nothing is added when this is empty,
+        /// so the configuration of a backup without them is the same as before.</param>
         public UsnJournalService(ISnapshotService snapshot, IFilter emitFilter, FileAttributes fileAttributeFilter,
-            long skipFilesLargerThan, IEnumerable<USNJournalDataEntry> prevJournalData, CancellationToken token)
+            long skipFilesLargerThan, IEnumerable<USNJournalDataEntry> prevJournalData, CancellationToken token,
+            IEnumerable<string>? extraConfiguration = null)
         {
             m_snapshot = snapshot;
-            m_volumeDataDict = Initialize(emitFilter, fileAttributeFilter, skipFilesLargerThan, prevJournalData);
+            m_volumeDataDict = Initialize(emitFilter, fileAttributeFilter, skipFilesLargerThan, prevJournalData, extraConfiguration);
             m_token = token;
         }
 
@@ -85,9 +89,10 @@ namespace Duplicati.Library.Snapshots.USN
         /// <param name="fileAttributeFilter"></param>
         /// <param name="skipFilesLargerThan"></param>
         /// <param name="prevJournalData"></param>
+        /// <param name="extraConfiguration"></param>
         /// <returns></returns>
         private Dictionary<string, VolumeData> Initialize(IFilter emitFilter, FileAttributes fileAttributeFilter, long skipFilesLargerThan,
-            IEnumerable<USNJournalDataEntry> prevJournalData)
+            IEnumerable<USNJournalDataEntry> prevJournalData, IEnumerable<string>? extraConfiguration)
         {
             if (prevJournalData == null)
                 throw new UsnJournalSoftFailureException(Strings.USNHelper.PreviousBackupNoInfo);
@@ -100,7 +105,7 @@ namespace Duplicati.Library.Snapshots.USN
                 string.Join("; ", m_snapshot.SourceEntries),
                 fileAttributeFilter.ToString(),
                 skipFilesLargerThan.ToString()
-            }));
+            }.Concat(extraConfiguration ?? []).ToArray()));
 
             // create lookup for journal data
             var journalDataDict = prevJournalData.ToDictionary(data => data.Volume);

@@ -905,6 +905,36 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
         Assert.That(Scenario.Current.LoadCalls, Is.EqualTo(0), "A refused run hands the provider no state");
     }
 
+    /// <summary>
+    /// A file that is not enumerated is copied from the previous fileset, so a modification time
+    /// limit that moves with every run would keep files the limit now skips, and miss the ones it
+    /// now lets in
+    /// </summary>
+    [Test]
+    [Category("ChangeTracking")]
+    public void AModificationTimeLimitThatMovesIsRefusedWithATrackedProvider()
+    {
+        var options = Prepare();
+        Scenario.Current = new Scenario { Children = InitialTree, Export = { ["k"] = "v1" } };
+        options["skip-files-modified-after"] = "1W";
+
+        using var c = new Controller("file://" + TARGETFOLDER, options, null);
+        var ex = Assert.ThrowsAsync<UserInformationException>(() => c.BackupAsync([Source]));
+        Assert.That(ex!.HelpID, Is.EqualTo("MovingTimeLimitWithChangeTrackingSource"));
+        Assert.That(Scenario.Current.LoadCalls, Is.EqualTo(0), "A refused run hands the provider no state");
+    }
+
+    [Test]
+    [Category("ChangeTracking")]
+    public async Task AFixedModificationTimeLimitWorksWithATrackedProviderAsync()
+    {
+        var options = Prepare();
+        Scenario.Current = new Scenario { Children = InitialTree, Export = { ["k"] = "v1" } };
+        options["skip-files-modified-before"] = "2000-01-01";
+
+        await RunBackupAsync(options);
+    }
+
     [Test]
     [Category("ChangeTracking")]
     public async Task FileCounterDoesNotEnumerateATrackedProviderAsync()

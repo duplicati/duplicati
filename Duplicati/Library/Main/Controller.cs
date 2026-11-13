@@ -1405,6 +1405,10 @@ namespace Duplicati.Library.Main
                     string.Join(", ", selectedRetentionOptions.Select(x => "--" + x))), "MultipleRetentionOptionsNotSupported");
             }
 
+            // The files not in the list are copied from the previous version, and a file can cross a moving limit without being changed
+            if (m_options.HasMovingModifiedTimeLimit && m_options.ChangedFilelist is { Length: > 0 })
+                throw new UserInformationException("A modification time limit given relative to now, such as --skip-files-modified-after=1W, cannot be combined with --changed-files. Give the limit as a date instead.", "MovingTimeLimitWithChangedFiles");
+
             // Check Prefix
             if (!string.IsNullOrWhiteSpace(m_options.Prefix) && m_options.Prefix.Contains("-"))
                 throw new UserInformationException("The prefix cannot contain hyphens (-)", "PrefixCannotContainHyphens");
