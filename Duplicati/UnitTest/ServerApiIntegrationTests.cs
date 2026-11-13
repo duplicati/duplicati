@@ -1027,6 +1027,75 @@ public class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// The new UI lists several folders of a backup at the same time, for example when folders are
+    /// opened quickly in the restore tree. Such listings must wait for each other instead of failing
+    /// with DatabaseLocked, which only a running operation such as a backup should cause.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task ListingsOfOneBackupAtTheSameTimeDoNotFail_Async()
+    {
+        foreach (var folder in new[] { "a", "b", "c" })
+        {
+            Directory.CreateDirectory(Path.Combine(this.DATAFOLDER, folder));
+            File.WriteAllText(Path.Combine(this.DATAFOLDER, folder, "file.txt"), folder);
+        }
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var backupId = await CreateBackupAsync(httpClient, "integration-passphrase").ConfigureAwait(false);
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+            var source = Library.Common.IO.Util.AppendDirSeparator(this.DATAFOLDER);
+            var listings = Enumerable.Range(0, 12)
+                .Select(i => httpClient.PostAsJsonAsync("/api/v2/backup/list-folder", new { BackupId = backupId, Paths = new[] { source + new[] { "a", "b", "c" }[i % 3] + Path.DirectorySeparatorChar }, PageSize = 1000, Page = 0, Time = (string?)null }))
+                .ToList();
+            var bodies = new List<string>();
+            foreach (var response in await Task.WhenAll(listings).ConfigureAwait(false))
+                bodies.Add(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+
+            Assert.That(bodies, Has.None.Contains("DatabaseLocked"), string.Join(Environment.NewLine, bodies.Where(b => b.Contains("DatabaseLocked"))));
+            Assert.That(bodies, Has.All.Contains("file.txt"));
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// While a queued operation such as a backup holds the database, a listing still fails at once
+    /// with DatabaseLocked instead of waiting for it.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task AListingFailsAtOnceWhileAnOperationHoldsTheDatabase_Async()
+    {
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "file.txt"), "content");
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var backupId = await CreateBackupAsync(httpClient, "integration-passphrase").ConfigureAwait(false);
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+            var provider = ServerProgram.DuplicatiWebserver.Provider;
+            var connection = (Duplicati.Server.Database.Connection)provider.GetService(typeof(Duplicati.Server.Database.Connection))!;
+            var tracker = (Duplicati.WebserverCore.Abstractions.IDatabaseLockTracker)provider.GetService(typeof(Duplicati.WebserverCore.Abstractions.IDatabaseLockTracker))!;
+            var held = tracker.TryAcquire(Duplicati.Server.Runner.GetEffectiveDBPath(connection.GetBackup(backupId)!));
+            Assert.That(held, Is.Not.Null);
+            try
+            {
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                var response = await httpClient.PostAsJsonAsync("/api/v2/backup/list-folder", new { BackupId = backupId, Paths = new[] { Library.Common.IO.Util.AppendDirSeparator(this.DATAFOLDER) }, PageSize = 1000, Page = 0, Time = (string?)null }).ConfigureAwait(false);
+                var body = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                Assert.That(body, Does.Contain("DatabaseLocked"));
+                Assert.That(watch.Elapsed, Is.LessThan(TimeSpan.FromSeconds(10)), "The listing should not wait for the operation");
+            }
+            finally
+            {
+                await held!.DisposeAsync().ConfigureAwait(false);
+            }
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// The old UI lists the files of one version to choose what to restore. The all-versions option
     /// of the backup or the server must not turn that into a list of every version, or it shows
     /// files that the restore of the version then leaves out (#5055).
