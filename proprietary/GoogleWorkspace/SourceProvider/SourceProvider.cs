@@ -29,10 +29,41 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     private readonly ChangeTracker _changeTracker = new();
 
     /// <summary>
+    /// The scope each user's change tracking state is stored under, by primary email. Set when
+    /// the user folder is enumerated, which happens before any entry below it builds a key.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, string> _changeTrackingUserScopes = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// What the provider learned during this enumeration about which paths it examined,
     /// and the tokens it carries between backups.
     /// </summary>
     internal ChangeTracker ChangeTracker => _changeTracker;
+
+    /// <summary>
+    /// Records the scope the change tracking state of a user is stored under
+    /// </summary>
+    /// <param name="userId">The primary email of the user</param>
+    /// <param name="scope">The scope</param>
+    internal void SetChangeTrackingUserScope(string userId, string scope)
+        => _changeTrackingUserScopes[userId] = scope;
+
+    /// <summary>
+    /// The scope the change tracking state of a user is stored under. It is the primary email,
+    /// unless the user folders are placed by organizational unit: the organizational unit is
+    /// then part of the scope, so a user moved to another organizational unit, and thereby to
+    /// another path, is listed in full instead of continuing from the state of the old path.
+    /// </summary>
+    /// <param name="userId">The primary email of the user</param>
+    /// <returns>The scope</returns>
+    internal string ChangeTrackingUserScope(string userId)
+    {
+        if (_changeTrackingUserScopes.TryGetValue(userId, out var scope))
+            return scope;
+        if (_options.UseOuPaths)
+            throw new InvalidOperationException($"The change tracking scope of user {userId} is not known, as the user folder was not enumerated");
+        return userId;
+    }
 
     /// <summary>
     /// Builds the API helper of the provider instances created while it is set, in place of

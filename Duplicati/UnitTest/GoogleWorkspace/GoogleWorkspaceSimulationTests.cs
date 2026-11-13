@@ -161,6 +161,8 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
     {
         public string Id = "";
         public string Email = "";
+        /// <summary>The path of the organizational unit the user is in</summary>
+        public string OrgUnitPath = "/";
         public readonly SimMailbox Mailbox = new();
         public SimDrive MyDrive = new();
         public readonly List<SimCalendar> Calendars = [];
@@ -171,10 +173,24 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
         public IEnumerable<SimContact> LiveContacts => Contacts.Values.Where(x => x.DeletedAt == null);
     }
 
+    /// <summary>
+    /// An organizational unit below the root
+    /// </summary>
+    /// <param name="Id">The organizational unit id, without the <c>id:</c> prefix</param>
+    /// <param name="OrgUnitPath">The full path</param>
+    /// <param name="Name">The name</param>
+    private sealed record SimOrgUnit(string Id, string OrgUnitPath, string Name)
+    {
+        public string ParentPath => OrgUnitPath.LastIndexOf('/') <= 0 ? "/" : OrgUnitPath.Substring(0, OrgUnitPath.LastIndexOf('/'));
+    }
+
     private sealed class Tenant
     {
         public long Seq;
         public readonly List<SimUser> Users = [];
+        public readonly List<SimOrgUnit> OrgUnits = [];
+        /// <summary>Whether the backup places the user folders by organizational unit</summary>
+        public bool UseOuPaths;
         public readonly List<SimDrive> SharedDrives = [];
         private int _ids;
 
@@ -651,6 +667,7 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
 
         private static readonly Regex DirectoryUsersRx = new(@"^/admin/directory/v1/users$");
         private static readonly Regex DirectoryUserRx = new(@"^/admin/directory/v1/users/([^/]+)$");
+        private static readonly Regex OrgUnitsRx = new(@"^/admin/directory/v1/customer/my_customer/orgunits$");
         private static readonly Regex GmailRx = new(@"^/gmail/v1/users/([^/]+)/(labels|profile|history|messages|settings/[a-zA-Z]+)$");
         private static readonly Regex GmailMessageRx = new(@"^/gmail/v1/users/([^/]+)/messages/([^/]+)$");
         private static readonly Regex BatchRx = new(@"^/batch");
@@ -671,7 +688,9 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
             Match m;
 
             if (DirectoryUsersRx.IsMatch(path))
-                return Json(new { users = tenant.Users.Select(u => new { id = u.Id, primaryEmail = u.Email, suspended = false, archived = false }) });
+                return Json(new { users = tenant.Users.Select(u => new { id = u.Id, primaryEmail = u.Email, suspended = false, archived = false, orgUnitPath = u.OrgUnitPath }) });
+            if (OrgUnitsRx.IsMatch(path))
+                return Json(new { organizationUnits = tenant.OrgUnits.Select(o => new { orgUnitId = "id:" + o.Id, orgUnitPath = o.OrgUnitPath, name = o.Name, parentOrgUnitPath = o.ParentPath }) });
             if ((m = DirectoryUserRx.Match(path)).Success)
             {
                 var u = FindUser(m.Groups[1].Value);
@@ -1007,9 +1026,20 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
         paths.Add(F(Mount, "google-workspace-backup-description.json"));
         paths.Add(D(Mount, "Users"));
 
+        // The folder of an organizational unit is nested in the folders of its ancestors
+        string OrgUnitFolder(string orgUnitPath)
+        {
+            var orgUnit = tenant.OrgUnits.FirstOrDefault(x => x.OrgUnitPath == orgUnitPath);
+            return orgUnit == null ? D(Mount, "Users") : D(OrgUnitFolder(orgUnit.ParentPath), orgUnit.Id);
+        }
+
+        if (tenant.UseOuPaths)
+            foreach (var orgUnit in tenant.OrgUnits)
+                paths.Add(OrgUnitFolder(orgUnit.OrgUnitPath));
+
         foreach (var user in tenant.Users)
         {
-            var userPath = D(Mount, "Users", user.Email);
+            var userPath = tenant.UseOuPaths ? D(OrgUnitFolder(user.OrgUnitPath), user.Id) : D(Mount, "Users", user.Email);
             paths.Add(userPath);
             paths.Add(F(userPath, "profile.json"));
 
@@ -1080,15 +1110,16 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
     /// <summary>
     /// The source, with the provider options in the url so that only the backup sees them
     /// </summary>
-    private string Source => "@" + Mount.TrimEnd(Path.DirectorySeparatorChar) + "|googleworkspace://tenant"
+    private static string Source(Tenant tenant) => "@" + Mount.TrimEnd(Path.DirectorySeparatorChar) + "|googleworkspace://tenant"
         + "?google-client-id=client&google-client-secret=secret&google-refresh-token=refresh"
         + "&google-included-root-types=Users%2CSharedDrives&google-included-user-types=Gmail%2CDrive%2CCalendar%2CContacts"
-        + "&google-ignore-calendar-acl=true";
+        + "&google-ignore-calendar-acl=true"
+        + (tenant.UseOuPaths ? "&google-use-ou-paths=true" : "");
 
-    private async Task<HashSet<string>> BackupAndListAsync(Dictionary<string, string> options, IEnumerable<string> ignoredWarnings)
+    private async Task<HashSet<string>> BackupAndListAsync(Tenant tenant, Dictionary<string, string> options, IEnumerable<string> ignoredWarnings)
     {
         using (var c = new Controller("file://" + TARGETFOLDER, options, null))
-            TestUtils.AssertResults(await c.BackupAsync([Source]), ignoredWarnings.ToArray());
+            TestUtils.AssertResults(await c.BackupAsync([Source(tenant)]), ignoredWarnings.ToArray());
 
         using (var c = new Controller("file://" + TARGETFOLDER, options.Expand(new { version = 0 }), null))
         {
@@ -1149,7 +1180,7 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
 
         using var handlerScope = GoogleWorkspaceTestSupport.UseHandler(google);
         var (paths, _) = Expected(tenant);
-        AssertSamePaths(await BackupAndListAsync(options, []), paths, "the first backup");
+        AssertSamePaths(await BackupAndListAsync(tenant, options, []), paths, "the first backup");
         Assert.That(google.Unhandled, Is.Empty);
 
         // The stopped run uploads a changed file from the first user's drive, so its fileset is
@@ -1175,7 +1206,7 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
                 }
             };
 
-            var r = await c.BackupAsync([Source]);
+            var r = await c.BackupAsync([Source(tenant)]);
             Assert.That(r.PartialBackup, Is.True, "The stop arrived while the backup was listing the tenant-level shared drives");
             Assert.That(stopped, Is.True, "The backup reached the tenant-level shared drives");
         }
@@ -1185,7 +1216,7 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
         var requestsBefore = google.Requests.Count;
         Dictionary<string, byte[]> contents;
         (paths, contents) = Expected(tenant);
-        AssertSamePaths(await BackupAndListAsync(options, []), paths, "the run after a stopped backup");
+        AssertSamePaths(await BackupAndListAsync(tenant, options, []), paths, "the run after a stopped backup");
         Assert.That(google.Unhandled, Is.Empty);
         Assert.That(google.Requests.Skip(requestsBefore).Where(UsesStoredToken), Is.Empty, "Nothing is walked from a token after a stopped backup");
         await AssertRestoredContentsAsync(options, contents, "the run after a stopped backup");
@@ -1194,11 +1225,65 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
         requestsBefore = google.Requests.Count;
         tenant.AddFile(firstDrive, firstDrive.RootId, rng);
         (paths, contents) = Expected(tenant);
-        AssertSamePaths(await BackupAndListAsync(options, []), paths, "the second run after a stopped backup");
+        AssertSamePaths(await BackupAndListAsync(tenant, options, []), paths, "the second run after a stopped backup");
         var requests = google.Requests.Skip(requestsBefore).ToList();
         Assert.That(requests.Any(x => x.Contains("/history?", StringComparison.Ordinal)), Is.True, "The mailboxes are walked from the history ids of the complete run");
         Assert.That(requests.Any(x => x.Contains("/changes?", StringComparison.Ordinal)), Is.True, "The drives are walked from the tokens of the complete run");
         Assert.That(requests.Any(x => x.Contains("syncToken=", StringComparison.Ordinal)), Is.True, "The calendars and contacts are walked from their sync tokens");
+    }
+
+    [Test]
+    [Category("GoogleWorkspace")]
+    public async Task OrgUnitLayoutRelistsAMovedUserInFullAsync()
+    {
+        var rng = new Random(11);
+        var tenant = Tenant.Create(rng);
+        tenant.UseOuPaths = true;
+        tenant.OrgUnits.Add(new SimOrgUnit("ou-sales", "/Sales", "Sales"));
+        tenant.OrgUnits.Add(new SimOrgUnit("ou-east", "/Sales/East", "East"));
+        tenant.OrgUnits.Add(new SimOrgUnit("ou-support", "/Support", "Support"));
+        tenant.Users[0].OrgUnitPath = "/Sales/East";
+        tenant.Users[1].OrgUnitPath = "/Support";
+        var moved = tenant.Users[0];
+
+        var google = new SimulatedGoogle(tenant);
+        var mutator = new Mutator(tenant, rng);
+        var options = Prepare();
+
+        using var handlerScope = GoogleWorkspaceTestSupport.UseHandler(google);
+        var (paths, contents) = Expected(tenant);
+        Assert.That(paths, Does.Contain(Util.AppendDirSeparator(Path.Combine(Mount, "Users", "ou-sales", "ou-east", moved.Id))), "The user folder is nested in its organizational units and named by id");
+        AssertSamePaths(await BackupAndListAsync(tenant, options, []), paths, "the first backup");
+        Assert.That(google.Unhandled, Is.Empty);
+        await AssertRestoredContentsAsync(options, contents, "the first backup");
+
+        // Moving the user gives it a new path, so its stored tokens must not be used: an
+        // incremental walk would list only the changes below the new path
+        mutator.ApplyRandomChanges(google);
+        moved.OrgUnitPath = "/Support";
+        var requestsBefore = google.Requests.Count;
+        var actual = await BackupAndListAsync(tenant, options, mutator.IgnoredWarnings);
+        Assert.That(google.Unhandled, Is.Empty);
+        var requests = google.Requests.Skip(requestsBefore).ToList();
+        Assert.That(requests.Any(x => x.Contains($"/users/{moved.Email}/history", StringComparison.Ordinal)), Is.False, "The moved user is listed in full");
+        Assert.That(requests.Any(x => x.Contains($"/users/{tenant.Users[1].Email}/history", StringComparison.Ordinal)), Is.True, "The user that stayed is listed from its stored tokens");
+        if (mutator.HardFault)
+            actual = await BackupAndListAsync(tenant, options, []);
+        (paths, contents) = Expected(tenant);
+        AssertSamePaths(actual, paths, $"moving the user ({string.Join("; ", mutator.Log)})");
+        await AssertRestoredContentsAsync(options, contents, "moving the user");
+
+        // The next run continues from the tokens stored under the new organizational unit
+        mutator.ApplyRandomChanges(google);
+        requestsBefore = google.Requests.Count;
+        actual = await BackupAndListAsync(tenant, options, mutator.IgnoredWarnings);
+        Assert.That(google.Unhandled, Is.Empty);
+        requests = google.Requests.Skip(requestsBefore).ToList();
+        Assert.That(requests.Any(x => x.Contains($"/users/{moved.Email}/history", StringComparison.Ordinal)), Is.True, "The moved user continues from the tokens of its new path");
+        if (mutator.HardFault)
+            actual = await BackupAndListAsync(tenant, options, []);
+        (paths, _) = Expected(tenant);
+        AssertSamePaths(actual, paths, $"the run after the move ({string.Join("; ", mutator.Log)})");
     }
 
     /// <summary>
@@ -1241,7 +1326,7 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
         using var handlerScope = GoogleWorkspaceTestSupport.UseHandler(google);
         {
             var (paths, contents) = Expected(tenant);
-            AssertSamePaths(await BackupAndListAsync(options, []), paths, "the first backup");
+            AssertSamePaths(await BackupAndListAsync(tenant, options, []), paths, "the first backup");
             Assert.That(google.Unhandled, Is.Empty, "Every request must be answered by the simulation");
             await AssertRestoredContentsAsync(options, contents, "the first backup");
 
@@ -1253,7 +1338,7 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
                 var context = $"seed {seed} {string.Join(Environment.NewLine, history.TakeLast(3))}";
 
                 var requestsBefore = google.Requests.Count;
-                var actual = await BackupAndListAsync(options, mutator.IgnoredWarnings);
+                var actual = await BackupAndListAsync(tenant, options, mutator.IgnoredWarnings);
                 Assert.That(google.Unhandled, Is.Empty, $"Every request must be answered by the simulation ({context})");
 
                 var requests = google.Requests.Skip(requestsBefore).ToList();
@@ -1263,7 +1348,7 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
                 {
                     // The failed walk carried its mailbox, drive or calendar forward unchanged; a clean run converges
                     history.Add($"run {run} (recovery)");
-                    actual = await BackupAndListAsync(options, []);
+                    actual = await BackupAndListAsync(tenant, options, []);
                     Assert.That(google.Unhandled, Is.Empty);
                 }
 

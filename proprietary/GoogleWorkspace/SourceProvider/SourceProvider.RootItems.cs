@@ -5,6 +5,7 @@ using Google.Apis.Drive.v3;
 using Drive = Google.Apis.Drive.v3.Data.Drive;
 using File = Google.Apis.Drive.v3.Data.File;
 using Group = Google.Apis.Admin.Directory.directory_v1.Data.Group;
+using OrgUnit = Google.Apis.Admin.Directory.directory_v1.Data.OrgUnit;
 using User = Google.Apis.Admin.Directory.directory_v1.Data.User;
 
 namespace Duplicati.Proprietary.GoogleWorkspace;
@@ -54,7 +55,7 @@ public sealed partial class SourceProvider
         var request = service.Users.List();
         request.Customer = "my_customer";
         request.MaxResults = DIRECTORY_USERS_PAGE_SIZE;
-        request.Fields = "nextPageToken,users(id,primaryEmail,suspended,archived)";
+        request.Fields = "nextPageToken,users(id,primaryEmail,suspended,archived,orgUnitPath)";
 
         string? nextPageToken = null;
         do
@@ -74,6 +75,22 @@ public sealed partial class SourceProvider
 
             nextPageToken = users?.NextPageToken;
         } while (!string.IsNullOrEmpty(nextPageToken));
+    }
+
+    /// <summary>
+    /// Lists every organizational unit of the tenant, at any depth. The root organizational
+    /// unit is not part of the list.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The organizational units.</returns>
+    internal async Task<IList<OrgUnit>> ListAllOrgUnitsAsync(CancellationToken cancellationToken)
+    {
+        var service = _apiHelper.GetDirectoryServiceForOrgUnits();
+        var request = service.Orgunits.List("my_customer");
+        request.Type = Google.Apis.Admin.Directory.directory_v1.OrgunitsResource.ListRequest.TypeEnum.All;
+        request.Fields = "organizationUnits(orgUnitId,orgUnitPath,name,parentOrgUnitPath)";
+        var result = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        return result?.OrganizationUnits ?? [];
     }
 
     /// <summary>

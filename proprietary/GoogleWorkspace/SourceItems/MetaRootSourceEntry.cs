@@ -25,6 +25,10 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
             var skippedArchivedUsers = 0;
             var skippedSuspendedUsers = 0;
 
+            // Placing the users by organizational unit needs every user before the first
+            // folder can be listed, so they are collected rather than listed as they arrive
+            var orgUnitUsers = provider.Options.UseOuPaths ? new List<Google.Apis.Admin.Directory.directory_v1.Data.User>() : null;
+
             await foreach (var user in provider.ListAllUsersAsync(cancellationToken).ConfigureAwait(false))
             {
                 if (cancellationToken.IsCancellationRequested) yield break;
@@ -45,18 +49,31 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
                     continue;
                 }
 
+                if (orgUnitUsers != null)
+                {
+                    orgUnitUsers.Add(user);
+                    continue;
+                }
+
                 // Only active accounts consume a seat, which the directory object already
                 // answers without any further request.
                 var countsAsSeat = category == SourceProvider.UserCategory.Active;
 
                 if (provider.LicenseApprovedForEntry(Path, GoogleRootType.Users, user.Id, increment: false, countsAsSeat: countsAsSeat))
-                    yield return new UserSourceEntry(provider, this.Path, user);
+                    yield return new UserSourceEntry(provider, this.Path, this.Path, user, user.PrimaryEmail);
             }
 
             if (skippedArchivedUsers > 0)
                 Log.WriteInformationMessage(LOGTAG, "SkippedExcludedUsers", Strings.SkippedExcludedUsers(skippedArchivedUsers, "archived", OptionsHelper.GOOGLE_EXCLUDE_ARCHIVED_USERS_OPTION));
             if (skippedSuspendedUsers > 0)
                 Log.WriteInformationMessage(LOGTAG, "SkippedExcludedUsers", Strings.SkippedExcludedUsers(skippedSuspendedUsers, "suspended", OptionsHelper.GOOGLE_EXCLUDE_SUSPENDED_USERS_OPTION));
+
+            if (orgUnitUsers != null)
+            {
+                var root = OrgUnitNode.Build(await provider.ListAllOrgUnitsAsync(cancellationToken).ConfigureAwait(false), orgUnitUsers);
+                await foreach (var entry in OrganizationalUnitFolderSourceEntry.EnumerateNode(provider, this.Path, this.Path, root, cancellationToken).ConfigureAwait(false))
+                    yield return entry;
+            }
         }
         else if (type == SourceItemType.MetaRootGroups)
         {

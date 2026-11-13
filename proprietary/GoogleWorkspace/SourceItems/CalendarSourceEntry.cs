@@ -41,7 +41,7 @@ internal class CalendarSourceEntry(SourceProvider provider, string parentPath, s
 
         var tracker = provider.ChangeTracker;
         var useDelta = provider.CalendarDeltaActive;
-        var stateKey = useDelta ? ChangeTrackingKeys.Calendar(userId, calendar.Id) : null;
+        var stateKey = useDelta ? ChangeTrackingKeys.Calendar(provider.ChangeTrackingUserScope(userId), calendar.Id) : null;
         var stored = stateKey == null ? null : tracker.GetState(stateKey);
 
         // Decide what the carry-forward sees before anything can fail: with a token, the
