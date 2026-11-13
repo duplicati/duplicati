@@ -196,7 +196,7 @@ partial class BackendManager
 
             // TODO Currently, only the restore process uses parallel downloads. If others need it as well, maybe use another option.
             maxParallelDownloads = Math.Max(1, context.Options.RestoreVolumeDownloaders);
-            maxParallelUploads = GetMaxParallelUploads(context.Options.AsynchronousConcurrentUploadLimit);
+            maxParallelUploads = GetMaxParallelUploads(context.Options.GetAsynchronousConcurrentUploadLimit(backendUrl));
             maxRetries = context.Options.NumberOfRetries;
             retryDelay = context.Options.RetryDelay;
             retryWithExponentialBackoff = context.Options.RetryWithExponentialBackoff;
