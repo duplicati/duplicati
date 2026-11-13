@@ -60,7 +60,7 @@ internal class DriveTreeSourceEntry(SourceProvider provider, string parentPath, 
     /// </summary>
     private string StateKey => driveId == null
         ? ChangeTrackingKeys.MyDrive(provider.ChangeTrackingUserScope(userId ?? throw new InvalidOperationException("My Drive is listed without a user")))
-        : ChangeTrackingKeys.SharedDrive(userId == null ? null : provider.ChangeTrackingUserScope(userId), driveId);
+        : ChangeTrackingKeys.SharedDrive(userId == null ? provider.ChangeTrackingSharedDriveScope(driveId) : provider.ChangeTrackingUserScope(userId), driveId);
 
     public override async IAsyncEnumerable<ISourceProviderEntry> Enumerate([EnumeratorCancellation] CancellationToken cancellationToken)
     {

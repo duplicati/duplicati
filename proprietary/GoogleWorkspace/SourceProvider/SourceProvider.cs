@@ -35,6 +35,13 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     private readonly ConcurrentDictionary<string, string> _changeTrackingUserScopes = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// The scope the change tracking state of each shared drive listed at the tenant level is
+    /// stored under, by drive id. Set when the drive folder is enumerated, which happens before
+    /// the drive tree builds its key.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, string> _changeTrackingSharedDriveScopes = new(StringComparer.Ordinal);
+
+    /// <summary>
     /// What the provider learned during this enumeration about which paths it examined,
     /// and the tokens it carries between backups.
     /// </summary>
@@ -47,6 +54,38 @@ public sealed partial class SourceProvider : ISourceProviderModule, IChangeTrack
     /// <param name="scope">The scope</param>
     internal void SetChangeTrackingUserScope(string userId, string scope)
         => _changeTrackingUserScopes[userId] = scope;
+
+    /// <summary>
+    /// Records the scope the change tracking state of a shared drive listed at the tenant level
+    /// is stored under
+    /// </summary>
+    /// <param name="driveId">The drive id</param>
+    /// <param name="scope">The scope, or <c>null</c> for the default</param>
+    internal void SetChangeTrackingSharedDriveScope(string driveId, string? scope)
+    {
+        if (scope == null)
+            _changeTrackingSharedDriveScopes.TryRemove(driveId, out _);
+        else
+            _changeTrackingSharedDriveScopes[driveId] = scope;
+    }
+
+    /// <summary>
+    /// The scope the change tracking state of a shared drive listed at the tenant level is
+    /// stored under. It is <c>null</c>, the scope used before organizational units, unless the
+    /// drives are placed by organizational unit: the organizational unit is then part of the
+    /// scope, so a drive moved to another organizational unit, and thereby to another path, is
+    /// listed in full instead of continuing from the state of the old path.
+    /// </summary>
+    /// <param name="driveId">The drive id</param>
+    /// <returns>The scope</returns>
+    internal string? ChangeTrackingSharedDriveScope(string driveId)
+    {
+        if (_changeTrackingSharedDriveScopes.TryGetValue(driveId, out var scope))
+            return scope;
+        if (_options.UseOuPaths)
+            throw new InvalidOperationException($"The change tracking scope of shared drive {driveId} is not known, as the drive folder was not enumerated");
+        return null;
+    }
 
     /// <summary>
     /// The scope the change tracking state of a user is stored under. It is the primary email,

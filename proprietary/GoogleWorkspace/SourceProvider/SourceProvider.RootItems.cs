@@ -158,6 +158,51 @@ public sealed partial class SourceProvider
     }
 
     /// <summary>
+    /// Reads the organizational unit of every shared drive of the domain. The Drive API only
+    /// reports it to an administrator listing with domain administrator access, which also
+    /// returns drives the account is not a member of, so the listing is used only for this
+    /// lookup. When the listing is refused, a warning is logged and no drive has an
+    /// organizational unit, so every drive is placed in the root.
+    /// </summary>
+    /// <param name="driveService">The tenant-level Drive service.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The organizational unit id by drive id.</returns>
+    internal async Task<Dictionary<string, string>> ListSharedDriveOrgUnitIdsAsync(DriveService driveService, CancellationToken cancellationToken)
+    {
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        var request = driveService.Drives.List();
+        request.PageSize = DRIVE_SHARED_DRIVES_PAGE_SIZE;
+        request.UseDomainAdminAccess = true;
+        request.Fields = "nextPageToken,drives(id,orgUnitId)";
+
+        string? nextPageToken = null;
+        do
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            request.PageToken = nextPageToken;
+
+            Google.Apis.Drive.v3.Data.DriveList drives;
+            try
+            {
+                drives = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (Google.GoogleApiException ex) when (ex.HttpStatusCode is System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.Unauthorized)
+            {
+                Library.Logging.Log.WriteWarningMessage(LOGTAG, "SharedDriveOrgUnitsNotRead", ex, Strings.SharedDriveOrgUnitsNotRead(ex.Message));
+                return new Dictionary<string, string>(StringComparer.Ordinal);
+            }
+
+            foreach (var drive in drives?.Drives ?? [])
+                if (!string.IsNullOrEmpty(drive.Id) && !string.IsNullOrEmpty(drive.OrgUnitId))
+                    result[drive.Id] = drive.OrgUnitId;
+
+            nextPageToken = drives?.NextPageToken;
+        } while (!string.IsNullOrEmpty(nextPageToken));
+
+        return result;
+    }
+
+    /// <summary>
     /// Lists the Google Sites of the tenant, which Drive stores as files of the site MIME type
     /// across all drives.
     /// </summary>

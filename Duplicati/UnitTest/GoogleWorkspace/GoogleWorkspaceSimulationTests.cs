@@ -97,6 +97,8 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
         public readonly Dictionary<string, SimItem> Items = new(StringComparer.Ordinal);
         /// <summary>Change tokens below this are rejected</summary>
         public long MinValidToken;
+        /// <summary>The id of the organizational unit of a shared drive, without the <c>id:</c> prefix, or <c>null</c> for the root</summary>
+        public string? OrgUnitId;
 
         public string LogName => Id ?? $"My Drive {RootId}";
         public IEnumerable<SimItem> LiveItems => Items.Values.Where(x => x.DeletedAt == null);
@@ -189,6 +191,8 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
         public long Seq;
         public readonly List<SimUser> Users = [];
         public readonly List<SimOrgUnit> OrgUnits = [];
+        /// <summary>Shared drives of the domain the backup account is not a member of, only seen with domain administrator access</summary>
+        public readonly List<SimDrive> OtherDomainDrives = [];
         /// <summary>Whether the backup places the user folders by organizational unit</summary>
         public bool UseOuPaths;
         public readonly List<SimDrive> SharedDrives = [];
@@ -734,6 +738,10 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
                 }
             }
 
+            if (DrivesRx.IsMatch(path) && Query(uri, "useDomainAdminAccess") == "true")
+                return user == null
+                    ? Json(new { drives = tenant.SharedDrives.Concat(tenant.OtherDomainDrives).Select(d => new { id = d.Id, name = d.Name, kind = "drive#drive", orgUnitId = d.OrgUnitId }) })
+                    : Unknown(url);
             if (DrivesRx.IsMatch(path))
                 return Json(new { drives = tenant.SharedDrives.Select(d => new { id = d.Id, name = d.Name, kind = "drive#drive" }) });
             if (FilesRx.IsMatch(path))
@@ -989,6 +997,13 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
         string D(params string[] parts) => Util.AppendDirSeparator(Path.Combine(parts));
         string F(params string[] parts) => Path.Combine(parts);
 
+        // The folder of an organizational unit is nested in the folders of its ancestors
+        string OrgUnitFolder(string root, string orgUnitPath)
+        {
+            var orgUnit = tenant.OrgUnits.FirstOrDefault(x => x.OrgUnitPath == orgUnitPath);
+            return orgUnit == null ? root : D(OrgUnitFolder(root, orgUnit.ParentPath), orgUnit.Id);
+        }
+
         void AddDriveTree(SimDrive drive, string treePath)
         {
             paths.Add(treePath);
@@ -1009,12 +1024,17 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
             }
         }
 
-        void AddSharedDrives(string parentPath)
+        void AddSharedDrives(string parentPath, bool byOrgUnit)
         {
             paths.Add(parentPath);
+            if (byOrgUnit)
+                foreach (var orgUnit in tenant.OrgUnits)
+                    paths.Add(OrgUnitFolder(parentPath, orgUnit.OrgUnitPath));
+
             foreach (var drive in tenant.SharedDrives)
             {
-                var drivePath = D(parentPath, drive.Id!);
+                var orgUnitPath = tenant.OrgUnits.FirstOrDefault(x => x.Id == drive.OrgUnitId)?.OrgUnitPath ?? "/";
+                var drivePath = D(byOrgUnit ? OrgUnitFolder(parentPath, orgUnitPath) : parentPath, drive.Id!);
                 paths.Add(drivePath);
                 paths.Add(F(drivePath, "metadata.json"));
                 paths.Add(F(drivePath, "permissions.json"));
@@ -1026,20 +1046,13 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
         paths.Add(F(Mount, "google-workspace-backup-description.json"));
         paths.Add(D(Mount, "Users"));
 
-        // The folder of an organizational unit is nested in the folders of its ancestors
-        string OrgUnitFolder(string orgUnitPath)
-        {
-            var orgUnit = tenant.OrgUnits.FirstOrDefault(x => x.OrgUnitPath == orgUnitPath);
-            return orgUnit == null ? D(Mount, "Users") : D(OrgUnitFolder(orgUnit.ParentPath), orgUnit.Id);
-        }
-
         if (tenant.UseOuPaths)
             foreach (var orgUnit in tenant.OrgUnits)
-                paths.Add(OrgUnitFolder(orgUnit.OrgUnitPath));
+                paths.Add(OrgUnitFolder(D(Mount, "Users"), orgUnit.OrgUnitPath));
 
         foreach (var user in tenant.Users)
         {
-            var userPath = tenant.UseOuPaths ? D(OrgUnitFolder(user.OrgUnitPath), user.Id) : D(Mount, "Users", user.Email);
+            var userPath = tenant.UseOuPaths ? D(OrgUnitFolder(D(Mount, "Users"), user.OrgUnitPath), user.Id) : D(Mount, "Users", user.Email);
             paths.Add(userPath);
             paths.Add(F(userPath, "profile.json"));
 
@@ -1061,7 +1074,7 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
             var drive = D(userPath, "UserDrive");
             paths.Add(drive);
             AddDriveTree(user.MyDrive, D(drive, "root"));
-            AddSharedDrives(D(drive, "Shared Drives"));
+            AddSharedDrives(D(drive, "Shared Drives"), false);
 
             var calendars = D(userPath, "UserCalendar");
             paths.Add(calendars);
@@ -1090,7 +1103,7 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
             }
         }
 
-        AddSharedDrives(D(Mount, "Shared Drives"));
+        AddSharedDrives(D(Mount, "Shared Drives"), tenant.UseOuPaths);
         return (paths, contents);
     }
 
@@ -1280,6 +1293,54 @@ public class GoogleWorkspaceSimulationTests : BasicSetupHelper
         Assert.That(google.Unhandled, Is.Empty);
         requests = google.Requests.Skip(requestsBefore).ToList();
         Assert.That(requests.Any(x => x.Contains($"/users/{moved.Email}/history", StringComparison.Ordinal)), Is.True, "The moved user continues from the tokens of its new path");
+        if (mutator.HardFault)
+            actual = await BackupAndListAsync(tenant, options, []);
+        (paths, _) = Expected(tenant);
+        AssertSamePaths(actual, paths, $"the run after the move ({string.Join("; ", mutator.Log)})");
+    }
+
+    [Test]
+    [Category("GoogleWorkspace")]
+    public async Task OrgUnitLayoutRelistsAMovedSharedDriveInFullAsync()
+    {
+        var rng = new Random(13);
+        var tenant = Tenant.Create(rng);
+        tenant.UseOuPaths = true;
+        tenant.OrgUnits.Add(new SimOrgUnit("ou-sales", "/Sales", "Sales"));
+        tenant.OrgUnits.Add(new SimOrgUnit("ou-support", "/Support", "Support"));
+        var moved = tenant.SharedDrives[0];
+        moved.OrgUnitId = "ou-sales";
+        // A drive the backup account cannot read is only seen by the administrator listing
+        tenant.OtherDomainDrives.Add(new SimDrive { Id = "not-a-member", RootId = "not-a-member", Name = "Not a member", OrgUnitId = "ou-sales" });
+
+        var google = new SimulatedGoogle(tenant);
+        var mutator = new Mutator(tenant, rng);
+        var options = Prepare();
+
+        using var handlerScope = GoogleWorkspaceTestSupport.UseHandler(google);
+        var (paths, contents) = Expected(tenant);
+        Assert.That(paths, Does.Contain(Util.AppendDirSeparator(Path.Combine(Mount, "Shared Drives", "ou-sales", moved.Id!))), "The tenant-level drive folder is placed in its organizational unit");
+        Assert.That(paths, Does.Contain(Util.AppendDirSeparator(Path.Combine(Mount, "Shared Drives", tenant.SharedDrives[1].Id!))), "A drive in the root organizational unit stays directly below Shared Drives");
+        AssertSamePaths(await BackupAndListAsync(tenant, options, []), paths, "the first backup");
+        Assert.That(google.Unhandled, Is.Empty);
+        await AssertRestoredContentsAsync(options, contents, "the first backup");
+
+        // Moving the drive gives its tenant-level folder a new path, so the drive must be
+        // listed in full there; an incremental walk would list only the changes
+        mutator.ApplyRandomChanges(google);
+        moved.OrgUnitId = "ou-support";
+        var actual = await BackupAndListAsync(tenant, options, mutator.IgnoredWarnings);
+        Assert.That(google.Unhandled, Is.Empty);
+        if (mutator.HardFault)
+            actual = await BackupAndListAsync(tenant, options, []);
+        (paths, contents) = Expected(tenant);
+        AssertSamePaths(actual, paths, $"moving the drive ({string.Join("; ", mutator.Log)})");
+        await AssertRestoredContentsAsync(options, contents, "moving the drive");
+
+        // The next run continues from the tokens stored under the new organizational unit
+        mutator.ApplyRandomChanges(google);
+        actual = await BackupAndListAsync(tenant, options, mutator.IgnoredWarnings);
+        Assert.That(google.Unhandled, Is.Empty);
         if (mutator.HardFault)
             actual = await BackupAndListAsync(tenant, options, []);
         (paths, _) = Expected(tenant);

@@ -70,7 +70,7 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
 
             if (orgUnitUsers != null)
             {
-                var root = OrgUnitNode.Build(await provider.ListAllOrgUnitsAsync(cancellationToken).ConfigureAwait(false), orgUnitUsers);
+                var root = OrgUnitNode.Build(await provider.ListAllOrgUnitsAsync(cancellationToken).ConfigureAwait(false), orgUnitUsers, []);
                 await foreach (var entry in OrganizationalUnitFolderSourceEntry.EnumerateNode(provider, this.Path, this.Path, root, cancellationToken).ConfigureAwait(false))
                     yield return entry;
             }
@@ -88,8 +88,28 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
         else if (type == SourceItemType.MetaRootSharedDrives)
         {
             var driveService = provider.ApiHelper.GetDriveService();
-            await foreach (var n in SharedDrivesSourceEntry.EnumerateSharedDrives(provider, this.Path, null, userIsInactive: false, driveService, cancellationToken))
-                yield return n;
+            if (provider.Options.UseOuPaths)
+            {
+                // The drives the backup reads are the ones listed without administrator
+                // access; the administrator listing also returns drives the account is not
+                // a member of, and is only used to learn the organizational unit of each drive
+                var drives = new List<Google.Apis.Drive.v3.Data.Drive>();
+                await foreach (var drive in SourceProvider.ListAllSharedDrivesAsync(driveService, cancellationToken).ConfigureAwait(false))
+                    drives.Add(drive);
+
+                var orgUnitIds = await provider.ListSharedDriveOrgUnitIdsAsync(driveService, cancellationToken).ConfigureAwait(false);
+                foreach (var drive in drives)
+                    drive.OrgUnitId = orgUnitIds.GetValueOrDefault(drive.Id);
+
+                var root = OrgUnitNode.Build(await provider.ListAllOrgUnitsAsync(cancellationToken).ConfigureAwait(false), [], drives);
+                await foreach (var entry in OrganizationalUnitFolderSourceEntry.EnumerateNode(provider, this.Path, this.Path, root, cancellationToken).ConfigureAwait(false))
+                    yield return entry;
+            }
+            else
+            {
+                await foreach (var n in SharedDrivesSourceEntry.EnumerateSharedDrives(provider, this.Path, null, userIsInactive: false, driveService, cancellationToken))
+                    yield return n;
+            }
         }
         else if (type == SourceItemType.MetaRootSites)
         {

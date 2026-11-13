@@ -54,7 +54,7 @@ public class GoogleOrgUnitTests
             UserIn("east@x.test", "/sales/east"),
             UserIn("new@x.test", "/Sales/East/New"),
             UserIn("gone@x.test", "/Gone"),
-        ]);
+        ], []);
 
         Assert.That(root.Children.Select(x => x.Id), Is.EqualTo(new[] { "sales" }), "The id prefix is removed from the folder name");
         var sales = root.Children.Single();
@@ -69,12 +69,36 @@ public class GoogleOrgUnitTests
 
     [Test]
     [Category("GoogleWorkspace")]
+    public void BuildPlacesSharedDrivesByUnitId()
+    {
+        var units = new[] { Unit("sales", "/Sales", "/"), Unit("east", "/Sales/East", "/Sales") };
+        var root = OrgUnitNode.Build(units, [],
+        [
+            new Google.Apis.Drive.v3.Data.Drive { Id = "d-east", OrgUnitId = "east" },
+            new Google.Apis.Drive.v3.Data.Drive { Id = "d-prefixed", OrgUnitId = "id:sales" },
+            new Google.Apis.Drive.v3.Data.Drive { Id = "d-none" },
+            new Google.Apis.Drive.v3.Data.Drive { Id = "d-unknown", OrgUnitId = "gone" },
+        ]);
+
+        var sales = root.Children.Single();
+        Assert.That(sales.Children.Single().SharedDrives.Select(x => x.Id), Is.EqualTo(new[] { "d-east" }));
+        Assert.That(sales.SharedDrives.Select(x => x.Id), Is.EqualTo(new[] { "d-prefixed" }), "An id is matched with or without the prefix");
+        Assert.That(root.SharedDrives.Select(x => x.Id), Is.EquivalentTo(new[] { "d-none", "d-unknown" }), "A drive without a known unit is placed in the root");
+        Assert.That(root.Users, Is.Empty);
+    }
+
+    [Test]
+    [Category("GoogleWorkspace")]
     public void ChangeTrackingScopeDependsOnTheUnit()
     {
-        var root = OrgUnitNode.Build([Unit("a", "/A", "/"), Unit("b", "/B", "/")], []);
+        var root = OrgUnitNode.Build([Unit("a", "/A", "/"), Unit("b", "/B", "/")], [], []);
         var scopes = new[] { root }.Concat(root.Children).Select(x => x.ChangeTrackingUserScope("u@x.test")).ToList();
         Assert.That(scopes.Distinct().Count(), Is.EqualTo(3));
         Assert.That(scopes, Has.None.EqualTo("u@x.test"), "The scope never equals the one used without organizational units");
+
+        var driveScopes = new[] { root }.Concat(root.Children).Select(x => x.ChangeTrackingSharedDriveScope()).ToList();
+        Assert.That(driveScopes.Distinct().Count(), Is.EqualTo(3));
+        Assert.That(driveScopes, Has.None.Null.And.None.Empty, "The scope never equals the one used without organizational units");
     }
 
     [Test]
