@@ -31,7 +31,7 @@ using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Backend
 {
-    public class WEBDAV : IStreamingBackend, IRenameEnabledBackend
+    public class WEBDAV : IStreamingBackend, IRenameEnabledBackend, IModificationTimeEnabledBackend
     {
         /// <summary>
         /// The integrated authentication option name
@@ -708,11 +708,29 @@ namespace Duplicati.Library.Backend
         #region IStreamingBackend Members
 
         ///<inheritdoc/>
-        public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
+        public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
+            => PutAsync(remotename, stream, null, cancelToken);
+
+        ///<inheritdoc/>
+        public Task PutAsync(string remotename, Stream stream, DateTime lastModifiedUtc, CancellationToken cancelToken)
+            => PutAsync(remotename, stream, (DateTime?)lastModifiedUtc, cancelToken);
+
+        /// <summary>
+        /// Uploads the stream, optionally asking the server to keep the given modification time
+        /// </summary>
+        /// <param name="remotename">The remote filename</param>
+        /// <param name="stream">The stream to upload</param>
+        /// <param name="lastModifiedUtc">The modification time to keep, or null for the time of the upload</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        private async Task PutAsync(string remotename, Stream stream, DateTime? lastModifiedUtc, CancellationToken cancelToken)
         {
             try
             {
                 using var request = CreateRequest(remotename, HttpMethod.Put);
+                // Nextcloud and ownCloud set the modification time from this header, in seconds
+                // since the epoch; other servers ignore it
+                if (lastModifiedUtc.HasValue)
+                    request.Headers.Add("X-OC-Mtime", Utility.Utility.NormalizeDateTimeToEpochSeconds(lastModifiedUtc.Value).ToString(System.Globalization.CultureInfo.InvariantCulture));
                 using var timeoutStream = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
                 request.Content = new StreamContent(timeoutStream);
                 request.Content.Headers.ContentLength = stream.Length;

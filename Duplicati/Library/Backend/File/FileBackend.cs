@@ -33,7 +33,7 @@ namespace Duplicati.Library.Backend
     /// <summary>
     /// The file backend implementation
     /// </summary>
-    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend, ILinkEnabledBackend, IFolderDeleteEnabledBackend
+    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend, ILinkEnabledBackend, IFolderDeleteEnabledBackend, IModificationTimeEnabledBackend
     {
         /// <summary>
         /// The option key for the destination marker file
@@ -412,6 +412,21 @@ namespace Duplicati.Library.Backend
 
         }
 #endif
+
+        /// <inheritdoc />
+        public async Task PutAsync(string targetFilename, Stream sourceStream, DateTime lastModifiedUtc, CancellationToken cancelToken)
+        {
+            await PutAsync(targetFilename, sourceStream, cancelToken).ConfigureAwait(false);
+            try
+            {
+                systemIO.FileSetLastWriteTimeUtc(GetRemoteName(targetFilename), lastModifiedUtc.Kind == DateTimeKind.Local ? lastModifiedUtc.ToUniversalTime() : lastModifiedUtc);
+            }
+            catch (Exception ex)
+            {
+                MapException(ex);
+                throw;
+            }
+        }
 
         /// <inheritdoc />
         public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)

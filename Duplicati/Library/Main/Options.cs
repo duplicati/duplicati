@@ -686,6 +686,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("sync-recheck", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncRecheckShort, Strings.Options.SyncRecheckLong, "false"),
             new CommandLineArgument(SYNC_THEN_DELETE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncThenDeleteShort, Strings.Options.SyncThenDeleteLong, "false"),
             new CommandLineArgument("sync-verify-hash", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncVerifyHashShort, Strings.Options.SyncVerifyHashLong, "false"),
+            new CommandLineArgument("sync-keep-modification-time", CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncKeepModificationTimeShort, Strings.Options.SyncKeepModificationTimeLong, "false"),
             new CommandLineArgument("sync-remote-state", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.SyncRemoteStateShort, Strings.Options.SyncRemoteStateLong, Enum.GetName(typeof(SyncRemoteState), SyncRemoteState.UseRemoteState), null, Enum.GetNames(typeof(SyncRemoteState))),
             new CommandLineArgument(SYNC_SNAPSHOT_FOLDERS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncSnapshotFoldersShort, Strings.Options.SyncSnapshotFoldersLong(SYNC_THEN_DELETE_OPTION, SYNC_KEEP_SNAPSHOTS_OPTION, SYNC_SNAPSHOT_DISABLE_HARDLINKS_OPTION), "false"),
             new CommandLineArgument(SYNC_SNAPSHOT_DISABLE_HARDLINKS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncSnapshotDisableHardlinksShort, Strings.Options.SyncSnapshotDisableHardlinksLong(SYNC_SNAPSHOT_FOLDERS_OPTION), "false"),
@@ -2348,6 +2349,11 @@ namespace Duplicati.Library.Main
         /// Verifies file content using SHA-256 hashes when size and time match.
         /// </summary>
         public bool SyncVerifyHash => GetBool("sync-verify-hash");
+
+        /// <summary>
+        /// Records the modification time of the local files on the uploaded files, where the destination supports it.
+        /// </summary>
+        public bool SyncKeepModificationTime => GetBool("sync-keep-modification-time");
 
         /// <summary>
         /// Controls how the sync operation determines the remote state of each folder:
