@@ -57,6 +57,13 @@ public interface IJWTTokenProvider
     /// <param name="UserId">The user ID the token is for.</param>
     /// <param name="Counter">The counter of the token family the token is for.</param>
     public record RefreshToken(DateTimeOffset ValidFrom, DateTimeOffset Expiration, string TokenFamilyId, string UserId, int Counter);
+    /// <summary>
+    /// Represents a JWT token that can be used to access resources via the MCP endpoint.
+    /// </summary>
+    /// <param name="ValidFrom">The time the token was created.</param>
+    /// <param name="Expiration">The time the token expires.</param>
+    /// <param name="TokenId">The ID of the token in the MCP token store.</param>
+    public record McpToken(DateTimeOffset ValidFrom, DateTimeOffset Expiration, string TokenId);
 
     /// <summary>
     /// Creates a JWT token that only works for a single operation.
@@ -71,6 +78,21 @@ public interface IJWTTokenProvider
     /// <param name="userId">The user ID the token is for.</param>
     /// <returns>The JWT token.</returns>
     string CreateSigninToken(string userId);
+
+    /// <summary>
+    /// Creates a token that is only accepted by the MCP endpoint
+    /// </summary>
+    /// <param name="tokenId">The ID of the token in the MCP token store</param>
+    /// <param name="expires">The time the token expires</param>
+    /// <returns>The token</returns>
+    string CreateMcpToken(string tokenId, DateTime expires);
+
+    /// <summary>
+    /// Reads and validates an MCP token
+    /// </summary>
+    /// <param name="token">The token to read</param>
+    /// <returns>The content of the token</returns>
+    McpToken ReadMcpToken(string token);
     /// <summary>
     /// Creates a JWT token that can be used to access resources.
     /// </summary>

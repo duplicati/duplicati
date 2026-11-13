@@ -267,10 +267,10 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // Verify the target file blocks that may already exist.
                         long bytes_verified;
                         List<BlockRequest> missing_blocks, verified_blocks;
-                        bool target_differs;
+                        bool target_differs, target_truncated;
                         try
                         {
-                            (bytes_verified, missing_blocks, verified_blocks, target_differs) = await VerifyTargetBlocksAsync(file, restoreDestination, blocks, filehasher, blockhasher, buffer, options, results, results.TaskControl.ProgressToken).ConfigureAwait(false);
+                            (bytes_verified, missing_blocks, verified_blocks, target_differs, target_truncated) = await VerifyTargetBlocksAsync(file, restoreDestination, blocks, filehasher, blockhasher, buffer, options, results, results.TaskControl.ProgressToken).ConfigureAwait(false);
                         }
                         // Now that the reads observe the token, a shutdown reaches this handler.
                         // Letting it through matters twice over: continuing would carry on with
@@ -725,7 +725,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                         }
 
                         sw_work_results?.Start();
-                        if (empty_file_or_symlink || bytes_written > 0)
+                        // A file that was cut back to the restored content has changed,
+                        // although nothing was written to it
+                        if (empty_file_or_symlink || bytes_written > 0 || target_truncated)
                         {
                             // Keep track of the restored files and their sizes
                             lock (results)
@@ -1187,13 +1189,14 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// <param name="options">The Duplicati configuration options.</param>
         /// <param name="results">The restoration results.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>An awaitable `Task`, which returns the number of bytes verified, the data blocks that are missing, the data blocks that are verified, and whether the file that is there is a different file although every block matches.</returns>
-        private static async Task<(long, List<BlockRequest>, List<BlockRequest>, bool)> VerifyTargetBlocksAsync(FileRequest file, IRestoreDestinationProvider restoreDestination, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, byte[] buffer, Options options, RestoreResults results, CancellationToken cancellationToken)
+        /// <returns>An awaitable `Task`, which returns the number of bytes verified, the data blocks that are missing, the data blocks that are verified, whether the file that is there is a different file although every block matches, and whether the file was cut back to the restored content, which is all it needed.</returns>
+        private static async Task<(long, List<BlockRequest>, List<BlockRequest>, bool, bool)> VerifyTargetBlocksAsync(FileRequest file, IRestoreDestinationProvider restoreDestination, BlockRequest[] blocks, System.Security.Cryptography.HashAlgorithm filehasher, System.Security.Cryptography.HashAlgorithm blockhasher, byte[] buffer, Options options, RestoreResults results, CancellationToken cancellationToken)
         {
             long bytes_read = 0;
             List<BlockRequest> missing_blocks = [];
             List<BlockRequest> verified_blocks = [];
             var target_differs = false;
+            var target_truncated = false;
 
             // Check if the file exists. A symbolic link has no content to compare: it is
             // made from its metadata. What is at its path may be a link as well, and reading
@@ -1280,6 +1283,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                             else if (options.Dryrun)
                             {
                                 Logging.Log.WriteDryrunMessage(LOGTAG, "DryrunRestore", @$"Would have truncated ""{file.TargetPath}"" from {currentLength} to {file.Length}");
+                                target_truncated = true;
                             }
                             else
                             {
@@ -1291,6 +1295,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                                 {
                                     using var f = await restoreDestination.OpenWrite(file.TargetPath, cancellationToken).ConfigureAwait(false);
                                     f.SetLength(file.Length);
+                                    target_truncated = true;
                                 }
                                 catch (Exception) when (!RestoreCancellation.IsShutdownRequested(results.TaskControl))
                                 {
@@ -1311,7 +1316,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 missing_blocks.AddRange(blocks);
             }
 
-            return (bytes_read, missing_blocks, verified_blocks, target_differs);
+            return (bytes_read, missing_blocks, verified_blocks, target_differs, target_truncated);
         }
 
         /// <summary>

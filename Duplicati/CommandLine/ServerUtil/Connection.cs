@@ -159,19 +159,14 @@ public class Connection
     }
 
     /// <summary>
-    /// Connects to the server
+    /// Creates the HTTP handler for requests to the server, which trusts the certificates given in the settings
+    /// and the self-signed certificate of a server whose database can be read
     /// </summary>
     /// <param name="settings">The settings to use for the connection</param>
-    /// <param name="obtainRefreshToken">Whether to obtain a refresh token</param>
     /// <param name="console">Console messages interceptor</param>
-    /// <returns>The connection</returns>
-    public static async Task<Connection> ConnectAsync(Settings settings, bool obtainRefreshToken = false, OutputInterceptor? console = null)
+    /// <returns>The handler</returns>
+    private static HttpClientHandler CreateHttpHandler(Settings settings, OutputInterceptor? console)
     {
-        if (console != null)
-            console.AppendConsoleMessage($"Connecting to {settings.HostUrl}...");
-        else
-            Console.WriteLine($"Connecting to {settings.HostUrl}...");
-
         var trustedCertificateHashes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (!string.IsNullOrWhiteSpace(settings.AcceptedHostCertificate))
             trustedCertificateHashes.UnionWith(settings.AcceptedHostCertificate.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
@@ -224,6 +219,47 @@ public class Connection
                 acceptAll ? null : [.. trustedCertificateHashes],
                 settings.IgnoreRevocationFailure);
         }
+
+        return httpHandler;
+    }
+
+    /// <summary>
+    /// Creates a client that sends a fixed bearer token, does not log in, and has no request timeout.
+    /// It is used for the MCP endpoint, where a call can wait for minutes, and with an MCP token,
+    /// which the login endpoints do not accept.
+    /// </summary>
+    /// <param name="settings">The settings to use for the connection</param>
+    /// <param name="token">The token to send</param>
+    /// <param name="console">Console messages interceptor</param>
+    /// <returns>The client</returns>
+    public static HttpClient CreateTokenClient(Settings settings, string token, OutputInterceptor? console)
+    {
+        var client = new HttpClient(CreateHttpHandler(settings, console)) { Timeout = Timeout.InfiniteTimeSpan };
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+
+    /// <summary>
+    /// The access token this connection sends, or <c>null</c> if it has none.
+    /// Access tokens are short-lived, so a long-running caller has to connect again when it is refused.
+    /// </summary>
+    public string? AccessToken => client.DefaultRequestHeaders.Authorization?.Parameter;
+
+    /// <summary>
+    /// Connects to the server
+    /// </summary>
+    /// <param name="settings">The settings to use for the connection</param>
+    /// <param name="obtainRefreshToken">Whether to obtain a refresh token</param>
+    /// <param name="console">Console messages interceptor</param>
+    /// <returns>The connection</returns>
+    public static async Task<Connection> ConnectAsync(Settings settings, bool obtainRefreshToken = false, OutputInterceptor? console = null)
+    {
+        if (console != null)
+            console.AppendConsoleMessage($"Connecting to {settings.HostUrl}...");
+        else
+            Console.WriteLine($"Connecting to {settings.HostUrl}...");
+
+        var httpHandler = CreateHttpHandler(settings, console);
 
         var client = new HttpClient(httpHandler)
         {
@@ -309,7 +345,13 @@ public class Connection
         {
             // Try obtaining the password from the user
             if (string.IsNullOrWhiteSpace(settings.Password))
+            {
+                // A password cannot be typed when the input is not a terminal, as with the mcp command, where the input carries the protocol
+                if (Console.IsInputRedirected)
+                    throw new UserReportedException("A password is needed and cannot be asked for, as the input is not a terminal. Pass it with --password, or run the login command first.");
+
                 settings = settings with { Password = Library.Utility.Utility.ReadSecretFromConsole("Enter server password: ") };
+            }
 
             if (string.IsNullOrWhiteSpace(settings.Password))
                 throw new UserReportedException("Password is required");
@@ -680,6 +722,67 @@ public class Connection
         return accessToken;
     }
 
+
+    /// <summary>
+    /// The options for reading the MCP token responses, which use the server's property names and enum names
+    /// </summary>
+    private static readonly JsonSerializerOptions McpTokenJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+    };
+
+    /// <summary>
+    /// Issues a token that gives an agent access to the MCP endpoint
+    /// </summary>
+    /// <param name="input">The name and scope of the token</param>
+    /// <returns>The description of the token, and the token itself</returns>
+    public async Task<WebserverCore.Dto.V2.CreateMcpTokenOutputDto> CreateMcpTokenAsync(WebserverCore.Dto.V2.CreateMcpTokenInputDto input)
+        => await ReadV2ResultAsync<WebserverCore.Dto.V2.CreateMcpTokenOutputDto>(
+            client.PostAsync(V2Uri("mcp/tokens"), JsonContent.Create(input, options: McpTokenJsonOptions)))
+            ?? throw new UserReportedException("Failed to parse response");
+
+    /// <summary>
+    /// Lists the issued MCP tokens
+    /// </summary>
+    /// <returns>The descriptions of the tokens</returns>
+    public async Task<WebserverCore.Dto.V2.McpTokenDto[]> ListMcpTokensAsync()
+        => await ReadV2ResultAsync<WebserverCore.Dto.V2.McpTokenDto[]>(client.GetAsync(V2Uri("mcp/tokens")))
+            ?? throw new UserReportedException("Failed to parse response");
+
+    /// <summary>
+    /// Revokes an MCP token
+    /// </summary>
+    /// <param name="id">The ID of the token</param>
+    /// <returns>The task</returns>
+    public async Task DeleteMcpTokenAsync(string id)
+        => await ReadV2ResultAsync<object>(client.DeleteAsync(V2Uri($"mcp/token/{Uri.EscapeDataString(id)}")));
+
+    /// <summary>
+    /// Builds the address of a V2 API endpoint; the client itself is rooted at the V1 API
+    /// </summary>
+    /// <param name="path">The path below the V2 API</param>
+    /// <returns>The address</returns>
+    private Uri V2Uri(string path)
+        => new(client.BaseAddress!, $"../v2/{path}");
+
+    /// <summary>
+    /// Reads the response of a V2 API endpoint, which reports failures in its envelope and not in the HTTP status
+    /// </summary>
+    /// <typeparam name="T">The type of the data in the envelope</typeparam>
+    /// <param name="responseTask">The task producing the response</param>
+    /// <returns>The data</returns>
+    private static async Task<T?> ReadV2ResultAsync<T>(Task<HttpResponseMessage> responseTask)
+    {
+        var response = await responseTask;
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
+        var envelope = await response.Content.ReadFromJsonAsync<WebserverCore.Dto.V2.ResponseEnvelope<T>>(McpTokenJsonOptions)
+            ?? throw new UserReportedException("Failed to parse response");
+        if (!envelope.Success)
+            throw new UserReportedException(envelope.Error ?? $"The server reported the error {envelope.StatusCode}");
+
+        return envelope.Data;
+    }
 
     /// <summary>
     /// The server error structure for JSON deserialization

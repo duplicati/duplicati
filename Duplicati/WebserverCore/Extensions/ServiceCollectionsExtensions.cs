@@ -69,6 +69,7 @@ public static class ServiceCollectionsExtensions
                 return new JWTTokenProvider(() => jwtConfigProvider.Current);
             })
             .AddTransient<ITokenFamilyStore, TokenFamilyStore>()
+            .AddTransient<IMcpTokenStore, McpTokenStore>()
             .AddTransient<ILoginProvider, LoginProvider>()
             .AddSingleton<ILoginAttemptThrottle>(_ => new LoginAttemptThrottle())
             .AddSingleton<IRemoteController, RemoteControllerService>()
@@ -83,6 +84,8 @@ public static class ServiceCollectionsExtensions
             .AddTransient<INotificationService, NotificationService>()
             .AddTransient<IBackupListService, BackupListService>()
             .AddTransient<ITaskQueueService, TaskQueueService>()
+            .AddTransient<IBackupTaskService, BackupTaskService>()
+            .AddSingleton<ITaskWaitService, TaskWaitService>()
             .AddTransient<IFolderStatusService, FolderStatusService>()
             .AddSingleton<IWebsocketAuthenticator, WebsocketAuthenticator>()
             .AddSingleton(logWriteHandler)

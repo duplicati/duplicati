@@ -38,7 +38,8 @@ namespace Duplicati.WebserverCore.Abstractions;
 /// <param name="TaskFinished">The time the task finished</param>
 /// <param name="Exception">The exception that was thrown</param>
 /// <param name="ErrorMessage">The errors reported by a task that finished without throwing, or <c>null</c> if it reported none</param>
-public sealed record CachedTaskResult(long TaskID, string? BackupId, DateTime? TaskStarted, DateTime? TaskFinished, Exception? Exception, string? ErrorMessage = null);
+/// <param name="Summary">The summary of the results of a task that finished without throwing, or <c>null</c> if it has no results</param>
+public sealed record CachedTaskResult(long TaskID, string? BackupId, DateTime? TaskStarted, DateTime? TaskFinished, Exception? Exception, string? ErrorMessage, TaskResultSummary? Summary);
 
 /// <summary>
 /// Class to encapsulate a thread that runs a list of queued operations

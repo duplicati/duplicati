@@ -162,7 +162,7 @@ public class QueueRunnerService(
 
             // If the task is completed, don't call OnFinished again
             completed = true;
-            AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, task.TaskFinished ?? DateTime.Now, null, GetResultErrorMessage(result)));
+            AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, task.TaskFinished ?? DateTime.Now, null, GetResultErrorMessage(result), TaskResultSummary.FromResults(result)));
             if (task.OnFinished != null)
                 await task.OnFinished(null).ConfigureAwait(false);
         }
@@ -171,14 +171,14 @@ public class QueueRunnerService(
             // The run was skipped before it started, which is not an error
             Library.Logging.Log.WriteInformationMessage(LOGTAG, "ScheduledRunSkipped", ex.Message);
             completed = true;
-            AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, DateTime.UtcNow, null));
+            AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, DateTime.UtcNow, null, null, null));
         }
         catch (Exception ex)
         {
             connection.LogError(task.BackupID, "Error in worker", ex);
             if (!completed)
             {
-                AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, task.TaskFinished ?? DateTime.Now, ex));
+                AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, task.TaskFinished ?? DateTime.Now, ex, null, null));
                 if (task.OnFinished != null)
                     await task.OnFinished(ex).ConfigureAwait(false);
             }

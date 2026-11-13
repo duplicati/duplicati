@@ -35,7 +35,7 @@ public class PreSharedKeyFilter : IEndpointFilter
     /// <param name="request">The request to check</param>
     /// <param name="preSharedKey">The expected pre-shared key</param>
     /// <returns><c>true</c> if the request carries the key; <c>false</c> otherwise</returns>
-    private static bool HasValidPreSharedKey(HttpRequest request, string preSharedKey)
+    public static bool HasValidPreSharedKey(HttpRequest request, string preSharedKey)
     {
         if (!request.Headers.TryGetValue(HeaderName, out var values) || values.Count != 1)
             return false;

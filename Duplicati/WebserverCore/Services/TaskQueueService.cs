@@ -35,8 +35,10 @@ public class TaskQueueService(IQueueRunnerService queueRunnerService) : ITaskQue
     /// <inheritdoc/>
     public GetTaskStateDto GetTaskInfo(long taskid)
     {
-        var task = queueRunnerService.GetCurrentTask();
+        // A task moves from the queue to running, so the queue is read first. In the other order
+        // a task that starts between the two reads is in neither, and would be reported as unknown.
         var tasks = queueRunnerService.GetCurrentTasks();
+        var task = queueRunnerService.GetCurrentTask();
 
         if (task != null && task.TaskID == taskid)
         {
@@ -61,21 +63,21 @@ public class TaskQueueService(IQueueRunnerService queueRunnerService) : ITaskQue
             );
         }
 
-        if (tasks.FirstOrDefault(x => x.TaskID == taskid) == null)
-        {
-            var res = queueRunnerService.GetCachedTaskResults(taskid);
-            if (res == null)
-                throw new NotFoundException("No such task found");
-
+        // The list of waiting tasks was read first, so a task in it can have run to the end since.
+        // A task with a result has finished, whatever the list says.
+        var res = queueRunnerService.GetCachedTaskResults(taskid);
+        if (res != null)
             return new GetTaskStateDto(
                 Status: res.Exception == null ? "Completed" : "Failed",
                 ID: taskid,
-                TaskStarted: res?.TaskStarted,
-                TaskFinished: res?.TaskFinished,
-                ErrorMessage: res?.Exception?.Message ?? res?.ErrorMessage,
-                Exception: res?.Exception?.ToString()
+                TaskStarted: res.TaskStarted,
+                TaskFinished: res.TaskFinished,
+                ErrorMessage: res.Exception?.Message ?? res.ErrorMessage,
+                Exception: res.Exception?.ToString()
             );
-        }
+
+        if (tasks.FirstOrDefault(x => x.TaskID == taskid) == null)
+            throw new NotFoundException("No such task found");
 
         return new GetTaskStateDto("Waiting", taskid, null, null);
     }

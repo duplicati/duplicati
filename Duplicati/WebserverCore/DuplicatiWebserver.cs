@@ -34,6 +34,7 @@ using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto.V2;
 using Duplicati.WebserverCore.Exceptions;
 using Duplicati.WebserverCore.Extensions;
+using Duplicati.WebserverCore.Mcp;
 using Duplicati.WebserverCore.Middlewares;
 using Duplicati.WebserverCore.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -60,6 +61,10 @@ public class DuplicatiWebserver
     /// The name of the CORS policy
     /// </summary>
     public const string CorsPolicyName = "CustomCorsPolicy";
+    /// <summary>
+    /// The name of the authentication scheme that accepts the credentials of the API
+    /// </summary>
+    public const string CombinedSchemeName = "CombinedScheme";
 
     /// <summary>
     /// The configuration for the server
@@ -252,9 +257,10 @@ public class DuplicatiWebserver
             .AddTransient(sp => sp.GetRequiredService<IJWTConfigProvider>().Current)
             .AddSingleton(new PreAuthTokenConfig(settings.PreAuthTokens))
             .AddAuthorization()
-            .AddAuthentication(options => { options.DefaultScheme = "CombinedScheme"; })
+            .AddAuthentication(options => { options.DefaultScheme = CombinedSchemeName; })
             .AddScheme<AuthenticationSchemeOptions, PreAuthTokenHandler>(PreAuthTokenHandler.SchemeName, null)
-            .AddPolicyScheme("CombinedScheme", $"JWT or {PreAuthTokenHandler.SchemeName}", options =>
+            .AddScheme<AuthenticationSchemeOptions, McpTokenHandler>(McpTokenHandler.SchemeName, null)
+            .AddPolicyScheme(CombinedSchemeName, $"JWT or {PreAuthTokenHandler.SchemeName}", options =>
             {
                 options.ForwardDefaultSelector = context =>
                 {
@@ -309,6 +315,7 @@ public class DuplicatiWebserver
         builder.Services.AddHealthChecks()
             .AddCheck("Basic", () => HealthCheckResult.Healthy("Service is running"));
 
+        builder.Services.AddDuplicatiMcp();
         builder.Services.AddDuplicati(connection, logWriteHandler, applicationSettings, settings.ChangeTracking);
 
         // Prevent logs from spamming the console, but allow enabling for debugging
@@ -319,6 +326,7 @@ public class DuplicatiWebserver
                 .AddFilter("Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager", LogLevel.Error)
                 .AddFilter("System", LogLevel.Warning)
                 .AddFilter("Duplicati", LogLevel.Warning)
+                .AddFilter("ModelContextProtocol", LogLevel.Warning)
                 .AddFilter("Microsoft.AspNetCore.Diagnostics", LogLevel.None);
 
             // The event log of Windows has a filter rule of its own, which takes precedence
@@ -356,6 +364,7 @@ public class DuplicatiWebserver
         if (useCors)
             app.UseCors(CorsPolicyName);
 
+        app.UseDuplicatiMcpAccessControl();
         app.UseAuthentication();
         app.UseAuthorization();
 
@@ -508,6 +517,7 @@ public class DuplicatiWebserver
     public Task StartAsync()
     {
         App.MapHealthChecks("/health");
+        App.MapDuplicatiMcp();
         App.AddEndpoints(CorsEnabled)
             .UseNotifications("/notifications");
 

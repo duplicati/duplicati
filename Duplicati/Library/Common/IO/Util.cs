@@ -330,5 +330,227 @@ namespace Duplicati.Library.Common.IO
             // 5. Re-attach the alternate data stream suffix at the very end
             return resolvedPath + streamSuffix;
         }
+
+        /// <summary>
+        /// The number of links followed before a path is refused, which stops on links that point at each other
+        /// </summary>
+        private const int MaxLinksFollowed = 10;
+
+        /// <summary>
+        /// Resolves every symbolic link and junction in a path, so the result is the path that the operating
+        /// system ends up in. The part of the path that does not exist is kept as it is, as nothing in it is a link.
+        /// </summary>
+        /// <remarks>
+        /// This is the thorough counterpart of <see cref="GetFinalPath"/>, which looks at the last existing
+        /// segment only and is what <see cref="IsPathInsideTarget"/> uses for each path of a restore.
+        /// A folder that is reached through a link is not a link itself, so looking at the last segment finds
+        /// no link in such a path. Here every existing segment is examined, at the cost of a file system call
+        /// for each, and a path is refused when a segment cannot be examined: that suits a single path that
+        /// is checked against a limit somebody else has set, and not every file of a restore.
+        /// </remarks>
+        /// <param name="path">The path to resolve.</param>
+        /// <returns>The path with all links resolved.</returns>
+        /// <exception cref="IOException">A segment of the path cannot be examined, or the path has more links than are followed.</exception>
+        public static string ResolveAllLinks(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return path;
+
+            // 1. Separate the Alternate Data Stream suffix if it exists
+            var basePath = SystemIO.IO_OS.GetAlternateDataStreamParent(path);
+            var streamSuffix = path.Substring(basePath.Length);
+
+            // 2. Make the path absolute. This removes the relative segments as text, which is also
+            // what the file operations do with a path before they hand it to the operating system.
+            var fullPath = Path.GetFullPath(basePath);
+
+            // 3. Walk down from the root, replacing each link that is found with its target.
+            // The root is not examined, as resolving a Windows drive root can fail on some systems.
+            var resolved = Path.GetPathRoot(fullPath) ?? string.Empty;
+            var pending = new Stack<string>(SplitSegments(fullPath.Substring(resolved.Length)).Reverse());
+            var followed = 0;
+
+            while (pending.TryPop(out var segment))
+            {
+                if (segment == ".")
+                    continue;
+
+                if (segment == "..")
+                {
+                    // Only the target of a link has these left. The operating system goes to the parent of the folder
+                    // that was reached, which after a link is not the folder that the text before the segment names.
+                    resolved = Path.GetDirectoryName(resolved) ?? resolved;
+                    continue;
+                }
+
+                var parent = resolved;
+                resolved = Path.Combine(parent, segment);
+
+                string? linkTarget;
+                try
+                {
+                    // The attributes say if this is a link without reading it. They are -1 for a path that does not exist.
+                    var info = new DirectoryInfo(resolved);
+                    var attributes = info.Attributes;
+                    if ((int)attributes == -1 || !attributes.HasFlag(FileAttributes.ReparsePoint))
+                        continue;
+
+                    linkTarget = OperatingSystem.IsWindows()
+                        ? GetWindowsLinkTarget(info, resolved, path, ref followed)
+                        : info.LinkTarget ?? throw new IOException($"The symbolic link cannot be read: {resolved}");
+                }
+                catch (Exception ex) when (ex is not IOException)
+                {
+                    // A segment that cannot be examined is not known to be a folder, so where the path leads is not known
+                    throw new IOException($"Failed to examine {resolved}: {ex.Message}", ex);
+                }
+
+                // On Windows this is a reparse point that leads nowhere else
+                if (linkTarget == null)
+                    continue;
+
+                if (++followed > MaxLinksFollowed)
+                    throw new IOException($"Too many levels of symbolic links in the path: {path}");
+
+                // A relative target continues from the folder the link is in; any other starts over from its root.
+                // The segments of the target are followed like the rest, as they can be links and relative segments.
+                resolved = parent;
+                if (Path.IsPathRooted(linkTarget))
+                {
+                    resolved = Path.GetPathRoot(linkTarget) ?? string.Empty;
+                    linkTarget = linkTarget.Substring(resolved.Length);
+                }
+
+                foreach (var targetSegment in SplitSegments(linkTarget).Reverse())
+                    pending.Push(targetSegment);
+            }
+
+            // 4. Re-attach the alternate data stream suffix at the very end
+            return resolved + streamSuffix;
+        }
+
+        /// <summary>
+        /// Gets where a link on Windows leads, as an absolute path. Windows is asked for the end of the chain of links,
+        /// as the target that a link holds can be a name that only Windows can follow, such as the name of a volume.
+        /// </summary>
+        /// <param name="info">The link</param>
+        /// <param name="linkPath">The path of the link</param>
+        /// <param name="path">The path that is being resolved, for the error message</param>
+        /// <param name="followed">The number of links followed so far, which is increased by the links the chain has after the first</param>
+        /// <returns>The absolute path the link leads to, or <c>null</c> if it leads nowhere else</returns>
+        private static string? GetWindowsLinkTarget(DirectoryInfo info, string linkPath, string path, ref int followed)
+        {
+            // The links of the chain are counted one step at a time, before Windows is asked to follow them all.
+            // That keeps the limit on the number of links, and stops on links that point at each other.
+            FileSystemInfo step = info;
+            string? firstStep = null;
+            var steps = 0;
+            while (step.ResolveLinkTarget(returnFinalTarget: false) is { } next)
+            {
+                firstStep ??= next.ToString();
+                if (followed + ++steps > MaxLinksFollowed)
+                    throw new IOException($"Too many levels of symbolic links in the path: {path}");
+
+                // The chain ends on something that is not a link, or is not there, which cannot be asked for its target
+                var attributes = next.Attributes;
+                if ((int)attributes == -1 || !attributes.HasFlag(FileAttributes.ReparsePoint))
+                    break;
+
+                step = next;
+            }
+
+            // The caller counts the first link
+            followed += Math.Max(0, steps - 1);
+
+            // The text a link holds does not say if it is relative, but the target of one step does:
+            // it is the text itself for an absolute target, and joined to the folder of the link for a relative one
+            var ownTarget = info.LinkTarget;
+            var isRelative = !string.Equals(ownTarget, firstStep, StringComparison.Ordinal);
+
+            // A folder that a volume is mounted on is the root of that volume, and leads nowhere else. Following it
+            // would give the drive letter of the volume, if it has one, which is another spelling of the same folder.
+            if (!isRelative && IsWindowsVolumeName(ownTarget))
+                return null;
+
+            // The text is used as it was computed: as a full name, a path that is not rooted is placed in the current folder
+            var target = ToWindowsPath(info.ResolveLinkTarget(returnFinalTarget: true)?.ToString());
+            if (target == null)
+                return null;
+
+            if (!Path.Exists(target) && !string.IsNullOrEmpty(ownTarget))
+            {
+                // Windows does not follow a link without a target, and the text is then put together from the last link
+                // of the chain, which is wrong for a target that starts at the root of a drive. One step is followed
+                // instead, with the rules for a path that is relative to a folder, and the caller follows the next.
+                target = isRelative
+                    ? Path.GetFullPath(ownTarget, Path.GetDirectoryName(linkPath) ?? linkPath)
+                    : ToWindowsPath(ownTarget);
+                if (target == null)
+                    return null;
+            }
+
+            // A link that the server of a share follows leads to itself
+            var separators = new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
+            return string.Equals(target.TrimEnd(separators), linkPath.TrimEnd(separators), StringComparison.OrdinalIgnoreCase)
+                ? null
+                : target;
+        }
+
+        /// <summary>
+        /// Checks if a link target on Windows is the name of a volume and nothing more
+        /// </summary>
+        /// <param name="target">The target</param>
+        /// <returns><c>true</c> if the target is the name of a volume</returns>
+        private static bool IsWindowsVolumeName(string? target)
+        {
+            if (string.IsNullOrEmpty(target))
+                return false;
+
+            var name = target.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            return name.StartsWith("Volume{", StringComparison.OrdinalIgnoreCase)
+                && name.EndsWith('}')
+                && name.IndexOfAny([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar]) < 0;
+        }
+
+        /// <summary>
+        /// Makes the absolute target of a link on Windows a path that can be compared and followed
+        /// </summary>
+        /// <param name="target">The target, as Windows or the link gives it</param>
+        /// <returns>The absolute path, or <c>null</c> if the target leads nowhere else</returns>
+        private static string? ToWindowsPath(string? target)
+        {
+            if (string.IsNullOrEmpty(target))
+                return null;
+
+            // The path of a network share is given without its first characters, and others can have the prefix for long paths
+            const string LongPathPrefix = @"\\?\";
+            if (target.StartsWith(LongPathPrefix + @"UNC\", StringComparison.OrdinalIgnoreCase))
+                target = @"\\" + target.Substring(LongPathPrefix.Length + 4);
+            else if (target.StartsWith(@"UNC\", StringComparison.OrdinalIgnoreCase))
+                target = @"\\" + target.Substring(4);
+            else if (target.StartsWith(LongPathPrefix, StringComparison.Ordinal) && target.Length > LongPathPrefix.Length + 1 && target[LongPathPrefix.Length + 1] == ':')
+                target = target.Substring(LongPathPrefix.Length);
+
+            if (!Path.IsPathFullyQualified(target))
+            {
+                // What is left is a name that is not a path. The name of a volume alone is the root of a volume that
+                // cannot be reached. Any other name is kept in a form that can be followed, which has another root
+                // than a path with a drive letter.
+                if (IsWindowsVolumeName(target))
+                    return null;
+
+                target = LongPathPrefix + target;
+            }
+
+            // A link without a target is given with the relative segments of the target left in
+            return Path.GetFullPath(target);
+        }
+
+        /// <summary>
+        /// Splits a path without its root into segments
+        /// </summary>
+        /// <param name="path">The path</param>
+        /// <returns>The segments</returns>
+        private static string[] SplitSegments(string path)
+            => path.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar], StringSplitOptions.RemoveEmptyEntries);
     }
 }
