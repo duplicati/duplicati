@@ -53,7 +53,7 @@ namespace Duplicati.CommandLine
             try
             {
                 CrashlogHelper.OnUnobservedTaskException += LogUnobservedTaskExceptions;
-                return RunCommandLine(Console.Out, Console.Error, c => { }, args);
+                return RunCommandLine(Console.Out, Console.Error, c => { }, args, rejectUnsupportedOptions: true);
             }
             finally
             {
@@ -161,13 +161,33 @@ namespace Duplicati.CommandLine
             }
         }
 
-        private static int ParseCommandLine(TextWriter outwriter, Action<Library.Main.Controller> setup, ref bool verboseErrors, string[] args)
+        private static int ParseCommandLine(TextWriter outwriter, Action<Library.Main.Controller> setup, ref bool verboseErrors, string[] args, bool rejectUnsupportedOptions)
         {
             List<string> cargs = new List<string>(args);
 
             var tmpparsed = Library.Utility.FilterCollector.ExtractOptions(cargs);
             var options = tmpparsed.Item1;
             var filter = tmpparsed.Item2;
+
+            if (rejectUnsupportedOptions)
+            {
+                // Only the typed options; the ones read from a parameters file below keep the warning.
+                // The options of this tool are handled here, so they are never rejected
+                var typedOptions = new HashSet<string>(options.Keys, StringComparer.OrdinalIgnoreCase);
+                foreach (var arg in SupportedOptions)
+                {
+                    typedOptions.Remove(arg.Name);
+                    foreach (var alias in arg.Aliases ?? [])
+                        typedOptions.Remove(alias);
+                }
+
+                var outerSetup = setup;
+                setup = c =>
+                {
+                    c.RejectUnsupportedOptions = typedOptions;
+                    outerSetup(c);
+                };
+            }
 
             verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
 
@@ -277,12 +297,22 @@ namespace Duplicati.CommandLine
             }
         }
 
-        public static int RunCommandLine(TextWriter outwriter, TextWriter errwriter, Action<Library.Main.Controller> setup, string[] args)
+        /// <summary>
+        /// Runs the command line
+        /// </summary>
+        /// <param name="outwriter">The output</param>
+        /// <param name="errwriter">The error output</param>
+        /// <param name="setup">Called with each controller before it runs</param>
+        /// <param name="args">The arguments</param>
+        /// <param name="rejectUnsupportedOptions">Whether a typed option that is not supported stops the command, instead of a warning.
+        /// Only for a person typing the command: the web UI runs it with the options of saved jobs.</param>
+        /// <returns>The exit code</returns>
+        public static int RunCommandLine(TextWriter outwriter, TextWriter errwriter, Action<Library.Main.Controller> setup, string[] args, bool rejectUnsupportedOptions = false)
         {
             bool verboseErrors = false;
             try
             {
-                return ParseCommandLine(outwriter, setup, ref verboseErrors, args);
+                return ParseCommandLine(outwriter, setup, ref verboseErrors, args, rejectUnsupportedOptions);
             }
             catch (Exception ex)
             {
