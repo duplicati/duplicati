@@ -516,6 +516,7 @@ namespace Duplicati.Library.Main
 
             new CommandLineArgument("throttle-upload", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottleuploadShort, Strings.Options.ThrottleuploadLong, "0kb"),
             new CommandLineArgument("throttle-download", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottledownloadShort, Strings.Options.ThrottledownloadLong, "0kb"),
+            new CommandLineArgument("max-upload-per-run", CommandLineArgument.ArgumentType.Size, Strings.Options.MaxUploadPerRunShort, Strings.Options.MaxUploadPerRunLong),
             new CommandLineArgument("throttle-disabled", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablethrottleShort, Strings.Options.DisablethrottleLong, "false"),
             new CommandLineArgument("throttle-disabled-backends", CommandLineArgument.ArgumentType.String, Strings.Options.DisablethrottlebackendsShort, Strings.Options.DisablethrottlebackendsLong("throttle-disabled"), DEFAULT_THROTTLE_DISABLED_BACKENDS),
             new CommandLineArgument("skip-files-larger-than", CommandLineArgument.ArgumentType.Size, Strings.Options.SkipfileslargerthanShort, Strings.Options.SkipfileslargerthanLong),
@@ -1144,6 +1145,18 @@ namespace Duplicati.Library.Main
             {
                 lock (m_lock)
                     m_options["throttle-upload"] = value <= 0 ? "" : $"{value}b";
+            }
+        }
+
+        /// <summary>
+        /// Gets the number of bytes a backup may upload before it stops after the current file, or zero for no limit
+        /// </summary>
+        public long MaxUploadPerRun
+        {
+            get
+            {
+                var value = m_options.GetValueOrDefault("max-upload-per-run");
+                return string.IsNullOrWhiteSpace(value) ? 0 : Math.Max(0, Library.Utility.Sizeparser.ParseSize(value, "mb"));
             }
         }
 

@@ -36,6 +36,11 @@ namespace Duplicati.Library.Main
         bool ReportedQuotaWarning { get; set; }
 
         /// <summary>
+        /// Called after each completed upload with the number of bytes uploaded so far in the operation
+        /// </summary>
+        Action<long> UploadCompleted { get; set; }
+
+        /// <summary>
         /// The operation the backend is working for, which decides whether running out of room
         /// at the destination is something it can suffer from.
         /// </summary>
@@ -114,6 +119,8 @@ namespace Duplicati.Library.Main
         public bool ReportedQuotaError { get; set; }
         public bool ReportedQuotaWarning { get; set; }
 
+        public Action<long> UploadCompleted { get; set; }
+
         public override OperationMode MainOperation { get { return m_parent.MainOperation; } }
 
         public void SendEvent(BackendActionType action, BackendEventType type, string path, long size, bool updateProgress = true)
@@ -144,7 +151,8 @@ namespace Duplicati.Library.Main
                         break;
                     case BackendActionType.Put:
                         System.Threading.Interlocked.Increment(ref m_filesUploaded);
-                        System.Threading.Interlocked.Add(ref m_bytesUploaded, size);
+                        var uploaded = System.Threading.Interlocked.Add(ref m_bytesUploaded, size);
+                        UploadCompleted?.Invoke(uploaded);
                         break;
                 }
             }
