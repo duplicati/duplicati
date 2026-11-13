@@ -49,6 +49,10 @@ namespace Duplicati.Library.Main.Operation
         private byte[]? m_blockbuffer;
         private readonly RestoreResults m_result;
         private string? m_selectedRestoreFolder;
+        /// <summary>
+        /// The URL of the destination being restored from, or null if the caller did not give it
+        /// </summary>
+        private string? m_backendUrl;
 
         /// <summary>
         /// When non-null, names a persistent scratch table (in the local database file) that
@@ -193,6 +197,7 @@ namespace Duplicati.Library.Main.Operation
         public async Task RunAsync(string[] paths, IBackendManager backendManager, Library.Utility.IFilter? filter, IRestoreDestinationProvider restoreDestination, string? backendUrl = null)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_Begin);
+            m_backendUrl = backendUrl;
 
             // Check tempdir free space before starting restore
             CheckTempDirFreeSpace();
@@ -911,7 +916,8 @@ namespace Duplicati.Library.Main.Operation
                 throw new UserInformationException("Restore volume decryptors must be greater than 0", "RestoreVolumeDecryptorsTooSmall");
             if (m_options.RestoreVolumeDecompressors <= 0)
                 throw new UserInformationException("Restore volume decompressors must be greater than 0", "RestoreVolumeDecompressorsTooSmall");
-            if (m_options.RestoreVolumeDownloaders <= 0)
+            var volumeDownloaderCount = m_options.GetRestoreVolumeDownloaders(m_backendUrl);
+            if (volumeDownloaderCount <= 0)
                 throw new UserInformationException("Restore volume downloaders must be greater than 0", "RestoreVolumeDownloadersTooSmall");
 
             // Verify the backend if necessary
@@ -973,7 +979,7 @@ namespace Duplicati.Library.Main.Operation
             var fileprocessors = Enumerable.Range(0, m_options.RestoreFileProcessors).Select(i => Restore.FileProcessor.RunAsync(channels, database, fileprocessor_requests[i], fileprocessor_responses[i], restoreDestination, m_options, m_result, m_options.LoadedModules)).ToArray();
             var blockmanager = Restore.BlockManager.RunAsync(channels, database, fileprocessor_requests, fileprocessor_responses, m_options, m_result);
             var volumecache = Restore.VolumeManager.RunAsync(channels, m_options, m_result);
-            var volumedownloaders = Enumerable.Range(0, m_options.RestoreVolumeDownloaders).Select(i => Restore.VolumeDownloader.RunAsync(channels, database, backendManager, m_options, m_result)).ToArray();
+            var volumedownloaders = Enumerable.Range(0, volumeDownloaderCount).Select(i => Restore.VolumeDownloader.RunAsync(channels, database, backendManager, m_options, m_result)).ToArray();
             var volumedecryptors = Enumerable.Range(0, m_options.RestoreVolumeDecryptors).Select(i => Restore.VolumeDecryptor.RunAsync(channels, backendManager, m_options)).ToArray();
             var volumedecompressors = Enumerable.Range(0, m_options.RestoreVolumeDecompressors).Select(i => Restore.VolumeDecompressor.RunAsync(channels, m_options)).ToArray();
 
