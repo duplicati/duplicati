@@ -438,10 +438,12 @@ namespace Duplicati.Library.Backend
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
             FtpListItem[] items;
+            AsyncFtpClient? client = null;
+            var remotePath = string.Empty;
             try
             {
-                var client = await CreateClient(cancelToken).ConfigureAwait(false);
-                var remotePath = PreparePathForClient(null);
+                client = await CreateClient(cancelToken).ConfigureAwait(false);
+                remotePath = PreparePathForClient(null);
 
                 try
                 {
@@ -477,6 +479,8 @@ namespace Duplicati.Library.Backend
             catch (Exception e)
             {
                 TranslateException(null, e);
+                if (client != null && await IsFolderMissingAsync(client, remotePath, e, cancelToken).ConfigureAwait(false))
+                    throw new FolderMissingException(Strings.MissingFolderError(_url.AbsolutePath, e.Message), e);
                 throw;
             }
 
@@ -934,6 +938,37 @@ namespace Duplicati.Library.Backend
 
             if (ex is SslCertificateValidator.InvalidCertificateException)
                 throw ex;
+        }
+
+        /// <summary>
+        /// Checks whether a listing failed because the folder does not exist. Some servers do not answer
+        /// 550 or 450 for a missing folder, for example pyftpdlib answers 501 to MLSD, so the folder is
+        /// looked up with CWD when the server refused the listing with another code.
+        /// </summary>
+        /// <param name="client">The client that tried the listing.</param>
+        /// <param name="remotePath">The listed path, empty when the client lists its working directory.</param>
+        /// <param name="ex">The exception the listing failed with.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns><c>true</c> if the folder does not exist.</returns>
+        private async Task<bool> IsFolderMissingAsync(AsyncFtpClient client, string remotePath, Exception ex, CancellationToken cancellationToken)
+        {
+            if (ex.InnerException is FtpCommandException)
+                ex = ex.InnerException;
+
+            // An empty path is the working directory, which the client has already changed into
+            if (ex is not FtpCommandException || string.IsNullOrWhiteSpace(remotePath) || !client.IsConnected)
+                return false;
+
+            try
+            {
+                return !await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, ct =>
+                    client.DirectoryExists(remotePath, ct)
+                ).ConfigureAwait(false);
+            }
+            catch (Exception probeEx) when (probeEx is not OperationCanceledException)
+            {
+                return false;
+            }
         }
 
         public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
