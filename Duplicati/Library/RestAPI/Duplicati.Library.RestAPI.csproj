@@ -9,6 +9,7 @@
     <ProjectReference Include="..\..\CommandLine\CLI\Duplicati.CommandLine.csproj" />
     <ProjectReference Include="..\Common\Duplicati.Library.Common.csproj" />
     <ProjectReference Include="..\Encryption\Duplicati.Library.Encryption.csproj" />
+    <ProjectReference Include="..\ChangeTracking\Duplicati.Library.ChangeTracking.csproj" />
     <ProjectReference Include="..\Main\Duplicati.Library.Main.csproj" />
     <ProjectReference Include="..\Snapshots\Duplicati.Library.Snapshots.csproj" />
     <ProjectReference Include="..\SQLiteHelper\Duplicati.Library.SQLiteHelper.csproj" />

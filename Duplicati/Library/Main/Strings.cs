@@ -208,6 +208,8 @@ namespace Duplicati.Library.Main.Strings
         public static string BlocksizeShort { get { return LC.L(@"Block size used in hashing"); } }
         public static string ChangedfilesLong { get { return LC.L(@"Use this option to limit the scan to only files that are known to have changed. This is usually only activated in combination with a filesystem watcher that keeps track of file changes."); } }
         public static string ChangedfilesShort { get { return LC.L(@"List of files to examine for changes"); } }
+        public static string ChangedfileslistLong(string optionname) { return LC.L(@"Path to a file listing the paths that changed since the previous backup, one per line. Each line starts with 'R' to rescan the path and everything below it, or 'E' to examine only the entry itself, followed by the full path. Listed paths that no longer exist are removed from the backup; everything not listed is copied from the previous backup. The progress counter only counts the listed entries. Cannot be combined with --{0}, with a USN policy other than off, or with a source that tracks its own changes.", optionname); }
+        public static string ChangedfileslistShort { get { return LC.L(@"File with paths to examine for changes"); } }
         public static string DbpathLong { get { return LC.L(@"Path to the file containing the local cache of the remote file database."); } }
         public static string DbpathShort { get { return LC.L(@"Path to the local state database"); } }
         public static string DeletedfilesLong(string optionname) { return LC.L(@"Use this option to supply a list of deleted files. This option will be ignored unless the option --{0} is also set.", optionname); }

@@ -100,6 +100,7 @@
   <Project Path="Duplicati/Library/Backend/OAuthHelper/Duplicati.Library.OAuthHelper.csproj" />
   <Project Path="Duplicati/Library/Certificates/Duplicati.Library.Certificates.csproj" />
   <Project Path="Duplicati/Library/Backends/Duplicati.Library.Backends.csproj" />
+  <Project Path="Duplicati/Library/ChangeTracking/Duplicati.Library.ChangeTracking.csproj" />
   <Project Path="Duplicati/Library/Common/Duplicati.Library.Common.csproj" />
   <Project Path="Duplicati/Library/Encryption/Duplicati.Library.Encryption.csproj" />
   <Project Path="Duplicati/Library/Interface/Duplicati.Library.Interface.csproj" />

@@ -166,6 +166,18 @@ namespace Duplicati.Library.Main
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// The provider that supplies a backup with the paths that changed since the previous backup, if any
+        /// </summary>
+        public IChangeListProvider ChangeListProvider { get; private set; }
+
+        /// <inheritdoc />
+        public Task SetChangeListProviderAsync(IChangeListProvider changeListProvider)
+        {
+            ChangeListProvider = changeListProvider;
+            return Task.CompletedTask;
+        }
+
         /// <inheritdoc />
         public async Task<IBackupResults> BackupAsync(string[] inputsources, IFilter inputFilter = null)
         {
@@ -185,10 +197,10 @@ namespace Duplicati.Library.Main
             SourceProviderFactory.EnableMetadataStorageIfRequiredBySources(inputsources, m_options.RawOptions);
             SourceProviderFactory.EnableCaseSensitiveFiltersIfRequiredBySources(inputsources, m_options.RawOptions);
 
-            return await RunActionAsync(new BackupResults(), inputsources, inputFilter, new { lastRestoreTest = m_lastRestoreTest }, static async config =>
+            return await RunActionAsync(new BackupResults(), inputsources, inputFilter, new { lastRestoreTest = m_lastRestoreTest, changeListProvider = ChangeListProvider }, static async config =>
             {
                 var (expandedSources, filter) = ExpandInputSources(config.Paths, config.Filter, config.Options);
-                using (var h = new Operation.BackupHandler(config.Options, config.Result))
+                using (var h = new Operation.BackupHandler(config.Options, config.Result, config.Context.changeListProvider))
                     await h.RunAsync(expandedSources, config.BackendManager, filter)
                         .ConfigureAwait(false);
 

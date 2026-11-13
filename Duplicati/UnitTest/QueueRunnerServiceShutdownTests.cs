@@ -38,7 +38,7 @@ namespace Duplicati.UnitTest
         /// A queue runner. Terminating and disposing it use none of its dependencies.
         /// </summary>
         private static QueueRunnerService CreateQueueRunner()
-            => new QueueRunnerService(null!, null!, null!, null!, null!, null!);
+            => new QueueRunnerService(null!, null!, null!, null!, null!, null!, null!);
 
         [Test]
         public void TerminatingAfterTheContainerDisposedTheQueueRunnerDoesNotThrow()

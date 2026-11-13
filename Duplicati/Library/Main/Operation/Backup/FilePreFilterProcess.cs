@@ -120,6 +120,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         {
                             if (ex.IsRetiredException())
                                 throw;
+                            FailedPathRecorder.Record(e.Entry.Path);
                             Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Entry.Path);
                         }
                         await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Entry.Path, Length = filestatsize, Type = EventType.FileSkipped });
@@ -158,6 +159,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                         }
                         catch (Exception ex)
                         {
+                            FailedPathRecorder.Record(e.Entry.Path);
                             Logging.Log.WriteWarningMessage(FILELOGTAG, "FailedToAddFile", ex, "Failed while attempting to add unmodified file to database: {0}", e.Entry.Path);
                         }
                         await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Entry.Path, Length = filestatsize, Type = EventType.FileSkipped });

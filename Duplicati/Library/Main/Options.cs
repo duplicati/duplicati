@@ -582,6 +582,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("disable-filepath-cache", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilepathcacheShort, Strings.Options.DisablefilepathcacheLong, "true", null, null, Strings.Options.DisablefilepathcacheDeprecated),
             new CommandLineArgument("changed-files", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfilesShort, Strings.Options.ChangedfilesLong),
             new CommandLineArgument("deleted-files", CommandLineArgument.ArgumentType.Path, Strings.Options.DeletedfilesShort, Strings.Options.DeletedfilesLong("changed-files")),
+            new CommandLineArgument("changed-files-list", CommandLineArgument.ArgumentType.Path, Strings.Options.ChangedfileslistShort, Strings.Options.ChangedfileslistLong("changed-files")),
             new CommandLineArgument("disable-synthetic-filelist", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablesyntheticfilelistShort, Strings.Options.DisablesyntehticfilelistLong, "false"),
 
             new CommandLineArgument("threshold", CommandLineArgument.ArgumentType.Integer, Strings.Options.ThresholdShort, Strings.Options.ThresholdLong, DEFAULT_THRESHOLD.ToString()),
@@ -1577,6 +1578,43 @@ namespace Duplicati.Library.Main
         /// List of files to mark as deleted
         /// </summary>
         public string[]? DeletedFilelist => m_options.GetValueOrDefault("deleted-files")?.Split(new char[] { System.IO.Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
+
+        /// <summary>
+        /// Explains why these options make a change list unusable, or returns null. The server
+        /// asks this before it starts a file watcher, and the engine before it uses a list.
+        /// </summary>
+        /// <returns>The reason, or null</returns>
+        public string? GetChangeListUnsupportedReason()
+        {
+            // The emitted entries are not in tree order, so empty folders cannot be told apart
+            if (ExcludeEmptyFolders)
+                return "empty folders are excluded";
+            // Removing one hard link changes whether another is backed up, which the list does not name
+            if (HardlinkPolicy != HardlinkStrategy.All)
+                return "the hardlink policy is not \"all\"";
+            // A list names paths, but a followed symlink brings in a tree the list does not cover
+            if (SymlinkPolicy == SymlinkStrategy.Follow)
+                return "symlinks are followed";
+            // Alternate data streams are stored as entries of their own, which the list does not name
+            if (EnableAdsBackup)
+                return "alternate data streams are backed up";
+            // The change journal decides what is copied from the previous fileset itself
+            if (UsnStrategy != OptimizationStrategy.Off)
+                return "the USN change journal is in use";
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the path to a file listing the paths that changed since the previous backup, or null if not set
+        /// </summary>
+        public string? ChangedFilesList
+        {
+            get
+            {
+                var value = m_options.GetValueOrDefault("changed-files-list");
+                return string.IsNullOrWhiteSpace(value) ? null : value;
+            }
+        }
 
         /// <summary>
         /// List of filenames that are used to exclude a folder

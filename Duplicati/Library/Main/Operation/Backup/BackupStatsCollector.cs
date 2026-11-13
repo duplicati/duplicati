@@ -95,6 +95,20 @@ namespace Duplicati.Library.Main.Operation.Backup
                 m_res.ExaminedFiles++;
             });
         }
+
+        /// <summary>
+        /// Records a number of examined files at once, as when they are copied from the previous fileset
+        /// </summary>
+        /// <param name="count">The number of files</param>
+        /// <param name="size">The combined size of the files</param>
+        public Task AddExaminedFilesAsync(long count, long size)
+        {
+            return WithLockAsync(() =>
+            {
+                m_res.SizeOfExaminedFiles += size;
+                m_res.ExaminedFiles += count;
+            });
+        }
     }
 }
 

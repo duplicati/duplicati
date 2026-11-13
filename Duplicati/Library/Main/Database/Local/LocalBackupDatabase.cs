@@ -1785,6 +1785,311 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// Populates the FilesetEntry table with the files from the previous fileset that are not
+        /// yet part of the new fileset and that are not covered by the change list. An entry whose
+        /// path is listed, is a listed folder, or lies below a listed path marked for recursion,
+        /// was examined by the current run and is not copied, so a listed path that no longer
+        /// exists drops out of the new fileset.
+        /// </summary>
+        /// <param name="changes">The change list entries; paths without a trailing separator, and whether everything below the path was rescanned</param>
+        /// <param name="sourceRoots">The current source roots; entries outside them are not copied, as a full scan would not find them</param>
+        /// <param name="lastFilesetId">The previous fileset, which the change list is relative to</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
+        /// <returns>The number and combined size of the copied files</returns>
+        public async Task<(long Count, long Size)> AppendFilesFromPreviousSetExcludingListAsync(IAsyncEnumerable<(string Path, bool Recurse)> changes, IReadOnlyList<string> sourceRoots, long lastFilesetId, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand();
+
+            var guid = Library.Utility.Utility.GetHexGuid();
+            var candTable = $"AppendFromPrev-Cand-{guid}";
+            var listTable = $"AppendFromPrev-List-{guid}";
+            var rootTable = $"AppendFromPrev-Roots-{guid}";
+            var separator = System.IO.Path.DirectorySeparatorChar.ToString();
+            // On a case-insensitive file system paths are compared as the backup compares them;
+            // SQLite's NOCASE only folds ASCII, so a renamed "Ärger" would not match "ärger"
+            var collation = Library.Utility.Utility.IsFSCaseSensitive ? "" : $" COLLATE {PATH_NOCASE_COLLATION}";
+            if (!Library.Utility.Utility.IsFSCaseSensitive)
+                m_connection.CreateCollation(PATH_NOCASE_COLLATION, (x, y) => string.Compare(x, y, StringComparison.OrdinalIgnoreCase));
+
+            long count = 0, size = 0;
+
+            try
+            {
+                // 1. Candidates: the previous fileset's entries that the current run has not
+                //    produced, by file id or by path. The full path is materialized so the
+                //    comparisons below can use an index
+                await cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"
+                        CREATE TEMPORARY TABLE ""{candTable}"" (
+                            ""FileID"" INTEGER NOT NULL,
+                            ""Path"" TEXT NOT NULL,
+                            ""Lastmodified"" INTEGER NOT NULL
+                        )
+                    ")
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                await cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"
+                        INSERT INTO ""{candTable}"" (""FileID"", ""Path"", ""Lastmodified"")
+                        SELECT
+                            ""fe"".""FileID"",
+                            ""pp"".""Prefix"" || ""fl"".""Path"",
+                            ""fe"".""Lastmodified""
+                        FROM ""FilesetEntry"" ""fe""
+                        INNER JOIN ""FileLookup"" ""fl"" ON ""fl"".""ID"" = ""fe"".""FileID""
+                        INNER JOIN ""PathPrefix"" ""pp"" ON ""pp"".""ID"" = ""fl"".""PrefixID""
+                        WHERE ""fe"".""FilesetID"" = @PreviousFilesetId
+                            AND NOT EXISTS (
+                                SELECT 1
+                                FROM ""FilesetEntry"" ""cur""
+                                WHERE ""cur"".""FilesetID"" = @CurrentFilesetId
+                                    AND ""cur"".""FileID"" = ""fe"".""FileID""
+                            )
+                            AND NOT EXISTS (
+                                SELECT 1
+                                FROM ""FilesetEntry"" ""cur""
+                                INNER JOIN ""FileLookup"" ""fl2"" ON ""fl2"".""ID"" = ""cur"".""FileID""
+                                WHERE ""cur"".""FilesetID"" = @CurrentFilesetId
+                                    AND ""fl2"".""PrefixID"" = ""fl"".""PrefixID""
+                                    AND ""fl2"".""Path"" = ""fl"".""Path""
+                            )
+                    ")
+                    .SetParameterValue("@PreviousFilesetId", lastFilesetId)
+                    .SetParameterValue("@CurrentFilesetId", m_filesetId)
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                await cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"CREATE INDEX ""{candTable}-idx"" ON ""{candTable}"" (""Path""{collation})")
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                // 2. The change list. The prefix is the path with a trailing separator, which
+                //    is how a folder is stored and what everything below it starts with
+                await cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"
+                        CREATE TEMPORARY TABLE ""{listTable}"" (
+                            ""Path"" TEXT NOT NULL,
+                            ""Prefix"" TEXT NOT NULL,
+                            ""PrefixEnd"" TEXT NOT NULL,
+                            ""Recurse"" INTEGER NOT NULL
+                        )
+                    ")
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"INSERT INTO ""{listTable}"" (""Path"", ""Prefix"", ""PrefixEnd"", ""Recurse"") VALUES (@Path, @Prefix, @PrefixEnd, @Recurse)");
+
+                await foreach (var (path, recurse) in changes.WithCancellation(token).ConfigureAwait(false))
+                {
+                    var prefix = path.EndsWith(separator, StringComparison.Ordinal) ? path : path + separator;
+                    // Everything below the folder starts with the prefix, so it sorts between the
+                    // prefix and the prefix with its final separator raised by one. The separator
+                    // and the character after it are not letters, so case folding keeps the order
+                    var prefixEnd = prefix.Substring(0, prefix.Length - 1) + (char)(prefix[prefix.Length - 1] + 1);
+                    await cmd.SetParameterValue("@Path", path)
+                        .SetParameterValue("@Prefix", prefix)
+                        .SetParameterValue("@PrefixEnd", prefixEnd)
+                        .SetParameterValue("@Recurse", recurse ? 1 : 0)
+                        .ExecuteNonQueryAsync(false, token)
+                        .ConfigureAwait(false);
+                }
+
+                // 3. Drop what the current run examined: the listed paths themselves, as files
+                //    or as folders, and everything below a path marked for recursion
+                await cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"
+                        DELETE FROM ""{candTable}""
+                        WHERE ""Path""{collation} IN (SELECT ""Path"" FROM ""{listTable}"")
+                           OR ""Path""{collation} IN (SELECT ""Prefix"" FROM ""{listTable}"")
+                    ")
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                await cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"
+                        DELETE FROM ""{candTable}""
+                        WHERE ""rowid"" IN (
+                            SELECT ""c"".""rowid""
+                            FROM ""{listTable}"" ""l""
+                            INNER JOIN ""{candTable}"" ""c""
+                                ON ""c"".""Path"" >= ""l"".""Prefix""{collation}
+                                AND ""c"".""Path"" < ""l"".""PrefixEnd""{collation}
+                            WHERE ""l"".""Recurse"" = 1
+                        )
+                    ")
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                // 4. Drop what lies outside the current sources, such as a root that is
+                //    missing now, which a full scan would not find either
+                await cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"
+                        CREATE TEMPORARY TABLE ""{rootTable}"" (
+                            ""Path"" TEXT NOT NULL,
+                            ""Prefix"" TEXT NOT NULL,
+                            ""PrefixEnd"" TEXT NOT NULL
+                        )
+                    ")
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"INSERT INTO ""{rootTable}"" (""Path"", ""Prefix"", ""PrefixEnd"") VALUES (@Path, @Prefix, @PrefixEnd)");
+                foreach (var root in sourceRoots)
+                {
+                    var path = root.TrimEnd(System.IO.Path.DirectorySeparatorChar);
+                    if (path.Length == 0)
+                        path = root;
+                    var prefix = path.EndsWith(separator, StringComparison.Ordinal) ? path : path + separator;
+                    var prefixEnd = prefix.Substring(0, prefix.Length - 1) + (char)(prefix[prefix.Length - 1] + 1);
+                    await cmd.SetParameterValue("@Path", path)
+                        .SetParameterValue("@Prefix", prefix)
+                        .SetParameterValue("@PrefixEnd", prefixEnd)
+                        .ExecuteNonQueryAsync(false, token)
+                        .ConfigureAwait(false);
+                }
+
+                await cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"
+                        DELETE FROM ""{candTable}""
+                        WHERE NOT EXISTS (
+                            SELECT 1
+                            FROM ""{rootTable}"" ""r""
+                            WHERE ""{candTable}"".""Path""{collation} = ""r"".""Path""
+                                OR ""{candTable}"".""Path""{collation} = ""r"".""Prefix""
+                                OR (""{candTable}"".""Path"" >= ""r"".""Prefix""{collation} AND ""{candTable}"".""Path"" < ""r"".""PrefixEnd""{collation})
+                        )
+                    ")
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                // 5. Copy the rest, and count the files among them for the statistics
+                await cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"
+                        INSERT INTO ""FilesetEntry"" (""FilesetID"", ""FileID"", ""Lastmodified"")
+                        SELECT @CurrentFilesetId, ""FileID"", ""Lastmodified""
+                        FROM ""{candTable}""
+                    ")
+                    .SetParameterValue("@CurrentFilesetId", m_filesetId)
+                    .ExecuteNonQueryAsync(true, token)
+                    .ConfigureAwait(false);
+
+                cmd.SetTransaction(m_rtr)
+                    .SetCommandAndParameters($@"
+                        SELECT COUNT(*), COALESCE(SUM(""bs"".""Length""), 0)
+                        FROM ""{candTable}"" ""c""
+                        INNER JOIN ""FileLookup"" ""fl"" ON ""fl"".""ID"" = ""c"".""FileID""
+                        INNER JOIN ""Blockset"" ""bs"" ON ""bs"".""ID"" = ""fl"".""BlocksetID""
+                    ");
+
+                await foreach (var row in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
+                {
+                    count = row.ConvertValueToInt64(0);
+                    size = row.ConvertValueToInt64(1);
+                }
+            }
+            finally
+            {
+                foreach (var table in new[] { candTable, listTable, rootTable })
+                {
+                    try
+                    {
+                        await cmd.SetTransaction(m_rtr)
+                            .ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{table}""", default)
+                            .ConfigureAwait(false);
+                    }
+                    catch { /* best-effort cleanup */ }
+                }
+            }
+
+            await m_rtr.CommitAsync(token).ConfigureAwait(false);
+            return (count, size);
+        }
+
+        /// <summary>
+        /// The collation that compares paths case-insensitively, as the backup does on a case-insensitive file system
+        /// </summary>
+        private const string PATH_NOCASE_COLLATION = "DUPLICATI_PATH_NOCASE";
+
+        /// <summary>
+        /// Checks whether a folder, or anything below it, is part of a fileset
+        /// </summary>
+        /// <param name="folderPath">The full folder path, ending with a directory separator</param>
+        /// <param name="filesetId">The fileset to look in</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
+        /// <returns>True if the fileset contains the folder or anything below it</returns>
+        public async Task<bool> IsFolderOrDescendantInFilesetAsync(string folderPath, long filesetId, CancellationToken token)
+        {
+            if (filesetId < 0)
+                return false;
+
+            if (await IsPathInFilesetAsync(folderPath, filesetId, token).ConfigureAwait(false))
+                return true;
+
+            // Everything below the folder has a prefix that starts with the folder path, so it sorts
+            // between the folder path and the folder path with its final separator raised by one
+            var prefixEnd = folderPath.Substring(0, folderPath.Length - 1) + (char)(folderPath[folderPath.Length - 1] + 1);
+            await using var cmd = m_connection.CreateCommand();
+            cmd.SetTransaction(m_rtr)
+                .SetCommandAndParameters(@"
+                    SELECT 1
+                    FROM ""PathPrefix"" ""pp""
+                    INNER JOIN ""FileLookup"" ""fl"" ON ""fl"".""PrefixID"" = ""pp"".""ID""
+                    INNER JOIN ""FilesetEntry"" ""fe"" ON ""fe"".""FileID"" = ""fl"".""ID""
+                    WHERE ""pp"".""Prefix"" >= @Prefix
+                        AND ""pp"".""Prefix"" < @PrefixEnd
+                        AND ""fe"".""FilesetID"" = @FilesetId
+                    LIMIT 1
+                ")
+                .SetParameterValue("@Prefix", folderPath)
+                .SetParameterValue("@PrefixEnd", prefixEnd)
+                .SetParameterValue("@FilesetId", filesetId);
+
+            await foreach (var _ in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
+                return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks whether a path is part of a fileset
+        /// </summary>
+        /// <param name="path">The full path; folders end with a directory separator</param>
+        /// <param name="filesetId">The fileset to look in</param>
+        /// <param name="token">The cancellation token to cancel the operation.</param>
+        /// <returns>True if the fileset contains the path</returns>
+        public async Task<bool> IsPathInFilesetAsync(string path, long filesetId, CancellationToken token)
+        {
+            if (filesetId < 0)
+                return false;
+
+            var split = SplitIntoPrefixAndName(path);
+            await using var cmd = m_connection.CreateCommand();
+            cmd.SetTransaction(m_rtr)
+                .SetCommandAndParameters(@"
+                    SELECT 1
+                    FROM ""FilesetEntry"" ""fe""
+                    INNER JOIN ""FileLookup"" ""fl"" ON ""fl"".""ID"" = ""fe"".""FileID""
+                    INNER JOIN ""PathPrefix"" ""pp"" ON ""pp"".""ID"" = ""fl"".""PrefixID""
+                    WHERE ""fe"".""FilesetID"" = @FilesetId
+                        AND ""pp"".""Prefix"" = @Prefix
+                        AND ""fl"".""Path"" = @Name
+                    LIMIT 1
+                ")
+                .SetParameterValue("@FilesetId", filesetId)
+                .SetParameterValue("@Prefix", split.Key)
+                .SetParameterValue("@Name", split.Value);
+
+            await foreach (var _ in cmd.ExecuteReaderEnumerableAsync(token).ConfigureAwait(false))
+                return true;
+
+            return false;
+        }
+
+        /// <summary>
         /// Creates a timestamped backup operation to correctly associate the fileset with the time it was created.
         /// </summary>
         /// <param name="volumeid">The ID of the fileset volume to update.</param>

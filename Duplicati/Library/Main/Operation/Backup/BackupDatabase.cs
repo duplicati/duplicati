@@ -289,6 +289,71 @@ namespace Duplicati.Library.Main.Operation.Backup
             );
         }
 
+        /// <summary>
+        /// Copies the files of the previous fileset that are not covered by the change list into the current fileset
+        /// </summary>
+        /// <param name="changes">The change list entries; paths without a trailing separator, and whether everything below the path was rescanned</param>
+        /// <param name="sourceRoots">The current source roots; entries outside them are not copied</param>
+        /// <param name="lastFilesetId">The previous fileset, which the change list is relative to</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>The number and combined size of the copied files</returns>
+        public Task<(long Count, long Size)> AppendFilesFromPreviousSetExcludingListAsync(IAsyncEnumerable<(string Path, bool Recurse)> changes, IReadOnlyList<string> sourceRoots, long lastFilesetId, CancellationToken cancellationToken)
+        {
+            return RunOnMainAsync(async () =>
+                await m_database
+                    .AppendFilesFromPreviousSetExcludingListAsync(changes, sourceRoots, lastFilesetId, cancellationToken)
+                    .ConfigureAwait(false)
+            );
+        }
+
+        /// <summary>
+        /// Checks whether a path is part of a fileset
+        /// </summary>
+        /// <param name="path">The full path; folders end with a directory separator</param>
+        /// <param name="filesetId">The fileset to look in</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>True if the fileset contains the path</returns>
+        public Task<bool> IsPathInFilesetAsync(string path, long filesetId, CancellationToken cancellationToken)
+        {
+            return RunOnMainAsync(async () =>
+                await m_database
+                    .IsPathInFilesetAsync(path, filesetId, cancellationToken)
+                    .ConfigureAwait(false)
+            );
+        }
+
+        /// <summary>
+        /// Checks whether a folder, or anything below it, is part of a fileset
+        /// </summary>
+        /// <param name="folderPath">The full folder path, ending with a directory separator</param>
+        /// <param name="filesetId">The fileset to look in</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>True if the fileset contains the folder or anything below it</returns>
+        public Task<bool> IsFolderOrDescendantInFilesetAsync(string folderPath, long filesetId, CancellationToken cancellationToken)
+        {
+            return RunOnMainAsync(async () =>
+                await m_database
+                    .IsFolderOrDescendantInFilesetAsync(folderPath, filesetId, cancellationToken)
+                    .ConfigureAwait(false)
+            );
+        }
+
+        /// <summary>
+        /// Reads the source provider state stored with a fileset
+        /// </summary>
+        /// <param name="filesetId">The fileset</param>
+        /// <param name="scope">The scope of the state</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>The state, or null if none is stored</returns>
+        public Task<SourceProviderState> GetSourceProviderStateAsync(long filesetId, string scope, CancellationToken cancellationToken)
+        {
+            return RunOnMainAsync(async () =>
+                await m_database
+                    .GetSourceProviderStateAsync(filesetId, scope, cancellationToken)
+                    .ConfigureAwait(false)
+            );
+        }
+
         public Task<KeyValuePair<long, DateTime>[]> GetIncompleteFilesetsAsync(CancellationToken cancellationToken)
         {
             return RunOnMainAsync(async () =>

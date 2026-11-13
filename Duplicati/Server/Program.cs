@@ -27,6 +27,7 @@ using System.Threading.Tasks;
 using CoCoL;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Certificates;
+using Duplicati.Library.ChangeTracking;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Crashlog;
 using Duplicati.Library.Encryption;
@@ -65,6 +66,11 @@ namespace Duplicati.Server
         private const string SETTINGS_ENCRYPTION_KEY_OPTION = "settings-encryption-key";
         /// <summary>The commandline argument name for disabling update check.</summary>
         private const string DISABLE_UPDATE_CHECK_OPTION = "disable-update-check";
+        private const string DISABLE_FILE_WATCHER_OPTION = "disable-file-watcher";
+        private const string FILE_WATCHER_FLUSH_INTERVAL_OPTION = "file-watcher-flush-interval";
+        private const string FILE_WATCHER_HIGH_WATER_OPTION = "file-watcher-high-water";
+        private const string FILE_WATCHER_MAX_CHANGES_OPTION = "file-watcher-max-changes";
+        private const string FILE_WATCHER_GRACE_DELAY_OPTION = "file-watcher-grace-delay";
         /// <summary>The commandline argument name for registering remote control.</summary>
         private const string REGISTER_REMOTE_CONTROL_OPTION = "register-remote-control";
         /// <summary>The commandline argument name for forcing remote control reregistration.</summary>
@@ -265,6 +271,7 @@ namespace Duplicati.Server
             UpdatePollThread updatePollThread = null;
             EventPollNotify eventPollNotify = null;
             ISchedulerService scheduler = null;
+            IChangeTrackingService changeTracking = null;
             try
             {
                 // Opening the database can create or upgrade it, which a second server must not do
@@ -318,6 +325,7 @@ namespace Duplicati.Server
                 updatePollThread = DuplicatiWebserver.Provider.GetRequiredService<UpdatePollThread>();
                 eventPollNotify = DuplicatiWebserver.Provider.GetRequiredService<EventPollNotify>();
                 scheduler = DuplicatiWebserver.Provider.GetRequiredService<ISchedulerService>();
+                changeTracking = DuplicatiWebserver.Provider.GetRequiredService<IChangeTrackingService>();
 
                 updatePollThread.Init(Library.Utility.Utility.ParseBoolOption(commandlineOptions, DISABLE_UPDATE_CHECK_OPTION));
                 DuplicatiWebserver.Provider.GetRequiredService<IUpdateInstallService>().CompletePendingInstall();
@@ -432,6 +440,7 @@ namespace Duplicati.Server
                     () => updatePollThread?.Terminate(),
                     () => scheduler?.Terminate(true),
                     () => queueRunner?.Terminate(true),
+                    () => changeTracking?.DisposeAsync().AsTask().Await(),
                     () => ApplicationInstance?.Dispose(),
                     () => PurgeTempFilesTimer?.Dispose(),
                     () => CertificateRenewalTimer?.Dispose(),
@@ -488,7 +497,8 @@ namespace Duplicati.Server
                     parsedOptions.TokenLifetimeInMinutes,
                     parsedOptions.SPAPaths,
                     parsedOptions.CorsOrigins,
-                    parsedOptions.PreAuthTokens
+                    parsedOptions.PreAuthTokens,
+                    ParseChangeTrackingSettings(options, applicationSettings)
                 );
 
                 var server = DuplicatiWebserver.CreateWebServer(mappedSettings, connection, logWriteHandler, applicationSettings);
@@ -534,6 +544,22 @@ namespace Duplicati.Server
                 logMessageToConsole(Strings.Program.FailedForceLocaleError(FORCE_LOCALE_OPTION, localestring, ex.Message));
             }
         }
+
+        /// <summary>
+        /// Reads the file watcher settings from the commandline options
+        /// </summary>
+        /// <param name="options">The commandline options</param>
+        /// <param name="applicationSettings">The application settings, for the data folder</param>
+        /// <returns>The settings</returns>
+        private static ChangeTrackingSettings ParseChangeTrackingSettings(IReadOnlyDictionary<string, string> options, IApplicationSettings applicationSettings)
+            => new ChangeTrackingSettings(
+                !Library.Utility.Utility.ParseBoolOption(options, DISABLE_FILE_WATCHER_OPTION),
+                System.IO.Path.Combine(applicationSettings.DataFolder, ChangeTrackingSettings.DATABASE_FILENAME),
+                TempFolder.SystemTempPath,
+                Library.Utility.Utility.ParseTimespanOption(options, FILE_WATCHER_FLUSH_INTERVAL_OPTION, ChangeTrackingSettings.DEFAULT_FLUSH_INTERVAL),
+                Library.Utility.Utility.ParseIntOption(options, FILE_WATCHER_HIGH_WATER_OPTION, ChangeTrackingSettings.DEFAULT_HIGH_WATER_MARK),
+                Library.Utility.Utility.ParseLongOption(options, FILE_WATCHER_MAX_CHANGES_OPTION, ChangeTrackingSettings.DEFAULT_MAX_CHANGES),
+                Library.Utility.Utility.ParseTimespanOption(options, FILE_WATCHER_GRACE_DELAY_OPTION, ChangeTrackingSettings.DEFAULT_GRACE_DELAY));
 
         /// <summary>
         /// Sets up the timer for purging temp files and log data
@@ -1674,6 +1700,11 @@ namespace Duplicati.Server
             new CommandLineArgument(WebServerLoader.OPTION_SUPPRESS_WELCOME_PAGE, CommandLineArgument.ArgumentType.Boolean, Strings.Program.SuppressWelcomePageShort, Strings.Program.SuppressWelcomePageLong),
             new CommandLineArgument(PING_PONG_KEEPALIVE_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.PingpongkeepaliveShort, Strings.Program.PingpongkeepaliveLong),
             new CommandLineArgument(DISABLE_UPDATE_CHECK_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisableupdatecheckShort, Strings.Program.DisableupdatecheckLong),
+            new CommandLineArgument(DISABLE_FILE_WATCHER_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.DisablefilewatcherShort, Strings.Program.DisablefilewatcherLong, "false"),
+            new CommandLineArgument(FILE_WATCHER_FLUSH_INTERVAL_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.Program.FilewatcherflushintervalShort, Strings.Program.FilewatcherflushintervalLong, ChangeTrackingSettings.DEFAULT_FLUSH_INTERVAL),
+            new CommandLineArgument(FILE_WATCHER_HIGH_WATER_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.Program.FilewatcherhighwaterShort, Strings.Program.FilewatcherhighwaterLong, ChangeTrackingSettings.DEFAULT_HIGH_WATER_MARK.ToString()),
+            new CommandLineArgument(FILE_WATCHER_MAX_CHANGES_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.Program.FilewatchermaxchangesShort, Strings.Program.FilewatchermaxchangesLong, ChangeTrackingSettings.DEFAULT_MAX_CHANGES.ToString()),
+            new CommandLineArgument(FILE_WATCHER_GRACE_DELAY_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.Program.FilewatchergracedelayShort, Strings.Program.FilewatchergracedelayLong, ChangeTrackingSettings.DEFAULT_GRACE_DELAY),
             new CommandLineArgument(LOG_RETENTION_OPTION, CommandLineArgument.ArgumentType.Timespan, Strings.Program.LogretentionShort, Strings.Program.LogretentionLong, DEFAULT_LOG_RETENTION),
             new CommandLineArgument(DataFolderManager.SERVER_DATAFOLDER_OPTION, CommandLineArgument.ArgumentType.Path, Strings.Program.ServerdatafolderShort, Strings.Program.ServerdatafolderLong(DataFolderManager.DATAFOLDER_ENV_NAME), DataFolderManager.GetDataFolder(DataFolderManager.AccessMode.ProbeOnly)),
             new CommandLineArgument(DataFolderManager.ALLOW_INSECURE_DATAFOLDER_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Program.AllowInsecureDatafolderShort, Strings.Program.AllowInsecureDatafolderLong, false.ToString()),

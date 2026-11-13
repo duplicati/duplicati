@@ -19,11 +19,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+using System;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.IPC.Dto;
 using PolyType;
 using StreamJsonRpc;
+
+#nullable enable
 
 namespace Duplicati.Library.Main.IPC;
 
@@ -47,4 +50,9 @@ public partial interface IControllerRpcCallbacks
     // Operation lifecycle
     Task OnOperationStartedAsync(OperationMode operation);
     Task OnOperationCompletedAsync(OperationResultDto result, ExceptionDto exception);
+
+    // Change list handoff: the backup asks the host for the paths that changed
+    // since the previous backup, after the snapshot was created. Returns the
+    // handoff, or null if the host tracks nothing for this backup.
+    Task<ChangeListHandoff?> OnDrainChangeListAsync(DateTime referenceTimeUtc);
 }
