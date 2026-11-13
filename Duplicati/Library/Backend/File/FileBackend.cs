@@ -129,12 +129,14 @@ namespace Duplicati.Library.Backend
                 path = systemIO.PathGetFullPath(path);
 
             var altPaths = options.GetValueOrDefault(OPTION_ALTERNATE_PATHS);
-            if (!string.IsNullOrWhiteSpace(altPaths))
+            var markerfile = options.GetValueOrDefault(OPTION_DESTINATION_MARKER);
+            // A marker alone guards the one path, such as a mount point that exists while the share is not mounted
+            if (!string.IsNullOrWhiteSpace(altPaths) || !string.IsNullOrWhiteSpace(markerfile))
             {
                 List<string> paths =
                 [
                     path,
-                    .. altPaths.Split(new string[] {Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries),
+                    .. (altPaths ?? "").Split(new string[] {Path.PathSeparator.ToString() }, StringSplitOptions.RemoveEmptyEntries),
                 ];
 
                 //On windows we expand the drive letter * to all drives
@@ -156,7 +158,6 @@ namespace Duplicati.Library.Backend
 
                 //If there is a marker file, we do not allow the primary target path
                 // to be accepted, unless it contains the marker file
-                var markerfile = options.GetValueOrDefault(OPTION_DESTINATION_MARKER);
                 if (!string.IsNullOrWhiteSpace(markerfile))
                     path = null;
 
