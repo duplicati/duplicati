@@ -112,6 +112,11 @@ namespace Duplicati.Library.Main
         private const int DEFAULT_ASYNCHRONOUS_UPLOAD_LIMIT = 4;
 
         /// <summary>
+        /// The default number of concurrent uploads to a local folder
+        /// </summary>
+        private const int DEFAULT_LOCAL_ASYNCHRONOUS_UPLOAD_LIMIT = 1;
+
+        /// <summary>
         /// The backends where throttling is disabled by default
         /// </summary>
         private const string DEFAULT_THROTTLE_DISABLED_BACKENDS = "";
@@ -1261,6 +1266,33 @@ namespace Duplicati.Library.Main
         /// </summary>
         public int AsynchronousConcurrentUploadLimit
             => GetInt("asynchronous-upload-limit", GetInt("asynchronous-concurrent-upload-limit", DEFAULT_ASYNCHRONOUS_UPLOAD_LIMIT));
+
+        /// <summary>
+        /// Gets the number of concurrent volume uploads allowed to the given destination. A local folder
+        /// is often an external hard disk, which is slow when several volumes are written to it at once,
+        /// so it gets one upload at a time unless a limit is given (#4808).
+        /// </summary>
+        /// <param name="backendUrl">The URL of the destination</param>
+        /// <returns>The number of concurrent uploads</returns>
+        public int GetAsynchronousConcurrentUploadLimit(string backendUrl)
+        {
+            if (m_options.ContainsKey("asynchronous-upload-limit") || m_options.ContainsKey("asynchronous-concurrent-upload-limit"))
+                return AsynchronousConcurrentUploadLimit;
+
+            string? scheme = null;
+            try
+            {
+                scheme = new Library.Utility.RelaxedUri(backendUrl).Scheme;
+            }
+            catch
+            {
+                // An invalid URL is reported when the backend is loaded
+            }
+
+            return string.Equals(scheme, "file", StringComparison.OrdinalIgnoreCase)
+                ? DEFAULT_LOCAL_ASYNCHRONOUS_UPLOAD_LIMIT
+                : DEFAULT_ASYNCHRONOUS_UPLOAD_LIMIT;
+        }
 
         /// <summary>
         /// Gets the temporary folder to use for asynchronous transfers
