@@ -698,8 +698,12 @@ public class ChangeTrackingServiceTests : BasicSetupHelper
         Assert.That((await second.DrainChangeListAsync(tRef, CancellationToken.None))?.ListPath, Is.Null);
         await service.CompleteHandoffAsync(second, true, CancellationToken.None);
 
+        // The next snapshot is taken well after the loss; a timer may fire early, so the
+        // grace delay of the drain above does not put the loss outside this run's window
+        await Task.Delay(Grace + Grace);
+
         // The lost events may be missing from that snapshot too, so the next run cannot use a list either
-        var third = await service.PrepareHandoffAsync(BACKUP, [Root], HASH, CancellationToken.None);
+        var third =await service.PrepareHandoffAsync(BACKUP, [Root], HASH, CancellationToken.None);
         Assert.That(third.Usable, Is.False);
         Assert.That((await third.DrainChangeListAsync(DateTime.UtcNow, CancellationToken.None))?.ListPath, Is.Null);
         await service.CompleteHandoffAsync(third, true, CancellationToken.None);
