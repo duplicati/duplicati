@@ -7,9 +7,10 @@
       MSI Formatted-string substitution {[NOHOSTEDSERVERARG]}. The
       SetNoHostedServerArg custom action (see Duplicati.wxs) populates that
       property in the InstallExecuteSequence right before CreateShortcuts,
-      based on the action state of DuplicatiServiceFeature:
-        * Feature being installed locally : value "no-hosted-server" (with
-          the leading dashes set in Duplicati.wxs)
+      based on the state of DuplicatiServiceFeature after the run:
+        * Feature installed (being installed, or installed and kept, as in
+          a repair) : value "no-hosted-server" (with the leading dashes set
+          in Duplicati.wxs)
         * Feature absent : empty
       If NOHOSTEDSERVERARG is empty the curly braces collapse and the
       shortcut is created with no arguments.

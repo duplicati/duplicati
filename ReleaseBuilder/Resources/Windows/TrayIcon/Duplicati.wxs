@@ -412,14 +412,19 @@
       <RemoveExistingProducts After="WriteUpgradeSentinel" />
 
       <!-- Set NOHOSTEDSERVERARG so the shortcut Arguments column expands to
-           the no-hosted-server flag when the service feature ends up
-           installed locally, and to empty otherwise. The Shortcut.Arguments
+           the no-hosted-server flag when the service feature is installed
+           after this run, and to empty otherwise. The Shortcut.Arguments
            column is a Formatted string and uses {[NOHOSTEDSERVERARG]} so an
            empty value produces no arguments at all.
+           The feature is installed after this run when it is being installed
+           (&Feature=3), or when it is installed and not being removed
+           (!Feature=3 and not &Feature=2). A repair reinstalls the feature
+           and creates the shortcuts again, but its action state is not 3,
+           so checking only &Feature=3 removed the flag on a repair (#7804).
            Must run after CostFinalize (1000) and before CreateShortcuts (4500).
            SetNoHostedServerArg runs at 4001, ClearNoHostedServerArg at 1002. -->
-      <Custom Action="SetNoHostedServerArg"   After="InstallFiles">&amp;DuplicatiServiceFeature=3</Custom>
-      <Custom Action="ClearNoHostedServerArg" Sequence="1002">NOT (&amp;DuplicatiServiceFeature=3)</Custom>
+      <Custom Action="SetNoHostedServerArg"   After="InstallFiles">&amp;DuplicatiServiceFeature=3 OR (!DuplicatiServiceFeature=3 AND NOT &amp;DuplicatiServiceFeature=2)</Custom>
+      <Custom Action="ClearNoHostedServerArg" Sequence="1002">NOT (&amp;DuplicatiServiceFeature=3 OR (!DuplicatiServiceFeature=3 AND NOT &amp;DuplicatiServiceFeature=2))</Custom>
 
       <!-- Resolves [SourceDir] into PRELOAD_SOURCE -->
       <Custom Action="SetPreloadSource" After="CostFinalize">INSTALL_PRELOAD="true" AND NOT Installed</Custom>
