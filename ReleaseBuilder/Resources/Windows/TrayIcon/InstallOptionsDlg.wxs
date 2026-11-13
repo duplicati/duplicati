@@ -8,6 +8,7 @@
     * ADD_DESKTOP_SHORTCUT    -> create a desktop shortcut
     * ADD_PROGRAMMENU_SHORTCUT-> create a Program Menu shortcut
     * ADD_STARTUP_SHORTCUT    -> launch at user logon
+    * STARTUP_FOR_CURRENT_USER-> launch at logon of the installing user only
 
   The Next button publishes AddLocal/Remove for the corresponding feature(s)
   and sets the INSTALLASSERVICE property which the service-variant shortcut
@@ -30,13 +31,14 @@
           <Publish Event="SpawnDialog" Value="BrowseDlg" Order="2" />
         </Control>
 
-        <Control Id="OptionsGroup" Type="GroupBox" X="20" Y="95" Width="330" Height="125" Text="Configuration Options" />
+        <Control Id="OptionsGroup" Type="GroupBox" X="20" Y="95" Width="330" Height="137" Text="Configuration Options" />
 
         <Control Id="ServiceChk" Type="CheckBox" X="35" Y="115" Width="300" Height="15" Property="LAUNCH_AS_SERVICE" CheckBoxValue="1" Text="Install Duplicati as a Windows Service" />
         <Control Id="TlsCertsChk" Type="CheckBox" X="35" Y="135" Width="300" Height="15" Property="INSTALL_TLS_CERTS" CheckBoxValue="1" Text="Generate and use TLS (HTTPS) certificates" />
         <Control Id="DesktopShortcutChk" Type="CheckBox" X="35" Y="155" Width="300" Height="15" Property="ADD_DESKTOP_SHORTCUT" CheckBoxValue="1" Text="Create Desktop shortcut" />
         <Control Id="MenuShortcutChk" Type="CheckBox" X="35" Y="175" Width="300" Height="15" Property="ADD_PROGRAMMENU_SHORTCUT" CheckBoxValue="1" Text="Create Program Menu shortcut" />
         <Control Id="StartupChk" Type="CheckBox" X="35" Y="195" Width="300" Height="15" Property="ADD_STARTUP_SHORTCUT" CheckBoxValue="1" Text="Launch Duplicati at system startup" />
+        <Control Id="StartupCurrentUserChk" Type="CheckBox" X="50" Y="212" Width="285" Height="15" Property="STARTUP_FOR_CURRENT_USER" CheckBoxValue="1" Text="Only for the current user, not for every user of this computer" />
 
         <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back" />
         <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
@@ -61,8 +63,11 @@
           <Publish Event="AddLocal" Value="DuplicatiProgramMenuShortCutFeature" Order="12" Condition="ADD_PROGRAMMENU_SHORTCUT = &quot;1&quot;" />
           <Publish Event="Remove"   Value="DuplicatiProgramMenuShortCutFeature" Order="12" Condition="NOT (ADD_PROGRAMMENU_SHORTCUT = &quot;1&quot;)" />
 
-          <Publish Event="AddLocal" Value="DuplicatiStartupShortCutFeature" Order="13" Condition="ADD_STARTUP_SHORTCUT = &quot;1&quot;" />
-          <Publish Event="Remove"   Value="DuplicatiStartupShortCutFeature" Order="13" Condition="NOT (ADD_STARTUP_SHORTCUT = &quot;1&quot;)" />
+          <Publish Event="AddLocal" Value="DuplicatiStartupShortCutFeature" Order="13" Condition="ADD_STARTUP_SHORTCUT = &quot;1&quot; AND NOT STARTUP_FOR_CURRENT_USER = &quot;1&quot;" />
+          <Publish Event="Remove"   Value="DuplicatiStartupShortCutFeature" Order="13" Condition="NOT (ADD_STARTUP_SHORTCUT = &quot;1&quot; AND NOT STARTUP_FOR_CURRENT_USER = &quot;1&quot;)" />
+
+          <Publish Event="AddLocal" Value="DuplicatiUserStartupShortCutFeature" Order="15" Condition="ADD_STARTUP_SHORTCUT = &quot;1&quot; AND STARTUP_FOR_CURRENT_USER = &quot;1&quot;" />
+          <Publish Event="Remove"   Value="DuplicatiUserStartupShortCutFeature" Order="15" Condition="NOT (ADD_STARTUP_SHORTCUT = &quot;1&quot; AND STARTUP_FOR_CURRENT_USER = &quot;1&quot;)" />
 
           <Publish Event="AddLocal" Value="DuplicatiTlsCertsFeature" Order="14" Condition="INSTALL_TLS_CERTS = &quot;1&quot;" />
           <Publish Event="Remove"   Value="DuplicatiTlsCertsFeature" Order="14" Condition="NOT (INSTALL_TLS_CERTS = &quot;1&quot;)" />

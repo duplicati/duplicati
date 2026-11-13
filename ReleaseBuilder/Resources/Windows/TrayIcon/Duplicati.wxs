@@ -49,6 +49,24 @@
     <Property Id="ADD_PROGRAMMENU_SHORTCUT" Value="1" Secure="yes" />
     <Property Id="ADD_STARTUP_SHORTCUT" Value="1" Secure="yes" />
 
+    <!-- When "1", Duplicati is started at logon for the installing user only
+         (DuplicatiUserStartupShortCutFeature) instead of for every user
+         (DuplicatiStartupShortCutFeature). Bound to a checkbox on
+         InstallOptionsDlg and can be passed on the msiexec command line,
+         e.g. STARTUP_FOR_CURRENT_USER=1 for a silent install. Seeded from the
+         marker of a previous install so an upgrade keeps the choice.
+         Like PREVIOUS_INSTALLLOCATION this only works when the
+         InstallUISequence runs: in a silent upgrade AppSearch runs after the
+         early RemoveExistingProducts has removed the marker, so a silent
+         upgrade has to pass STARTUP_FOR_CURRENT_USER=1 again. -->
+    <Property Id="STARTUP_FOR_CURRENT_USER" Secure="yes">
+      <RegistrySearch Id="SearchPreviousUserStartup"
+                      Root="HKCU"
+                      Key="Software\DuplicatiTeam\Duplicati\UserStartupShortcut"
+                      Name="Enabled"
+                      Type="raw" />
+    </Property>
+
     <!-- Legacy command-line-only switch. When passed as FORSERVICE=true on the
          msiexec command line it suppresses the shortcut features (Desktop /
          Program Menu / Startup) for unattended/silent service deployments.
@@ -338,7 +356,15 @@
 
     <Feature Id="DuplicatiStartupShortCutFeature" Level="1" Absent="allow" AllowAdvertise="no">
       <ComponentRef Id="StartupMenuItem"/>
-      <Condition Level="0">FORSERVICE = "true"</Condition>
+      <Condition Level="0">FORSERVICE = "true" OR STARTUP_FOR_CURRENT_USER = "1"</Condition>
+    </Feature>
+
+    <!-- Level=2 keeps the per-user startup entry out of the default install
+         set; it replaces the all-users shortcut when STARTUP_FOR_CURRENT_USER
+         is "1". -->
+    <Feature Id="DuplicatiUserStartupShortCutFeature" Level="2" Absent="allow" AllowAdvertise="no">
+      <ComponentRef Id="UserStartupRunEntry"/>
+      <Condition Level="1">STARTUP_FOR_CURRENT_USER = "1" AND NOT FORSERVICE = "true"</Condition>
     </Feature>
 
     <!-- Launch duplicati setup -->
