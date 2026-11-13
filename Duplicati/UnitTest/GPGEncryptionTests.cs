@@ -302,6 +302,84 @@ public class GPGEncryptionTests
         Assert.That(SpinWait.SpinUntil(() => HasExited(pid), TimeSpan.FromSeconds(10)), Is.True, "gpg is still running");
     }
 
+    /// <summary>
+    /// Runs the action and returns the profiling messages it logged
+    /// </summary>
+    private static List<string> ProfilingMessages(Action action)
+    {
+        var messages = new List<string>();
+        using (Library.Logging.Log.StartScope(e =>
+        {
+            if (e.Level == Library.Logging.LogMessageType.Profiling)
+                lock (messages)
+                    messages.Add(e.FormattedMessage);
+        }))
+            action();
+        return messages;
+    }
+
+    private const string Secret = "do-not-log-me";
+
+    private static GPGEncryption CreateGpgWithSecretSwitch(string program)
+        => new GPGEncryption("the-passphrase", new Dictionary<string, string>
+        {
+            [GPGEncryption.COMMANDLINE_OPTIONS_PATH] = program,
+            ["gpg-encryption-switches"] = $"--passphrase {Secret} --compress-algo none",
+            ["gpg-decryption-switches"] = $"--passphrase=\"{Secret}\"",
+        });
+
+    /// <summary>
+    /// The gpg program and its arguments are logged, so a user can see which gpg runs with which options (#1940)
+    /// </summary>
+    [Test]
+    public void TheGpgCommandIsLogged()
+    {
+        var program = CreateFakeGpg(new FakeGpg());
+        var gpg = CreateGpgWithSecretSwitch(program);
+        var data = RandomData(1024);
+
+        var encrypt = ProfilingMessages(() => gpg.Encrypt(new MemoryStream(data), new MemoryStream()));
+        var decrypt = ProfilingMessages(() => gpg.Decrypt(new MemoryStream(data), new MemoryStream()));
+
+        Assert.That(encrypt, Has.Some.Contains(program).And.Contains("--batch --passphrase-fd 0").And.Contains("--compress-algo none").And.Contains("--symmetric"), string.Join(Environment.NewLine, encrypt));
+        Assert.That(decrypt, Has.Some.Contains(program).And.Contains("--decrypt"), string.Join(Environment.NewLine, decrypt));
+    }
+
+    /// <summary>
+    /// A passphrase given in the switches is not logged; the one Duplicati passes goes to the input of gpg, not its arguments
+    /// </summary>
+    [Test]
+    public void APassphraseInTheSwitchesIsNotLogged()
+    {
+        var gpg = CreateGpgWithSecretSwitch(CreateFakeGpg(new FakeGpg()));
+        var data = RandomData(1024);
+
+        var messages = ProfilingMessages(() =>
+        {
+            gpg.Encrypt(new MemoryStream(data), new MemoryStream());
+            gpg.Decrypt(new MemoryStream(data), new MemoryStream());
+        });
+
+        Assert.That(messages, Has.Count.GreaterThanOrEqualTo(2), "Both commands are logged");
+        Assert.That(messages, Has.None.Contains(Secret).And.None.Contains("the-passphrase"), string.Join(Environment.NewLine, messages));
+        Assert.That(messages, Has.Some.Contains("--passphrase-fd 0"), "Only the value of --passphrase is hidden");
+    }
+
+    /// <summary>
+    /// The error for a gpg that cannot be started names the command, without a passphrase given in the switches
+    /// </summary>
+    [Test]
+    public void AGpgThatCannotStartIsReportedWithoutThePassphrase()
+    {
+        var program = Path.Combine(m_folder, "no-such-gpg");
+        var gpg = CreateGpgWithSecretSwitch(program);
+
+        var ex = Assert.Catch(() => gpg.Encrypt(new MemoryStream(RandomData(1024)), new MemoryStream()));
+
+        Assert.That(ex!.Message, Does.Contain(program).And.Contain("--compress-algo none"));
+        Assert.That(ex.Message, Does.Not.Contain(Secret));
+    }
+
     private static bool HasExited(int pid)
     {
         try
