@@ -25,7 +25,6 @@ using Duplicati.Library.Utility;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -50,6 +49,12 @@ namespace Duplicati.Library.Main.Operation.Restore
         /// Number of disk-pressure evictions that must occur before a mid-run warning is emitted.
         /// </summary>
         private const int CACHE_PRESSURE_WARNING_THRESHOLD = 5;
+
+        /// <summary>
+        /// Returns the free space of the drive that holds the given folder, or <c>null</c> if it
+        /// could not be determined. Tests replace it to simulate a disk that is nearly full.
+        /// </summary>
+        internal static Func<string, long?> GetAvailableFreeSpace = path => Library.Utility.Utility.GetFreeSpaceForPath(path)?.FreeSpace;
 
         /// <summary>
         /// Helper class to read from either of two channels.
@@ -140,7 +145,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                     long cache_max = options.RestoreVolumeCacheHint;
                     // Minimum free space (bytes) to maintain in temp dir — used only in unlimited mode.
                     long cache_min_free = options.RestoreVolumeCacheMinFree;
-                    // Temp directory path used for DriveInfo queries in unlimited mode.
+                    // Temp directory path used for free space queries in unlimited mode.
                     string temp_dir = options.TempDir;
                     // Cache of volume readers.
                     Dictionary<long, VolumeWrapper> cache = [];
@@ -168,8 +173,82 @@ namespace Duplicati.Library.Main.Operation.Restore
                     Stopwatch? sw_request = options.InternalProfiling ? new() : null;
                     Stopwatch? sw_wakeup = options.InternalProfiling ? new() : null;
 
+                    // The largest volume seen so far, used to estimate the room a download needs.
+                    // Before any is seen, the volume size option is the estimate.
+                    long largest_volume = 0;
+                    long volume_size_estimate() => largest_volume > 0 ? largest_volume : options.VolumeSize;
+                    // Volumes that wait for room in the temporary folder before they are downloaded, in request order.
+                    Dictionary<long, List<BlockRequest>> pending_downloads = [];
+                    List<long> pending_order = [];
+
+                    // The free space in the temporary folder. When it cannot be determined, it is
+                    // treated as unlimited, so nothing is evicted and no download waits.
+                    bool free_space_unknown_warned = false;
+                    long free_space()
+                    {
+                        var free = GetAvailableFreeSpace(temp_dir);
+                        if (free.HasValue)
+                            return free.Value;
+
+                        if (!free_space_unknown_warned)
+                        {
+                            free_space_unknown_warned = true;
+                            Logging.Log.WriteWarningMessage(LOGTAG, "FreeSpaceUnknown", null, "Could not determine the free space in '{0}'. The restore volume cache will not be limited by disk space.", temp_dir);
+                        }
+                        return long.MaxValue;
+                    }
+
+                    // Evicts cached volumes for disk pressure (unlimited cache mode only).
+                    long evict_for_disk_pressure()
+                    {
+                        var evict_id = evict_lru();
+                        previously_evicted_volume_ids.Add(evict_id);
+                        disk_pressure_evictions++;
+                        if (disk_pressure_evictions == CACHE_PRESSURE_WARNING_THRESHOLD)
+                            Logging.Log.WriteWarningMessage(LOGTAG, "CachePressure", null, "Restore volume cache has begun evicting cached volumes due to low disk space in '{0}'. Restore performance may be degraded.", temp_dir);
+                        return free_space();
+                    }
+
+                    // Free space is otherwise only checked when a decrypted volume is added to the
+                    // cache. A volume that is downloaded and decrypted needs room before that: the
+                    // downloaded file and the decrypted file, about twice its size, for each volume
+                    // in flight. Without this, the volumes in flight could fill the disk while
+                    // decrypting, above the minimum free space (#6606). Cached volumes are evicted
+                    // to make room, and when that is not enough, the download waits until a volume
+                    // in flight is done. One volume is always allowed, so the restore goes on.
+                    bool make_room_for_download()
+                    {
+                        var needed = cache_min_free + (in_flight_downloads.Count + 1) * 2 * volume_size_estimate();
+                        var available_free_space = free_space();
+                        // The most recently used volume is kept, as its blocks are likely still
+                        // being requested; evicting it would only download it again
+                        while (available_free_space < needed && cache_last_touched.Count > 1)
+                            available_free_space = evict_for_disk_pressure();
+                        return available_free_space >= needed || in_flight_downloads.Count == 0;
+                    }
+
+                    async Task start_download(long volume_id, List<BlockRequest> requests)
+                    {
+                        await self.DownloadRequest.WriteAsync(volume_id).ConfigureAwait(false);
+                        in_flight_downloads[volume_id] = requests;
+                    }
+
+                    // Starts the downloads that waited for room, as long as there is room for them
+                    async Task start_pending_downloads()
+                    {
+                        while (pending_order.Count > 0 && make_room_for_download())
+                        {
+                            var volume_id = pending_order[0];
+                            pending_order.RemoveAt(0);
+                            pending_downloads.Remove(volume_id, out var requests);
+                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Downloading volume {0}, which waited for room in the temporary folder", volume_id);
+                            await start_download(volume_id, requests!).ConfigureAwait(false);
+                        }
+                    }
+
                     void handle_add(long volume_id, VolumeWrapper volume)
                     {
+                        largest_volume = Math.Max(largest_volume, volume.Size);
                         cache[volume_id] = volume;
                         cache_size += volume.Size;
                         cache_size_max_consumed = Math.Max(cache_size_max_consumed, cache_size);
@@ -248,7 +327,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                 else
                                                 {
                                                     Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Block {0} not found in cache, requesting volume {1}", request.BlockID, request.VolumeID);
-                                                    if (in_flight_downloads.TryGetValue(request.VolumeID, out var waiters))
+                                                    if (in_flight_downloads.TryGetValue(request.VolumeID, out var waiters)
+                                                        || pending_downloads.TryGetValue(request.VolumeID, out waiters))
                                                     {
                                                         waiters.Add(request);
                                                     }
@@ -258,8 +338,16 @@ namespace Duplicati.Library.Main.Operation.Restore
                                                             total_volumes_accessed++;
                                                         if (previously_evicted_volume_ids.Contains(request.VolumeID))
                                                             disk_pressure_redownloads++;
-                                                        await self.DownloadRequest.WriteAsync(request.VolumeID).ConfigureAwait(false);
-                                                        in_flight_downloads[request.VolumeID] = [request];
+                                                        if (cache_max >= 0 || make_room_for_download())
+                                                        {
+                                                            await start_download(request.VolumeID, [request]).ConfigureAwait(false);
+                                                        }
+                                                        else
+                                                        {
+                                                            Logging.Log.WriteExplicitMessage(LOGTAG, "VolumeRequest", "Volume {0} waits for room in the temporary folder", request.VolumeID);
+                                                            pending_downloads[request.VolumeID] = [request];
+                                                            pending_order.Add(request.VolumeID);
+                                                        }
                                                     }
                                                 }
                                                 sw_request?.Stop();
@@ -300,16 +388,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                                         else
                                         {
                                             // Unlimited mode (cache_max < 0): evict LRU while free space is below the minimum.
-                                            var available_free_space = new DriveInfo(temp_dir).AvailableFreeSpace;
+                                            var available_free_space = free_space();
                                             while (available_free_space < cache_min_free && cache_size > 0)
-                                            {
-                                                var evict_id = evict_lru();
-                                                previously_evicted_volume_ids.Add(evict_id);
-                                                disk_pressure_evictions++;
-                                                if (disk_pressure_evictions == CACHE_PRESSURE_WARNING_THRESHOLD)
-                                                    Logging.Log.WriteWarningMessage(LOGTAG, "CachePressure", null, "Restore volume cache has begun evicting cached volumes due to low disk space in '{0}'. Restore performance may be degraded.", temp_dir);
-                                                available_free_space = new DriveInfo(temp_dir).AvailableFreeSpace;
-                                            }
+                                                available_free_space = evict_for_disk_pressure();
 
                                             if (!cache_exhausted_warned && cache_size == 0 && available_free_space < cache_min_free)
                                             {
@@ -330,6 +411,8 @@ namespace Duplicati.Library.Main.Operation.Restore
                                             await self.DecompressRequest.WriteAsync((request, volume)).ConfigureAwait(false);
                                         }
                                         in_flight_downloads.Remove(volume_id);
+                                        if (pending_order.Count > 0)
+                                            await start_pending_downloads().ConfigureAwait(false);
                                         sw_wakeup?.Stop();
                                         break;
                                     }
