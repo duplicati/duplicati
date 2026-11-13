@@ -46,6 +46,10 @@ namespace Duplicati.Library.Backend
         /// Whether to use the v1 list API; null keeps the Minio default (v2)
         /// </summary>
         private readonly bool? m_useV1ListApi;
+        /// <summary>
+        /// The headers that request server-side encryption of a written object, empty for none
+        /// </summary>
+        private readonly Dictionary<string, string> m_encryptionHeaders = new();
 
         public S3MinioClient(string awsID, string awsKey, string? locationConstraint,
             string servername, string? storageClass, bool useSSL, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options, string lockMode, string? authenticationRegion)
@@ -57,6 +61,12 @@ namespace Duplicati.Library.Backend
             var listApiVersion = options.GetValueOrDefault(S3AwsClient.S3_LIST_API_VERSION_OPTION) ?? options.GetValueOrDefault(S3AwsClient.S3_LEGACY_LIST_API_VERSION_OPTION);
             if (!string.IsNullOrWhiteSpace(listApiVersion))
                 m_useV1ListApi = !string.Equals(listApiVersion, "v2", StringComparison.OrdinalIgnoreCase);
+
+            var (sseMethod, sseKmsKeyId) = S3AwsClient.ParseServerSideEncryption(options);
+            if (sseMethod != null)
+                m_encryptionHeaders["x-amz-server-side-encryption"] = sseMethod;
+            if (sseKmsKeyId != null)
+                m_encryptionHeaders["x-amz-server-side-encryption-aws-kms-key-id"] = sseKmsKeyId;
 
             var clientBuilder = new MinioClient()
                 .WithEndpoint(servername)
@@ -227,7 +237,7 @@ namespace Duplicati.Library.Backend
             try
             {
                 await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct
-                    => m_client.CopyObjectAsync(new CopyObjectArgs().WithBucket(bucketName).WithObject(target).WithCopyObjectSource(new CopySourceObjectArgs().WithBucket(bucketName).WithObject(source)), cancellationToken: ct)
+                    => m_client.CopyObjectAsync(new CopyObjectArgs().WithBucket(bucketName).WithObject(target).WithHeaders(m_encryptionHeaders).WithCopyObjectSource(new CopySourceObjectArgs().WithBucket(bucketName).WithObject(source)), cancellationToken: ct)
                 ).ConfigureAwait(false);
             }
             catch (MinioException e)
@@ -291,7 +301,8 @@ namespace Duplicati.Library.Backend
                     .WithObject(keyName)
                     .WithStreamData(t)
                     .WithObjectSize(t.Length)
-                    .WithContentType("application/octet-stream"),
+                    .WithContentType("application/octet-stream")
+                    .WithHeaders(m_encryptionHeaders),
                     cancellationToken: cancelToken);
             }
             catch (MinioException e)
