@@ -25,6 +25,10 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
             var skippedArchivedUsers = 0;
             var skippedSuspendedUsers = 0;
 
+            // Placing the users by organizational unit needs every user before the first
+            // folder can be listed, so they are collected rather than listed as they arrive
+            var orgUnitUsers = provider.Options.UseOuPaths ? new List<Google.Apis.Admin.Directory.directory_v1.Data.User>() : null;
+
             await foreach (var user in provider.ListAllUsersAsync(cancellationToken).ConfigureAwait(false))
             {
                 if (cancellationToken.IsCancellationRequested) yield break;
@@ -45,18 +49,31 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
                     continue;
                 }
 
+                if (orgUnitUsers != null)
+                {
+                    orgUnitUsers.Add(user);
+                    continue;
+                }
+
                 // Only active accounts consume a seat, which the directory object already
                 // answers without any further request.
                 var countsAsSeat = category == SourceProvider.UserCategory.Active;
 
                 if (provider.LicenseApprovedForEntry(Path, GoogleRootType.Users, user.Id, increment: false, countsAsSeat: countsAsSeat))
-                    yield return new UserSourceEntry(provider, this.Path, user);
+                    yield return new UserSourceEntry(provider, this.Path, this.Path, user, user.PrimaryEmail);
             }
 
             if (skippedArchivedUsers > 0)
                 Log.WriteInformationMessage(LOGTAG, "SkippedExcludedUsers", Strings.SkippedExcludedUsers(skippedArchivedUsers, "archived", OptionsHelper.GOOGLE_EXCLUDE_ARCHIVED_USERS_OPTION));
             if (skippedSuspendedUsers > 0)
                 Log.WriteInformationMessage(LOGTAG, "SkippedExcludedUsers", Strings.SkippedExcludedUsers(skippedSuspendedUsers, "suspended", OptionsHelper.GOOGLE_EXCLUDE_SUSPENDED_USERS_OPTION));
+
+            if (orgUnitUsers != null)
+            {
+                var root = OrgUnitNode.Build(await provider.ListAllOrgUnitsAsync(cancellationToken).ConfigureAwait(false), orgUnitUsers, []);
+                await foreach (var entry in OrganizationalUnitFolderSourceEntry.EnumerateNode(provider, this.Path, this.Path, root, cancellationToken).ConfigureAwait(false))
+                    yield return entry;
+            }
         }
         else if (type == SourceItemType.MetaRootGroups)
         {
@@ -71,8 +88,28 @@ internal class MetaRootSourceEntry(SourceProvider provider, string parentPath, s
         else if (type == SourceItemType.MetaRootSharedDrives)
         {
             var driveService = provider.ApiHelper.GetDriveService();
-            await foreach (var n in SharedDrivesSourceEntry.EnumerateSharedDrives(provider, this.Path, null, userIsInactive: false, driveService, cancellationToken))
-                yield return n;
+            if (provider.Options.UseOuPaths)
+            {
+                // The drives the backup reads are the ones listed without administrator
+                // access; the administrator listing also returns drives the account is not
+                // a member of, and is only used to learn the organizational unit of each drive
+                var drives = new List<Google.Apis.Drive.v3.Data.Drive>();
+                await foreach (var drive in SourceProvider.ListAllSharedDrivesAsync(driveService, cancellationToken).ConfigureAwait(false))
+                    drives.Add(drive);
+
+                var orgUnitIds = await provider.ListSharedDriveOrgUnitIdsAsync(driveService, cancellationToken).ConfigureAwait(false);
+                foreach (var drive in drives)
+                    drive.OrgUnitId = orgUnitIds.GetValueOrDefault(drive.Id);
+
+                var root = OrgUnitNode.Build(await provider.ListAllOrgUnitsAsync(cancellationToken).ConfigureAwait(false), [], drives);
+                await foreach (var entry in OrganizationalUnitFolderSourceEntry.EnumerateNode(provider, this.Path, this.Path, root, cancellationToken).ConfigureAwait(false))
+                    yield return entry;
+            }
+            else
+            {
+                await foreach (var n in SharedDrivesSourceEntry.EnumerateSharedDrives(provider, this.Path, null, userIsInactive: false, driveService, cancellationToken))
+                    yield return n;
+            }
         }
         else if (type == SourceItemType.MetaRootSites)
         {
