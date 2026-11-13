@@ -66,6 +66,7 @@ public class WebModule : IWebModule
         SourceItemType.MetaRootSharedDrives.ToString(),
         SourceItemType.MetaRootSites.ToString(),
         SourceItemType.MetaRootOrganizationalUnits.ToString(),
+        SourceItemType.OrganizationalUnitFolder.ToString(),
     };
 
 

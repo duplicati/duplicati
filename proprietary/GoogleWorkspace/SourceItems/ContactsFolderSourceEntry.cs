@@ -37,7 +37,7 @@ internal class ContactsFolderSourceEntry(SourceProvider provider, string parentP
     {
         var tracker = provider.ChangeTracker;
         var useDelta = provider.ContactsDeltaActive;
-        var stateKey = useDelta ? ChangeTrackingKeys.Contacts(userId) : null;
+        var stateKey = useDelta ? ChangeTrackingKeys.Contacts(provider.ChangeTrackingUserScope(userId)) : null;
         var stored = stateKey == null ? null : tracker.GetState(stateKey);
 
         // Decide what the carry-forward sees before anything can fail: with a token, the

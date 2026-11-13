@@ -61,7 +61,7 @@ internal static class GmailMailboxWalk
     {
         var tracker = provider.ChangeTracker;
         var useDelta = provider.GmailDeltaActive;
-        var stateKey = useDelta ? ChangeTrackingKeys.Gmail(userId) : null;
+        var stateKey = useDelta ? ChangeTrackingKeys.Gmail(provider.ChangeTrackingUserScope(userId)) : null;
         var stored = stateKey == null ? null : tracker.GetState(stateKey);
 
         // The mailbox level itself is listed in full on every run: the labels and the settings.
