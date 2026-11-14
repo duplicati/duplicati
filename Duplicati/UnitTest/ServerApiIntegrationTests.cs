@@ -1096,6 +1096,33 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// By default (--store-task-config=Auto) the task configuration is stored in an encrypted backup.
+    /// A backup with a passphrase and no encryption-module is encrypted with the default module, so its
+    /// configuration must be stored too.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task StoreTaskConfigAutoStoresTheConfigWhenTheDefaultEncryptionModuleIsUsed_Async()
+    {
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sample content");
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            // The settings have a passphrase and no encryption-module
+            var backupId = await CreateBackupAsync(httpClient, "integration-passphrase").ConfigureAwait(false);
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+            Assert.That(Directory.GetFiles(this.TARGETFOLDER, "*.aes"), Is.Not.Empty, "The backup should be encrypted with the default module");
+
+            var configResponse = await httpClient.PostAsync($"/api/v1/backup/{backupId}/restore-task-config", null).ConfigureAwait(false);
+            configResponse.EnsureSuccessStatusCode();
+            var storedConfig = await configResponse.Content.ReadFromJsonAsync<JsonElement>(JsonOptions).ConfigureAwait(false);
+            Assert.That(storedConfig.ValueKind == JsonValueKind.Array ? storedConfig.GetArrayLength() : -1, Is.EqualTo(1),
+                $"The backup did not store its task configuration: {storedConfig}");
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// The old UI lists the files of one version to choose what to restore. The all-versions option
     /// of the backup or the server must not turn that into a list of every version, or it shows
     /// files that the restore of the version then leaves out (#5055).

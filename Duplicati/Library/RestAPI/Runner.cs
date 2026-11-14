@@ -282,11 +282,10 @@ namespace Duplicati.Server
             if (Utility.ParseBoolOption(options, "no-encryption"))
                 return false;
 
-            // But since we explicitly set the encryption module, we also check that this is set
-            if (string.IsNullOrWhiteSpace(options.GetValueOrDefault("encryption-module")))
-                return false;
+            // An empty encryption-module is not checked: the backup then uses the default module (aes),
+            // as a backup created through the API or an older client can have only the passphrase
 
-            // Also, we need a passphrase
+            // But we need a passphrase
             if (string.IsNullOrWhiteSpace(options.GetValueOrDefault("passphrase")))
                 return false;
 
