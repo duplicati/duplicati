@@ -1163,12 +1163,11 @@ namespace Duplicati.Library.Main.Operation.Backup
                 return false;
             }
 
-            // Exclude special files. On Linux and macOS, IsBlockDevice is true for every entry
-            // that is not a regular file, a folder or a symlink: block and character devices,
-            // FIFOs and sockets.
+            // Exclude special files: on Linux and macOS, every entry that is not a regular file,
+            // a folder or a symlink, so block and character devices, FIFOs and sockets
             try
             {
-                if (entry.IsBlockDevice)
+                if (entry.IsSpecialFile)
                 {
                     Logging.Log.WriteVerboseMessage(FILTER_LOGTAG, "ExcludingSpecialFile", "Excluding special file (device, FIFO or socket): {0}", entry.Path);
                     return false;

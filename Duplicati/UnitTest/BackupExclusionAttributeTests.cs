@@ -47,7 +47,7 @@ public class BackupExclusionAttributeTests : BasicSetupHelper
         public bool IsSymlink { get; set; }
         public string? SymlinkTarget { get; set; }
         public FileAttributes Attributes { get; set; } = FileAttributes.Normal;
-        public bool IsBlockDevice { get; set; }
+        public bool IsSpecialFile { get; set; }
         public bool IsCharacterDevice { get; set; }
         public bool IsAlternateStream { get; set; }
         public string? HardlinkTargetId { get; set; }

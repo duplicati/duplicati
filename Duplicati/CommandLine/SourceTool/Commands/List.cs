@@ -53,7 +53,7 @@ public static class List
     /// <param name="IsSymlink">True if the entry is a symlink</param>
     /// <param name="SymlinkTarget">The target of the symlink, if the entry is a symlink</param>
     /// <param name="Attributes">The entry attributes</param>
-    /// <param name="IsBlockDevice">True if the entry is a block device; on Linux and macOS, true for any special file: a block or character device, a FIFO or a socket</param>
+    /// <param name="IsSpecialFile">True if the entry is a special file: a block device, and on Linux and macOS also a character device, a FIFO or a socket</param>
     /// <param name="IsCharacterDevice">True if the entry is a character device</param>
     /// <param name="IsAlternateStream">True if the entry is an alternate stream</param>
     /// <param name="HardlinkTargetId">The hardlink target id, if the entry is a hardlink</param>
@@ -69,7 +69,7 @@ public static class List
         bool IsSymlink,
         string? SymlinkTarget,
         FileAttributes Attributes,
-        bool IsBlockDevice,
+        bool IsSpecialFile,
         bool IsCharacterDevice,
         bool IsAlternateStream,
         string? HardlinkTargetId,
@@ -129,7 +129,7 @@ public static class List
                             entry.IsSymlink,
                             entry.SymlinkTarget,
                             entry.Attributes,
-                            entry.IsBlockDevice,
+                            entry.IsSpecialFile,
                             entry.IsCharacterDevice,
                             entry.IsAlternateStream,
                             entry.HardlinkTargetId,

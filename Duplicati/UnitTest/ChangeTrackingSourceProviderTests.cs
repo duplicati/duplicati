@@ -116,7 +116,7 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
         public bool IsSymlink => false;
         public string? SymlinkTarget => null;
         public FileAttributes Attributes => IsFolder ? FileAttributes.Directory : FileAttributes.Normal;
-        public bool IsBlockDevice => false;
+        public bool IsSpecialFile => false;
         public bool IsCharacterDevice => false;
         public bool IsAlternateStream => false;
         public string? HardlinkTargetId => null;

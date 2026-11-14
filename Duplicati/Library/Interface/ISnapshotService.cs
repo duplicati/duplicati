@@ -117,13 +117,13 @@ public interface ISnapshotService : IDisposable
     Dictionary<string, string?> GetMetadata(string localPath, bool isSymlink);
 
     /// <summary>
-    /// Gets a value indicating if the path points to a block device. The Linux and macOS
-    /// snapshots also return <c>true</c> for any other special file: character devices, FIFOs
-    /// and sockets.
+    /// Gets a value indicating if the path points to a special file, which a backup leaves out.
+    /// On Linux and macOS that is anything that is not a regular file, a folder or a symlink:
+    /// block and character devices, FIFOs and sockets.
     /// </summary>
-    /// <returns><c>true</c> if the path is a block device, or on Linux and macOS any special file; otherwise, <c>false</c>.</returns>
+    /// <returns><c>true</c> if the path is a special file; otherwise, <c>false</c>.</returns>
     /// <param name="localPath">The file or folder to examine</param>
-    bool IsBlockDevice(string localPath);
+    bool IsSpecialFile(string localPath);
 
     /// <summary>
     /// Gets a unique hardlink target ID

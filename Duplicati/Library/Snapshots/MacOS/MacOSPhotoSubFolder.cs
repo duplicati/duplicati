@@ -73,7 +73,7 @@ internal class MacOSPhotoSubFolder(MacOSPhotosLibraryEntry parent, string subpat
     public FileAttributes Attributes => parent.Attributes;
 
     /// <inheritdoc/>
-    public bool IsBlockDevice => false;
+    public bool IsSpecialFile => false;
 
     /// <inheritdoc/>
     public bool IsCharacterDevice => false;
