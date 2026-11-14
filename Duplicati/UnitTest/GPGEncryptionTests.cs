@@ -351,6 +351,48 @@ public class GPGEncryptionTests
     }
 
     /// <summary>
+    /// A recipient makes gpg encrypt to that public key instead of the passphrase (#2270)
+    /// </summary>
+    [Test]
+    public void ARecipientEncryptsToThePublicKey()
+    {
+        var program = CreateFakeGpg(new FakeGpg());
+        var gpg = new GPGEncryption("the-passphrase", new Dictionary<string, string>
+        {
+            [GPGEncryption.COMMANDLINE_OPTIONS_PATH] = program,
+            ["gpg-encryption-recipient"] = " Backup Key <backup@example.com> ",
+            ["gpg-encryption-switches"] = "--recipient second@example.com",
+        });
+        var data = RandomData(1024);
+
+        var encrypt = ProfilingMessages(() => gpg.Encrypt(new MemoryStream(data), new MemoryStream()));
+        var decrypt = ProfilingMessages(() => gpg.Decrypt(new MemoryStream(data), new MemoryStream()));
+
+        Assert.That(encrypt, Has.Some.Contains("--batch --passphrase-fd 0 --recipient \"Backup Key <backup@example.com>\" --recipient second@example.com --encrypt"), string.Join(Environment.NewLine, encrypt));
+        Assert.That(encrypt, Has.None.Contains("--symmetric"), string.Join(Environment.NewLine, encrypt));
+        Assert.That(decrypt, Has.Some.Contains("--decrypt").And.None.Contains("--recipient"), string.Join(Environment.NewLine, decrypt));
+    }
+
+    /// <summary>
+    /// An encryption command given explicitly is used as before, with the recipient added
+    /// </summary>
+    [Test]
+    public void AnEncryptionCommandTakesPrecedenceOverTheRecipient()
+    {
+        var program = CreateFakeGpg(new FakeGpg());
+        var gpg = new GPGEncryption("the-passphrase", new Dictionary<string, string>
+        {
+            [GPGEncryption.COMMANDLINE_OPTIONS_PATH] = program,
+            ["gpg-encryption-recipient"] = "backup@example.com",
+            ["gpg-encryption-command"] = "--encrypt --sign",
+        });
+
+        var encrypt = ProfilingMessages(() => gpg.Encrypt(new MemoryStream(RandomData(1024)), new MemoryStream()));
+
+        Assert.That(encrypt, Has.Some.Contains("--recipient \"backup@example.com\"").And.Contains("--encrypt --sign"), string.Join(Environment.NewLine, encrypt));
+    }
+
+    /// <summary>
     /// A passphrase given in the switches is not logged; the one Duplicati passes goes to the input of gpg, not its arguments
     /// </summary>
     [Test]
