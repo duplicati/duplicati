@@ -692,7 +692,7 @@ namespace Duplicati.Library.Main.Operation
         /// <summary>
         /// Performs the bulk of work by starting all relevant processes
         /// </summary>
-        private static async Task RunMainOperationAsync(Backup.Channels channels, ISourceProvider source, UsnJournalService journalService, Backup.ChangeTrackingCoordinator changeTracking, Backup.ChangeList changeList, string changeListToken, Backup.FailedPathRecorder failedPaths, Backup.BackupDatabase database, IBackendManager backendManager, Backup.BackupStatsCollector stats, Options options, IFilter filter, HashSet<string> blacklistPaths, BackupResults result, ITaskReader taskreader, long filesetid, long lastfilesetid)
+        private static async Task RunMainOperationAsync(Backup.Channels channels, ISourceProvider source, UsnJournalService journalService, Backup.ChangeTrackingCoordinator changeTracking, Backup.ChangeList changeList, string changeListToken, Backup.FailedPathRecorder failedPaths, Backup.BackupDatabase database, IBackendManager backendManager, Backup.BackupStatsCollector stats, Options options, IFilter filter, HashSet<string> blacklistPaths, BackupResults result, ITaskReader taskreader, long filesetid, long lastfilesetid, IReadOnlyList<string> missingSources)
         {
             using (new Logging.Timer(LOGTAG, "BackupMainOperation", "BackupMainOperation"))
             {
@@ -850,6 +850,12 @@ namespace Duplicati.Library.Main.Operation
                     await changeTracking.StoreStateAsync(database, result.PartialBackup, taskreader.ProgressToken).ConfigureAwait(false);
                 }
 
+                // A missing source, such as a folder on a drive that is not connected, was not walked,
+                // so its files are copied from the previous version instead of being recorded as deleted.
+                // Entries already in the new fileset are not copied again
+                if (missingSources != null && missingSources.Count > 0)
+                    await AppendMissingSourcesFromPreviousSetAsync(database, stats, missingSources, taskreader.ProgressToken).ConfigureAwait(false);
+
                 if (changeListToken != null)
                     await StoreChangeListTokenAsync(database, changeListToken, failedPaths, result.PartialBackup, taskreader.ProgressToken).ConfigureAwait(false);
 
@@ -866,6 +872,54 @@ namespace Duplicati.Library.Main.Operation
 
                 result.OperationProgressUpdater.UpdatefileCount(result.ExaminedFiles, result.SizeOfExaminedFiles, true);
             }
+        }
+
+        /// <summary>
+        /// Copies the entries of the missing sources from the previous fileset into the new one
+        /// </summary>
+        /// <param name="database">The database</param>
+        /// <param name="stats">The statistics collector, which counts the copied files as examined</param>
+        /// <param name="missingSources">The full paths of the missing sources</param>
+        /// <param name="token">The cancellation token</param>
+        private static async Task AppendMissingSourcesFromPreviousSetAsync(Backup.BackupDatabase database, Backup.BackupStatsCollector stats, IReadOnlyList<string> missingSources, CancellationToken token)
+        {
+            long count = 0;
+            long size = 0;
+            await database.AppendFilesFromPreviousSetWithPredicateAsync((path, fileSize) =>
+            {
+                if (!IsInMissingSource(path, missingSources))
+                    return true;
+
+                if (fileSize >= 0)
+                {
+                    count++;
+                    size += fileSize;
+                }
+
+                return false;
+            }, token).ConfigureAwait(false);
+
+            await stats.AddExaminedFilesAsync(count, size).ConfigureAwait(false);
+            Log.WriteInformationMessage(LOGTAG, "MissingSourceCarryForward", "Copied {0} files of missing sources from the previous backup", count);
+        }
+
+        /// <summary>
+        /// Gets a value indicating if a stored path is one of the missing sources or lies below one
+        /// </summary>
+        /// <param name="path">The stored path; folders end with a separator</param>
+        /// <param name="missingSources">The full paths of the missing sources, with or without a trailing separator</param>
+        /// <returns><c>true</c> if the path belongs to a missing source</returns>
+        internal static bool IsInMissingSource(string path, IEnumerable<string> missingSources)
+        {
+            foreach (var missing in missingSources)
+            {
+                var folder = Util.AppendDirSeparator(missing);
+                if (path.StartsWith(folder, Library.Utility.Utility.ClientFilenameStringComparison)
+                    || path.Equals(missing.TrimEnd(System.IO.Path.DirectorySeparatorChar), Library.Utility.Utility.ClientFilenameStringComparison))
+                    return true;
+            }
+
+            return false;
         }
 
         private async Task CompactIfRequiredAsync(IBackendManager backendManager, long lastVolumeSize)
@@ -1060,7 +1114,14 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        public async Task RunAsync(string[] sources, IBackendManager backendManager, IFilter filter)
+        /// <summary>
+        /// Runs the backup
+        /// </summary>
+        /// <param name="sources">The expanded sources</param>
+        /// <param name="backendManager">The backend manager</param>
+        /// <param name="filter">The filter</param>
+        /// <param name="missingSources">The full paths of missing sources whose files are copied unchanged from the previous version, or null</param>
+        public async Task RunAsync(string[] sources, IBackendManager backendManager, IFilter filter, IReadOnlyList<string> missingSources = null)
         {
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);
 
@@ -1205,7 +1266,7 @@ namespace Duplicati.Library.Main.Operation
                             if (await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                             {
                                 var stats = new Backup.BackupStatsCollector(m_result);
-                                await RunMainOperationAsync(channels, source, journalService, changeTracking, changeList, changeListHandoff?.Token, failedPaths, db, backendManager, stats, m_options, m_filter, blacklistPaths, m_result, m_result.TaskControl, filesetid, lastfilesetid).ConfigureAwait(false);
+                                await RunMainOperationAsync(channels, source, journalService, changeTracking, changeList, changeListHandoff?.Token, failedPaths, db, backendManager, stats, m_options, m_filter, blacklistPaths, m_result, m_result.TaskControl, filesetid, lastfilesetid, missingSources).ConfigureAwait(false);
                             }
                             else
                             {

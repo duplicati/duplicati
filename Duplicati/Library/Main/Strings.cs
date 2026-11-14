@@ -275,6 +275,8 @@ namespace Duplicati.Library.Main.Strings
         public static string AllowmissingsourceShort { get { return LC.L(@"Ignore missing source elements"); } }
         public static string AbortifsourcemissingLong { get { return LC.L(@"Use this option to abort the backup if any source path is missing. This overrides the default behavior of logging a warning and continuing."); } }
         public static string AbortifsourcemissingShort { get { return LC.L(@"Abort backup if a source is missing"); } }
+        public static string KeepmissingsourcesLong { get { return LC.L(@"Use this option to keep the files of a source path that does not exist, such as a folder on a drive that is not connected, as they were in the previous version instead of recording them as deleted. This applies to local source paths only, and not to a source that lies inside another source."); } }
+        public static string KeepmissingsourcesShort { get { return LC.L(@"Keep the files of missing sources"); } }
         public static string PreventemptysourceLong { get { return LC.L(@"Use this option to prevent backups from running if one or more source folders are empty. This is useful to prevent backups from running when the source is not available, such as when a USB drive is not mounted. This only works for filesystem source paths."); } }
         public static string PreventemptysourceShort { get { return LC.L(@"Prevent backups from running if source folders are empty"); } }
         public static string OverwriteLong { get { return LC.L(@"Use this option to overwrite target files when restoring. If this option is not set, the files will be restored with a timestamp and a number appended."); } }
