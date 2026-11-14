@@ -18,6 +18,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+#nullable enable
+
 using Duplicati.Server.Serialization;
 
 namespace Duplicati.GUI.TrayIcon
@@ -29,5 +31,13 @@ namespace Duplicati.GUI.TrayIcon
         long LastEventID { get; }
         long LastDataUpdateID { get; }
         long LastNotificationUpdateID { get; }
+        /// <summary>
+        /// Whether the server is running a task
+        /// </summary>
+        bool HasActiveTask { get; }
+        /// <summary>
+        /// The name of the backup the running task belongs to, or <c>null</c> if there is none or it is not known
+        /// </summary>
+        string? ActiveBackupName { get; }
     }
 }

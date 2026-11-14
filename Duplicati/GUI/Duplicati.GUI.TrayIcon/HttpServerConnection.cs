@@ -55,7 +55,32 @@ namespace Duplicati.GUI.TrayIcon
             long LastEventID,
             long LastDataUpdateID,
             long LastNotificationUpdateID
-        ) : IServerStatus;
+        ) : IServerStatus
+        {
+            /// <summary>
+            /// The running task, as the server sends it: the task ID and the backup ID
+            /// </summary>
+            public ActiveTaskImpl? ActiveTask { get; init; }
+
+            /// <inheritdoc />
+            [JsonIgnore]
+            public bool HasActiveTask => ActiveTask != null;
+
+            /// <inheritdoc />
+            [JsonIgnore]
+            public string? ActiveBackupName { get; init; }
+        }
+
+        private sealed record ActiveTaskImpl(long Item1, string? Item2);
+
+        private sealed record BackupNameImpl(string? Name);
+
+        private sealed record BackupResponseImpl(BackupNameImpl? Backup);
+
+        /// <summary>
+        /// The backup names looked up, by backup ID, with the data update they were read at
+        /// </summary>
+        private readonly Dictionary<string, (long DataUpdateId, string? Name)> m_backupNames = new();
 
         private record NotificationImpl(
             long ID,
@@ -233,6 +258,10 @@ namespace Duplicati.GUI.TrayIcon
             var status = await PerformRequestAsync<ServerStatusImpl>("GET", $"/serverstate{query}", null,
                 longpoll ? Library.Utility.Timeparser.ParseTimeSpan(LONGPOLL_TIMEOUT) : null);
 
+            var activeBackupId = status.ActiveTask?.Item2;
+            if (!string.IsNullOrWhiteSpace(activeBackupId))
+                status = status with { ActiveBackupName = await GetBackupNameAsync(activeBackupId, status.LastDataUpdateID).ConfigureAwait(false) };
+
             lock (m_statusLock)
             {
                 // A plain request runs next to the long poll. If the long poll has taken a state
@@ -266,6 +295,40 @@ namespace Duplicati.GUI.TrayIcon
                 m_lastDataUpdateId = m_status.LastDataUpdateID;
                 await UpdateApplicationSettingsAsync().ConfigureAwait(false);
             }
+        }
+
+        /// <summary>
+        /// Gets the name of a backup, to show which backup is running. A name is read again
+        /// once the server data has changed, as the backup may have been renamed.
+        /// </summary>
+        /// <param name="backupId">The backup ID</param>
+        /// <param name="dataUpdateId">The data update the server state was taken at</param>
+        /// <returns>The name, or <c>null</c> if it could not be read</returns>
+        private async Task<string?> GetBackupNameAsync(string backupId, long dataUpdateId)
+        {
+            lock (m_backupNames)
+                if (m_backupNames.TryGetValue(backupId, out var cached) && cached.DataUpdateId == dataUpdateId)
+                    return cached.Name;
+
+            string? name;
+            try
+            {
+                var response = await PerformRequestAsync<BackupResponseImpl>("GET", $"/backup/{Uri.EscapeDataString(backupId)}", null, null)
+                    .ConfigureAwait(false);
+                name = response?.Backup?.Name;
+            }
+            catch (Exception ex) when (!m_stopToken.IsCancellationRequested && !_applicationExitEvent.IsCancellationRequested)
+            {
+                // The name is only shown in the tooltip, so the status update goes on without it
+                Library.Logging.Log.WriteVerboseMessage(LOGTAG, "TrayIconBackupNameError", ex,
+                    "Failed to get the name of backup {0}", backupId);
+                return null;
+            }
+
+            lock (m_backupNames)
+                m_backupNames[backupId] = (dataUpdateId, name);
+
+            return name;
         }
 
         private async Task UpdateNotificationsAsync()

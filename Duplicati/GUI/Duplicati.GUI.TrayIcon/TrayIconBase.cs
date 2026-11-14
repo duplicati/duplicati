@@ -122,6 +122,14 @@ namespace Duplicati.GUI.TrayIcon
 
         protected abstract void SetMenu(IEnumerable<IMenuItem> items);
 
+        /// <summary>
+        /// Sets the text shown when the cursor rests on the tray icon
+        /// </summary>
+        /// <param name="text">The text to show</param>
+        protected virtual void SetTooltip(string text)
+        {
+        }
+
         public abstract void NotifyUser(string title, string message, NotificationType type);
 
         protected virtual void RegisterStatusUpdateCallback()
@@ -279,6 +287,8 @@ namespace Duplicati.GUI.TrayIcon
                         break;
 
                 }
+
+                this.SetTooltip(TrayTooltip.Build(Library.AutoUpdater.AutoUpdateSettings.AppName, status));
 
                 if (status.ProgramState == LiveControlState.Running)
                 {
