@@ -33,7 +33,7 @@ namespace Duplicati.Library.Backend
     /// <summary>
     /// The file backend implementation
     /// </summary>
-    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend, ILinkEnabledBackend, IFolderDeleteEnabledBackend, IModificationTimeEnabledBackend
+    public class File : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend, ILinkEnabledBackend, IFolderDeleteEnabledBackend, IModificationTimeEnabledBackend, IFileInfoEnabledBackend
     {
         /// <summary>
         /// The tag used for logging
@@ -552,6 +552,18 @@ namespace Duplicati.Library.Backend
                 => systemIO.FileDelete(GetRemoteName(remotename))
             ).ConfigureAwait(false);
         }
+
+        /// <inheritdoc />
+        public async Task<IFileEntry?> GetFileInfoAsync(string remotename, CancellationToken cancelToken)
+            => await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, _ =>
+            {
+                var path = GetRemoteName(remotename);
+                if (!systemIO.FileExists(path))
+                    return (IFileEntry?)null;
+
+                var fi = new FileInfo(path);
+                return new FileEntry(remotename, fi.Length, fi.LastAccessTime, fi.LastWriteTime, false, (fi.Attributes & System.IO.FileAttributes.Archive) != 0);
+            }).ConfigureAwait(false);
 
         /// <inheritdoc />
         public IList<ICommandLineArgument> SupportedCommands
