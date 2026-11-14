@@ -59,6 +59,8 @@ namespace Duplicati.Library.Encryption.Strings
         public static string GpgencryptiondecryptioncommandShort { get { return LC.L(@"The GPG decryption command"); } }
         public static string GpgencryptionencryptioncommandLong(string commandname, string optionvalue) { return LC.L(@"Override the default GPG encryption command ""{0}"". Normal usage is to request asymetric encryption with the setting {1}.", commandname, optionvalue); }
         public static string GpgencryptionencryptioncommandShort { get { return LC.L(@"The GPG encryption command"); } }
+        public static string GpgencryptioncipheralgoLong(string gpgoption, string switchesoption) { return LC.L(@"Use this option to choose the cipher GPG encrypts with, by passing {0} to GPG. If not set, GPG uses its own default. Decryption does not need it, as GPG reads the cipher from the file. A {0} given in --{1} takes precedence.", gpgoption, switchesoption); }
+        public static string GpgencryptioncipheralgoShort { get { return LC.L(@"The GPG cipher algorithm"); } }
     }
     internal static class GPGStreamWrapper
     {
