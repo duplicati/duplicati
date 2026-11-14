@@ -538,6 +538,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("throttle-disabled", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablethrottleShort, Strings.Options.DisablethrottleLong, "false"),
             new CommandLineArgument("throttle-disabled-backends", CommandLineArgument.ArgumentType.String, Strings.Options.DisablethrottlebackendsShort, Strings.Options.DisablethrottlebackendsLong("throttle-disabled"), DEFAULT_THROTTLE_DISABLED_BACKENDS),
             new CommandLineArgument("skip-files-larger-than", CommandLineArgument.ArgumentType.Size, Strings.Options.SkipfileslargerthanShort, Strings.Options.SkipfileslargerthanLong),
+            new CommandLineArgument("skip-files-smaller-than", CommandLineArgument.ArgumentType.Size, Strings.Options.SkipfilessmallerthanShort, Strings.Options.SkipfilessmallerthanLong),
             new CommandLineArgument("skip-files-modified-before", CommandLineArgument.ArgumentType.DateTime, Strings.Options.SkipfilesmodifiedbeforeShort, Strings.Options.SkipfilesmodifiedbeforeLong),
             new CommandLineArgument("skip-files-modified-after", CommandLineArgument.ArgumentType.DateTime, Strings.Options.SkipfilesmodifiedafterShort, Strings.Options.SkipfilesmodifiedafterLong),
 
@@ -775,6 +776,20 @@ namespace Duplicati.Library.Main
                 var value = m_options.GetValueOrDefault("skip-files-larger-than");
                 return string.IsNullOrWhiteSpace(value)
                     ? long.MaxValue
+                    : Library.Utility.Sizeparser.ParseSize(value, "mb");
+            }
+        }
+
+        /// <summary>
+        /// Gets the size a file must reach to be backed up, or 0 to not skip small files
+        /// </summary>
+        public long SkipFilesSmallerThan
+        {
+            get
+            {
+                var value = m_options.GetValueOrDefault("skip-files-smaller-than");
+                return string.IsNullOrWhiteSpace(value)
+                    ? 0
                     : Library.Utility.Sizeparser.ParseSize(value, "mb");
             }
         }

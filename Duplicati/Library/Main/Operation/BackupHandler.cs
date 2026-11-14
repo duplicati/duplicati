@@ -137,11 +137,14 @@ namespace Duplicati.Library.Main.Operation
             // The journal only lists the changed files. The time limits are compared as points in time,
             // so a limit given as an interval moves with every run and the files have to be scanned again,
             // as a file can cross it without being changed
-            var timeLimits = new[] { ("skip-files-modified-before", m_options.SkipFilesModifiedBefore), ("skip-files-modified-after", m_options.SkipFilesModifiedAfter) }
+            var journalConfiguration = new[] { ("skip-files-modified-before", m_options.SkipFilesModifiedBefore), ("skip-files-modified-after", m_options.SkipFilesModifiedAfter) }
                 .Where(x => x.Item2.HasValue)
                 .Select(x => $"{x.Item1}={x.Item2!.Value.Ticks}");
+            // Only added when set, so the configuration of an existing backup is unchanged
+            if (m_options.SkipFilesSmallerThan > 0)
+                journalConfiguration = journalConfiguration.Append($"skip-files-smaller-than={m_options.SkipFilesSmallerThan}");
             var service = new UsnJournalService(fileProvider.SnapshotService, filter, m_options.FileAttributeFilter, m_options.SkipFilesLargerThan,
-                journalData, cancellationTokenSource.Token, timeLimits);
+                journalData, cancellationTokenSource.Token, journalConfiguration);
 
             foreach (var volumeData in service.VolumeDataList)
             {
