@@ -722,6 +722,8 @@ namespace Duplicati.Server
             connection.ApplicationSettings.JWTConfig = null;
             // Clean up stored tokens as they are now invalid
             connection.ExecuteWithCommand((con) => con.ExecuteNonQuery("DELETE FROM TokenFamily"));
+            // The MCP tokens are signed with the same key, so the list of them describes tokens that no longer work
+            connection.ApplicationSettings.McpTokens = null;
         }
 
         /// <summary>
@@ -758,6 +760,8 @@ namespace Duplicati.Server
 
             if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_ENABLE_FOLDER_STATUS_SERVICE))
                 connection.ApplicationSettings.EnableFolderStatusService = Library.Utility.Utility.ParseBoolOption(commandlineOptions, WebServerLoader.OPTION_WEBSERVICE_ENABLE_FOLDER_STATUS_SERVICE);
+            if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_ENABLE_MCP_SERVER))
+                connection.ApplicationSettings.EnableMcpServer = Library.Utility.Utility.ParseBoolOption(commandlineOptions, WebServerLoader.OPTION_WEBSERVICE_ENABLE_MCP_SERVER);
 
             if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_PASSWORD))
             {
@@ -1695,6 +1699,7 @@ namespace Duplicati.Server
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_PRE_AUTH_TOKENS, CommandLineArgument.ArgumentType.String, Strings.Program.WebserverPreAuthTokensDescription, Strings.Program.WebserverPreAuthTokensDescription),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_TOKENDURATION, CommandLineArgument.ArgumentType.Timespan, Strings.Program.WebserverTokenDurationDescription, Strings.Program.WebserverTokenDurationDescription, WebServerLoader.DEFAULT_OPTION_TOKENDURATION),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_ENABLE_FOLDER_STATUS_SERVICE, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverEnableFolderStatusServiceDescription, Strings.Program.WebserverEnableFolderStatusServiceDescription),
+            new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_ENABLE_MCP_SERVER, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverEnableMcpServerDescription, Strings.Program.WebserverEnableMcpServerDescription),
             new CommandLineArgument(WebServerLoader.OPTION_CONFIGURE_HTTPS, CommandLineArgument.ArgumentType.Boolean, Strings.Program.ConfigureHttpsShort, Strings.Program.ConfigureHttpsLong),
             new CommandLineArgument(WebServerLoader.OPTION_CONFIGURE_HTTPS_HOSTNAMES, CommandLineArgument.ArgumentType.String, Strings.Program.ConfigureHttpsHostnamesShort, Strings.Program.ConfigureHttpsHostnamesLong),
             new CommandLineArgument(WebServerLoader.OPTION_SUPPRESS_WELCOME_PAGE, CommandLineArgument.ArgumentType.Boolean, Strings.Program.SuppressWelcomePageShort, Strings.Program.SuppressWelcomePageLong),

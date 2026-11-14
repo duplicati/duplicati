@@ -93,6 +93,23 @@ public class JWTTokenProvider(Func<JWTConfig> getJWTConfig) : IJWTTokenProvider
             new Claim(Claims.Family, TemporaryFamilyId)
         ], DateTime.Now, expires: DateTime.Now.AddYears(10));
 
+    public string CreateMcpToken(string tokenId, DateTime expires)
+        => GenerateToken([
+            new Claim(Claims.Type, TokenType.McpToken.ToString()),
+            new Claim(Claims.TokenId, tokenId)
+        ], DateTime.Now, expires: expires);
+
+    public IJWTTokenProvider.McpToken ReadMcpToken(string token)
+    {
+        var jwtToken = ParseAndValidateToken(token, TokenType.McpToken);
+
+        return new IJWTTokenProvider.McpToken(
+            jwtToken.ValidFrom,
+            jwtToken.ValidTo,
+            jwtToken.Claims.First(c => c.Type == Claims.TokenId).Value
+        );
+    }
+
     public (string RefreshToken, string? Nonce) CreateRefreshToken(string userId, string tokenFamilyId, int counter, bool shortLived)
     {
         var claims = new List<Claim>
@@ -248,7 +265,8 @@ public class JWTTokenProvider(Func<JWTConfig> getJWTConfig) : IJWTTokenProvider
         AccessToken,
         RefreshToken,
         SigninToken,
-        SingleOperationToken
+        SingleOperationToken,
+        McpToken
     }
 
     private static class Claims
@@ -260,6 +278,7 @@ public class JWTTokenProvider(Func<JWTConfig> getJWTConfig) : IJWTTokenProvider
         public const string IssuedAt = "iat";
         public const string Operation = "sop";
         public const string Nonce = "nce";
+        public const string TokenId = "mti";
     }
 
 }

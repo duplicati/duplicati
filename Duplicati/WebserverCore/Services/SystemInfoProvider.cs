@@ -55,6 +55,13 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
     public const string SyncRestoreExtension = "v1:backup:sync-restore";
 
     /// <summary>
+    /// The API extension that signals the server has the MCP endpoint, toggled with the
+    /// "enable-mcp-server" server setting. It is reported whether the endpoint is on or off,
+    /// so a client can offer the switch.
+    /// </summary>
+    public const string McpServerExtension = "v2:mcp:server";
+
+    /// <summary>
     /// The API extensions that are available
     /// </summary>
     public static readonly string[] SupportedAPIExtensions = [
@@ -92,6 +99,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         BackupEnableDisableExtension,
         SyncSnapshotsExtension,
         SyncRestoreExtension,
+        McpServerExtension,
         "v2:backup:purge-files:suppress-compact",
 
         // "v1:subscribe:scheduler",

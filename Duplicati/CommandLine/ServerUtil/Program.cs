@@ -55,6 +55,10 @@ public static class Program
                 Export.Create(),
                 Health.Create(),
                 IssueForeverToken.Create(),
+                IssueMcpToken.Create(),
+                ListMcpTokens.Create(),
+                RevokeMcpToken.Create(),
+                Mcp.Create(),
                 ServerStatus.Create()
             };
 

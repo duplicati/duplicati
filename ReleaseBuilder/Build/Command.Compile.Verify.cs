@@ -277,8 +277,13 @@ public static partial class Command
             { "System.Memory.Data", new Version(8, 0, 0, 1) },
 
             // Microsoft.Extensions packages use 10.0.0.0 as assembly version
+            { "Microsoft.Extensions.Caching.Abstractions", new Version(10, 0, 0, 0) },
             { "Microsoft.Extensions.Configuration.Abstractions", new Version(10, 0, 0, 0) },
+            { "Microsoft.Extensions.DependencyInjection.Abstractions", new Version(10, 0, 0, 0) },
             { "Microsoft.Extensions.Diagnostics.Abstractions", new Version(10, 0, 0, 0) },
+            { "Microsoft.Extensions.FileProviders.Abstractions", new Version(10, 0, 0, 0) },
+            { "Microsoft.Extensions.Hosting.Abstractions", new Version(10, 0, 0, 0) },
+            { "Microsoft.Extensions.Logging.Abstractions", new Version(10, 0, 0, 0) },
             { "Microsoft.Extensions.Options", new Version(10, 0, 0, 0) },
             { "Microsoft.Extensions.Primitives", new Version(10, 0, 0, 0) },
             { "System.IO.Hashing", new Version(10, 0, 0, 3) }

@@ -53,7 +53,7 @@ using ServerProgram = Duplicati.Server.Program;
 namespace Duplicati.UnitTest;
 
 [NonParallelizable]
-public class ServerApiIntegrationTests : BasicSetupHelper
+public partial class ServerApiIntegrationTests : BasicSetupHelper
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

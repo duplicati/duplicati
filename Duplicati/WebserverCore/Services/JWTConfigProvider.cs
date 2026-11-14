@@ -84,6 +84,9 @@ public class JWTConfigProvider : IJWTConfigProvider
 
             // Tokens signed with the new key can only reference families created from now on
             m_connection.ExecuteWithCommand(cmd => cmd.ExecuteNonQuery(@"DELETE FROM ""TokenFamily"""));
+
+            // The MCP tokens were signed with the previous key, so none of the listed tokens works anymore
+            m_connection.ApplicationSettings.McpTokens = null;
         }
 
         ConfigReset?.Invoke(this, EventArgs.Empty);

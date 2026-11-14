@@ -97,7 +97,7 @@ public class TaskQueueServiceTests
         var runner = new MockQueueRunnerService();
         var task = new MockQueuedTask { TaskID = 7, BackupID = "1", TaskStarted = Started, TaskFinished = Finished };
         runner.CurrentTask = task;
-        runner.Results[7] = new CachedTaskResult(7, "1", Started, Finished, failed ? new InvalidOperationException("The passphrase is wrong") : null);
+        runner.Results[7] = new CachedTaskResult(7, "1", Started, Finished, failed ? new InvalidOperationException("The passphrase is wrong") : null, null, null);
 
         var state = new TaskQueueService(runner).GetTaskInfo(7);
 
@@ -174,7 +174,7 @@ public class TaskQueueServiceTests
     public void GetTaskInfo_FinishedTaskNoLongerCurrent_ReportsFromTheCache(bool failed)
     {
         var runner = new MockQueueRunnerService();
-        runner.Results[7] = new CachedTaskResult(7, "1", Started, Finished, failed ? new InvalidOperationException("The passphrase is wrong") : null);
+        runner.Results[7] = new CachedTaskResult(7, "1", Started, Finished, failed ? new InvalidOperationException("The passphrase is wrong") : null, null, null);
 
         var state = new TaskQueueService(runner).GetTaskInfo(7);
 
@@ -220,7 +220,7 @@ public class TaskQueueServiceTests
     {
         var runner = new MockQueueRunnerService();
         runner.CurrentTask = new MockQueuedTask { TaskID = 7, BackupID = "1", TaskStarted = Started, TaskFinished = Finished };
-        runner.Results[7] = new CachedTaskResult(7, "1", Started, Finished, failed ? new InvalidOperationException("The passphrase is wrong") : null);
+        runner.Results[7] = new CachedTaskResult(7, "1", Started, Finished, failed ? new InvalidOperationException("The passphrase is wrong") : null, null, null);
 
         var state = new TaskQueueService(runner).GetTaskQueue().Single();
 

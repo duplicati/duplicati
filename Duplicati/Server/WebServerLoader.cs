@@ -181,6 +181,11 @@ public static class WebServerLoader
     public const string OPTION_WEBSERVICE_ENABLE_FOLDER_STATUS_SERVICE = "webservice-enable-folder-status-service";
 
     /// <summary>
+    /// Option for enabling the MCP server endpoint
+    /// </summary>
+    public const string OPTION_WEBSERVICE_ENABLE_MCP_SERVER = "webservice-enable-mcp-server";
+
+    /// <summary>
     /// Option for configuring HTTPS certificates automatically
     /// </summary>
     public const string OPTION_CONFIGURE_HTTPS = "configure-https";

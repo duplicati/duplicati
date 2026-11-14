@@ -56,8 +56,8 @@ public class BackupPost : IEndpointV1
             => UpdateDatabasePath(connection, GetBackup(connection, id), input.path, false))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/restore", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromServices] IApplicationSettings applicationSettings, [FromRoute] string id, [FromBody] Dto.RestoreInputDto input, CancellationToken cancellationToken)
-            => ExecuteRestoreAsync(connection, applicationSettings, id, queueRunnerService, input, cancellationToken))
+        group.MapPost("/backup/{id}/restore", ([FromServices] Connection connection, [FromServices] IBackupTaskService backupTaskService, [FromRoute] string id, [FromBody] Dto.RestoreInputDto input, CancellationToken cancellationToken)
+            => ExecuteRestoreAsync(GetBackup(connection, id), backupTaskService, input, cancellationToken))
             .RequireAuthorization();
 
         group.MapPost("/backup/{id}/createreport", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
@@ -84,12 +84,12 @@ public class BackupPost : IEndpointV1
             => ExecuteCompact(GetBackup(connection, id), queueRunnerService))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/start", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id, [FromQuery] bool? skipQueue)
-            => ExecuteRunBackup(GetBackup(connection, id), skipQueue ?? false, queueRunnerService))
+        group.MapPost("/backup/{id}/start", ([FromServices] Connection connection, [FromServices] IBackupTaskService backupTaskService, [FromRoute] string id, [FromQuery] bool? skipQueue)
+            => ExecuteRunBackup(GetBackup(connection, id), skipQueue ?? false, backupTaskService))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/run", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id, [FromQuery] bool? skipQueue)
-            => ExecuteRunBackup(GetBackup(connection, id), skipQueue ?? false, queueRunnerService))
+        group.MapPost("/backup/{id}/run", ([FromServices] Connection connection, [FromServices] IBackupTaskService backupTaskService, [FromRoute] string id, [FromQuery] bool? skipQueue)
+            => ExecuteRunBackup(GetBackup(connection, id), skipQueue ?? false, backupTaskService))
             .RequireAuthorization();
 
         group.MapPost("/backup/{id}/report-remote-size", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
@@ -143,28 +143,8 @@ public class BackupPost : IEndpointV1
 
 
 
-    private static async Task<Dto.TaskStartedDto> ExecuteRestoreAsync(Connection connection, IApplicationSettings applicationSettings, string id, IQueueRunnerService queueRunnerService, Dto.RestoreInputDto input, CancellationToken cancellationToken)
-    {
-        var backup = GetBackup(connection, id);
-        var restorepath = input.restore_path;
-        if (restorepath != null && restorepath.StartsWith("@"))
-        {
-            var res = await SharedRemoteOperation.ExpandUrlAsync(connection, applicationSettings, restorepath.Substring(1), id, input.connection_string_id ?? -1, input.source_prefix, cancellationToken);
-            if (!string.IsNullOrWhiteSpace(res.Url))
-                restorepath = "@" + res.Url;
-        }
-
-        return new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateRestoreTask(
-            backup,
-            input.paths ?? [],
-            Library.Utility.Timeparser.ParseTimeInterval(input.time, DateTime.Now),
-            restorepath,
-            input.overwrite,
-            input.permissions,
-            input.skip_metadata,
-            string.IsNullOrWhiteSpace(input.passphrase) ? null : input.passphrase,
-            input.options)));
-    }
+    private static async Task<Dto.TaskStartedDto> ExecuteRestoreAsync(IBackup backup, IBackupTaskService backupTaskService, Dto.RestoreInputDto input, CancellationToken cancellationToken)
+        => new Dto.TaskStartedDto("OK", (await backupTaskService.StartRestoreAsync(backup, input, cancellationToken).ConfigureAwait(false)).TaskID);
 
     private static Dto.TaskStartedDto ExecuteCreateReport(IBackup backup, IQueueRunnerService queueRunnerService)
         => new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.CreateReport, backup)));
@@ -248,21 +228,8 @@ public class BackupPost : IEndpointV1
         return null;
     }
 
-    private static Dto.TaskStartedDto ExecuteRunBackup(IBackup backup, bool skipQueue, IQueueRunnerService queueRunnerService)
-    {
-        var t = queueRunnerService.GetCurrentTask();
-        var bt = t?.BackupID;
-
-        // Already running
-        if (bt != null && backup.ID == bt)
-            return new Dto.TaskStartedDto("OK", t!.TaskID);
-
-        t = queueRunnerService.GetCurrentTasks().FirstOrDefault(x => x.BackupID == backup.ID);
-        if (t != null)
-            return new Dto.TaskStartedDto("OK", t.TaskID);
-
-        return new Dto.TaskStartedDto("OK", queueRunnerService.AddTask(Runner.CreateTask(DuplicatiOperation.BackupOrSync, backup), skipQueue));
-    }
+    private static Dto.TaskStartedDto ExecuteRunBackup(IBackup backup, bool skipQueue, IBackupTaskService backupTaskService)
+        => new Dto.TaskStartedDto("OK", backupTaskService.StartBackup(backup, skipQueue).TaskID);
 
     private static Dto.CreateBackupDto ExecuteCopyToTemp(IBackup backup, Connection connection)
     {
