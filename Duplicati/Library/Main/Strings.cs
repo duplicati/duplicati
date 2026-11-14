@@ -99,6 +99,8 @@ namespace Duplicati.Library.Main.Strings
         public static string SoftdeleteprefixShort { get { return LC.L(@"Prefix for soft-deleted files"); } }
         public static string PreventbackendrenameLong { get { return LC.L(@"Use this option to prevent the backend from renaming files, even if the backend supports it. This will force the soft-delete operation to download, re-upload with the new name, and then delete the original file."); } }
         public static string PreventbackendrenameShort { get { return LC.L(@"Prevent backend rename"); } }
+        public static string TruncatebeforedeleteLong { get { return LC.L(@"Use this option if deleting a remote file can fail because the destination is full, as can happen with copy-on-write file systems such as ZFS or Btrfs. If a delete fails, the file is first overwritten with an empty file to free up space, and the delete is then tried again. This option has no effect if --soft-delete-prefix is set."); } }
+        public static string TruncatebeforedeleteShort { get { return LC.L(@"Truncate files that fail to delete"); } }
         public static string ListfoldercontentsLong { get { return LC.L(@"When searching for files, all matching files are returned. Use this option to return only the entries found in the folder specified as filter."); } }
         public static string ListfoldercontentsShort { get { return LC.L(@"Show folder contents"); } }
         public static string RetrydelayLong { get { return LC.L(@"After a failed transmission, Duplicati will wait a short period before attempting again. This is useful if the network drops out occasionally during transmissions."); } }
