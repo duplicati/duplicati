@@ -650,6 +650,93 @@ namespace Duplicati.UnitTest
 
             TestUtils.AssertDirectoryTreesAreEquivalent(DATAFOLDER, RESTOREFOLDER, !Library.Utility.Utility.ParseBoolOption(testopts, "skip-metadata"), "Restore");
         }
+
+        [Test]
+        [Category("Targeted")]
+        [TestCase("auto")]
+        [TestCase("off")]
+        public async Task TestRepairReadsLockedSourceFileThroughSnapshotAsync(string snapshotPolicy)
+        {
+            if (!OperatingSystem.IsWindows())
+                Assert.Ignore("Exclusive file locks that block reading are only enforced on Windows");
+
+            var testopts = TestOptions.Expand(new { blocksize = "1kb", no_encryption = true, rebuild_missing_dblock_files = true, number_of_retries = 0 });
+
+            // 1. Make a backup of a single file
+            var data = new byte[1024 + 3];
+            Random.Shared.NextBytes(data);
+            var sourceFile = Path.Combine(DATAFOLDER, "a");
+            File.WriteAllBytes(sourceFile, data);
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
+
+            // 2. Delete the dblock files, so the data must be recovered from the source file
+            foreach (var file in Directory.GetFiles(TARGETFOLDER, "*.dblock.*", SearchOption.TopDirectoryOnly))
+                File.Delete(file);
+
+            // 3. Repair while the source file is locked, with a snapshot that can read it
+            var snapshotPaths = new List<string>();
+            var original = Library.Main.Operation.RepairHandler.CreateSnapshotForLockedFiles;
+            Library.Main.Operation.RepairHandler.CreateSnapshotForLockedFiles = (paths, _) =>
+            {
+                snapshotPaths.AddRange(paths);
+                return new InMemorySnapshot(new Dictionary<string, byte[]> { [sourceFile] = data });
+            };
+
+            try
+            {
+                using (new FileStream(sourceFile, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { snapshot_policy = snapshotPolicy }), null))
+                {
+                    var res = await c.RepairAsync();
+                    if (snapshotPolicy != "off")
+                        TestUtils.AssertResults(res);
+                }
+            }
+            finally
+            {
+                Library.Main.Operation.RepairHandler.CreateSnapshotForLockedFiles = original;
+            }
+
+            if (snapshotPolicy == "off")
+            {
+                Assert.That(snapshotPaths, Is.Empty, "No snapshot should be created when snapshot-policy is off");
+                return;
+            }
+
+            Assert.That(snapshotPaths, Is.EqualTo(new[] { sourceFile }), "The snapshot should be created for the locked file");
+
+            // 4. Verify that the recreated dblock holds the data
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(await c.TestAsync());
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts.Expand(new { restore_path = RESTOREFOLDER }), null))
+                TestUtils.AssertResults(await c.RestoreAsync(null));
+
+            Assert.That(File.ReadAllBytes(Path.Combine(RESTOREFOLDER, "a")), Is.EqualTo(data), "Restored file should match the original");
+        }
+
+        /// <summary>
+        /// A snapshot that serves file contents from memory, standing in for a VSS/LVM snapshot
+        /// </summary>
+        private sealed class InMemorySnapshot : Library.Snapshots.SnapshotBase
+        {
+            private readonly Dictionary<string, byte[]> m_files;
+
+            public InMemorySnapshot(Dictionary<string, byte[]> files)
+                : base(false)
+            {
+                m_files = files;
+            }
+
+            public override IEnumerable<string> SourceEntries => m_files.Keys;
+            public override IEnumerable<ISourceProviderEntry> EnumerateFilesystemEntries() => [];
+            public override Stream OpenRead(string localPath) => new MemoryStream(m_files[localPath], false);
+            public override string GetSymlinkTarget(string localPath) => null;
+            public override Dictionary<string, string> GetMetadata(string localPath, bool isSymlink) => [];
+            public override string ConvertToLocalPath(string snapshotPath) => snapshotPath;
+            public override string ConvertToSnapshotPath(string localPath) => localPath;
+        }
     }
 }
 
