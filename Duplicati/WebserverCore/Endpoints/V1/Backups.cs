@@ -40,7 +40,7 @@ public class Backups : IEndpointV1
             using var tempfile = new Library.Utility.TempFile();
             File.WriteAllBytes(tempfile, Convert.FromBase64String(input.config));
 
-            return backupListService.Import(input.cmdline ?? false, input.import_metadata ?? false, input.direct ?? false, input.temporary ?? false, input.passphrase ?? "", tempfile, input.replace_settings);
+            return backupListService.Import(input.cmdline ?? false, input.import_metadata ?? false, input.direct ?? false, input.temporary ?? false, input.passphrase ?? "", tempfile, input.replace_settings, input.expand_env_vars ?? false);
 
         }).RequireAuthorization();
     }

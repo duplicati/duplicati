@@ -51,6 +51,10 @@ public static class Import
             Description = "The url to inject into the backup configuration after import. Use this option to replace the storage URL.",
             DefaultValueFactory = _ => string.Empty
         };
+        var expandEnvVarsOption = new Option<bool>("--expand-env-vars")
+        {
+            Description = "Expand %VAR% environment variables in the configuration with the values of the server, so an exported configuration can be used as a template. A variable that is not defined is left as it is."
+        };
 
         var cmd = new Command("import", "Import a backup configuration")
         {
@@ -58,7 +62,8 @@ public static class Import
             passphraseArgument,
             importMetadataOption,
             backupPassphraseOption,
-            backupUrlOption
+            backupUrlOption,
+            expandEnvVarsOption
         };
         cmd.SetAction(async (parseResult, cancellationToken) =>
         {
@@ -69,6 +74,7 @@ public static class Import
             var importMetadata = parseResult.GetValue(importMetadataOption);
             var backupPassphrase = parseResult.GetValue(backupPassphraseOption)!;
             var backupUrl = parseResult.GetValue(backupUrlOption)!;
+            var expandEnvVars = parseResult.GetValue(expandEnvVarsOption);
 
             if (!file.Exists)
                 throw new UserReportedException($"File {file.FullName} does not exist");
@@ -100,7 +106,7 @@ public static class Import
                 extraSettings.Add("targeturl", backupUrl);
 
             var connection = await settings.GetConnectionAsync(output);
-            var result = await connection.ImportBackupAsync(file.FullName, passphrase, importMetadata, extraSettings);
+            var result = await connection.ImportBackupAsync(file.FullName, passphrase, importMetadata, extraSettings, expandEnvVars);
 
             output.AppendConsoleMessage($"Imported \"{result.Name}\" with ID {result.ID}");
             output.AppendCustomObject("Imported", new { Id = result.ID, Name = result.Name });

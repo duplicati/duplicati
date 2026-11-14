@@ -145,7 +145,7 @@ public class BackupListService(Connection connection) : IBackupListService
     }
 
     /// <inheritdoc/>
-    public ImportBackupOutputDto Import(bool cmdline, bool import_metadata, bool direct, bool temporary, string passphrase, string tempfile, Dictionary<string, string>? replace_settings)
+    public ImportBackupOutputDto Import(bool cmdline, bool import_metadata, bool direct, bool temporary, string passphrase, string tempfile, Dictionary<string, string>? replace_settings, bool expand_env_vars = false)
     {
         try
         {
@@ -153,6 +153,11 @@ public class BackupListService(Connection connection) : IBackupListService
                 throw new BadRequestException("Import from commandline not yet implemented");
 
             var ipx = BackupImportExportHandler.LoadConfiguration(tempfile, import_metadata, () => passphrase);
+
+            // The variables are in the configuration file; values given to replace are used as they are
+            if (expand_env_vars)
+                ExpandEnvironmentVariables(ipx.Backup);
+
             if (replace_settings != null)
             {
                 foreach (var kvp in replace_settings.Where(k => k.Value != null && k.Key.StartsWith("settings.", StringComparison.OrdinalIgnoreCase)).ToDictionary(k => k.Key.Substring("settings.".Length), v => v.Value))
@@ -217,6 +222,31 @@ public class BackupListService(Connection connection) : IBackupListService
             connection.LogError("", "Failed to import backup", ex);
             throw new ServerErrorException($"Failed to import backup: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Expands the %VAR% environment variables in an imported configuration with the environment of
+    /// the server, so an exported configuration can be used as a template. Only the %VAR% syntax is
+    /// expanded, so a $ in a password or a URL is never changed, and a variable that is not defined
+    /// is left as it is.
+    /// </summary>
+    /// <param name="backup">The imported backup</param>
+    private static void ExpandEnvironmentVariables(Backup backup)
+    {
+        static string Expand(string value)
+            => string.IsNullOrEmpty(value) ? value : Environment.ExpandEnvironmentVariables(value);
+
+        backup.Name = Expand(backup.Name);
+        backup.Description = Expand(backup.Description);
+        backup.TargetURL = Expand(backup.TargetURL);
+        if (backup.Sources != null)
+            backup.Sources = backup.Sources.Select(Expand).ToArray();
+        foreach (var setting in backup.Settings ?? [])
+            setting.Value = Expand(setting.Value);
+        foreach (var filter in backup.Filters ?? [])
+            filter.Expression = Expand(filter.Expression);
+        foreach (var target in backup.AdditionalTargetURLs ?? [])
+            target.TargetUrl = Expand(target.TargetUrl);
     }
 
     /// <inheritdoc/>
