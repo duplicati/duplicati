@@ -48,6 +48,10 @@ public class BackupPost : IEndpointV1
             => ExecuteSetEnabled(connection, GetBackup(connection, id), false))
             .RequireAuthorization();
 
+        group.MapPost("/backup/{id}/skip-next-run", ([FromServices] Connection connection, [FromServices] ISchedulerService schedulerService, [FromRoute] string id)
+            => ExecuteSkipNextRun(schedulerService, GetBackup(connection, id)))
+            .RequireAuthorization();
+
         group.MapPost("/backup/{id}/movedb", ([FromServices] Connection connection, [FromRoute] string id, [FromBody] Dto.UpdateDbPathInputDto input)
             => UpdateDatabasePath(connection, GetBackup(connection, id), input.path, true))
             .RequireAuthorization();
@@ -123,6 +127,17 @@ public class BackupPost : IEndpointV1
             throw new BadRequestException("Cannot enable or disable a temporary backup");
 
         connection.SetBackupEnabled(backup, enabled);
+    }
+
+    private static Dto.SkipNextRunOutputDto ExecuteSkipNextRun(ISchedulerService schedulerService, IBackup backup)
+    {
+        if (backup.IsTemporary)
+            throw new BadRequestException("Cannot skip a run of a temporary backup");
+
+        var next = schedulerService.SkipNextRun(backup.ID)
+            ?? throw new BadRequestException("The backup has no schedule");
+
+        return new Dto.SkipNextRunOutputDto("OK", next);
     }
 
     private static void UpdateDatabasePath(Connection connection, IBackup backup, string targetpath, bool move)

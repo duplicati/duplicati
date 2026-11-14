@@ -887,6 +887,68 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
         }, null, "127.0.0.1", [$"--webservice-disable-api-extensions={SystemInfoProvider.BackupEnableDisableExtension}"]).ConfigureAwait(false);
     }
 
+    [Test]
+    [Category("Integration")]
+    public async Task NextScheduledRunCanBeSkippedThroughTheApi_Async()
+    {
+        var firstRun = DateTime.UtcNow.AddHours(1);
+        firstRun = new DateTime(firstRun.Ticks - firstRun.Ticks % TimeSpan.TicksPerSecond, DateTimeKind.Utc);
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            Assert.That(await GetApiExtensionsAsync(httpClient).ConfigureAwait(false), Does.Contain(SystemInfoProvider.SkipNextRunExtension),
+                "System info should advertise that the next scheduled run can be skipped");
+
+            BackupAndScheduleInputDto CreateRequest(string name, BackupAndScheduleInputDto.ScheduleInputDto? schedule) => new()
+            {
+                Backup = new BackupAndScheduleInputDto.BackupInputDto
+                {
+                    Name = name,
+                    Description = "Skip next run",
+                    TargetURL = BuildFileBackendUrl(this.TARGETFOLDER),
+                    Sources = new[] { this.DATAFOLDER },
+                    Settings = new[] { new BackupAndScheduleInputDto.SettingInputDto { Name = "passphrase", Value = "integration-passphrase" } },
+                    Filters = Array.Empty<BackupAndScheduleInputDto.FilterInputDto>(),
+                    Metadata = new Dictionary<string, string>()
+                },
+                Schedule = schedule
+            };
+
+            async Task<string> CreateAsync(BackupAndScheduleInputDto request)
+            {
+                var response = await httpClient.PostAsJsonAsync("/api/v1/backups", request, JsonOptions).ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
+                var result = await response.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false)
+                             ?? throw new InvalidOperationException("Backup creation response was empty");
+                return result.ID ?? throw new InvalidOperationException("Backup creation did not return an ID");
+            }
+
+            var scheduledId = await CreateAsync(CreateRequest($"Skip next run {Guid.NewGuid():N}",
+                new BackupAndScheduleInputDto.ScheduleInputDto { Time = firstRun, Repeat = "1D", Rule = "" })).ConfigureAwait(false);
+
+            var skip = await httpClient.PostAsync($"/api/v1/backup/{scheduledId}/skip-next-run", null).ConfigureAwait(false);
+            skip.EnsureSuccessStatusCode();
+            var skipped = await skip.Content.ReadFromJsonAsync<SkipNextRunOutputDto>(JsonOptions).ConfigureAwait(false)
+                          ?? throw new InvalidOperationException("Skip response was empty");
+            Assert.That(skipped.NextScheduledRun.ToUniversalTime(), Is.EqualTo(firstRun.AddDays(1)),
+                "Skipping should report the slot after the skipped run");
+
+            var getResponse = await httpClient.GetAsync($"/api/v1/backup/{scheduledId}").ConfigureAwait(false);
+            getResponse.EnsureSuccessStatusCode();
+            var stored = await getResponse.Content.ReadFromJsonAsync<BackupGet.GetBackupResultDto>(JsonOptions).ConfigureAwait(false)
+                         ?? throw new InvalidOperationException("Backup get response was empty");
+            Assert.That(stored.Schedule?.Time.ToUniversalTime(), Is.EqualTo(firstRun.AddDays(1)),
+                "The stored schedule should start from the slot after the skipped run");
+
+            var unscheduledId = await CreateAsync(CreateRequest($"Unscheduled {Guid.NewGuid():N}", null)).ConfigureAwait(false);
+            var unscheduled = await httpClient.PostAsync($"/api/v1/backup/{unscheduledId}/skip-next-run", null).ConfigureAwait(false);
+            Assert.That(unscheduled.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), "A backup without a schedule has no run to skip");
+
+            var missing = await httpClient.PostAsync("/api/v1/backup/999999/skip-next-run", null).ConfigureAwait(false);
+            Assert.That(missing.StatusCode, Is.EqualTo(HttpStatusCode.NotFound), "Skipping a run of an unknown backup should return 404");
+        }).ConfigureAwait(false);
+    }
+
     private static async Task<string[]> GetApiExtensionsAsync(HttpClient httpClient)
     {
         var systemInfo = await httpClient.GetFromJsonAsync<JsonElement>("/api/v1/systeminfo", JsonOptions).ConfigureAwait(false);

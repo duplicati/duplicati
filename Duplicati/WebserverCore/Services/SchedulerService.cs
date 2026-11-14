@@ -57,6 +57,9 @@ public class SchedulerService : ISchedulerService
     public IList<Tuple<string, DateTime>> GetProposedSchedule()
         => scheduler.GetProposedSchedule();
 
+    public DateTime? SkipNextRun(string backupId)
+        => scheduler.SkipNextRun(backupId);
+
     public void Reschedule()
         => scheduler.Reschedule();
 

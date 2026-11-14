@@ -43,6 +43,12 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
     public const string BackupEnableDisableExtension = "v1:backup:enable-disable";
 
     /// <summary>
+    /// The API extension that signals the next scheduled run of a backup can be skipped,
+    /// with the "/backup/{id}/skip-next-run" endpoint
+    /// </summary>
+    public const string SkipNextRunExtension = "v1:backup:skip-next-run";
+
+    /// <summary>
     /// The API extension that signals Sync jobs can keep each run in a dated snapshot folder,
     /// with the "sync-snapshot-folders" and "sync-keep-snapshots" options
     /// </summary>
@@ -112,6 +118,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         BackupEnableDisableExtension,
         BackupRunAfterExtension,
         QueueCompletionActionExtension,
+        SkipNextRunExtension,
         SyncSnapshotsExtension,
         SyncRestoreExtension,
         McpServerExtension,
