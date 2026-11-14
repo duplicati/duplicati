@@ -40,6 +40,11 @@ public static class ChangeStatistics
     private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(ChangeStatistics));
 
     /// <summary>
+    /// The tag used for per-file log messages, matching the other backup file entry messages
+    /// </summary>
+    private static readonly string FILELOGTAG = LOGTAG + ".FileEntry";
+
+    /// <summary>
     /// Calculates the change statistics for the current and previous fileset.
     /// </summary>
     /// <param name="cmd">The database command to use.</param>
@@ -115,6 +120,12 @@ public static class ChangeStatistics
                 LocalDatabase.SYMLINK_BLOCKSET_ID
             ], token)
                 .ConfigureAwait(false);
+
+            // The paths of new and changed files are logged as they are processed,
+            // but deleted entries are only known here, so log their paths now
+            if (results.DeletedFolders + results.DeletedSymlinks + results.DeletedFiles > 0)
+                await LogDeletedEntriesAsync(cmd, tmpName, token)
+                    .ConfigureAwait(false);
 
             // Modified
             results.ModifiedFolders = await CountModifiedAsync(cmd, tmpName, LocalDatabase.FOLDER_BLOCKSET_ID, null, token)
@@ -193,6 +204,54 @@ public static class ChangeStatistics
 
         return await CountWithConditionAsync(cmd, tmpName, "A", conditions, blocksetId, excludeBlocksets, token)
             .ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Writes a verbose log message with the path of each entry that was in the previous
+    /// fileset but is not in the current one.
+    /// </summary>
+    /// <param name="cmd">The database command to use.</param>
+    /// <param name="tmpName">The name of the temporary table.</param>
+    /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
+    /// <returns>A task that completes when the messages are written.</returns>
+    private static async Task LogDeletedEntriesAsync(SqliteCommand cmd, string tmpName, CancellationToken token)
+    {
+        var sql = $@"
+            SELECT
+                ""P"".""Prefix"" || ""A"".""Path"",
+                ""A"".""BlocksetID""
+            FROM ""{tmpName}"" ""A""
+            JOIN ""PathPrefix"" ""P""
+                ON ""P"".""ID"" = ""A"".""PrefixID""
+            WHERE
+                ""A"".""Source"" = 0
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM ""{tmpName}"" ""B""
+                    WHERE
+                        ""B"".""Source"" = 1
+                        AND ""B"".""PrefixID"" = ""A"".""PrefixID""
+                        AND ""B"".""Path"" = ""A"".""Path""
+                )
+            ORDER BY 1
+        ";
+
+        await using var reader = await cmd
+            .SetCommandAndParameters(sql)
+            .ExecuteReaderAsync(true, token)
+            .ConfigureAwait(false);
+
+        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        {
+            var path = reader.ConvertValueToString(0);
+            var blocksetId = reader.ConvertValueToInt64(1);
+            if (blocksetId == LocalDatabase.FOLDER_BLOCKSET_ID)
+                Logging.Log.WriteVerboseMessage(FILELOGTAG, "DeletedFolder", "Folder has been deleted {0}", path);
+            else if (blocksetId == LocalDatabase.SYMLINK_BLOCKSET_ID)
+                Logging.Log.WriteVerboseMessage(FILELOGTAG, "DeletedSymlink", "Symlink has been deleted {0}", path);
+            else
+                Logging.Log.WriteVerboseMessage(FILELOGTAG, "DeletedFile", "File has been deleted {0}", path);
+        }
     }
 
     /// <summary>
