@@ -356,9 +356,17 @@
       <ComponentRef Id="TlsCertsServiceMarkerServiceComponent"/>
     </Feature>
 
+    <!-- STARTUP_FOR_CURRENT_USER moves the feature to Level=2, not 0. Level 2
+         keeps it out of the default install set, but leaves it selectable. A
+         feature at Level 0 is disabled and ignores AddLocal, and the property
+         is seeded from the marker of a previous install before the dialog is
+         shown, so unticking the checkbox in an upgrade or a Change could not
+         bring the all-users shortcut back. The two conditions exclude each
+         other, so only one level applies. -->
     <Feature Id="DuplicatiStartupShortCutFeature" Level="1" Absent="allow" AllowAdvertise="no">
       <ComponentRef Id="StartupMenuItem"/>
-      <Condition Level="0">FORSERVICE = "true" OR STARTUP_FOR_CURRENT_USER = "1"</Condition>
+      <Condition Level="0">FORSERVICE = "true"</Condition>
+      <Condition Level="2">STARTUP_FOR_CURRENT_USER = "1" AND NOT FORSERVICE = "true"</Condition>
     </Feature>
 
     <!-- Level=2 keeps the per-user startup entry out of the default install
@@ -519,12 +527,20 @@
 
       <!-- When the service was installed before and stays installed, keep the
            TrayIcon host URL in step with the TLS feature (#7804): HTTPS when the
-           feature is being installed, HTTP when it is being removed or an upgrade
-           leaves it out. A plain repair sets nothing, so a host URL the user
-           entered in the TrayIcon is kept. StoreTrayIconValues covers the first
-           install of the service. -->
-      <Custom Action="SetTrayIconHostUrlHttps"          Sequence="1307">PREVIOUS_SERVICE_INSTALLED="1" AND (&amp;DuplicatiServiceFeature=3 OR (!DuplicatiServiceFeature=3 AND NOT &amp;DuplicatiServiceFeature=2)) AND NOT REMOVE~="ALL" AND NOSCRIPT &lt;&gt; "true" AND &amp;DuplicatiTlsCertsFeature=3</Custom>
-      <Custom Action="SetTrayIconHostUrlHttp"           Sequence="1308">PREVIOUS_SERVICE_INSTALLED="1" AND (&amp;DuplicatiServiceFeature=3 OR (!DuplicatiServiceFeature=3 AND NOT &amp;DuplicatiServiceFeature=2)) AND NOT REMOVE~="ALL" AND NOSCRIPT &lt;&gt; "true" AND NOT (&amp;DuplicatiTlsCertsFeature=3 OR (!DuplicatiTlsCertsFeature=3 AND NOT &amp;DuplicatiTlsCertsFeature=2)) AND (&amp;DuplicatiTlsCertsFeature=2 OR PREVIOUSVERSIONSINSTALLED)</Custom>
+           feature is being installed and the service had no certificates
+           before, HTTP when the service had certificates and the feature is
+           not installed after this run.
+           The URL is only stored when the TLS state changes, because the
+           stored value replaces a host URL the user entered in the TrayIcon
+           (another port or host). In a major upgrade every kept feature has
+           the action state 3, so the action state alone cannot tell a change
+           from an upgrade that keeps TLS as it was;
+           PREVIOUS_SERVICE_CERTS_INSTALLED, the marker of the state before
+           this run, can. An upgrade or a repair that leaves TLS as it was
+           stores nothing. StoreTrayIconValues covers the first install of
+           the service. -->
+      <Custom Action="SetTrayIconHostUrlHttps"          Sequence="1307">PREVIOUS_SERVICE_INSTALLED="1" AND (&amp;DuplicatiServiceFeature=3 OR (!DuplicatiServiceFeature=3 AND NOT &amp;DuplicatiServiceFeature=2)) AND NOT REMOVE~="ALL" AND NOSCRIPT &lt;&gt; "true" AND &amp;DuplicatiTlsCertsFeature=3 AND PREVIOUS_SERVICE_CERTS_INSTALLED&lt;&gt;"1"</Custom>
+      <Custom Action="SetTrayIconHostUrlHttp"           Sequence="1308">PREVIOUS_SERVICE_INSTALLED="1" AND (&amp;DuplicatiServiceFeature=3 OR (!DuplicatiServiceFeature=3 AND NOT &amp;DuplicatiServiceFeature=2)) AND NOT REMOVE~="ALL" AND NOSCRIPT &lt;&gt; "true" AND NOT (&amp;DuplicatiTlsCertsFeature=3 OR (!DuplicatiTlsCertsFeature=3 AND NOT &amp;DuplicatiTlsCertsFeature=2)) AND PREVIOUS_SERVICE_CERTS_INSTALLED="1"</Custom>
       <Custom Action="SyncTrayIconHostUrl"              Sequence="1309">TRAYICON_HOSTURL AND PREVIOUS_SERVICE_INSTALLED="1" AND (&amp;DuplicatiServiceFeature=3 OR (!DuplicatiServiceFeature=3 AND NOT &amp;DuplicatiServiceFeature=2)) AND NOT REMOVE~="ALL" AND NOSCRIPT &lt;&gt; "true"</Custom>
 
       <Custom Action="Set_INSTALL_TLS_CERTS" After="AppSearch">NOT INSTALL_TLS_CERTS AND (PREVIOUS_USER_CERTS_INSTALLED="1" OR PREVIOUS_SERVICE_CERTS_INSTALLED="1")</Custom>

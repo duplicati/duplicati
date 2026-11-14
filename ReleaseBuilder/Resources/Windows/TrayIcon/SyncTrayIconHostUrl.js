@@ -9,8 +9,8 @@
 // for the first time. Turning TLS on in an upgrade or in Change switched the
 // service to HTTPS while the TrayIcon kept using HTTP, and turning TLS off left
 // the TrayIcon on HTTPS (#7804). The wxs sets TRAYICON_HOSTURL only when the
-// TLS feature is being installed or removed, or in an upgrade, so a host URL
-// the user entered is kept on a plain repair.
+// TLS state of the service changes in this run, so a host URL the user entered
+// is kept on a repair and on an upgrade that leaves TLS as it was.
 //
 // Being immediate and in the InstallUISequence (which runs as the installing
 // user, not LocalSystem), we write to that user's Credential Vault, as
