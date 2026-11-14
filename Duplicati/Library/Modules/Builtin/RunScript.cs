@@ -72,6 +72,12 @@ namespace Duplicati.Library.Modules.Builtin
 
         private const string RESULT_FORMAT_OPTION = "run-script-result-output-format";
 
+        /// <summary>
+        /// The internal option holding the source paths of the job, set by the server for every operation.
+        /// It matches Library.Main.Options.BACKUP_SOURCES_OPTION, which this project cannot reference.
+        /// </summary>
+        private const string BACKUP_SOURCES_OPTION = "backup-sources";
+
         private const string DEFAULT_TIMEOUT = "60s";
 
         private string m_requiredScript = null;
@@ -349,6 +355,10 @@ namespace Duplicati.Library.Modules.Builtin
                     && !string.Equals(kv.Key, Logging.ReducedReportFormat.OPTION_REDUCED_REPORTING, StringComparison.OrdinalIgnoreCase))
                     continue;
 
+                // Passed as DUPLICATI__BACKUP_SOURCES below; on Windows the names would collide
+                if (string.Equals(kv.Key, BACKUP_SOURCES_OPTION, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 env["DUPLICATI__" + kv.Key.Replace('-', '_')] = kv.Value;
             }
 
@@ -365,6 +375,12 @@ namespace Duplicati.Library.Modules.Builtin
                 env["DUPLICATI__REMOTEURL"] = remoteurl;
                 if (localpath != null)
                     env["DUPLICATI__LOCALPATH"] = string.Join(System.IO.Path.PathSeparator.ToString(), localpath);
+
+                // The server passes the sources of the job; a backup started elsewhere has them as its local path
+                if (options.TryGetValue(BACKUP_SOURCES_OPTION, out var backupSources) && backupSources != null)
+                    env["DUPLICATI__BACKUP_SOURCES"] = backupSources;
+                else if (localpath != null && string.Equals(operationname, nameof(OperationMode.Backup), StringComparison.OrdinalIgnoreCase))
+                    env["DUPLICATI__BACKUP_SOURCES"] = string.Join(System.IO.Path.PathSeparator.ToString(), localpath);
             }
 
             if (!string.IsNullOrEmpty(datafile))

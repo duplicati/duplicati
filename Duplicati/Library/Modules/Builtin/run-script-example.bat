@@ -140,6 +140,13 @@ REM is empty operations  other than backup or restore. The local path can
 REM contain : to separate multiple folders. This value can be changed by echoing
 REM --localpath = "new value".
 
+REM DUPLICATI__BACKUP_SOURCES
+REM This is the list of source folders of the backup job, also when the
+REM operation is not a backup. In a restore, DUPLICATI__LOCALPATH holds the
+REM paths being restored, while this holds the sources of the job. It is set
+REM for every operation started by the server, and for a backup started from
+REM the commandline. The paths are separated with ; as in DUPLICATI__LOCALPATH.
+
 REM DUPLICATI__PARSED_RESULT
 REM This is a value indicating how well the operation was performed.
 REM It can take the values: Unknown, Success, Warning, Error, Fatal.

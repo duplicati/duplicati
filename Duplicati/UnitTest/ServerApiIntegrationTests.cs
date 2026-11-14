@@ -1027,6 +1027,60 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// A script run by a restore of a job gets the sources of the job in DUPLICATI__BACKUP_SOURCES,
+    /// while DUPLICATI__LOCALPATH holds the paths being restored (#5212)
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task ScriptsSeeTheBackupSourcesOfTheJob_Async()
+    {
+        var backupPassphrase = "integration-passphrase";
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sample content");
+
+        // Outside the source folder, so the backup does not hold the script
+        var seen = Path.Combine(BASEFOLDER, $"backup-sources-{Guid.NewGuid():N}.txt");
+        string script;
+        if (OperatingSystem.IsWindows())
+        {
+            script = Path.Combine(BASEFOLDER, $"backup-sources-{Guid.NewGuid():N}.bat");
+            File.WriteAllLines(script, [$"echo %DUPLICATI__OPERATIONNAME%=%DUPLICATI__BACKUP_SOURCES%>>\"{seen}\"", "exit 0"]);
+        }
+        else
+        {
+            script = Path.Combine(BASEFOLDER, $"backup-sources-{Guid.NewGuid():N}.sh");
+            File.WriteAllLines(script, ["#!/bin/sh", $"echo \"$DUPLICATI__OPERATIONNAME=$DUPLICATI__BACKUP_SOURCES\" >>\"{seen}\"", "exit 0"]);
+            File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+
+        try
+        {
+            await WithAuthenticatedServerAsync(async httpClient =>
+            {
+                var backupId = await CreateBackupAsync(httpClient, backupPassphrase,
+                    extraSettings: [new BackupAndScheduleInputDto.SettingInputDto { Name = "run-script-after", Value = script }]).ConfigureAwait(false);
+
+                await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+                await DirectoryDeleteSafeAsync(this.RESTOREFOLDER).ConfigureAwait(false);
+                Directory.CreateDirectory(this.RESTOREFOLDER);
+                await RestoreAndVerifyAsync(httpClient, backupId, backupPassphrase, this.RESTOREFOLDER, "Sample content").ConfigureAwait(false);
+
+                // The internal option is not warned about as unsupported
+                var connection = (Duplicati.Server.Database.Connection)ServerProgram.DuplicatiWebserver.Provider.GetService(typeof(Duplicati.Server.Database.Connection))!;
+                var notifications = connection.GetNotifications().Where(n => n.BackupID == backupId).ToList();
+                Assert.That(notifications, Is.Empty, string.Join(" | ", notifications.Select(n => $"{n.Type} {n.Title}: {n.Message}")));
+            }).ConfigureAwait(false);
+
+            Assert.That(File.ReadAllLines(seen), Is.EqualTo(new[] { $"Backup={this.DATAFOLDER}", $"Restore={this.DATAFOLDER}" }));
+        }
+        finally
+        {
+            File.Delete(script);
+            File.Delete(seen);
+        }
+    }
+
+    /// <summary>
     /// The new UI lists several folders of a backup at the same time, for example when folders are
     /// opened quickly in the restore tree. Such listings must wait for each other instead of failing
     /// with DatabaseLocked, which only a running operation such as a backup should cause.

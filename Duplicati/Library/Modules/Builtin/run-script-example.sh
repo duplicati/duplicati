@@ -135,6 +135,13 @@
 # contain : to separate multiple folders. This value can be changed by echoing
 # --localpath = "new value".
 
+# DUPLICATI__BACKUP_SOURCES
+# This is the list of source folders of the backup job, also when the
+# operation is not a backup. In a restore, DUPLICATI__LOCALPATH holds the
+# paths being restored, while this holds the sources of the job. It is set
+# for every operation started by the server, and for a backup started from
+# the commandline. The paths are separated with : as in DUPLICATI__LOCALPATH.
+
 # DUPLICATI__PARSED_RESULT
 # This is a value indicating how well the operation was performed.
 # It can take the values: Unknown, Success, Warning, Error, Fatal.
