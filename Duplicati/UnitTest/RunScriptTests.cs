@@ -799,6 +799,48 @@ namespace Duplicati.UnitTest
             Assert.That(received, Is.EqualTo(expectReport ? new[] { "/report" } : Array.Empty<string>()), "Unexpected reports about the stopped backup");
         }
 
+        [Test]
+        [Category("Border")]
+        [TestCase(false, "BEFORE")]
+        [TestCase(true, "BEFORE one,two")]
+        public async Task RunsPowerShellScriptOnWindowsAsync(bool withArguments, string expectedContent)
+        {
+            if (!OperatingSystem.IsWindows())
+                Assert.Ignore("PowerShell scripts are only wrapped on Windows");
+
+            var outputFile = Path.Combine(this.RESTOREFOLDER, "powershell.txt");
+            var script = Path.GetFullPath(Path.Combine(DATAFOLDER, "run-script.ps1"));
+            File.WriteAllLines(script, new[]
+            {
+                $"Set-Content -LiteralPath '{outputFile}' -Value \"$env:DUPLICATI__EVENTNAME $($args -join ',')\".Trim()",
+                "exit 2"
+            });
+
+            var options = new Dictionary<string, string>(this.TestOptions);
+            options["run-script-timeout"] = "60s";
+            if (withArguments)
+            {
+                options["run-script-before"] = $"\"{script}\" one two";
+                options["run-script-with-arguments"] = "true";
+            }
+            else
+            {
+                options["run-script-before"] = script;
+            }
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var res = await c.BackupAsync(new[] { this.DATAFOLDER });
+
+                // Exit code 2 from the script is a warning, so the exit code reached Duplicati
+                Assert.AreEqual(ParsedResultType.Warning, res.ParsedResult, string.Join(Environment.NewLine, res.Errors.Concat(res.Warnings)));
+                Assert.That(res.Warnings.Single(), Does.Contain(script));
+            }
+
+            Assert.IsTrue(File.Exists(outputFile), "The PowerShell script did not run");
+            Assert.AreEqual(expectedContent, File.ReadAllText(outputFile).Trim());
+        }
+
         private string CreateScript(int exitcode, string stderr = null, string stdout = null, int sleeptime = 0, List<string> customCommands = null)
         {
             var id = Guid.NewGuid().ToString("N").Substring(0, 6);
