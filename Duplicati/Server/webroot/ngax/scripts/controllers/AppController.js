@@ -108,11 +108,6 @@ backupApp.controller('AppController', function($rootScope, $scope, $cookies, $lo
     };
 
     $scope.$on('serverstatechanged', function() {
-        // Unwanted jQuery interference, but the menu is built with this
-        if (ServerStatus.state.programState == 'Paused') {
-            $('#contextmenu_pause').removeClass('open');
-            $('#contextmenulink_pause').removeClass('open');            
-        }
         $scope.isLoggedIn = ServerStatus.state.connectionState == 'connected';
     });
 
