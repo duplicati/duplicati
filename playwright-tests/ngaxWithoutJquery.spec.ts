@@ -110,10 +110,16 @@ test("ngax expands a folder in the source tree", async ({ page }) => {
     .filter({ has: page.locator(':scope > div > span:text-is("Computer")') });
   await computer.locator(":scope > div > a.nav").click();
 
-  // The first child of "Computer" is a drive or the file system root
-  const root = computer.locator(":scope > ul > li").first();
-  await root.locator(":scope > div > a.nav").click();
-  await expect(root.locator(":scope > ul > li").first()).toBeAttached();
+  // On Windows the children of "Computer" are the drives. On Linux and macOS they are
+  // the folders in "/", and the first one is "bin", which holds over a thousand entries
+  // that ngax takes about a minute to show. "usr" holds only a few folders, so use it
+  // when it is there, and the first drive otherwise.
+  const children = computer.locator(":scope > ul > li");
+  await expect(children.first()).toBeAttached();
+  const usr = children.filter({ has: page.locator(':scope > div > span:text-is("usr")') });
+  const folder = (await usr.count()) > 0 ? usr.first() : children.first();
+  await folder.locator(":scope > div > a.nav").click();
+  await expect(folder.locator(":scope > ul > li").first()).toBeAttached();
 
   expect(errors).toEqual([]);
 });
