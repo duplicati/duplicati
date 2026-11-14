@@ -53,6 +53,8 @@ namespace Duplicati.Library.Backend.Strings
         public static string FilenotFound(string name) { return LC.L(@"File not found: {0}", name); }
         public static string TeamDriveIdLong { get { return LC.L("This option sets the team drive to use. Leaving it empty uses the personal drive."); } }
         public static string TeamDriveIdShort { get { return LC.L("Team drive ID"); } }
+        public static string UseTrashShort { get { return LC.L("Move deleted files to the trash"); } }
+        public static string UseTrashLong { get { return LC.L("Use this option to move files to the trash instead of deleting them permanently. On a shared drive, a permanent delete needs the Manager role, while the Content manager role can move files to the trash. Trashed files still use storage until the trash is emptied, which Google Drive does automatically after 30 days."); } }
         public static string ListResponseError { get { return LC.L(@"The list response was not valid."); } }
         public static string AboutResponseError { get { return LC.L(@"The about response was not valid."); } }
         public static string CreateFolderResponseError { get { return LC.L(@"The create folder response was not valid."); } }
