@@ -95,9 +95,9 @@ async function createBackup(page: Page) {
 
   await page.click("text=Add backup");
   await page.locator("button").filter({ hasText: "Add a new backup" }).click();
-  await page.fill("[formcontrolname='name']", BACKUP_NAME);
-  await page.fill("[formcontrolname='password']", PASSWORD);
-  await page.fill("[formcontrolname='repeatPassword']", PASSWORD);
+  await page.fill("#backupName", BACKUP_NAME);
+  await page.fill("#password", PASSWORD);
+  await page.fill("#repeatPassword", PASSWORD);
   await page.locator("button").filter({ hasText: "Continue" }).click();
 
   // Source data page (comes before Destination)
@@ -329,7 +329,10 @@ async function restoreFromConfigFile(page: Page) {
     downloadPath,
   );
 
-  await page.fill("[formcontrolname='passphrase']", CONFIG_FILE_PASSWORD);
+  await page.fill(
+    "app-restore-from-config input[type='password']",
+    CONFIG_FILE_PASSWORD,
+  );
 
   await page
     .locator("app-restore-from-config")
@@ -365,7 +368,10 @@ test("backup and restore flow", async ({ page }) => {
     fullPage: true,
   });
 
-  await page.fill("[formcontrolname='pass']", WEBSERVICE_PASSWORD);
+  await page.fill(
+    "input[autocomplete='current-password']",
+    WEBSERVICE_PASSWORD,
+  );
 
   await page.locator("button").filter({ hasText: "Login" }).click();
 
