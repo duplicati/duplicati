@@ -2168,6 +2168,48 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// The tray icon follows the server state over the websocket the server offers, rather
+    /// than with a long poll, and takes the state as the server sends it there (issue #5273)
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task TheTrayIconFollowsTheServerStateOverTheWebsocket_Async()
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var messages = new ConcurrentQueue<Library.Logging.LogEntry>();
+            using var scope = Library.Logging.Log.StartScope(messages.Enqueue);
+
+            var passwords = await Duplicati.GUI.TrayIcon.PasswordStorageHelper.CreateAsync($"{httpClient.BaseAddress}", true, "integration-test-password",
+                Duplicati.GUI.TrayIcon.Program.PasswordSource.SuppliedPassword, new Dictionary<string, string?>()).ConfigureAwait(false);
+            using var tray = new Duplicati.GUI.TrayIcon.HttpServerConnection(null, Duplicati.GUI.TrayIcon.Program.PasswordSource.SuppliedPassword,
+                false, "", false, new Dictionary<string, string>(), passwords);
+
+            var paused = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            tray.OnStatusUpdated = status =>
+            {
+                if (status.ProgramState == Duplicati.Server.Serialization.LiveControlState.Paused)
+                    paused.TrySetResult();
+                return Task.CompletedTask;
+            };
+
+            // Wait for the tray to set up the websocket, then change the state
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+            while (!messages.Any(x => x.Id == "TrayIconWebsocketConnected" || x.Id == "TrayIconWebsocketUnavailable") && DateTime.UtcNow < deadline)
+                await Task.Delay(100).ConfigureAwait(false);
+
+            Assert.That(messages.Where(x => x.Id == "TrayIconWebsocketUnavailable").Select(x => x.FormattedMessage), Is.Empty, "the tray should not fall back to the long poll");
+            Assert.That(messages.Any(x => x.Id == "TrayIconWebsocketConnected"), Is.True, "the tray should set up the websocket");
+
+            (await httpClient.PostAsync("/api/v1/serverstate/pause", null).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            await paused.Task.WaitAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+            Assert.That(tray.Status.ProgramState, Is.EqualTo(Duplicati.Server.Serialization.LiveControlState.Paused));
+
+            (await httpClient.PostAsync("/api/v1/serverstate/resume", null).ConfigureAwait(false)).EnsureSuccessStatusCode();
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Opens a notifications websocket and authenticates it with the token, failing the test if it is rejected
     /// </summary>
     private static async Task<System.Net.WebSockets.ClientWebSocket> ConnectAuthenticatedWebsocketAsync(Uri baseAddress, string token)
