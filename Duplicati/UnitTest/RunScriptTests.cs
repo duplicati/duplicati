@@ -602,6 +602,82 @@ namespace Duplicati.UnitTest
             return File.ReadAllText(captured);
         }
 
+        /// <summary>
+        /// A script command that appends the event, the operation and the backup sources it sees to a file
+        /// </summary>
+        /// <param name="file">The file to append to</param>
+        /// <returns>The command</returns>
+        private static string AppendBackupSourcesCommand(string file)
+            => OperatingSystem.IsWindows()
+                ? $"echo %DUPLICATI__EVENTNAME% %DUPLICATI__OPERATIONNAME%=%DUPLICATI__BACKUP_SOURCES%>>\"{file}\""
+                : $"echo \"$DUPLICATI__EVENTNAME $DUPLICATI__OPERATIONNAME=$DUPLICATI__BACKUP_SOURCES\" >>\"{file}\"";
+
+        [Test]
+        [Category("Border")]
+        public async Task ScriptsSeeTheBackupSourcesAsync()
+        {
+            var seen = Path.Combine(RESTOREFOLDER, "backup-sources.txt");
+            var sampleFile = Path.Combine(DATAFOLDER, "sample.txt");
+            File.WriteAllText(sampleFile, "data");
+            var script = CreateScript(0, null, null, 0, new List<string> { AppendBackupSourcesCommand(seen) });
+
+            // A backup that is not started by the server has its sources as the local path
+            var options = new Dictionary<string, string>(TestOptions)
+            {
+                ["run-script-before"] = script,
+                ["run-script-after"] = script
+            };
+            using (var c = new Controller("file://" + TARGETFOLDER, options, null))
+            {
+                var res = await c.BackupAsync(new[] { DATAFOLDER });
+                Assert.AreEqual(0, res.Errors.Count());
+                Assert.AreEqual(0, res.Warnings.Count());
+            }
+
+            // The server passes the sources of the job to every operation, here a restore of one file
+            var sources = string.Join(Path.PathSeparator.ToString(), DATAFOLDER, Path.Combine(BASEFOLDER, "other-source"));
+            options["restore-path"] = Path.Combine(RESTOREFOLDER, "restored");
+            options[Options.BACKUP_SOURCES_OPTION] = sources;
+            using (var c = new Controller("file://" + TARGETFOLDER, options, null))
+            {
+                var res = await c.RestoreAsync(new[] { sampleFile });
+                Assert.AreEqual(0, res.Errors.Count());
+                // The option is internal, so it is not warned about as unsupported
+                Assert.AreEqual(0, res.Warnings.Count(), string.Join(Environment.NewLine, res.Warnings));
+                Assert.AreEqual(1, res.RestoredFiles);
+            }
+
+            Assert.That(File.ReadAllLines(seen), Is.EqualTo(new[] {
+                $"BEFORE Backup={DATAFOLDER}",
+                $"AFTER Backup={DATAFOLDER}",
+                $"BEFORE Restore={sources}",
+                $"AFTER Restore={sources}"
+            }));
+        }
+
+        [Test]
+        [Category("Border")]
+        public async Task BackupSourcesAreLeftOutWithReducedReportingAsync()
+        {
+            var seen = Path.Combine(RESTOREFOLDER, "backup-sources.txt");
+            File.WriteAllText(Path.Combine(DATAFOLDER, "sample.txt"), "data");
+
+            var options = new Dictionary<string, string>(TestOptions)
+            {
+                ["run-script-before"] = CreateScript(0, null, null, 0, new List<string> { AppendBackupSourcesCommand(seen) }),
+                ["reduced-reporting"] = "true",
+                [Options.BACKUP_SOURCES_OPTION] = DATAFOLDER
+            };
+            using (var c = new Controller("file://" + TARGETFOLDER, options, null))
+            {
+                var res = await c.BackupAsync(new[] { DATAFOLDER });
+                Assert.AreEqual(0, res.Errors.Count());
+            }
+
+            // Like the local path, the sources are content that the reduced form leaves out
+            Assert.That(File.ReadAllLines(seen), Is.EqualTo(new[] { "BEFORE Backup=" }));
+        }
+
         [Test]
         [Category("Border")]
         [TestCase("run-script-after", "Duplicati")]

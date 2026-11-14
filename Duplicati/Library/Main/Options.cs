@@ -66,6 +66,12 @@ namespace Duplicati.Library.Main
         /// The name of the option that makes a sync delete remote files that no longer exist locally
         /// </summary>
         public const string SYNC_THEN_DELETE_OPTION = "sync-then-delete";
+
+        /// <summary>
+        /// The name of the internal option the server uses to pass the source paths of the job,
+        /// joined with the path separator, so scripts see them in every operation and not only in a backup
+        /// </summary>
+        public const string BACKUP_SOURCES_OPTION = "backup-sources";
         /// <summary>
         /// The default file hash algorithm
         /// </summary>
@@ -407,7 +413,8 @@ namespace Duplicati.Library.Main
         /// Returns a list of strings that are not supported on the commandline as options, but used internally
         /// </summary>
         public static string[] InternalOptions => [
-                    "main-action"
+                    "main-action",
+                    BACKUP_SOURCES_OPTION
                 ];
 
         /// <summary>
