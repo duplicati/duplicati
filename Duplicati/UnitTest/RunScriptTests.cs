@@ -463,6 +463,47 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Border")]
+        public async Task ScriptOptionChangesAreLoggedAsync()
+        {
+            // A script can set secrets in options of any type, so no value is logged
+            var values = new[] { "FromScript", "ScriptSecret123", "TelegramSecret456" };
+            var customTargetFolder = Path.Combine(this.TARGETFOLDER, "destination");
+            Directory.CreateDirectory(customTargetFolder);
+            var customSourceFolder = Path.Combine(this.DATAFOLDER, "source2");
+            Directory.CreateDirectory(customSourceFolder);
+            File.WriteAllText(Path.Combine(customSourceFolder, "file2.txt"), "some content");
+
+            var customCommands = new List<string>
+            {
+                $"echo --backup-name={values[0]}",
+                $"echo --passphrase={values[1]}",
+                $"echo --send-telegram-api-key={values[2]}",
+                $"echo --remoteurl=\"file://{customTargetFolder}\"",
+                $"echo --localpath=\"{customSourceFolder}\""
+            };
+
+            var options = new Dictionary<string, string>(this.TestOptions);
+            options["run-script-before"] = CreateScript(0, null, null, 0, customCommands);
+            using (var c = new Library.Main.Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var backupResults = await c.BackupAsync(new[] { this.DATAFOLDER });
+                Assert.AreEqual(0, backupResults.Errors.Count());
+                Assert.AreEqual(0, backupResults.Warnings.Count());
+
+                var messages = backupResults.Messages.ToList();
+                Assert.That(messages, Has.Some.Contains("-ScriptChangedOptions]")
+                    .And.Contains("--backup-name")
+                    .And.Contains("--passphrase")
+                    .And.Contains("--send-telegram-api-key"));
+                Assert.That(messages, Has.Some.Contains("-ScriptChangedRemoteUrl]").And.EndsWith("destination"));
+                Assert.That(messages, Has.Some.Contains("-ScriptChangedLocalPath]").And.EndsWith(customSourceFolder));
+                foreach (var value in values)
+                    Assert.That(messages, Has.None.Contains(value));
+            }
+        }
+
+        [Test]
+        [Category("Border")]
         public async Task CustomFilterAsync()
         {
             var expectedFilter = ".*b.*";
