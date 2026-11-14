@@ -66,8 +66,10 @@ INSERT INTO `InstallExecuteSequence` (`Action`, `Condition`, `Sequence`) VALUES 
 -- toolchain emits this table natively from the WXS <ServiceConfig> element.
 --
 --   Name        - the service name (matches ServiceInstall/@Name in the WXS).
---   Event       - 3 = msidbServiceConfigEventInstall (1) | ...Reinstall (2).
---                 The uninstall bit (4) is not set.
+--   Event       - 5 = msidbServiceConfigEventInstall (1) | ...Reinstall (4).
+--                 The uninstall bit (msidbServiceConfigEventUninstall, 2) is
+--                 not set. This is what WiX writes for OnInstall="yes"
+--                 OnReinstall="yes".
 --   ConfigType  - 3 = SERVICE_CONFIG_DELAYED_AUTO_START_INFO.
 --   Argument    - '1' enables delayed auto-start (only affects auto services).
 --   Component_  - keyed to the always-installed service component so the
@@ -77,7 +79,7 @@ INSERT INTO `InstallExecuteSequence` (`Action`, `Condition`, `Sequence`) VALUES 
 -- scheduled below.
 -- ---------------------------------------------------------------------------
 CREATE TABLE `MsiServiceConfig` (`MsiServiceConfig` CHAR(72) NOT NULL, `Name` CHAR(255) NOT NULL, `Event` INT NOT NULL, `ConfigType` INT NOT NULL, `Argument` CHAR(255), `Component_` CHAR(72) NOT NULL PRIMARY KEY `MsiServiceConfig`)
-INSERT INTO `MsiServiceConfig` (`MsiServiceConfig`, `Name`, `Event`, `ConfigType`, `Argument`, `Component_`) VALUES ('DelayStartAgentSvc', 'Duplicati.Agent', 3, 3, '1', 'DuplicatiAgentServiceComponent')
+INSERT INTO `MsiServiceConfig` (`MsiServiceConfig`, `Name`, `Event`, `ConfigType`, `Argument`, `Component_`) VALUES ('DelayStartAgentSvc', 'Duplicati.Agent', 5, 3, '1', 'DuplicatiAgentServiceComponent')
 
 -- ---------------------------------------------------------------------------
 -- Service recovery: restart the service 60 seconds after a failure, at most
@@ -107,13 +109,15 @@ INSERT INTO `MsiServiceConfigFailureActions` (`MsiServiceConfigFailureActions`, 
 -- because the table is empty at wixl build time. 5850 is just after the
 -- standard InstallServices (5800), so the service exists when it is configured.
 --
--- Condition 'NOT REMOVE~="ALL"': despite Event=3 (install/reinstall only),
--- Windows Installer still emits a ServiceConfigure op for the component's
+-- Condition 'NOT REMOVE~="ALL"': with the uninstall bit set (Event 7, and
+-- also 3, which was meant as install/reinstall but is install/uninstall),
+-- Windows Installer emits a ServiceConfigure op for the component's
 -- uninstall transition. Because MsiConfigureServices (5850) runs AFTER
 -- DeleteServices (5680) removes the service, that op fails with Error
 -- 1060/1939 ("handle to the service could [not] be obtained") and aborts the
 -- uninstall with 1603. Gating the action off REMOVE="ALL" skips it entirely on
 -- uninstall (and on the major-upgrade removal of the old product), while still
--- running it on install/reinstall of the new product.
+-- running it on install/reinstall of the new product. Event 5 no longer asks
+-- for the uninstall op; the condition is kept as a guard.
 -- ---------------------------------------------------------------------------
 INSERT INTO `InstallExecuteSequence` (`Action`, `Condition`, `Sequence`) VALUES ('MsiConfigureServices', 'NOT REMOVE~="ALL"', 5850)
