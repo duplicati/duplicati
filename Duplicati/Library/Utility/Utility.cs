@@ -1533,34 +1533,66 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// Gets the drive letter from the given volume guid.
+        /// Gets the path the given volume is mounted on: its drive letter, or the folder
+        /// it is mounted on when it has no drive letter.
         /// This method cannot be inlined since the Microsoft.Management.Infrastructure types are not implemented in Mono
         /// </summary>
         /// <param name="volumeGuid">Volume guid</param>
-        /// <returns>Drive letter, as a single character, or null if the volume wasn't found</returns>
+        /// <returns>The drive letter (as <c>C:</c>) or the mount folder (as <c>C:\mnt\disk\</c>), or null if the volume wasn't found or is not mounted</returns>
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         [SupportedOSPlatform("windows")]
-        public static string? GetDriveLetterFromVolumeGuid(Guid volumeGuid)
+        public static string? GetMountPathFromVolumeGuid(Guid volumeGuid)
         {
             // Based on this answer:
             // https://stackoverflow.com/questions/10186277/how-to-get-drive-information-by-volume-id
             using var session = Microsoft.Management.Infrastructure.CimSession.Create(null);
             string targetId = string.Format(@"\\?\Volume{{{0}}}\", volumeGuid);
-            foreach (var obj in session.QueryInstances(@"root\cimv2", "WQL", "Select DeviceID, DriveLetter from Win32_Volume"))
+            foreach (var obj in session.QueryInstances(@"root\cimv2", "WQL", "Select DeviceID, DriveLetter, Name from Win32_Volume"))
             {
                 var deviceId = obj.CimInstanceProperties["DeviceID"]?.Value?.ToString();
                 if (string.Equals(deviceId, targetId, StringComparison.OrdinalIgnoreCase))
-                {
-                    var driveLetter = obj.CimInstanceProperties["DriveLetter"]?.Value?.ToString();
-                    if (!string.IsNullOrEmpty(driveLetter))
-                        return driveLetter;
-
-                    // The volume was found, but doesn't have a drive letter associated with it.
-                    break;
-                }
+                    return SelectVolumeMountPath(
+                        obj.CimInstanceProperties["DriveLetter"]?.Value?.ToString(),
+                        obj.CimInstanceProperties["Name"]?.Value?.ToString());
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Picks the path a volume is mounted on from its Win32_Volume properties.
+        /// The drive letter wins; otherwise the name is used when it is a folder the volume
+        /// is mounted on. A volume that is not mounted anywhere has its own volume guid path
+        /// as name, which is not used.
+        /// </summary>
+        /// <param name="driveLetter">The DriveLetter property, as <c>C:</c>, or null</param>
+        /// <param name="name">The Name property, as <c>C:\</c>, <c>C:\mnt\disk\</c> or <c>\\?\Volume{...}\</c>, or null</param>
+        /// <returns>The mount path, or null if the volume is not mounted</returns>
+        public static string? SelectVolumeMountPath(string? driveLetter, string? name)
+        {
+            if (!string.IsNullOrEmpty(driveLetter))
+                return driveLetter;
+
+            if (string.IsNullOrEmpty(name) || name.StartsWith(@"\\?\", StringComparison.Ordinal))
+                return null;
+
+            return name;
+        }
+
+        /// <summary>
+        /// Builds a regular path from the mount path of a volume and a path inside the volume
+        /// </summary>
+        /// <param name="mountPath">The mount path, as <c>C:</c> or <c>C:\mnt\disk\</c></param>
+        /// <param name="pathInVolume">The rest of the volume guid source, as <c>\data\</c>, or empty</param>
+        /// <returns>The combined path</returns>
+        public static string CombineVolumeMountPath(string mountPath, string pathInVolume)
+        {
+            var root = mountPath.TrimEnd('\\');
+            // A source of only the volume guid points to the root of the volume
+            if (string.IsNullOrEmpty(pathInVolume))
+                return root.EndsWith(':') ? root : root + @"\";
+
+            return root + (pathInVolume.StartsWith('\\') ? pathInVolume : @"\" + pathInVolume);
         }
 
         /// <summary>

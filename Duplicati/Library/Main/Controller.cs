@@ -1732,10 +1732,11 @@ namespace Duplicati.Library.Main
                     Guid volumeGuid;
                     if (Guid.TryParse(inputsource.Substring(@"\\?\Volume{".Length, @"XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX".Length), out volumeGuid))
                     {
-                        string driveLetter = Library.Utility.Utility.GetDriveLetterFromVolumeGuid(volumeGuid);
-                        if (!string.IsNullOrEmpty(driveLetter))
+                        // The drive letter, or the folder the volume is mounted on when it has none
+                        string mountPath = Library.Utility.Utility.GetMountPathFromVolumeGuid(volumeGuid);
+                        if (!string.IsNullOrEmpty(mountPath))
                         {
-                            string expandedSource = driveLetter + inputsource.Substring(@"\\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}".Length);
+                            string expandedSource = Library.Utility.Utility.CombineVolumeMountPath(mountPath, inputsource.Substring(@"\\?\Volume{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}".Length));
                             Logging.Log.WriteVerboseMessage(LOGTAG, "AddingSourceFromGuid", @"Adding source path ""{0}"" in place of volume guid source path ""{1}""", expandedSource, inputsource);
                             expandedSources.Add(expandedSource);
                         }
