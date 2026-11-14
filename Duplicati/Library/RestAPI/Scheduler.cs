@@ -85,14 +85,28 @@ namespace Duplicati.Server
         private Dictionary<Runner.IRunnerData, Tuple<ISchedule, DateTime, DateTime>> m_updateTasks;
 
         /// <summary>
+        /// Returns the current power source
+        /// </summary>
+        private readonly Func<Library.Utility.Power.PowerSupply.Source> m_getPowerSource;
+
+        /// <summary>
+        /// The IDs of the backups whose scheduled run was skipped on battery power,
+        /// and that should run once the system is no longer on battery power.
+        /// Only used by the scheduler thread.
+        /// </summary>
+        private readonly HashSet<string> m_skippedOnBattery = new HashSet<string>();
+
+        /// <summary>
         /// Constructs a new scheduler
         /// </summary>
         /// <param name="connection">The data connection</param>
         /// <param name="queueRunnerService">The queue runner service</param>
-        public Scheduler(Connection connection, IQueueRunnerService queueRunnerService)
+        /// <param name="getPowerSource">Returns the current power source; defaults to <see cref="Library.Utility.Power.PowerSupply.GetSource"/></param>
+        public Scheduler(Connection connection, IQueueRunnerService queueRunnerService, Func<Library.Utility.Power.PowerSupply.Source>? getPowerSource = null)
         {
             m_dataConnection = connection;
             m_queueRunnerService = queueRunnerService;
+            m_getPowerSource = getPowerSource ?? Library.Utility.Power.PowerSupply.GetSource;
             m_thread = new Thread(new ThreadStart(Runner));
             m_schedule = [];
             m_terminate = false;
@@ -328,19 +342,13 @@ namespace Duplicati.Server
         /// </summary>
         /// <param name="entry">The backup to run</param>
         /// <param name="taskOptions">The extra options for the run, or <c>null</c> if there are none</param>
-        /// <param name="scheduledRun">If the run comes from the schedule of the backup, so --min-time-between-scheduled-runs applies</param>
+        /// <param name="scheduledRun">If the run comes from the schedule of the backup, so --min-time-between-scheduled-runs applies
+        /// and a run skipped on battery power is recorded for --run-skipped-on-ac-power</param>
         /// <returns>The task to queue, or <c>null</c> if the backup must not be queued</returns>
         private Runner.IRunnerData? TryCreateBackupTask(IBackup entry, Dictionary<string, string?>? taskOptions, bool scheduledRun = false)
         {
             //See if it is already queued
-            var tmplst = from n in m_queueRunnerService.GetCurrentTasks()
-                         where n.Operation == Serialization.DuplicatiOperation.BackupOrSync
-                         select n.BackupID;
-            var tastTemp = m_queueRunnerService.GetCurrentTask();
-            if (tastTemp != null && tastTemp.Operation == Serialization.DuplicatiOperation.BackupOrSync)
-                tmplst = tmplst.Union(new[] { tastTemp.BackupID });
-
-            if (tmplst.Any(x => x == entry.ID))
+            if (GetQueuedBackupIDs().Any(x => x == entry.ID))
                 return null;
 
             if (!entry.Enabled)
@@ -356,12 +364,15 @@ namespace Duplicati.Server
             Server.Runner.ApplyOptions(m_dataConnection, entry, options, out var _);
             var parsedOptions = new Library.Main.Options(options);
             if (parsedOptions.DisableOnBattery &&
-                (Library.Utility.Power.PowerSupply.GetSource() ==
+                (m_getPowerSource() ==
                  Library.Utility.Power.PowerSupply.Source.Battery))
             {
                 Library.Logging.Log.WriteInformationMessage(LOGTAG,
                     "BackupDisabledOnBattery",
                     "Scheduled backup disabled while on battery power.");
+                // The set is only used by the scheduler thread, so only scheduled runs are recorded
+                if (scheduledRun && parsedOptions.RunSkippedOnAcPower)
+                    m_skippedOnBattery.Add(entry.ID);
                 return null;
             }
 
@@ -374,6 +385,10 @@ namespace Duplicati.Server
                     entry.Name, lastFinished, parsedOptions.MinTimeBetweenScheduledRuns);
                 return null;
             }
+
+            // This run replaces a run that was skipped on battery power
+            if (scheduledRun)
+                m_skippedOnBattery.Remove(entry.ID);
 
             return Server.Runner.CreateTask(Serialization.DuplicatiOperation.BackupOrSync, entry, taskOptions);
         }
@@ -444,6 +459,63 @@ namespace Duplicati.Server
                     daysMask |= 1 << (int)d;
 
             return FormattableString.Invariant($"{schedule.Time.Ticks}:{daysMask}:{schedule.Repeat}");
+        }
+
+        /// <summary>
+        /// Returns the IDs of the backups that are queued or running
+        /// </summary>
+        /// <returns>The IDs of the queued or running backups</returns>
+        private IEnumerable<string?> GetQueuedBackupIDs()
+        {
+            var tmplst = from n in m_queueRunnerService.GetCurrentTasks()
+                         where n.Operation == Serialization.DuplicatiOperation.BackupOrSync
+                         select n.BackupID;
+            var tastTemp = m_queueRunnerService.GetCurrentTask();
+            if (tastTemp != null && tastTemp.Operation ==
+                Serialization.DuplicatiOperation.BackupOrSync)
+                tmplst = tmplst.Union(new[] { tastTemp.BackupID });
+            return tmplst;
+        }
+
+        /// <summary>
+        /// Queues the backups whose scheduled run was skipped on battery power,
+        /// once the system is no longer on battery power
+        /// </summary>
+        private void QueueRunsSkippedOnBattery()
+        {
+            if (m_skippedOnBattery.Count == 0 ||
+                m_getPowerSource() == Library.Utility.Power.PowerSupply.Source.Battery)
+                return;
+
+            var queued = GetQueuedBackupIDs().ToHashSet();
+            foreach (var id in m_skippedOnBattery.ToArray())
+            {
+                m_skippedOnBattery.Remove(id);
+
+                // Only one instance of a backup is kept in the queue
+                if (queued.Contains(id))
+                    continue;
+
+                // The backup is read again, so the run uses the current settings,
+                // and is dropped if it was disabled, deleted or unscheduled meanwhile
+                var entry = m_dataConnection.GetBackup(id);
+                if (entry == null || !entry.Enabled || !IsScheduled(id))
+                    continue;
+
+                var options = Server.Runner.GetCommonOptions(m_dataConnection);
+                Server.Runner.ApplyOptions(m_dataConnection, entry, options, out var _);
+                var parsed = new Library.Main.Options(options);
+                if (!parsed.DisableOnBattery || !parsed.RunSkippedOnAcPower)
+                    continue;
+
+                Library.Logging.Log.WriteInformationMessage(LOGTAG,
+                    "RunningBackupSkippedOnBattery",
+                    "Running scheduled backup {0} that was skipped on battery power.", entry.Name);
+
+                var job = Server.Runner.CreateTask(Serialization.DuplicatiOperation.BackupOrSync, entry, null);
+                job.OnStarting = () => OnStartingWorkAsync(job);
+                m_queueRunnerService.AddTask(job);
+            }
         }
 
         /// <summary>
@@ -579,6 +651,8 @@ namespace Duplicati.Server
                     }
                 }
 
+                QueueRunsSkippedOnBattery();
+
                 var existing = lst.ToDictionary(x => x.ID);
                 //Sort them, lock as we assign the m_schedule variable
                 lock (m_lock)
@@ -610,6 +684,10 @@ namespace Duplicati.Server
                     //No tasks, check back later
                     waittime = 60 * 1000;
                 }
+
+                // Check the power source at least once a minute while a skipped run is waiting for it
+                if (m_skippedOnBattery.Count > 0)
+                    waittime = Math.Min(waittime, 60 * 1000);
 
                 //Waiting on the event, enables a wakeup call from termination
                 // never use waittime = 0
