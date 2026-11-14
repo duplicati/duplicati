@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Runtime.CompilerServices;
+using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 
 namespace Duplicati.Library.SourceProvider;
@@ -74,12 +75,20 @@ public class Combiner(IEnumerable<ISourceProvider> providers) : ISourceProvider
     /// <returns>The filesystem entry</returns>
     public async Task<ISourceProviderEntry?> GetEntryAsync(string path, bool isFolder, CancellationToken cancellationToken)
     {
-        foreach (var provider in providers)
-            if (!string.IsNullOrWhiteSpace(MountedPath) && provider.MountedPath.StartsWith(path))
-            {
-                var subpath = provider.MountedPath.Substring(path.Length);
-                return await provider.GetEntryAsync(subpath, isFolder, cancellationToken).ConfigureAwait(false);
-            }
+        // A path below a mountpoint belongs to the provider mounted there; the longest
+        // mountpoint wins, so a mountpoint inside another one is found first
+        var pathWithSeparator = Util.AppendDirSeparator(path);
+        var mounted = providers
+            .Where(x => !string.IsNullOrWhiteSpace(x.MountedPath)
+                && pathWithSeparator.StartsWith(Util.AppendDirSeparator(x.MountedPath), Utility.Utility.ClientFilenameStringComparison))
+            .MaxBy(x => Util.AppendDirSeparator(x.MountedPath).Length);
+        if (mounted != null)
+        {
+            // Give the provider the path with its own spelling of the mountpoint
+            var mountpoint = Util.AppendDirSeparator(mounted.MountedPath);
+            var subpath = pathWithSeparator.Length == mountpoint.Length ? "" : path.Substring(mountpoint.Length);
+            return await mounted.GetEntryAsync(mountpoint + subpath, isFolder, cancellationToken).ConfigureAwait(false);
+        }
 
         foreach (var provider in providers.Where(x => string.IsNullOrWhiteSpace(x.MountedPath)))
         {
