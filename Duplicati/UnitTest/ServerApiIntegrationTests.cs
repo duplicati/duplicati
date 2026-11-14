@@ -887,6 +887,36 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
         }, null, "127.0.0.1", [$"--webservice-disable-api-extensions={SystemInfoProvider.BackupEnableDisableExtension}"]).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// The system information tells whether the server database is encrypted and where
+    /// preload settings are read from, so a user can check both in the UI (issue #6611)
+    /// </summary>
+    [TestCase(true)]
+    [TestCase(false)]
+    [Category("Integration")]
+    public async Task SystemInfoReportsDatabaseEncryptionAndPreloadPaths_Async(bool encryptDatabase)
+    {
+        string[] serverArgs = encryptDatabase
+            ? [$"--settings-encryption-key=key{Guid.NewGuid():N}", "--disable-db-encryption=false"]
+            : ["--disable-db-encryption=true"];
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var systemInfo = await httpClient.GetFromJsonAsync<JsonElement>("/api/v1/systeminfo", JsonOptions).ConfigureAwait(false);
+
+            Assert.That(systemInfo.TryGetProperty("DatabaseFieldsEncrypted", out var encrypted), Is.True, "System information should tell whether the database is encrypted");
+            Assert.That(encrypted.GetBoolean(), Is.EqualTo(encryptDatabase));
+
+            Assert.That(systemInfo.TryGetProperty("PreloadSettingsPaths", out var paths), Is.True, "System information should list the preload settings paths");
+            var reported = paths.EnumerateArray()
+                .Select(x => (Path: x.GetProperty("Path").GetString(), Exists: x.GetProperty("Exists").GetBoolean()))
+                .ToArray();
+            var expected = PreloadSettingsLoader.GetPreloadSettingsPaths().Select(x => (Path: (string?)x.Path, x.Exists)).ToArray();
+            Assert.That(reported, Is.EqualTo(expected));
+            Assert.That(reported.Select(x => x.Path), Does.Contain(Path.Combine(Path.GetDirectoryName(typeof(PreloadSettingsLoader).Assembly.Location) ?? "", "preload.json")));
+        }, null, "127.0.0.1", serverArgs).ConfigureAwait(false);
+    }
+
     private static async Task<string[]> GetApiExtensionsAsync(HttpClient httpClient)
     {
         var systemInfo = await httpClient.GetFromJsonAsync<JsonElement>("/api/v1/systeminfo", JsonOptions).ConfigureAwait(false);
