@@ -292,6 +292,18 @@ namespace Duplicati.Server.Database
             }
         }
 
+        /// <summary>
+        /// Gets a copy of each registered temporary backup
+        /// </summary>
+        public IBackup[] TemporaryBackups
+        {
+            get
+            {
+                lock (m_lock)
+                    return m_temporaryBackups.Values.Select(x => (IBackup)x.Backup.Clone()).ToArray();
+            }
+        }
+
         public ServerSettings ApplicationSettings { get; private set; }
 
         internal IDictionary<string, string?> GetMetadata(long id)

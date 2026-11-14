@@ -75,6 +75,12 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
     public const string QueueCompletionActionExtension = "v1:serverstate:queue-completion-action";
 
     /// <summary>
+    /// The API extension that signals the temporary backups, such as those made for a direct restore,
+    /// can be listed with "GET /backups/temporary"
+    /// </summary>
+    public const string TemporaryBackupListExtension = "v1:backups:temporary";
+
+    /// <summary>
     /// The API extensions that are available
     /// </summary>
     public static readonly string[] SupportedAPIExtensions = [
@@ -116,6 +122,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         SyncRestoreExtension,
         McpServerExtension,
         "v2:backup:purge-files:suppress-compact",
+        TemporaryBackupListExtension,
 
         // "v1:subscribe:scheduler",
     ];
