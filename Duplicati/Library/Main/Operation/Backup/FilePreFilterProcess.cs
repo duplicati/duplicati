@@ -68,6 +68,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 var SKIPFILESMODIFIEDAFTER = options.SkipFilesModifiedAfter;
 
                 var DISABLEFILETIMECHECK = options.DisableFiletimeCheck;
+                var DISABLEFILETIMECHECKFOR = options.DisableFiletimeCheckFor;
                 var CHECKFILETIMEONLY = options.CheckFiletimeOnly;
                 var SKIPMETADATA = options.SkipMetadata;
 
@@ -117,9 +118,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                     // Invalid ID indicates a new file
                     var isNewFile = e.OldId < 0;
 
-                    // If we disable the filetime check, we always assume that the file has changed
+                    // If we disable the filetime check, for all files or for this one, we always assume that the file has changed
                     // Otherwise we check that the timestamps are different or if any of them are empty
-                    e.TimestampChanged = DISABLEFILETIMECHECK || e.LastWrite != e.OldModified || e.LastWrite.Ticks == 0 || e.OldModified.Ticks == 0;
+                    e.TimestampChanged = DISABLEFILETIMECHECK || DISABLEFILETIMECHECKFOR.Matches(e.Entry.Path, out _, out _) || e.LastWrite != e.OldModified || e.LastWrite.Ticks == 0 || e.OldModified.Ticks == 0;
 
                     // Avoid generating a new metadata blob if timestamp has not changed
                     // and we only check for timestamp changes
