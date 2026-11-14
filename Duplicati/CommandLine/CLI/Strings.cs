@@ -70,6 +70,8 @@ namespace Duplicati.CommandLine.Strings
         public static string AllowedCompressionModulesShort { get { return LC.L(@"Allowed compression modules"); } }
         public static string AllowedCompressionModulesLong { get { return LC.L(@"Comma-separated list of compression module file extensions that are allowed to be used. If this option is not specified, all available compression modules are allowed. Use this option to restrict the compression modules that can be used, for example in a managed environment. Example: --allowed-compression-modules=zip"); } }
         public static string RestoreTestStarted(System.DateTime time) { return LC.L(@"Restore test started at {0}", time); }
+        public static string CancelKeyStopping { get { return LC.L(@"Stopping the operation cleanly, this can take a while. Press Ctrl+C again to abort it."); } }
+        public static string CancelKeyAborting { get { return LC.L(@"Aborting the operation. Press Ctrl+C again to exit at once, which can leave the local database to be repaired."); } }
         public static string BackupRestoreTestStarting { get { return LC.L(@"Testing restore of a sample from the backup ..."); } }
         public static string BackupRestoreTestSummary(long tested, long passed, long failed, long skipped) { return LC.L(@"  Restore test: {0} file(s) tested, {1} passed, {2} failed, {3} skipped", tested, passed, failed, skipped); }
         public static string RestoreTestSummary(string mode, long version, int seed) { return LC.L(@"Restore test completed for version {0} in {1} mode (seed {2})", version, mode, seed); }

@@ -50,13 +50,17 @@ namespace Duplicati.CommandLine
 
             Library.UsageReporter.Reporter.Initialize();
             FROM_COMMANDLINE = true;
+            // Ctrl+C stops the operation cleanly instead of killing the process in the middle of it
+            var cancelKeyHandler = new CancelKeyHandler(Console.Error);
             try
             {
                 CrashlogHelper.OnUnobservedTaskException += LogUnobservedTaskExceptions;
-                return RunCommandLine(Console.Out, Console.Error, c => { }, args, rejectUnsupportedOptions: true);
+                Console.CancelKeyPress += cancelKeyHandler.OnCancelKeyPress;
+                return RunCommandLine(Console.Out, Console.Error, cancelKeyHandler.Track, args, rejectUnsupportedOptions: true);
             }
             finally
             {
+                Console.CancelKeyPress -= cancelKeyHandler.OnCancelKeyPress;
                 Library.UsageReporter.Reporter.ShutDown();
                 CrashlogHelper.OnUnobservedTaskException -= LogUnobservedTaskExceptions;
             }
