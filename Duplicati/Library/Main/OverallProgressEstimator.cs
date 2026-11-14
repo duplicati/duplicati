@@ -43,6 +43,12 @@ namespace Duplicati.Library.Main
         public const float ProcessingFilesCap = 0.90f;
 
         /// <summary>
+        /// The part of the overall backup progress that the delete and compact phases report into.
+        /// It ends where the verification phases start.
+        /// </summary>
+        internal static readonly (float Start, float Span) CompactRange = (0.95f, 0.03f);
+
+        /// <summary>
         /// Estimates the overall progress for the given progress counters.
         /// </summary>
         /// <param name="phase">The current operation phase.</param>
@@ -82,7 +88,8 @@ namespace Duplicati.Library.Main
 
                 case OperationPhase.Backup_Delete:
                 case OperationPhase.Backup_Compact:
-                    return 0.95f;
+                    // The compact reports its progress into this range; anything else stays at the start of it
+                    return Math.Min(CompactRange.Start + CompactRange.Span, Math.Max(CompactRange.Start, Clamp(reportedProgress)));
 
                 case OperationPhase.Backup_VerificationUpload:
                 case OperationPhase.Backup_PostBackupVerify:

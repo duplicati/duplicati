@@ -995,7 +995,7 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Delete);
                 m_result.DeleteResults = new DeleteResults(m_result);
                 await using var db = await LocalDeleteDatabase.CreateAsync(m_database, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-                await new DeleteHandler(m_options, (DeleteResults)m_result.DeleteResults)
+                await new DeleteHandler(m_options, (DeleteResults)m_result.DeleteResults, OverallProgressEstimator.CompactRange)
                     .DoRunAsync(db, true, currentIsSmall, backendManager)
                     .ConfigureAwait(false);
 
@@ -1005,7 +1005,7 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Compact);
                 m_result.CompactResults = new CompactResults(m_result);
                 await using var db = await LocalDeleteDatabase.CreateAsync(m_database, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-                await new CompactHandler(m_options, (CompactResults)m_result.CompactResults)
+                await new CompactHandler(m_options, (CompactResults)m_result.CompactResults, OverallProgressEstimator.CompactRange)
                     .DoCompactAsync(db, true, backendManager)
                     .ConfigureAwait(false);
             }
