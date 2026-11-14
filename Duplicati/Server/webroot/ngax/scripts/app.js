@@ -1,5 +1,11 @@
+// AngularJS 1.7 removed angular.lowercase, but the bundled angular-gettext still calls it
+if (!angular.lowercase)
+    angular.lowercase = function (value) {
+        return angular.isString(value) ? value.toLowerCase() : value;
+    };
+
 var backupApp = angular.module(
-    'backupApp', 
+    'backupApp',
     [
         'ngRoute', 
         'dotjem.angular.tree',
@@ -13,6 +19,17 @@ var backupApp = angular.module(
 backupApp.constant('appConfig', {
     login_url: '/login.html?v=2.0.0.7'
 });
+
+// Keep the "#/page" urls; AngularJS 1.6 changed the default prefix to "#!/"
+backupApp.config(['$locationProvider', function($locationProvider) {
+    $locationProvider.hashPrefix('');
+}]);
+
+// Many requests have no rejection handler, and AngularJS 1.6 started to log
+// those as errors; keep the earlier behavior and leave them silent
+backupApp.config(['$qProvider', function($qProvider) {
+    $qProvider.errorOnUnhandledRejections(false);
+}]);
 
 backupApp.config(['$routeProvider',
     function($routeProvider) {
