@@ -94,7 +94,8 @@ async function createBackup(page: Page) {
   await page.locator("h2").filter({ hasText: "My backups" }).waitFor();
 
   await page.click("text=Add backup");
-  await page.locator("button").filter({ hasText: "Add a new backup" }).click();
+  // ngclient 0.0.250 shows this as a link (duplicati/ngclient#709)
+  await page.getByRole("link", { name: "Add a new backup" }).click();
   await page.fill("#backupName", BACKUP_NAME);
   await page.fill("#password", PASSWORD);
   await page.fill("#repeatPassword", PASSWORD);
