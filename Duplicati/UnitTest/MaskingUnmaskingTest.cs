@@ -336,5 +336,88 @@ public class BackupConfigMaskingTests
         Assert.That(newBackup.TargetURL, Does.Contain("custom=value-from-prev"));
         Assert.That(newBackup.TargetURL, Does.Not.Contain(placeholder));
     }
+
+    // The URLs below have parts that a parse and rebuild would change: a port with a
+    // leading zero, an encoded separator in the path, a repeated key, a key without a
+    // value, an empty value, '+', '%20' and a double encoded value.
+    private static readonly object[] UrlsWithPartsToKeep =
+    [
+        new object[] {
+            "ssh://fixture-user:fixture-secret@Example.COM:022/archive%2fpart?auth-password=p%2525&buffer-size=64MB&web-timeout=2m&future=a+b&future=two&flag",
+            "ssh://fixture-user:fixture-secret@Example.COM:022/archive%2fpart?auth-password=***************&buffer-size=64MB&web-timeout=2m&future=a+b&future=two&flag"
+        },
+        new object[] {
+            "ftp://Example.COM/a%2Fb%20c?auth-username=u&empty=&plus=a+b&space=a%20b&double=%2520&auth-password=x%26y%3D&flag&dup=1&dup=2",
+            "ftp://Example.COM/a%2Fb%20c?auth-username=u&empty=&plus=a+b&space=a%20b&double=%2520&auth-password=***************&flag&dup=1&dup=2"
+        },
+        new object[] {
+            "s3://bucket/a%2Fb?AUTH-PASSWORD=one&auth-password=two&s3-server-name=x",
+            "s3://bucket/a%2Fb?AUTH-PASSWORD=***************&auth-password=***************&s3-server-name=x"
+        },
+    ];
+
+    [Test]
+    [TestCaseSource(nameof(UrlsWithPartsToKeep))]
+    public void MaskingChangesOnlyTheProtectedValues(string url, string expectedMasked)
+    {
+        var masked = Server.QuerystringMasking.Mask(url, Connection.PasswordFieldNames);
+
+        Assert.That(masked, Is.EqualTo(expectedMasked));
+    }
+
+    [Test]
+    [TestCaseSource(nameof(UrlsWithPartsToKeep))]
+    public void SavingAnUnchangedMaskedUrlRestoresTheStoredUrl(string url, string expectedMasked)
+    {
+        var restored = Server.QuerystringMasking.Unmask(expectedMasked, url);
+
+        Assert.That(restored, Is.EqualTo(url));
+    }
+
+    [Test]
+    public void SavingAnUnchangedBackupKeepsItsTargetUrls()
+    {
+        var url = (string)((object[])UrlsWithPartsToKeep[0])[0];
+        var additionalUrl = (string)((object[])UrlsWithPartsToKeep[1])[0];
+        Backup Create() => new Backup
+        {
+            ID = "1",
+            Name = "Test",
+            Description = string.Empty,
+            Tags = Array.Empty<string>(),
+            TargetURL = url,
+            AdditionalTargetURLs = [new TargetUrlEntry { TargetUrlKey = "second", TargetUrl = additionalUrl }],
+            Sources = Array.Empty<string>(),
+            Settings = Array.Empty<ISetting>(),
+            Filters = Array.Empty<IFilter>(),
+            Metadata = new Dictionary<string, string>()
+        };
+
+        var previous = Create();
+        var edited = Create();
+        edited.MaskSensitiveInformation();
+        Assert.That(edited.TargetURL, Does.Not.Contain("p%2525"));
+        Assert.That(edited.AdditionalTargetURLs.Single().TargetUrl, Does.Not.Contain("x%26y%3D"));
+
+        edited.UnmaskSensitiveInformation(previous, new Dictionary<long, string>());
+
+        Assert.That(edited.TargetURL, Is.EqualTo(url));
+        Assert.That(edited.AdditionalTargetURLs.Single().TargetUrl, Is.EqualTo(additionalUrl));
+    }
+
+    [Test]
+    public void SavingAMaskedUrlKeepsTheChangesTheUserMade()
+    {
+        var url = "ssh://host:022/archive%2fpart?auth-password=old&future=a+b&future=two&flag";
+        var placeholder = Connection.PASSWORD_PLACEHOLDER;
+
+        // The password is kept masked, other parameters are changed, removed and added
+        var restored = Server.QuerystringMasking.Unmask($"ssh://host:023/other%2fpart?future=c&auth-password={placeholder}&added=1", url);
+        Assert.That(restored, Is.EqualTo("ssh://host:023/other%2fpart?future=c&auth-password=old&added=1"));
+
+        // A new password replaces the stored one
+        var changed = Server.QuerystringMasking.Unmask($"ssh://host:022/archive%2fpart?auth-password=new%2B1&future=a+b&future=two&flag", url);
+        Assert.That(changed, Is.EqualTo("ssh://host:022/archive%2fpart?auth-password=new%2B1&future=a+b&future=two&flag"));
+    }
 }
 

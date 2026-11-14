@@ -19,9 +19,9 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using Duplicati.Server.Database;
 
@@ -32,6 +32,11 @@ namespace Duplicati.Server;
 /// <summary>
 /// Helper class to mask and unmask sensitive query parameters in backup configs.
 /// </summary>
+/// <remarks>
+/// Only the values of the masked parameters are changed. The rest of the URL is kept as it is written,
+/// as a parse and rebuild would change parts that a backend may read differently, such as an encoded
+/// separator in the path, a repeated parameter or a parameter without a value.
+/// </remarks>
 public static class QuerystringMasking
 {
     /// <summary>
@@ -45,26 +50,23 @@ public static class QuerystringMasking
         if (string.IsNullOrEmpty(urlstring))
             return urlstring;
 
-        var url = new Library.Utility.RelaxedUri(urlstring);
-        if (string.IsNullOrWhiteSpace(url.Query))
+        if (!TrySplitQuery(urlstring, out var beforeQuery, out var parameters))
             return urlstring;
 
         var modified = false;
-        var query = url.GetEncodedQueryParameters();
-        foreach (var k in query.AllKeys)
+        for (var i = 0; i < parameters.Length; i++)
         {
-            if (k is null) continue;
-            if (protectedProperties.Contains(k, StringComparer.OrdinalIgnoreCase))
+            var key = GetKey(parameters[i]);
+            if (key.Length > 0 && protectedProperties.Contains(key, StringComparer.OrdinalIgnoreCase))
             {
-                query[k] = Connection.PASSWORD_PLACEHOLDER;
+                parameters[i] = GetEncodedKey(parameters[i]) + "=" + Connection.PASSWORD_PLACEHOLDER;
                 modified = true;
             }
         }
 
         if (!modified) return urlstring;
 
-        url = url.SetQuery(Library.Utility.UrlEncoding.BuildUriQuery(query, true));
-        return url.ToString();
+        return beforeQuery + string.Join("&", parameters);
     }
 
     /// <summary>
@@ -88,73 +90,114 @@ public static class QuerystringMasking
         if (string.IsNullOrEmpty(newUrl))
             throw new ArgumentException("newUrl is null or empty");
 
-        var newUb = new Library.Utility.RelaxedUri(newUrl);
-        if (string.IsNullOrWhiteSpace(newUb.Query))
+        if (!TrySplitQuery(newUrl, out var beforeQuery, out var parameters))
             return newUrl;
 
-        var newQuery = newUb.GetEncodedQueryParameters();
+        // If any value of a key contains the mask, the entire set for that key is replaced from the previous URLs
+        var maskedKeys = parameters
+            .Where(x => Connection.IsPasswordPlaceholder(GetEncodedValue(x)))
+            .Select(GetKey)
+            .Where(x => x.Length > 0)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var modified = false;
-        foreach (var key in newQuery.AllKeys)
+        if (maskedKeys.Count == 0)
+            return newUrl;
+
+        var result = new List<string>(parameters.Length);
+        var replacedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var parameter in parameters)
         {
-            if (key is null) continue;
+            var key = GetKey(parameter);
+            if (!maskedKeys.Contains(key))
+                result.Add(parameter);
+            // The previous entries go where the first entry for the key was, the other entries are dropped
+            else if (replacedKeys.Add(key))
+                result.AddRange(GetPreviousParameters(key, previousUrls));
+        }
 
-            // Read values from the new URL for this key
-            var newValues = GetValuesCaseInsensitive(newQuery, key);
-            if (newValues is null || newValues.Length == 0) continue;
+        return beforeQuery + string.Join("&", result);
+    }
 
-            // If any value contains the mask, replace the entire set for that key from the previous URLs
-            if (newValues.Any(v => Connection.IsPasswordPlaceholder(v)))
+    /// <summary>
+    /// Finds the entries for a key in the previous URLs, as they are written there.
+    /// </summary>
+    /// <param name="key">The decoded key to find (case-insensitive).</param>
+    /// <param name="previousUrls">The previous URLs, used as a priority list.</param>
+    /// <returns>The entries of the first URL that has a value for the key that is not masked.</returns>
+    private static List<string> GetPreviousParameters(string key, IReadOnlyList<string>? previousUrls)
+    {
+        var previous = new List<string>();
+
+        // Search through previous URLs in priority order
+        if (previousUrls != null)
+        {
+            foreach (var previousUrl in previousUrls)
             {
-                string[]? prevValues = null;
+                if (string.IsNullOrEmpty(previousUrl))
+                    continue;
 
-                // Search through previous URLs in priority order
-                if (previousUrls != null)
-                {
-                    foreach (var previousUrl in previousUrls)
-                    {
-                        if (string.IsNullOrEmpty(previousUrl))
-                            continue;
+                previous = TrySplitQuery(previousUrl, out _, out var previousParameters)
+                    ? previousParameters.Where(x => string.Equals(GetKey(x), key, StringComparison.OrdinalIgnoreCase)).ToList()
+                    : [];
 
-                        var prevUb = new Library.Utility.RelaxedUri(previousUrl);
-                        var prevQuery = Library.Utility.UrlEncoding.ParseQueryString(prevUb.Query ?? "", false);
-                        prevValues = GetValuesCaseInsensitive(prevQuery, key);
-                        if (prevValues != null && prevValues.Any(x => !Connection.IsPasswordPlaceholder(x)))
-                            break;
-                    }
-                }
-
-                if (prevValues is null || prevValues.Length == 0)
-                    throw new InvalidOperationException($"Missing previous value for protected parameter '{key}'.");
-
-                // Remove existing entries for this key (case-insensitive) and add prior values
-                RemoveCaseInsensitive(newQuery, key);
-                foreach (var pv in prevValues)
-                    newQuery.Add(key, pv);
-
-                modified = true;
+                if (previous.Any(x => !Connection.IsPasswordPlaceholder(GetEncodedValue(x))))
+                    break;
             }
         }
 
-        if (!modified)
-            return newUrl;
+        if (previous.Count == 0)
+            throw new InvalidOperationException($"Missing previous value for protected parameter '{key}'.");
 
-        newUb = newUb.SetQuery(Library.Utility.UrlEncoding.BuildUriQuery(newQuery, true));
+        return previous;
+    }
 
-        return newUb.ToString();
+    /// <summary>
+    /// Splits a URL into the part up to and including the '?' and the query parameters, as they are written.
+    /// </summary>
+    /// <param name="url">The URL to split.</param>
+    /// <param name="beforeQuery">The part of the URL before the query, including the '?'.</param>
+    /// <param name="parameters">The query parameters, still encoded.</param>
+    /// <returns><c>true</c> if the URL has a query; <c>false</c> otherwise.</returns>
+    private static bool TrySplitQuery(string url, out string beforeQuery, out string[] parameters)
+    {
+        beforeQuery = url;
+        parameters = [];
 
-        static string[]? GetValuesCaseInsensitive(NameValueCollection nvc, string key)
-        {
-            foreach (var k in nvc.AllKeys)
-                if (k != null && string.Equals(k, key, StringComparison.OrdinalIgnoreCase))
-                    return nvc.GetValues(k);
-            return null;
-        }
+        // The URL is parsed only to find out if it has a query, and to reject URLs that cannot be parsed.
+        // The query starts at the first raw '?', as no part before it may contain one.
+        if (string.IsNullOrWhiteSpace(new Library.Utility.RelaxedUri(url).Query))
+            return false;
 
-        static void RemoveCaseInsensitive(NameValueCollection nvc, string key)
-        {
-            string? match = nvc.AllKeys?.FirstOrDefault(k => k != null && string.Equals(k, key, StringComparison.OrdinalIgnoreCase));
-            if (match != null) nvc.Remove(match);
-        }
+        var index = url.IndexOf('?');
+        if (index < 0)
+            return false;
+
+        beforeQuery = url.Substring(0, index + 1);
+        parameters = url.Substring(index + 1).Split('&');
+        return true;
+    }
+
+    /// <summary>
+    /// Gets the key of a query parameter, as it is written.
+    /// </summary>
+    private static string GetEncodedKey(string parameter)
+    {
+        var index = parameter.IndexOf('=');
+        return index < 0 ? parameter : parameter.Substring(0, index);
+    }
+
+    /// <summary>
+    /// Gets the decoded key of a query parameter.
+    /// </summary>
+    private static string GetKey(string parameter)
+        => Library.Utility.UrlEncoding.UrlDecode(GetEncodedKey(parameter));
+
+    /// <summary>
+    /// Gets the value of a query parameter, as it is written, or an empty string if it has none.
+    /// </summary>
+    private static string GetEncodedValue(string parameter)
+    {
+        var index = parameter.IndexOf('=');
+        return index < 0 ? "" : parameter.Substring(index + 1);
     }
 }
