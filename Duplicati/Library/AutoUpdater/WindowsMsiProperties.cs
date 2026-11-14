@@ -42,6 +42,11 @@ public static class WindowsMsiProperties
     private const string InstallStateKey = @"SOFTWARE\DuplicatiTeam\Duplicati\InstallState";
 
     /// <summary>
+    /// The registry key below HKCU with the marker for the startup entry of the current user only
+    /// </summary>
+    private const string UserStartupKey = @"Software\DuplicatiTeam\Duplicati\UserStartupShortcut";
+
+    /// <summary>
     /// Derives the properties for the running installation
     /// </summary>
     /// <param name="host">The host environment</param>
@@ -71,15 +76,44 @@ public static class WindowsMsiProperties
             props["INSTALLASSERVICE"] = "true";
             props["FORSERVICE"] = "true";
         }
-        else if (tlsUserCerts)
+        else
         {
-            props["ADDLOCAL"] = "DuplicatiCore,DuplicatiProgramMenuShortCutFeature,DuplicatiStartupShortCutFeature,DuplicatiTlsCertsFeature";
+            // The service install has no startup entry (FORSERVICE), and as a service this process
+            // does not run as the user who owns the marker, so this is only read here
+            var userStartup = ReadUserStartupMarker();
+            if (userStartup)
+                props["STARTUP_FOR_CURRENT_USER"] = "1";
+
+            if (tlsUserCerts)
+            {
+                var startupFeature = userStartup ? "DuplicatiUserStartupShortCutFeature" : "DuplicatiStartupShortCutFeature";
+                props["ADDLOCAL"] = $"DuplicatiCore,DuplicatiProgramMenuShortCutFeature,{startupFeature},DuplicatiTlsCertsFeature";
+            }
         }
 
         if (tlsServiceCerts || tlsUserCerts)
             props["INSTALL_TLS_CERTS"] = "true";
 
         return props;
+    }
+
+    /// <summary>
+    /// Reads the marker the installer writes when Duplicati is started at logon for the installing user only.
+    /// It is in HKCU, so it is only found when this process runs as that user.
+    /// </summary>
+    /// <returns><c>true</c> if the marker is set</returns>
+    [SupportedOSPlatform("windows")]
+    private static bool ReadUserStartupMarker()
+    {
+        try
+        {
+            using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(UserStartupKey, false);
+            return key?.GetValue("Enabled") as string == "1";
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     [SupportedOSPlatform("windows")]
