@@ -662,6 +662,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("disable-file-scanner", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilescannerShort, Strings.Options.DisablefilescannerLong, "false"),
             new CommandLineArgument("disable-filelist-consistency-checks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilelistconsistencychecksShort, Strings.Options.DisablefilelistconsistencychecksLong, "false"),
             new CommandLineArgument("disable-on-battery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableOnBatteryShort, Strings.Options.DisableOnBatteryLong, "false"),
+            new CommandLineArgument("min-time-between-scheduled-runs", CommandLineArgument.ArgumentType.Timespan, Strings.Options.MinTimeBetweenScheduledRunsShort, Strings.Options.MinTimeBetweenScheduledRunsLong),
 
             new CommandLineArgument("exclude-empty-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludeemptyfoldersShort, Strings.Options.ExcludeemptyfoldersLong, "false"),
             new CommandLineArgument("one-file-system", CommandLineArgument.ArgumentType.Boolean, Strings.Options.OnefilesystemShort, Strings.Options.OnefilesystemLong, "false"),
@@ -1988,6 +1989,22 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <value><c>true</c> if the backup should be disabled when on battery power; otherwise, <c>false</c>.</value>
         public bool DisableOnBattery => GetBool("disable-on-battery");
+
+        /// <summary>
+        /// Gets the minimum time that must pass after the last completed run before a scheduled run starts, if specified
+        /// </summary>
+        public TimeSpan? MinTimeBetweenScheduledRuns
+        {
+            get
+            {
+                m_options.TryGetValue("min-time-between-scheduled-runs", out var value);
+
+                if (string.IsNullOrWhiteSpace(value))
+                    return null;
+
+                return Library.Utility.Timeparser.ParseTimeSpan(value);
+            }
+        }
 
         /// <summary>
         /// Gets a value indicating if missing dblock files are attempted created
