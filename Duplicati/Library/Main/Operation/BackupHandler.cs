@@ -690,6 +690,70 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
+        /// Stops the backup after the current file once it has run for --max-backup-runtime, the same
+        /// way as a stop from the user, so the backups queued after it can run and the files it did not
+        /// reach are backed up by the next run
+        /// </summary>
+        /// <param name="runtime">Measures how long the backup has run</param>
+        /// <returns>The timer, to dispose once the files are processed, or null if there is no limit</returns>
+        private IDisposable StopWhenRuntimeLimitIsReached(System.Diagnostics.Stopwatch runtime)
+        {
+            var limit = m_options.MaxBackupRuntime;
+            if (limit <= TimeSpan.Zero)
+                return null;
+
+            // A timer waits at most about 24 days, so a longer limit is checked again when it fires
+            static TimeSpan DueTime(TimeSpan left)
+                => TimeSpan.FromMilliseconds(Math.Clamp(left.TotalMilliseconds, 0, int.MaxValue - 1));
+
+            var timer = new RuntimeLimitTimer();
+            timer.Timer = new System.Threading.Timer(_ =>
+            {
+                // A callback that was already running when the timer was disposed must not stop
+                // the steps after the files, so the check and the stop are under the same lock
+                lock (timer)
+                {
+                    if (timer.Disposed)
+                        return;
+
+                    var left = limit - runtime.Elapsed;
+                    if (left > TimeSpan.Zero)
+                    {
+                        timer.Timer.Change(DueTime(left), System.Threading.Timeout.InfiniteTimeSpan);
+                        return;
+                    }
+
+                    Log.WriteWarningMessage(LOGTAG, "MaxBackupRuntimeReached", null,
+                        Strings.Options.MaxBackupRuntimeReached(limit.ToString()));
+                    m_result.TaskControl.Stop();
+                }
+            }, null, System.Threading.Timeout.InfiniteTimeSpan, System.Threading.Timeout.InfiniteTimeSpan);
+
+            timer.Timer.Change(DueTime(limit - runtime.Elapsed), System.Threading.Timeout.InfiniteTimeSpan);
+            return timer;
+        }
+
+        /// <summary>
+        /// The timer of --max-backup-runtime, which does nothing once it is disposed
+        /// </summary>
+        private sealed class RuntimeLimitTimer : IDisposable
+        {
+            public System.Threading.Timer Timer;
+            public bool Disposed;
+
+            public void Dispose()
+            {
+                lock (this)
+                {
+                    if (Disposed)
+                        return;
+                    Disposed = true;
+                    Timer?.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
         /// Performs the bulk of work by starting all relevant processes
         /// </summary>
         private static async Task RunMainOperationAsync(Backup.Channels channels, ISourceProvider source, UsnJournalService journalService, Backup.ChangeTrackingCoordinator changeTracking, Backup.ChangeList changeList, string changeListToken, Backup.FailedPathRecorder failedPaths, Backup.BackupDatabase database, IBackendManager backendManager, Backup.BackupStatsCollector stats, Options options, IFilter filter, HashSet<string> blacklistPaths, BackupResults result, ITaskReader taskreader, long filesetid, long lastfilesetid)
@@ -1062,6 +1126,9 @@ namespace Duplicati.Library.Main.Operation
 
         public async Task RunAsync(string[] sources, IBackendManager backendManager, IFilter filter)
         {
+            // The runtime limit counts the checks before the backup as well
+            var runtime = System.Diagnostics.Stopwatch.StartNew();
+
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);
 
             // Only reads the options, so it refuses a bad combination before the database is opened
@@ -1083,6 +1150,7 @@ namespace Duplicati.Library.Main.Operation
             var blacklistPaths = GetBlacklistedPaths(m_options, sources);
 
             StopWhenUploadLimitIsReached();
+            using var runtimeLimit = StopWhenRuntimeLimitIsReached(runtime);
 
             // If there is no filter, we set an empty filter to simplify the code
             m_filter = filter ?? new Library.Utility.FilterExpression();
@@ -1214,6 +1282,11 @@ namespace Duplicati.Library.Main.Operation
                         }
                         finally
                         {
+                            // The runtime limit only stops the processing of files: the steps after
+                            // it finish the version, so a limit reached during them would leave it
+                            // unlocked, uncompacted and unverified although every file was backed up
+                            runtimeLimit?.Dispose();
+
                             //If the scanner is still running for some reason, make sure we kill it now
                             await counterToken.CancelAsync();
 
