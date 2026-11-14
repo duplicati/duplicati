@@ -517,6 +517,16 @@
       <Custom Action="CheckBootstrapResult"             Sequence="1305">DUPLICATI_SERVICE_PASSWORD AND PREVIOUS_SERVICE_INSTALLED&lt;&gt;"1" AND NOSCRIPT &lt;&gt; "true"</Custom>
       <Custom Action="StoreTrayIconValues"              Sequence="1306">DUPLICATI_SERVICE_PASSWORD AND PREVIOUS_SERVICE_INSTALLED&lt;&gt;"1" AND NOSCRIPT &lt;&gt; "true"</Custom>
 
+      <!-- When the service was installed before and stays installed, keep the
+           TrayIcon host URL in step with the TLS feature (#7804): HTTPS when the
+           feature is being installed, HTTP when it is being removed or an upgrade
+           leaves it out. A plain repair sets nothing, so a host URL the user
+           entered in the TrayIcon is kept. StoreTrayIconValues covers the first
+           install of the service. -->
+      <Custom Action="SetTrayIconHostUrlHttps"          Sequence="1307">PREVIOUS_SERVICE_INSTALLED="1" AND (&amp;DuplicatiServiceFeature=3 OR (!DuplicatiServiceFeature=3 AND NOT &amp;DuplicatiServiceFeature=2)) AND NOT REMOVE~="ALL" AND NOSCRIPT &lt;&gt; "true" AND &amp;DuplicatiTlsCertsFeature=3</Custom>
+      <Custom Action="SetTrayIconHostUrlHttp"           Sequence="1308">PREVIOUS_SERVICE_INSTALLED="1" AND (&amp;DuplicatiServiceFeature=3 OR (!DuplicatiServiceFeature=3 AND NOT &amp;DuplicatiServiceFeature=2)) AND NOT REMOVE~="ALL" AND NOSCRIPT &lt;&gt; "true" AND NOT (&amp;DuplicatiTlsCertsFeature=3 OR (!DuplicatiTlsCertsFeature=3 AND NOT &amp;DuplicatiTlsCertsFeature=2)) AND (&amp;DuplicatiTlsCertsFeature=2 OR PREVIOUSVERSIONSINSTALLED)</Custom>
+      <Custom Action="SyncTrayIconHostUrl"              Sequence="1309">TRAYICON_HOSTURL AND PREVIOUS_SERVICE_INSTALLED="1" AND (&amp;DuplicatiServiceFeature=3 OR (!DuplicatiServiceFeature=3 AND NOT &amp;DuplicatiServiceFeature=2)) AND NOT REMOVE~="ALL" AND NOSCRIPT &lt;&gt; "true"</Custom>
+
       <Custom Action="Set_INSTALL_TLS_CERTS" After="AppSearch">NOT INSTALL_TLS_CERTS AND (PREVIOUS_USER_CERTS_INSTALLED="1" OR PREVIOUS_SERVICE_CERTS_INSTALLED="1")</Custom>
 
       <!-- Pre-fill the install directory shown in InstallOptionsDlg with
@@ -535,6 +545,7 @@
     <!-- Random password generation + service configuration scripts. -->
     <Binary Id="GeneratePasswordScript"          SourceFile="GeneratePassword.js" />
     <Binary Id="StoreTrayIconValuesScript"       SourceFile="StoreTrayIconValues.js" />
+    <Binary Id="SyncTrayIconHostUrlScript"       SourceFile="SyncTrayIconHostUrl.js" />
     <Binary Id="CheckBootstrapResultScript"      SourceFile="CheckBootstrapResult.js" />
     <Binary Id="CopyPasswordToClipboardScript"   SourceFile="CopyPasswordToClipboard.js" />
     <Binary Id="SilentRunScript"                 SourceFile="SilentRun.js" />
@@ -678,6 +689,25 @@
          be written, so no Impersonate dance is needed. -->
     <CustomAction Id="StoreTrayIconValues"
               BinaryKey="StoreTrayIconValuesScript"
+              JScriptCall="CustomAction"
+              Execute="immediate"
+              Return="ignore" />
+
+    <!-- The host URL SyncTrayIconHostUrl stores for the TrayIcon (#7804) -->
+    <CustomAction Id="SetTrayIconHostUrlHttps"
+              Property="TRAYICON_HOSTURL"
+              Value="https://127.0.0.1:8200"
+              Execute="immediate"
+              Return="check" />
+
+    <CustomAction Id="SetTrayIconHostUrlHttp"
+              Property="TRAYICON_HOSTURL"
+              Value="http://127.0.0.1:8200"
+              Execute="immediate"
+              Return="check" />
+
+    <CustomAction Id="SyncTrayIconHostUrl"
+              BinaryKey="SyncTrayIconHostUrlScript"
               JScriptCall="CustomAction"
               Execute="immediate"
               Return="ignore" />
