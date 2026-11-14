@@ -87,14 +87,28 @@ public class ChangeTrackingServiceTests : BasicSetupHelper
     private const string HASH = "hash-a";
     private static readonly TimeSpan Grace = TimeSpan.FromMilliseconds(50);
 
+    // For the tests that act while a drain waits for the grace delay. Timers on the macOS
+    // runner fire tens of milliseconds late, which is more than a quarter of Grace
+    private static readonly TimeSpan LongGrace = TimeSpan.FromSeconds(1);
+
     private string Root => Path.Combine(DATAFOLDER, "watched");
     private string DbPath => Path.Combine(BASEFOLDER, "change-tracking.sqlite");
 
-    private ChangeTrackingSettings Settings(bool enabled)
-        => new(enabled, DbPath, BASEFOLDER, TimeSpan.FromMilliseconds(100), 3, 10, Grace);
+    private ChangeTrackingSettings Settings(bool enabled, TimeSpan? grace = null)
+        => new(enabled, DbPath, BASEFOLDER, TimeSpan.FromMilliseconds(100), 3, 10, grace ?? Grace);
 
-    private Task<ChangeTrackingService> CreateServiceAsync(FakeFactory factory)
-        => ChangeTrackingService.CreateAsync(Settings(true), factory.Create, CancellationToken.None);
+    private Task<ChangeTrackingService> CreateServiceAsync(FakeFactory factory, TimeSpan? grace = null)
+        => ChangeTrackingService.CreateAsync(Settings(true, grace), factory.Create, CancellationToken.None);
+
+    [TearDown]
+    public void DeleteChangeLists()
+    {
+        // A test that fails before it completes its handoff leaves the list behind, and a later
+        // test that checks that no list is written would then fail as well
+        if (Directory.Exists(BASEFOLDER))
+            foreach (var file in Directory.EnumerateFiles(BASEFOLDER, "duplicati-changes-*.txt"))
+                File.Delete(file);
+    }
 
     private static Task<Dictionary<string, char>> ReadListAsync(Library.Interface.ChangeListHandoff? handoff)
         => ReadListAsync(handoff?.ListPath);
@@ -268,7 +282,7 @@ public class ChangeTrackingServiceTests : BasicSetupHelper
     public async Task Service_LateEventsAfterRotationAreInTheListAsync()
     {
         var factory = new FakeFactory();
-        await using var service = await CreateServiceAsync(factory);
+        await using var service = await CreateServiceAsync(factory, LongGrace);
 
         var first = await service.PrepareHandoffAsync(BACKUP, [Root], HASH, CancellationToken.None);
         await first.DrainChangeListAsync(DateTime.UtcNow, CancellationToken.None);
@@ -279,7 +293,7 @@ public class ChangeTrackingServiceTests : BasicSetupHelper
 
         // Raise an event while the drain waits for the grace delay
         var drain = second.DrainChangeListAsync(DateTime.UtcNow, CancellationToken.None);
-        await Task.Delay(Grace / 4);
+        await Task.Delay(LongGrace / 4);
         factory.Raise(P("late.txt"), ChangeKind.Created);
 
         var list = await ReadListAsync(await drain);
@@ -661,7 +675,7 @@ public class ChangeTrackingServiceTests : BasicSetupHelper
     public async Task Service_OverflowDuringGraceDelayDiscardsTheListAsync()
     {
         var factory = new FakeFactory();
-        await using var service = await CreateServiceAsync(factory);
+        await using var service = await CreateServiceAsync(factory, LongGrace);
 
         var first = await service.PrepareHandoffAsync(BACKUP, [Root], HASH, CancellationToken.None);
         await first.DrainChangeListAsync(DateTime.UtcNow, CancellationToken.None);
@@ -673,7 +687,7 @@ public class ChangeTrackingServiceTests : BasicSetupHelper
 
         // The overflow is reported after the rotation, but the lost events may be older
         var drain = second.DrainChangeListAsync(DateTime.UtcNow, CancellationToken.None);
-        await Task.Delay(Grace / 4);
+        await Task.Delay(LongGrace / 4);
         factory.Active.RaiseError(new InternalBufferOverflowException("burst"));
         var h2 = await drain;
         Assert.That(h2!.ListPath, Is.Null);
@@ -739,7 +753,7 @@ public class ChangeTrackingServiceTests : BasicSetupHelper
     public async Task Service_ReconfigureDuringDrainHandsOverNoListAsync()
     {
         var factory = new FakeFactory();
-        await using var service = await CreateServiceAsync(factory);
+        await using var service = await CreateServiceAsync(factory, LongGrace);
 
         var first = await service.PrepareHandoffAsync(BACKUP, [Root], HASH, CancellationToken.None);
         await first.DrainChangeListAsync(DateTime.UtcNow, CancellationToken.None);
@@ -748,7 +762,7 @@ public class ChangeTrackingServiceTests : BasicSetupHelper
         factory.Raise(P("a.txt"), ChangeKind.Changed);
         var second = await service.PrepareHandoffAsync(BACKUP, [Root], HASH, CancellationToken.None);
         var drain = second.DrainChangeListAsync(DateTime.UtcNow, CancellationToken.None);
-        await Task.Delay(Grace / 4);
+        await Task.Delay(LongGrace / 4);
         await service.StopAsync(BACKUP, CancellationToken.None);
 
         // The sessions are gone, so whatever the drain does, it must not hand over a list
