@@ -30,6 +30,7 @@ namespace Duplicati.WebserverCore.Dto;
 /// <param name="passphrase">The passphrase to use for the backup configuration</param>
 /// <param name="temporary">Whether the backup should be created as temporary</param>
 /// <param name="replace_settings">Settings to replace in the imported backup configuration</param>
+/// <param name="expand_env_vars">Whether %VAR% environment variables in the configuration are expanded with the values of the server</param>
 public sealed record ImportBackupInputDto
 (
     string config,
@@ -38,5 +39,6 @@ public sealed record ImportBackupInputDto
     bool? direct,
     string? passphrase,
     bool? temporary,
-    Dictionary<string, string>? replace_settings
+    Dictionary<string, string>? replace_settings,
+    bool? expand_env_vars = null
 );
