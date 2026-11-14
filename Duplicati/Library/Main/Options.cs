@@ -689,6 +689,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("restore-file-processors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFileprocessorsShort, Strings.Options.RestoreFileprocessorsLong, DEFAULT_RESTORE_FILE_PROCESSORS.ToString()),
             new CommandLineArgument("restore-all-files", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.RestoreAllFilesShort, Strings.Options.RestoreAllFilesLong("restore-path"), nameof(RestoreAllFilesMode.False), null, Enum.GetNames(typeof(RestoreAllFilesMode))),
             new CommandLineArgument("restore-legacy", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreLegacyShort, Strings.Options.RestoreLegacyLong, "false"),
+            new CommandLineArgument("restore-files-modified-after", CommandLineArgument.ArgumentType.DateTime, Strings.Options.RestoreFilesModifiedAfterShort, Strings.Options.RestoreFilesModifiedAfterLong),
             new CommandLineArgument("restore-preallocate-size", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorePreallocateSizeShort, Strings.Options.RestorePreallocateSizeLong, "false"),
             new CommandLineArgument("restore-volume-cache-hint", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreVolumeCacheHintShort, Strings.Options.RestoreVolumeCacheHintLong, DEFAULT_RESTORE_VOLUME_CACHE_HINT),
             new CommandLineArgument("restore-volume-cache-min-free", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreVolumeCacheMinFreeShort, Strings.Options.RestoreVolumeCacheMinFreeLong, DEFAULT_RESTORE_VOLUME_CACHE_MIN_FREE),
@@ -785,6 +786,11 @@ namespace Duplicati.Library.Main
         /// Gets the time after which a file must have been modified to be skipped, in UTC, or <c>null</c> to not skip by time
         /// </summary>
         public DateTime? SkipFilesModifiedAfter => GetModifiedTimeLimit("skip-files-modified-after");
+
+        /// <summary>
+        /// Gets the time a file must have been modified at or after to be restored, in UTC, or <c>null</c> to restore files regardless of their modification time
+        /// </summary>
+        public DateTime? RestoreFilesModifiedAfter => GetModifiedTimeLimit("restore-files-modified-after");
 
         /// <summary>
         /// Gets a value indicating if a modification time limit is given relative to now, such as 1W,

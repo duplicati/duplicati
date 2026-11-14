@@ -1779,6 +1779,29 @@ namespace Duplicati.Library.Main.Operation
                     }
                 }
 
+                // When --restore-files-modified-after is set, remove the files that were last
+                // modified before the limit, as recorded in the backup, so they are neither
+                // downloaded nor compared with the files already in the restore target.
+                var restoreFilesModifiedAfter = options.RestoreFilesModifiedAfter;
+                if (restoreFilesModifiedAfter.HasValue && c.Item1 > 0)
+                {
+                    using (new Logging.Timer(LOGTAG, "RemoveFilesModifiedBefore", "Removing files modified before the restore time limit"))
+                    {
+                        var removed = await database
+                            .RemoveFilesModifiedBeforeAsync(restoreFilesModifiedAfter.Value, result.TaskControl.ProgressToken)
+                            .ConfigureAwait(false);
+                        if (removed > 0)
+                        {
+                            Logging.Log.WriteVerboseMessage(LOGTAG, "SkippedFilesModifiedBefore", "Skipped {0} file(s) modified before {1}", removed, restoreFilesModifiedAfter.Value.ToLocalTime());
+
+                            // Recompute the file count after removal.
+                            c = await database
+                                .PrepareRestoreFilelistCountAsync(result.TaskControl.ProgressToken)
+                                .ConfigureAwait(false);
+                        }
+                    }
+                }
+
                 result.OperationProgressUpdater.UpdatefileCount(c.Item1, c.Item2, true);
 
                 // If the selection is completely empty (no files, folders, or symlinks),

@@ -587,6 +587,42 @@ namespace Duplicati.UnitTest
             Assert.IsFalse(File.Exists(restoredLargeFilePath), "The large file should not have been restored");
         }
 
+        [Test]
+        [Category("RestoreHandler")]
+        public async Task RestoreFilesModifiedAfterAsync([Values("true", "false")] string restoreLegacy)
+        {
+            var oldFilePath = Path.Combine(this.DATAFOLDER, "old");
+            File.WriteAllBytes(oldFilePath, new byte[1024]);
+            File.SetLastWriteTimeUtc(oldFilePath, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+
+            var newFilePath = Path.Combine(this.DATAFOLDER, "new");
+            File.WriteAllBytes(newFilePath, new byte[2048]);
+            File.SetLastWriteTimeUtc(newFilePath, new DateTime(2025, 6, 1, 0, 0, 0, DateTimeKind.Utc));
+
+            var subfolderPath = Path.Combine(this.DATAFOLDER, "subfolder");
+            Directory.CreateDirectory(subfolderPath);
+            Directory.SetLastWriteTimeUtc(subfolderPath, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+
+            var backupOptions = new Dictionary<string, string>(this.TestOptions);
+            using (var c = new Controller("file://" + this.TARGETFOLDER, backupOptions, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            // Only the file modified after 2024-01-01 is restored; the folder is restored even though it is older.
+            var restoreOptions = new Dictionary<string, string>(backupOptions)
+            {
+                ["restore-path"] = this.RESTOREFOLDER,
+                ["restore-legacy"] = restoreLegacy,
+                ["restore-files-modified-after"] = "2024-01-01"
+            };
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null))
+                TestUtils.AssertResults(await c.RestoreAsync(new[] { "*" }));
+
+            Assert.IsTrue(File.Exists(Path.Combine(this.RESTOREFOLDER, "new")), "The file modified after the limit should have been restored");
+            Assert.IsFalse(File.Exists(Path.Combine(this.RESTOREFOLDER, "old")), "The file modified before the limit should not have been restored");
+            Assert.IsTrue(Directory.Exists(Path.Combine(this.RESTOREFOLDER, "subfolder")), "Folders should be restored regardless of their modification time");
+        }
+
         /// <summary>
         /// An abort is a requested shutdown, so it should not report errors of its own, should
         /// not blame the backup for a download it cancelled itself, and should not leave the
