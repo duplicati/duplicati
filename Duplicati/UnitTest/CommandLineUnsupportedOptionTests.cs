@@ -35,6 +35,11 @@ namespace Duplicati.UnitTest;
 public class CommandLineUnsupportedOptionTests : BasicSetupHelper
 {
     /// <summary>
+    /// The exit code of a backup that finished without warnings
+    /// </summary>
+    private const int SuccessExitCode = 0;
+
+    /// <summary>
     /// The exit code of a backup that finished with warnings
     /// </summary>
     private const int WarningExitCode = 2;
@@ -101,14 +106,30 @@ public class CommandLineUnsupportedOptionTests : BasicSetupHelper
         Assert.That(BackedUp(), Is.True, "The backup did not run");
     }
 
+    /// <summary>
+    /// The options of the command line tool are handled by the tool, so the controller does not
+    /// report them as unsupported either, which made the backup end with warnings
+    /// </summary>
     [Test]
     [Category("Targeted")]
-    public void TheOptionsOfTheCommandLineToolAreAccepted()
+    public void TheOptionsOfTheCommandLineToolAreAccepted([Values] bool rejectUnsupportedOptions)
     {
-        var (exitCode, output) = Run(BackupArgs("--quiet-console=true"), true);
+        var (exitCode, output) = Run(BackupArgs("--quiet-console=true"), rejectUnsupportedOptions);
 
-        Assert.That(exitCode, Is.Not.EqualTo(ErrorExitCode), output);
+        Assert.That(exitCode, Is.EqualTo(SuccessExitCode), output);
         Assert.That(BackedUp(), Is.True, "The backup did not run");
+    }
+
+    /// <summary>
+    /// Without any other option, the backup has no warnings, so the warnings above come from the options
+    /// </summary>
+    [Test]
+    [Category("Targeted")]
+    public void ABackupWithKnownOptionsHasNoWarnings()
+    {
+        var (exitCode, output) = Run(BackupArgs(), true);
+
+        Assert.That(exitCode, Is.EqualTo(SuccessExitCode), output);
     }
 
     /// <summary>

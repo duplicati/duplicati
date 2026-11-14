@@ -169,25 +169,17 @@ namespace Duplicati.CommandLine
             var options = tmpparsed.Item1;
             var filter = tmpparsed.Item2;
 
-            if (rejectUnsupportedOptions)
+            // The options of this tool, such as --quiet-console, are handled here and not by the controller.
+            // When rejecting, only the typed options count; the ones read from a parameters file below keep the warning
+            var toolOptions = new HashSet<string>(SupportedOptions.SelectMany(x => (x.Aliases ?? []).Append(x.Name)), StringComparer.OrdinalIgnoreCase);
+            var typedOptions = rejectUnsupportedOptions ? new HashSet<string>(options.Keys, StringComparer.OrdinalIgnoreCase) : null;
+            var outerSetup = setup;
+            setup = c =>
             {
-                // Only the typed options; the ones read from a parameters file below keep the warning.
-                // The options of this tool are handled here, so they are never rejected
-                var typedOptions = new HashSet<string>(options.Keys, StringComparer.OrdinalIgnoreCase);
-                foreach (var arg in SupportedOptions)
-                {
-                    typedOptions.Remove(arg.Name);
-                    foreach (var alias in arg.Aliases ?? [])
-                        typedOptions.Remove(alias);
-                }
-
-                var outerSetup = setup;
-                setup = c =>
-                {
-                    c.RejectUnsupportedOptions = typedOptions;
-                    outerSetup(c);
-                };
-            }
+                c.OptionsHandledByCaller = toolOptions;
+                c.RejectUnsupportedOptions = typedOptions;
+                outerSetup(c);
+            };
 
             verboseErrors = Library.Utility.Utility.ParseBoolOption(options, "debug-output");
 
