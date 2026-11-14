@@ -284,6 +284,13 @@ namespace Duplicati.Library.Backend.GoogleServices
             var retries = 0;
             var offset = 0L;
 
+            // The server may take only a part of a chunk, and a failed chunk is resumed from the bytes the server has,
+            // so the upload can go back within the last chunk. A stream that cannot seek is read into a buffer,
+            // which holds the bytes from the offset to the position of the stream.
+            var buffer = stream.CanSeek ? null : new byte[UPLOAD_CHUNK_SIZE];
+            var bufferStart = 0L;
+            var bufferLength = 0;
+
             // Repeatedly try uploading until all retries are done
             while (true)
             {
@@ -298,14 +305,40 @@ namespace Duplicati.Library.Backend.GoogleServices
                             return re;
                     }
 
-                    //Seek into the right place
-                    if (stream.Position != offset)
-                        stream.Position = offset;
+                    var chunkSize = Math.Min(UPLOAD_CHUNK_SIZE, stream.Length - offset);
+                    Stream ls;
+                    if (buffer == null)
+                    {
+                        //Seek into the right place
+                        if (stream.Position != offset)
+                            stream.Position = offset;
+
+                        ls = new ReadLimitLengthStream(stream, offset, chunkSize);
+                    }
+                    else
+                    {
+                        // The bytes before the offset are on the server, and the bytes after the buffer are still in the stream
+                        if (offset < bufferStart || offset > bufferStart + bufferLength)
+                            throw new InvalidOperationException(string.Format("Cannot resume the upload at byte {0}, as the stream cannot seek and only bytes {1} to {2} are kept", offset, bufferStart, bufferStart + bufferLength));
+
+                        var kept = (int)(bufferStart + bufferLength - offset);
+                        Buffer.BlockCopy(buffer, bufferLength - kept, buffer, 0, kept);
+                        bufferStart = offset;
+                        bufferLength = kept;
+
+                        while (bufferLength < chunkSize)
+                        {
+                            var read = await stream.ReadAsync(buffer.AsMemory(bufferLength, (int)chunkSize - bufferLength), cancelToken).ConfigureAwait(false);
+                            if (read == 0)
+                                throw new InvalidDataException(string.Format("The stream ended at byte {0}, before its length of {1}", bufferStart + bufferLength, stream.Length));
+                            bufferLength += read;
+                        }
+
+                        ls = new MemoryStream(buffer, 0, (int)chunkSize, false);
+                    }
 
                     using var req = await oauth.CreateRequestAsync(uploaduri, HttpMethod.Put, cancelToken);
-
-                    var chunkSize = Math.Min(UPLOAD_CHUNK_SIZE, stream.Length - offset);
-                    using var ls = new ReadLimitLengthStream(stream, offset, chunkSize);
+                    using var _ls = ls;
                     // The chunk stream is used as the request body and is only read
                     // by the HTTP stack, so the read timeout must be observed here.
                     using var ts = ls.ObserveReadTimeout(readWriteTimeout, false, TimeoutMode.Gap);
