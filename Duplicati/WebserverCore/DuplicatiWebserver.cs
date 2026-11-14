@@ -145,6 +145,12 @@ public class DuplicatiWebserver
             CommandLineArgument.ArgumentType.Boolean,
             Server.Strings.Program.RunSkippedOnAcPowerShort,
             Server.Strings.Program.RunSkippedOnAcPowerLong,
+            "false"),
+        new CommandLineArgument(
+            Server.Scheduler.SKIP_MISSED_SCHEDULED_BACKUPS_OPTION,
+            CommandLineArgument.ArgumentType.Boolean,
+            Server.Strings.Program.SkipMissedScheduledBackupsShort,
+            Server.Strings.Program.SkipMissedScheduledBackupsLong,
             "false")
     ];
 

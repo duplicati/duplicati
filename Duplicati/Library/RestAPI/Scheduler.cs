@@ -61,6 +61,11 @@ namespace Duplicati.Server
         public const string RUN_SKIPPED_ON_AC_POWER_OPTION = "run-skipped-on-ac-power";
 
         /// <summary>
+        /// The server-only option that skips a scheduled run that was missed, for example because the machine was off, instead of running it late
+        /// </summary>
+        public const string SKIP_MISSED_SCHEDULED_BACKUPS_OPTION = "skip-missed-scheduled-backups";
+
+        /// <summary>
         /// Removes the options that are handled by the scheduler, as the engine and the command line do not know them
         /// </summary>
         /// <param name="options">The options to remove the scheduler options from</param>
@@ -69,7 +74,15 @@ namespace Duplicati.Server
             options.Remove(DISABLE_ON_BATTERY_OPTION);
             options.Remove(MIN_TIME_BETWEEN_SCHEDULED_RUNS_OPTION);
             options.Remove(RUN_SKIPPED_ON_AC_POWER_OPTION);
+            options.Remove(SKIP_MISSED_SCHEDULED_BACKUPS_OPTION);
         }
+
+        /// <summary>
+        /// How late a scheduled run can be noticed before it counts as missed.
+        /// The scheduler sleeps until the next run and never longer than 5 minutes,
+        /// so a run noticed later than this was due while the scheduler was not running
+        /// </summary>
+        public static readonly TimeSpan MissedRunTolerance = TimeSpan.FromMinutes(10);
 
         /// <summary>
         /// The thread that runs the scheduler
@@ -367,14 +380,15 @@ namespace Duplicati.Server
         /// <summary>
         /// Creates the task that runs a backup, unless the backup must not be queued now:
         /// it is already queued or running, it is disabled, it does not run on battery power, or,
-        /// for a scheduled run, its last run finished too recently
+        /// for a scheduled run, it was missed or its last run finished too recently
         /// </summary>
         /// <param name="entry">The backup to run</param>
         /// <param name="taskOptions">The extra options for the run, or <c>null</c> if there are none</param>
         /// <param name="scheduledRun">If the run comes from the schedule of the backup, so --min-time-between-scheduled-runs applies
         /// and a run skipped on battery power is recorded for --run-skipped-on-ac-power</param>
+        /// <param name="dueTime">The time the scheduled run was due, so --skip-missed-scheduled-backups applies, or <c>null</c> if it is not a scheduled run</param>
         /// <returns>The task to queue, or <c>null</c> if the backup must not be queued</returns>
-        private Runner.IRunnerData? TryCreateBackupTask(IBackup entry, Dictionary<string, string?>? taskOptions, bool scheduledRun = false)
+        private Runner.IRunnerData? TryCreateBackupTask(IBackup entry, Dictionary<string, string?>? taskOptions, bool scheduledRun = false, DateTime? dueTime = null)
         {
             //See if it is already queued
             if (GetQueuedBackupIDs().Any(x => x == entry.ID))
@@ -401,6 +415,16 @@ namespace Duplicati.Server
                 // The set is only used by the scheduler thread, so only scheduled runs are recorded
                 if (scheduledRun && Utility.ParseBoolOption(options, RUN_SKIPPED_ON_AC_POWER_OPTION))
                     m_skippedOnBattery.Add(entry.ID);
+                return null;
+            }
+
+            if (dueTime is DateTime due && Utility.ParseBoolOption(options, SKIP_MISSED_SCHEDULED_BACKUPS_OPTION) && due < DateTime.UtcNow - MissedRunTolerance)
+            {
+                // The schedule still advances, so the backup runs at its next slot
+                Library.Logging.Log.WriteInformationMessage(LOGTAG,
+                    "SkippedMissedScheduledBackup",
+                    "Skipping the missed scheduled run of backup {0} that was due at {1}.",
+                    entry.Name, due.ToLocalTime());
                 return null;
             }
 
@@ -625,7 +649,7 @@ namespace Duplicati.Server
                                 {
                                 }
 
-                                var job = TryCreateBackupTask(entry, taskOptions, scheduledRun: true);
+                                var job = TryCreateBackupTask(entry, taskOptions, scheduledRun: true, dueTime: start);
                                 if (job != null)
                                 {
                                     job.OnStarting = () => OnStartingWorkAsync(job);
