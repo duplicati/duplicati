@@ -667,8 +667,9 @@ public class Connection
     /// <param name="password">The password to use</param>
     /// <param name="importMetadata">Whether to import metadata</param>
     /// <param name="extraSettings">Extra settings to apply to the imported backup</param>
+    /// <param name="expandEnvironmentVariables">Whether the server expands %VAR% environment variables in the configuration</param>
     /// <returns>The backup</returns>
-    public async Task<BackupEntry> ImportBackupAsync(string file, string? password, bool importMetadata, Dictionary<string, string> extraSettings)
+    public async Task<BackupEntry> ImportBackupAsync(string file, string? password, bool importMetadata, Dictionary<string, string> extraSettings, bool expandEnvironmentVariables = false)
     {
         var payload = JsonContent.Create(new
         {
@@ -676,7 +677,8 @@ public class Connection
             import_metadata = importMetadata,
             passphrase = password,
             direct = true,
-            replace_settings = extraSettings
+            replace_settings = extraSettings,
+            expand_env_vars = expandEnvironmentVariables
         });
         var response = await client.PostAsync("backups/import", payload);
         await EnsureSuccessStatusCodeWithParsingAsync(response);
