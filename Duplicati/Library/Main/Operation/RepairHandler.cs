@@ -417,7 +417,6 @@ namespace Duplicati.Library.Main.Operation
                     if (!m_options.RebuildMissingDblockFiles && missingDblocks.Count() > 0)
                         throw new UserInformationException($"The backup storage destination is missing data files. You can either enable `--rebuild-missing-dblock-files` or run the purge-broken-files command to remove these files. The following files are missing: {string.Join(", ", missingDblocks.Select(x => x.Name))}", "MissingDblockFiles");
 
-                    var anyDlistUploads = false;
                     foreach (var (filesetId, timestamp, isfull) in missingRemoteFilesets)
                     {
                         if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
@@ -474,16 +473,6 @@ namespace Duplicati.Library.Main.Operation
                         // later. Upload one at a time, and write a rename after a failed upload to
                         // the database right away, so the next name and the next retry see it.
                         await backendManager.PutAsync(fsw, null, null, true, () => backendManager.FlushPendingMessagesAsync(db, cancellationToken), cancellationToken).ConfigureAwait(false);
-                    }
-
-                    if (anyDlistUploads)
-                    {
-                        await backendManager.WaitForEmptyAsync(db, cancellationToken).ConfigureAwait(false);
-                        await backendManager.FlushPendingMessagesAsync(db, cancellationToken).ConfigureAwait(false);
-                        if (!m_options.Dryrun)
-                            await db.Transaction
-                                .CommitAsync("CommitFilesetTransaction", token: cancellationToken)
-                                .ConfigureAwait(false);
                     }
 
                     foreach (var volumename in missingLocalFilesets)
