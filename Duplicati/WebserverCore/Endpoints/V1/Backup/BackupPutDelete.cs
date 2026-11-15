@@ -56,7 +56,6 @@ public class BackupPutDelete : IEndpointV1
         if (input.Backup == null)
             throw new BadRequestException("No backup data found in request body");
 
-        var filters = input.Backup.Filters ?? Array.Empty<Dto.BackupAndScheduleInputDto.FilterInputDto>();
         var settings = input.Backup.Settings ?? Array.Empty<Dto.BackupAndScheduleInputDto.SettingInputDto>();
 
         try
@@ -65,8 +64,8 @@ public class BackupPutDelete : IEndpointV1
             {
                 ID = existing.ID,
                 Name = input.Backup.Name,
-                Description = input.Backup.Description,
-                Tags = input.Backup.Tags,
+                Description = input.Backup.Description ?? existing.Description,
+                Tags = input.Backup.Tags ?? existing.Tags,
                 TargetURL = input.Backup.TargetURL,
                 ConnectionStringID = input.Backup.ConnectionStringID,
                 OperationType = input.Backup.OperationType ?? existing.OperationType,
@@ -78,12 +77,12 @@ public class BackupPutDelete : IEndpointV1
                     Value = x.Value,
                     Filter = x.Filter
                 }).ToArray(),
-                Filters = filters.Select(x => new Filter()
+                Filters = input.Backup.Filters?.Select(x => (Server.Serialization.Interface.IFilter)new Filter()
                 {
                     Order = x.Order,
                     Include = x.Include,
                     Expression = x.Expression
-                }).ToArray(),
+                }).ToArray() ?? existing.Filters,
                 Metadata = input.Backup.Metadata,
                 AdditionalTargetURLs = input.Backup.AdditionalTargetURLs?.Select(x => new TargetUrlEntry
                 {
@@ -93,20 +92,26 @@ public class BackupPutDelete : IEndpointV1
                     Interval = x.Interval,
                     ConnectionStringID = x.ConnectionStringID,
                     Options = x.Options
-                }).ToList() ?? new List<TargetUrlEntry>()
+                }).ToList<ITargetUrlEntry>() ?? existing.AdditionalTargetURLs?.ToList() ?? new List<ITargetUrlEntry>()
             };
 
             var connectionStrings = connection.GetConnectionStrings().ToDictionary(x => x.ID, x => x.BaseUrl);
+            // A schedule field the client left out keeps the value of the current schedule
+            var existingScheduleId = connection.GetScheduleIDsFromTags(["ID=" + existing.ID]).FirstOrDefault(-1);
+            var existingSchedule = existingScheduleId < 0 ? null : connection.GetSchedule(existingScheduleId);
             var schedule = input.Schedule == null ? null : new Schedule()
             {
                 ID = input.Schedule.ID,
                 Tags = input.Schedule.Tags,
-                Time = input.Schedule.Time ?? new DateTime(0),
+                Time = input.Schedule.Time ?? existingSchedule?.Time ?? new DateTime(0),
                 Repeat = input.Schedule.Repeat,
                 LastRun = input.Schedule.LastRun ?? new DateTime(0),
-                Rule = input.Schedule.Rule,
-                AllowedDays = input.Schedule.AllowedDays
+                Rule = input.Schedule.Rule
             };
+            // The days are stored in Rule, and setting AllowedDays to null removes them from it
+            var allowedDays = input.Schedule?.AllowedDays ?? existingSchedule?.AllowedDays;
+            if (schedule != null && allowedDays != null)
+                schedule.AllowedDays = allowedDays;
 
             if (backup.IsTemporary && !existing.IsTemporary)
                 throw new BadRequestException("Cannot update a temporary backup with a non-temporary backup");

@@ -45,15 +45,15 @@ public sealed record BackupAndScheduleInputDto
         /// </summary>
         public string Name { get; init; } = "";
         /// <summary>
-        /// The backup description
+        /// The backup description. When omitted, an updated backup keeps its current description.
         /// </summary>
-        public string Description { get; init; } = "";
+        public string? Description { get; init; }
         /// <summary>
         /// The path to the local database
         /// </summary>
         public string? DBPath { get; init; } = null;
         /// <summary>
-        /// The backup tags
+        /// The backup tags. When omitted, an updated backup keeps its current tags.
         /// </summary>
         public string[]? Tags { get; init; }
         /// <summary>
@@ -87,7 +87,7 @@ public sealed record BackupAndScheduleInputDto
         public IEnumerable<SettingInputDto>? Settings { get; init; }
 
         /// <summary>
-        /// The filters applied to the source files
+        /// The filters applied to the source files. When omitted, an updated backup keeps its current filters.
         /// </summary>
         public IEnumerable<FilterInputDto>? Filters { get; init; }
 
@@ -98,7 +98,8 @@ public sealed record BackupAndScheduleInputDto
 
         /// <summary>
         /// Additional target URLs for remote synchronization
-        /// These are used by RemoteSynchronizationModule and are separate from the primary TargetURL
+        /// These are used by RemoteSynchronizationModule and are separate from the primary TargetURL.
+        /// When omitted, an updated backup keeps its current additional target urls.
         /// </summary>
         public IEnumerable<TargetUrlInputDto>? AdditionalTargetURLs { get; init; }
     }
@@ -117,7 +118,7 @@ public sealed record BackupAndScheduleInputDto
         /// </summary>
         public string[]? Tags { get; init; }
         /// <summary>
-        /// The time this schedule is based on
+        /// The time this schedule is based on. When omitted, an updated schedule keeps its current time.
         /// </summary>
         public DateTime? Time { get; init; }
         /// <summary>
@@ -133,7 +134,7 @@ public sealed record BackupAndScheduleInputDto
         /// </summary>
         public string? Rule { get; init; }
         /// <summary>
-        /// The days that the backup is allowed to run
+        /// The days that the backup is allowed to run. When omitted, an updated schedule keeps its current days.
         /// </summary>
         public DayOfWeek[]? AllowedDays { get; init; }
     }

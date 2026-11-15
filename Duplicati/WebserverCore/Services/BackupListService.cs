@@ -48,7 +48,7 @@ public class BackupListService(Connection connection) : IBackupListService
             {
                 ID = null,
                 Name = data.Backup.Name,
-                Description = data.Backup.Description,
+                Description = data.Backup.Description ?? "",
                 Tags = data.Backup.Tags,
                 TargetURL = data.Backup.TargetURL,
                 ConnectionStringID = data.Backup.ConnectionStringID,
