@@ -162,4 +162,54 @@ public partial class ServerApiIntegrationTests
             Assert.That(await GetScheduleAsync(id).ConfigureAwait(false), Is.Null, "Saving with a null schedule should remove it, as the web clients do");
         }).ConfigureAwait(false);
     }
+
+    [Test]
+    [Category("Integration")]
+    public async Task SavingAJobWithoutItsNameSourcesSettingsOrRepeatKeepsThem_Async()
+    {
+        var name = $"Omitted required fields job {Guid.NewGuid():N}";
+        Directory.CreateDirectory(this.TARGETFOLDER);
+        var target = BuildFileBackendUrl(this.TARGETFOLDER);
+
+        static StringContent Json(JsonObject body) => new(body.ToJsonString(), Encoding.UTF8, "application/json");
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var createResponse = await httpClient.PostAsync("/api/v1/backups", Json(new JsonObject
+            {
+                ["Backup"] = new JsonObject
+                {
+                    ["Name"] = name,
+                    ["TargetURL"] = target,
+                    ["Sources"] = new JsonArray(this.DATAFOLDER),
+                    ["Settings"] = new JsonArray(
+                        new JsonObject { ["Name"] = "--no-encryption", ["Value"] = "true", ["Filter"] = "" },
+                        new JsonObject { ["Name"] = "--number-of-retries", ["Value"] = "7", ["Filter"] = "" })
+                },
+                ["Schedule"] = new JsonObject { ["Repeat"] = "2D", ["Rule"] = "" }
+            })).ConfigureAwait(false);
+            createResponse.EnsureSuccessStatusCode();
+            var id = (await createResponse.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false))?.ID
+                     ?? throw new InvalidOperationException("No backup ID in the response");
+
+            // Only the target and a schedule without its repetition are sent
+            var response = await httpClient.PutAsync($"/api/v1/backup/{id}", Json(new JsonObject
+            {
+                ["Backup"] = new JsonObject { ["TargetURL"] = target },
+                ["Schedule"] = new JsonObject { ["Rule"] = "" }
+            })).ConfigureAwait(false);
+            Assert.That(response.IsSuccessStatusCode, Is.True, await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+
+            var job = JsonNode.Parse(await httpClient.GetStringAsync($"/api/v1/backup/{id}").ConfigureAwait(false))!.AsObject();
+            var backup = job["Backup"]!.AsObject();
+            Assert.Multiple(() =>
+            {
+                Assert.That(backup["Name"]?.ToString(), Is.EqualTo(name), "Name");
+                Assert.That(backup["Sources"]?.AsArray().Select(x => x!.ToString()), Is.EqualTo(new[] { this.DATAFOLDER }), "Sources");
+                Assert.That(backup["Settings"]?.AsArray().Select(x => $"{x!["Name"]}={x["Value"]}"),
+                    Is.SupersetOf(new[] { "--no-encryption=true", "--number-of-retries=7" }), "Settings");
+                Assert.That(job["Schedule"]?["Repeat"]?.ToString(), Is.EqualTo("2D"), "Schedule.Repeat");
+            });
+        }).ConfigureAwait(false);
+    }
 }

@@ -59,9 +59,9 @@ public sealed record BackupAndScheduleInputDto
     public sealed record BackupInputDto
     {
         /// <summary>
-        /// The backup name
+        /// The backup name. When omitted, an updated backup keeps its current name.
         /// </summary>
-        public string Name { get; init; } = "";
+        public string? Name { get; init; }
         /// <summary>
         /// The backup description. When omitted, an updated backup keeps its current description.
         /// </summary>
@@ -95,12 +95,12 @@ public sealed record BackupAndScheduleInputDto
         /// </summary>
         public bool? Enabled { get; init; }
         /// <summary>
-        /// The backup source folders and files
+        /// The backup source folders and files. When omitted, an updated backup keeps its current sources.
         /// </summary>
-        public string[] Sources { get; init; } = [];
+        public string[]? Sources { get; init; }
 
         /// <summary>
-        /// The backup settings
+        /// The backup settings. When omitted, an updated backup keeps its current settings.
         /// </summary>
         public IEnumerable<SettingInputDto>? Settings { get; init; }
 
@@ -140,7 +140,7 @@ public sealed record BackupAndScheduleInputDto
         /// </summary>
         public DateTime? Time { get; init; }
         /// <summary>
-        /// How often the backup is repeated
+        /// How often the backup is repeated. When omitted, an updated schedule keeps its current repetition.
         /// </summary>
         public string? Repeat { get; init; }
         /// <summary>

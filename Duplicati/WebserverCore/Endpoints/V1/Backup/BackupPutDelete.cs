@@ -56,27 +56,26 @@ public class BackupPutDelete : IEndpointV1
         if (input.Backup == null)
             throw new BadRequestException("No backup data found in request body");
 
-        var settings = input.Backup.Settings ?? Array.Empty<Dto.BackupAndScheduleInputDto.SettingInputDto>();
 
         try
         {
             var backup = new Server.Database.Backup()
             {
                 ID = existing.ID,
-                Name = input.Backup.Name,
+                Name = input.Backup.Name ?? existing.Name,
                 Description = input.Backup.Description ?? existing.Description,
                 Tags = input.Backup.Tags ?? existing.Tags,
                 TargetURL = input.Backup.TargetURL,
                 ConnectionStringID = input.Backup.ConnectionStringID,
                 OperationType = input.Backup.OperationType ?? existing.OperationType,
                 Enabled = input.Backup.Enabled ?? existing.Enabled,
-                Sources = input.Backup.Sources,
-                Settings = settings.Select(x => new Setting()
+                Sources = input.Backup.Sources ?? existing.Sources,
+                Settings = input.Backup.Settings?.Select(x => (Server.Serialization.Interface.ISetting)new Setting()
                 {
                     Name = x.Name,
                     Value = x.Value,
                     Filter = x.Filter
-                }).ToArray(),
+                }).ToArray() ?? existing.Settings,
                 Filters = input.Backup.Filters?.Select(x => (Server.Serialization.Interface.IFilter)new Filter()
                 {
                     Order = x.Order,
@@ -111,7 +110,7 @@ public class BackupPutDelete : IEndpointV1
                     ID = input.Schedule.ID,
                     Tags = input.Schedule.Tags,
                     Time = input.Schedule.Time ?? existingSchedule?.Time ?? new DateTime(0),
-                    Repeat = input.Schedule.Repeat,
+                    Repeat = input.Schedule.Repeat ?? existingSchedule?.Repeat,
                     LastRun = input.Schedule.LastRun ?? new DateTime(0),
                     Rule = input.Schedule.Rule
                 };

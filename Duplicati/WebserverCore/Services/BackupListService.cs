@@ -47,14 +47,14 @@ public class BackupListService(Connection connection) : IBackupListService
             var backup = new Backup()
             {
                 ID = null,
-                Name = data.Backup.Name,
+                Name = data.Backup.Name ?? "",
                 Description = data.Backup.Description ?? "",
                 Tags = data.Backup.Tags,
                 TargetURL = data.Backup.TargetURL,
                 ConnectionStringID = data.Backup.ConnectionStringID,
                 OperationType = data.Backup.OperationType ?? Server.Serialization.OperationType.Backup,
                 Enabled = data.Backup.Enabled ?? true,
-                Sources = data.Backup.Sources,
+                Sources = data.Backup.Sources ?? [],
                 Settings = settings.Select(x => new Setting()
                 {
                     Name = x.Name,
