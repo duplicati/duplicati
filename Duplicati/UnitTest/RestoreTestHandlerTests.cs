@@ -255,12 +255,13 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("RestoreTest")]
-        public async Task AllModesPassOnHealthyBackupAsync([Values("RandomFiles", "RandomSize", "Full", "Rolling")] string mode)
+        public async Task AllModesPassOnHealthyBackupAsync([Values("RandomFiles", "RandomSize", "Full", "Rolling")] string mode, [Values(false, true)] bool dontCompressRestorePaths)
         {
             var files = CreateSourceFiles(12);
             await RunBackupAsync();
 
             var options = RestoreTestOptions(mode);
+            options["dont-compress-restore-paths"] = dontCompressRestorePaths.ToString();
             options["restore-test-recreate-database"] = "true";
             options["restore-test-sample-count"] = "5";
             options["restore-test-sample-percent"] = "30";

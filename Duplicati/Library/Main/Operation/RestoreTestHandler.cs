@@ -222,11 +222,15 @@ namespace Duplicati.Library.Main.Operation
                 if (mode == RestoreTestMode.Full)
                 {
                     restoreFilter = candidateFilter;
-                    prefix = await db.GetLargestPrefixAsync(useCandidates: true, token).ConfigureAwait(false);
+                    prefix = m_options.DontCompressRestorePaths
+                        ? string.Empty
+                        : await db.GetLargestPrefixAsync(useCandidates: true, token).ConfigureAwait(false);
                 }
                 else
                 {
-                    prefix = await db.GetLargestPrefixAsync(useCandidates: false, token).ConfigureAwait(false);
+                    prefix = m_options.DontCompressRestorePaths
+                        ? string.Empty
+                        : await db.GetLargestPrefixAsync(useCandidates: false, token).ConfigureAwait(false);
                     var paths = new List<string>();
                     await foreach (var file in db.GetSampleFilesAsync(filesetId, token).ConfigureAwait(false))
                     {
