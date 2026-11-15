@@ -64,6 +64,26 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
+    public async Task SavingAJobWithAnEmptyTargetIsABadRequest_Async()
+    {
+        const string passphrase = "integration-passphrase";
+        var name = $"Missing target backup {Guid.NewGuid():N}";
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var backupId = await CreateBackupAsync(httpClient, passphrase, name).ConfigureAwait(false);
+
+            var body = new { Backup = new { Name = name, TargetURL = "", Sources = new[] { this.DATAFOLDER }, Settings = new[] { new { Name = "passphrase", Value = passphrase } } } };
+            var response = await httpClient.PutAsJsonAsync($"/api/v1/backup/{backupId}", body, JsonOptions).ConfigureAwait(false);
+            var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), content);
+            Assert.That(content, Does.Contain("Missing a target"));
+        }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
     public async Task ServerBackupLifecycle_Async()
     {
         var backupPassphrase = "integration-passphrase";
