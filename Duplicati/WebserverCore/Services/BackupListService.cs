@@ -52,7 +52,7 @@ public class BackupListService(Connection connection) : IBackupListService
                 Tags = data.Backup.Tags,
                 TargetURL = data.Backup.TargetURL,
                 ConnectionStringID = data.Backup.ConnectionStringID,
-                OperationType = data.Backup.OperationType,
+                OperationType = data.Backup.OperationType ?? Server.Serialization.OperationType.Backup,
                 Enabled = data.Backup.Enabled ?? true,
                 Sources = data.Backup.Sources,
                 Settings = settings.Select(x => new Setting()
