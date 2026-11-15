@@ -65,7 +65,7 @@ public class BackupPutDelete : IEndpointV1
                 Name = input.Backup.Name ?? existing.Name,
                 Description = input.Backup.Description ?? existing.Description,
                 Tags = input.Backup.Tags ?? existing.Tags,
-                TargetURL = input.Backup.TargetURL,
+                TargetURL = input.Backup.TargetURL ?? existing.TargetURL,
                 ConnectionStringID = input.Backup.ConnectionStringID,
                 OperationType = input.Backup.OperationType ?? existing.OperationType,
                 Enabled = input.Backup.Enabled ?? existing.Enabled,

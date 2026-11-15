@@ -165,7 +165,7 @@ public partial class ServerApiIntegrationTests
 
     [Test]
     [Category("Integration")]
-    public async Task SavingAJobWithoutItsNameSourcesSettingsOrRepeatKeepsThem_Async()
+    public async Task SavingAJobWithoutItsRequiredFieldsKeepsThem_Async()
     {
         var name = $"Omitted required fields job {Guid.NewGuid():N}";
         Directory.CreateDirectory(this.TARGETFOLDER);
@@ -192,10 +192,10 @@ public partial class ServerApiIntegrationTests
             var id = (await createResponse.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false))?.ID
                      ?? throw new InvalidOperationException("No backup ID in the response");
 
-            // Only the target and a schedule without its repetition are sent
+            // Only an empty backup and a schedule without its repetition are sent
             var response = await httpClient.PutAsync($"/api/v1/backup/{id}", Json(new JsonObject
             {
-                ["Backup"] = new JsonObject { ["TargetURL"] = target },
+                ["Backup"] = new JsonObject(),
                 ["Schedule"] = new JsonObject { ["Rule"] = "" }
             })).ConfigureAwait(false);
             Assert.That(response.IsSuccessStatusCode, Is.True, await response.Content.ReadAsStringAsync().ConfigureAwait(false));
@@ -205,6 +205,7 @@ public partial class ServerApiIntegrationTests
             Assert.Multiple(() =>
             {
                 Assert.That(backup["Name"]?.ToString(), Is.EqualTo(name), "Name");
+                Assert.That(backup["TargetURL"]?.ToString(), Is.EqualTo(target), "TargetURL");
                 Assert.That(backup["Sources"]?.AsArray().Select(x => x!.ToString()), Is.EqualTo(new[] { this.DATAFOLDER }), "Sources");
                 Assert.That(backup["Settings"]?.AsArray().Select(x => $"{x!["Name"]}={x["Value"]}"),
                     Is.SupersetOf(new[] { "--no-encryption=true", "--number-of-retries=7" }), "Settings");

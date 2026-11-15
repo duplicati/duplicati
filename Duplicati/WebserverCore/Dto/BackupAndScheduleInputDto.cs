@@ -75,9 +75,9 @@ public sealed record BackupAndScheduleInputDto
         /// </summary>
         public string[]? Tags { get; init; }
         /// <summary>
-        /// The backup target url
+        /// The backup target url. When omitted, an updated backup keeps its current target.
         /// </summary>
-        public string TargetURL { get; init; } = "";
+        public string? TargetURL { get; init; }
         /// <summary>
         /// The connection string ID, or -1 if not used
         /// </summary>
