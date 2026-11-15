@@ -116,29 +116,57 @@ namespace Duplicati.UnitTest
             }
         }
 
+        /// <summary>
+        /// Writes new random data over every other block of the files in the source folder.
+        /// </summary>
+        private void ReplaceEveryOtherBlock(int seed, int blocksize, params string[] names)
+        {
+            var rng = new Random(seed);
+            var data = new byte[blocksize];
+            foreach (var name in names)
+            {
+                using var fs = new FileStream(Path.Combine(DATAFOLDER, name), FileMode.Open, FileAccess.Write);
+                for (var offset = 0L; offset + blocksize <= fs.Length; offset += 2L * blocksize)
+                {
+                    rng.NextBytes(data);
+                    fs.Position = offset;
+                    fs.Write(data);
+                }
+            }
+        }
+
         [Test]
         [TestCase(true)]
         [TestCase(false)]
         public async Task CompactAndRestoreWorkWithLinkedDownloads(bool encrypted)
         {
+            const int blocksize = 50 * 1024;
+            var names = new[] { "a.bin", "b.bin", "c.bin", "d.bin" };
+
+            // A volume is only downloaded when it holds both blocks that are still in use and
+            // blocks that are not. With one block for each file, that depends on the order the
+            // files are processed in, and the unused volumes can all be deleted without a download.
+            // The files are split into blocks here, and a single compressor stores the blocks of
+            // a file in order, so a volume with more blocks than there are files holds two
+            // neighbouring blocks of one file.
             var opts = TestOptions.Expand(new
             {
                 use_hardlink_for_get = true,
                 dblock_size = "300kb",
+                blocksize = blocksize + "b",
+                concurrency_compressors = 1,
                 no_auto_compact = true,
                 keep_versions = 1
             });
             if (!encrypted)
                 opts["no-encryption"] = "true";
 
-            WriteSourceFiles(1, "a.bin", "b.bin", "c.bin", "d.bin");
+            WriteSourceFiles(1, names);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, opts, null))
                 TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
-            // Replace half of the data, so the volumes of the deleted version are partly wasted
-            File.Delete(Path.Combine(DATAFOLDER, "a.bin"));
-            File.Delete(Path.Combine(DATAFOLDER, "c.bin"));
-            WriteSourceFiles(2, "e.bin");
+            // Replace every other block, so each volume of the deleted version is partly wasted
+            ReplaceEveryOtherBlock(2, blocksize, names);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, opts, null))
                 TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
@@ -157,7 +185,7 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, restoreopts, null))
                 TestUtils.AssertResults(await c.RestoreAsync(["*"]));
 
-            foreach (var name in new[] { "b.bin", "d.bin", "e.bin" })
+            foreach (var name in names)
                 CollectionAssert.AreEqual(File.ReadAllBytes(Path.Combine(DATAFOLDER, name)), File.ReadAllBytes(Path.Combine(RESTOREFOLDER, name)), name);
         }
 

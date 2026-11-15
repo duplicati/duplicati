@@ -887,13 +887,28 @@ namespace Duplicati.UnitTest
             CreateAppBundle(src, "Duplicati.app", marker, packageTypeId);
 
             var dmg = Path.Combine(root, "update.dmg");
-            var psi = new System.Diagnostics.ProcessStartInfo("/usr/bin/hdiutil") { UseShellExecute = false, RedirectStandardError = true };
-            foreach (var a in new[] { "create", "-quiet", "-srcfolder", src, "-volname", "Duplicati Test", "-format", "UDZO", dmg })
-                psi.ArgumentList.Add(a);
-            using var p = System.Diagnostics.Process.Start(psi)!;
-            var err = p.StandardError.ReadToEnd();
-            p.WaitForExit();
-            Assert.AreEqual(0, p.ExitCode, "hdiutil create failed: " + err);
+
+            // Creating an image fails now and then on a busy machine ("Resource busy"), so it is
+            // tried a few times. The messages are kept, as hdiutil gives no reason with -quiet.
+            const int attempts = 5;
+            for (var attempt = 1; ; attempt++)
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo("/usr/bin/hdiutil") { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
+                foreach (var a in new[] { "create", "-srcfolder", src, "-volname", "Duplicati Test", "-format", "UDZO", dmg })
+                    psi.ArgumentList.Add(a);
+                using var p = System.Diagnostics.Process.Start(psi)!;
+                var stdout = p.StandardOutput.ReadToEndAsync();
+                var err = p.StandardError.ReadToEnd();
+                p.WaitForExit();
+                if (p.ExitCode == 0)
+                    break;
+
+                var message = $"hdiutil create failed with exit code {p.ExitCode}: {err} {stdout.Result}";
+                Assert.Less(attempt, attempts, message);
+                TestContext.Progress.WriteLine($"Attempt {attempt}: {message}");
+                File.Delete(dmg);
+                Thread.Sleep(TimeSpan.FromSeconds(2 * attempt));
+            }
 
             // The image can still be locked for a moment after hdiutil has exited, and opening it
             // then fails with "being used by another process", as .NET takes a shared lock to read
