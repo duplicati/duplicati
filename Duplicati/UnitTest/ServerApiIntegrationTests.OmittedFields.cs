@@ -117,4 +117,49 @@ public partial class ServerApiIntegrationTests
             });
         }).ConfigureAwait(false);
     }
+
+    [Test]
+    [Category("Integration")]
+    public async Task SavingAJobWithoutTheScheduleKeepsItAndNullRemovesIt_Async()
+    {
+        var name = $"Omitted schedule job {Guid.NewGuid():N}";
+        Directory.CreateDirectory(this.TARGETFOLDER);
+
+        JsonObject Body(bool includeSchedule, bool scheduleIsNull = false)
+        {
+            var body = new JsonObject
+            {
+                ["Backup"] = new JsonObject
+                {
+                    ["Name"] = name,
+                    ["TargetURL"] = BuildFileBackendUrl(this.TARGETFOLDER),
+                    ["Sources"] = new JsonArray(this.DATAFOLDER),
+                    ["Settings"] = new JsonArray(new JsonObject { ["Name"] = "--no-encryption", ["Value"] = "true", ["Filter"] = "" })
+                }
+            };
+            if (includeSchedule)
+                body["Schedule"] = scheduleIsNull ? null : new JsonObject { ["Repeat"] = "2D", ["Time"] = "2030-01-02T03:04:05Z", ["Rule"] = "" };
+            return body;
+        }
+
+        static StringContent Json(JsonObject body) => new(body.ToJsonString(), Encoding.UTF8, "application/json");
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            async Task<JsonObject?> GetScheduleAsync(string id)
+                => JsonNode.Parse(await httpClient.GetStringAsync($"/api/v1/backup/{id}").ConfigureAwait(false))?["Schedule"] as JsonObject;
+
+            var createResponse = await httpClient.PostAsync("/api/v1/backups", Json(Body(true))).ConfigureAwait(false);
+            createResponse.EnsureSuccessStatusCode();
+            var id = (await createResponse.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false))?.ID
+                     ?? throw new InvalidOperationException("No backup ID in the response");
+            Assert.That((await GetScheduleAsync(id).ConfigureAwait(false))?["Repeat"]?.ToString(), Is.EqualTo("2D"), "The new job should have its schedule");
+
+            (await httpClient.PutAsync($"/api/v1/backup/{id}", Json(Body(false))).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            Assert.That((await GetScheduleAsync(id).ConfigureAwait(false))?["Repeat"]?.ToString(), Is.EqualTo("2D"), "Saving without the schedule should keep it");
+
+            (await httpClient.PutAsync($"/api/v1/backup/{id}", Json(Body(true, scheduleIsNull: true))).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            Assert.That(await GetScheduleAsync(id).ConfigureAwait(false), Is.Null, "Saving with a null schedule should remove it, as the web clients do");
+        }).ConfigureAwait(false);
+    }
 }

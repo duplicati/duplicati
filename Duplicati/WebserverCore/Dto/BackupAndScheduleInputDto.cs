@@ -30,10 +30,28 @@ public sealed record BackupAndScheduleInputDto
     /// The backup DTO
     /// </summary>
     public required BackupInputDto Backup { get; init; }
+    private readonly ScheduleInputDto? _schedule;
+
     /// <summary>
-    /// The schedule DTO
+    /// The schedule DTO. Null removes the schedule. When omitted, an updated backup keeps its
+    /// current schedule, so a client that saves only some fields does not remove it.
     /// </summary>
-    public ScheduleInputDto? Schedule { get; init; }
+    public ScheduleInputDto? Schedule
+    {
+        get => _schedule;
+        init
+        {
+            _schedule = value;
+            HasSchedule = true;
+        }
+    }
+
+    /// <summary>
+    /// Whether the request had the Schedule field, also when it was null. The JSON reader sets
+    /// <see cref="Schedule"/> only for a field that is present.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool HasSchedule { get; private init; }
 
     /// <summary>
     /// The backup DTO

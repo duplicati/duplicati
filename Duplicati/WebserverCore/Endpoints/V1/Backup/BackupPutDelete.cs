@@ -96,22 +96,31 @@ public class BackupPutDelete : IEndpointV1
             };
 
             var connectionStrings = connection.GetConnectionStrings().ToDictionary(x => x.ID, x => x.BaseUrl);
-            // A schedule field the client left out keeps the value of the current schedule
+            // A schedule, or a schedule field, that the client left out keeps its current value
             var existingScheduleId = connection.GetScheduleIDsFromTags(["ID=" + existing.ID]).FirstOrDefault(-1);
             var existingSchedule = existingScheduleId < 0 ? null : connection.GetSchedule(existingScheduleId);
-            var schedule = input.Schedule == null ? null : new Schedule()
+            ISchedule? schedule;
+            if (!input.HasSchedule)
+                schedule = existingSchedule;
+            else if (input.Schedule == null)
+                schedule = null;
+            else
             {
-                ID = input.Schedule.ID,
-                Tags = input.Schedule.Tags,
-                Time = input.Schedule.Time ?? existingSchedule?.Time ?? new DateTime(0),
-                Repeat = input.Schedule.Repeat,
-                LastRun = input.Schedule.LastRun ?? new DateTime(0),
-                Rule = input.Schedule.Rule
-            };
-            // The days are stored in Rule, and setting AllowedDays to null removes them from it
-            var allowedDays = input.Schedule?.AllowedDays ?? existingSchedule?.AllowedDays;
-            if (schedule != null && allowedDays != null)
-                schedule.AllowedDays = allowedDays;
+                var updated = new Schedule()
+                {
+                    ID = input.Schedule.ID,
+                    Tags = input.Schedule.Tags,
+                    Time = input.Schedule.Time ?? existingSchedule?.Time ?? new DateTime(0),
+                    Repeat = input.Schedule.Repeat,
+                    LastRun = input.Schedule.LastRun ?? new DateTime(0),
+                    Rule = input.Schedule.Rule
+                };
+                // The days are stored in Rule, and setting AllowedDays to null removes them from it
+                var allowedDays = input.Schedule.AllowedDays ?? existingSchedule?.AllowedDays;
+                if (allowedDays != null)
+                    updated.AllowedDays = allowedDays;
+                schedule = updated;
+            }
 
             if (backup.IsTemporary && !existing.IsTemporary)
                 throw new BadRequestException("Cannot update a temporary backup with a non-temporary backup");
