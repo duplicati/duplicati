@@ -116,6 +116,8 @@ namespace Duplicati.UnitTest
             }
         }
 
+        private const int BLOCKSIZE = 10 * 1024;
+
         [Test]
         [TestCase(true)]
         [TestCase(false)]
@@ -123,6 +125,7 @@ namespace Duplicati.UnitTest
         {
             var opts = TestOptions.Expand(new
             {
+                blocksize = $"{BLOCKSIZE}b",
                 use_hardlink_for_get = true,
                 dblock_size = "300kb",
                 no_auto_compact = true,
@@ -131,14 +134,26 @@ namespace Duplicati.UnitTest
             if (!encrypted)
                 opts["no-encryption"] = "true";
 
-            WriteSourceFiles(1, "a.bin", "b.bin", "c.bin", "d.bin");
+            var files = new[] { "a.bin", "b.bin", "c.bin", "d.bin" };
+            WriteSourceFiles(1, files);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, opts, null))
                 TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
-            // Replace half of the data, so the volumes of the deleted version are partly wasted
-            File.Delete(Path.Combine(DATAFOLDER, "a.bin"));
-            File.Delete(Path.Combine(DATAFOLDER, "c.bin"));
-            WriteSourceFiles(2, "e.bin");
+            // Replace every other block of every file, so each volume of the deleted version is
+            // partly wasted. Deleting whole files is not enough: the files are processed in
+            // parallel, and their blocks can end up filling whole volumes that compact just deletes.
+            var rng = new Random(2);
+            var replacement = new byte[BLOCKSIZE];
+            foreach (var name in files)
+            {
+                var data = File.ReadAllBytes(Path.Combine(DATAFOLDER, name));
+                for (var offset = 0; offset < data.Length; offset += 2 * BLOCKSIZE)
+                {
+                    rng.NextBytes(replacement);
+                    Array.Copy(replacement, 0, data, offset, Math.Min(BLOCKSIZE, data.Length - offset));
+                }
+                File.WriteAllBytes(Path.Combine(DATAFOLDER, name), data);
+            }
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, opts, null))
                 TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
@@ -157,7 +172,7 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, restoreopts, null))
                 TestUtils.AssertResults(await c.RestoreAsync(["*"]));
 
-            foreach (var name in new[] { "b.bin", "d.bin", "e.bin" })
+            foreach (var name in files)
                 CollectionAssert.AreEqual(File.ReadAllBytes(Path.Combine(DATAFOLDER, name)), File.ReadAllBytes(Path.Combine(RESTOREFOLDER, name)), name);
         }
 
