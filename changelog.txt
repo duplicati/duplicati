@@ -1,3 +1,258 @@
+2026-11-14 - 2.4.1.102_canary_2026-11-14
+==========
+This release is a canary release intended to be used for testing.
+
+# MCP server for agents
+
+Duplicati now has a Model Context Protocol (MCP) server at `/mcp`, so an AI agent can use Duplicati to keep secure offsite backups of its work, and restore if something fails. The agent can list backups, run a backup, follow and stop tasks, browse and search the versions of a backup, and restore files.
+
+The endpoint is off by default. It is turned on in the settings of the new UI, or with `--webservice-enable-mcp-server`. Turning it off again deletes the issued tokens.
+
+An agent gets its own access token, which is separate from the login to the UI. A token has a permission level, where each level includes the previous: Read to list and browse, Backup to also run backups and stop tasks, and Restore to also restore files. It can be limited to specific backups, and it expires. A token can always restore files to where they were backed up from, and to other folders only below the restore folders it was issued with.
+
+Tokens are created and deleted in the settings of the new UI, which also shows how to set the token up in Claude Code, Claude Desktop, VS Code, Cursor, Codex CLI, Gemini CLI, GitHub Copilot CLI and opencode. A token is shown once and is not stored. The same can be done with the `issue-mcp-token`, `list-mcp-tokens` and `revoke-mcp-token` commands of `duplicati-server-util`. For agents that start MCP servers as local commands, `duplicati-server-util mcp` forwards standard input and output to the endpoint.
+
+# File system watcher
+
+A backup can now use a watcher that monitors its source folders between runs and records what changes. When the backup runs, it gets the list of changes and examines only those files instead of walking the whole source. This trades a little background work while no backup runs for much less disk activity when one does.
+
+The watcher has no record when Duplicati starts, or before a backup has been monitored, so the first run is a full walk of the sources. The mode is opt-in for each backup with the advanced option `--use-file-watcher`. The settings in the new UI have a toggle that turns the watcher off for all backups, as does `--disable-file-watcher` on the server.
+
+# Changes to be aware of
+
+- An option typed on the command line that Duplicati does not know, such as a misspelled one, used to give a warning while the operation ran without it. The command line now stops with an error. Options from a parameters file, and jobs run from the UI, still only warn, thanks @JamBalaya56562.
+- A local folder destination now uploads one volume at a time, and a restore reads it with one volume downloader, unless `--asynchronous-upload-limit` or `--restore-volume-downloaders` is set. A local folder is often an external hard disk, where several transfers at once are slower, thanks @JamBalaya56562.
+- `--asynchronous-upload-limit=0` now means no limit, as the help says. It allowed only one upload at a time, thanks @JamBalaya56562.
+- Change tracking and the check for duplicate paths are now always case-sensitive. They followed the operating system, which failed for remote sources, such as S3 or Google Drive, with files that differ only in casing. Filters still follow the operating system unless `--filter-case-sensitivity` is set.
+- When a file is chosen as a source, its folder is now recorded as well, so a restore can give the folder its recorded owner and times. The folder is the root of such a backup when it is listed for a restore, thanks @JamBalaya56562.
+- Jottacloud uploads now use the newer allocation API. `--jottacloud-legacy-upload=true` selects the previous method.
+- The user and password of an HTTP report URL are now sent as Basic authentication, and left out of the request URL and the logs. They were ignored before, thanks @JamBalaya56562.
+
+# New backup options
+
+- `--one-file-system` leaves out folders on other file systems below a source folder, such as mounted disks, network shares and `/proc`, like the rsync option of the same name. On Windows it also finds volumes mounted in a folder, thanks @JamBalaya56562.
+- `--skip-files-modified-before` and `--skip-files-modified-after` skip files by their modification time. The value is a date, or an interval back from now such as `1W`. With `--changed-files`, or a source that tracks its own changes, only a date is accepted, thanks @JamBalaya56562.
+- `--max-upload-per-run` stops a backup once it has uploaded the given size, for destinations with a transfer cap. The backup is saved as a partial backup, and the next run continues. Volumes in progress are finished, so a run can upload somewhat more than the limit, thanks @JamBalaya56562.
+- `--filter-case-sensitivity` chooses if filters are case-sensitive. With the default, the operating system decides as before, except for sources that are known to be case-sensitive, which now get case-sensitive filters.
+- `--use-hardlink-for-get` makes a local folder destination link a volume into the temporary folder instead of copying it, and falls back to a copy when the link cannot be made, thanks @JamBalaya56562.
+- `--alternate-destination-marker` now also works without `--alternate-target-paths`, so a share that is not mounted is not written to through its empty mount point, thanks @JamBalaya56562.
+- The file given with `--log-file` is no longer backed up when it is inside the source, thanks @JamBalaya56562.
+- The default exclude filters for the root of a drive, such as `$Recycle.Bin` and `System Volume Information`, now also apply at the root of a remote source, thanks @JamBalaya56562.
+
+# Synchronization
+
+- `--sync-snapshot-folders` creates a timestamped folder for each synchronization, and `--sync-keep-snapshots` sets how many to keep. On `file://` and `smb://` destinations, unchanged files are hard-linked to the previous snapshot to save space, which `--sync-snapshot-disable-hardlinks` turns off. `--sync-then-delete` is not supported with snapshots.
+- The new UI can restore from synchronization jobs, and configure the synchronization mode for secondary destinations, thanks @JamBalaya56562.
+- `--sync-keep-modification-time` keeps the modification times of the local files, for WebDAV servers that accept the `X-OC-Mtime` header, such as Nextcloud and ownCloud, and for local folders, thanks @JamBalaya56562.
+- A remote source given as `@mountpoint|url` was skipped and nothing was copied, and several sources failed with a missing folder. Both work now, and a warning for a missing source no longer shows the credentials of its URL, thanks @JamBalaya56562.
+- Backends that cannot stream, such as rclone, Tencent COS and a local folder with `--use-move-for-put`, were refused. They are now used through a temporary file, thanks @JamBalaya56562.
+
+# Storage providers
+
+- Internxt Drive is a new destination, next to the existing S3 option. There is no official API, so it follows the public source of the Internxt CLI, and may need a subscription tier where the CLI is supported. The tokens last 3 days, so Duplicati needs the MFA secret to log in again by itself.
+- The S3 setup in the new UI handles more providers, and can fill in the fields from a pasted provider URL. Blomp, thanks @fusionfoto, and dosya, thanks @firatkaya1, were added, and more public S3 hosts are recognized.
+- `--s3-server-side-encryption` requests server-side encryption with `AES256` or `aws:kms`, with an optional `--s3-server-side-encryption-kms-key-id`, thanks @JamBalaya56562.
+- `--s3-assume-role-arn` lets the S3 backend reach a bucket through an IAM role with temporary credentials from STS, with `--s3-assume-role-session-name`, `--s3-assume-role-external-id` and `--s3-sts-endpoint`, thanks @JamBalaya56562.
+- The Minio S3 client logged an upload that the server refused and went on as if the file was stored, so it was only found missing by the next verification. The upload now fails and is retried, thanks @JamBalaya56562.
+- A Storj download that failed part way was returned as a success with the bytes received so far. It now fails and is retried, thanks @JamBalaya56562.
+- Some destinations, such as pCloud, list a file only a few seconds after it is uploaded, so the backup failed with missing remote files. A just uploaded file is now listed again before it is reported as missing, thanks @JamBalaya56562.
+- Drime listings failed when a folder was listed ahead of the files, when the total of a later listing window did not match, and when other uploads added files during the name check before an upload, thanks @JamBalaya56562.
+- Google Drive and Google Cloud Storage uploads failed when they had to resume a stream that cannot seek, thanks @JamBalaya56562.
+- FTP servers that refuse a listing of a missing folder with another code than 550 or 450 now get the offer to create the folder, thanks @JamBalaya56562.
+- A timeout on an SMB or MEGA call now drops the connection, so the call does not keep using it. Async calls that ignore the timeout, as MEGA, Storj and SharePoint calls do, are no longer waited for, and SharePoint upload chunks have a timeout, thanks @JamBalaya56562.
+
+# Google Workspace and Microsoft 365
+
+- `--google-use-user-ids-in-paths` builds the paths from the user's internal id instead of the email. Other items now use stable ids in their paths instead of names, which could collide or be invalid as a path. The UI maps the ids to names.
+- `--google-use-ou-paths` places each user folder and shared drive folder in a folder per organizational unit, nested as the units are, so a whole unit can be selected or left out. Users that move between units then follow the filters. It is off by default as it changes the paths, and toggling it makes the next backup read everything again.
+- At most 4 requests are sent to a Microsoft 365 mailbox at a time, and they share the wait when one is throttled.
+- Chats that live in another tenant are logged once instead of for each message, and a logging problem with many concurrent requests is fixed.
+- A Microsoft 365 restore into a library did not find the drive to restore to.
+
+# Reports
+
+- `--send-mail-body-html` sends the mail report body as HTML. The values put into it are escaped, thanks @JamBalaya56562.
+- Paths are now redacted in the values put into a report, not in the finished text. The HTTP report was sent without redaction, and the other reports redacted paths the user wrote in the template, thanks @JamBalaya56562.
+- A bug report replaced nearly every stored log message with `ERASED!`. The logs are now kept, with their paths redacted, thanks @JamBalaya56562.
+- The reduced report mode redacts more, and always leaves out paths.
+
+# Database, repair and restore fixes
+
+- Database upgrades now run in a transaction, and the server checks for another running server before it opens its database. Two servers started at the same time could upgrade the same database at once and lose the upgrade, thanks @JamBalaya56562.
+- The backup copy made before a database upgrade failed on systems where the lock also locks the file.
+- When a backup was interrupted, the files it had added were left out of the synthetic version made by the next backup, although their data was uploaded. A file deleted before the next backup was then in no version, thanks @JamBalaya56562.
+- Repair uploaded replacement dlist files without waiting, so two retries could pick the same name and a version was lost, thanks @JamBalaya56562.
+- Repair failed on a local database that could not be opened, instead of setting it aside and recreating it, thanks @JamBalaya56562.
+- An index file left for a block volume that is gone made every recreate report the volume as missing. Recreate now removes the index file, thanks @JamBalaya56562.
+- A destination with old 7z volumes now gets a message that says so and how to convert them, thanks @JamBalaya56562.
+- A restore could fill the disk while decrypting volumes. Room is now made in the restore cache before a volume is downloaded, thanks @JamBalaya56562.
+- A backup made on another operating system showed its root folder for a direct restore, but listed nothing in it, thanks @JamBalaya56562.
+- Opening several folders quickly in the restore tree failed with "The backup database is currently in use by another operation", thanks @JamBalaya56562.
+- Search results had a version time in year 1, and a full first page of a listing or search reported the wrong total, thanks @JamBalaya56562.
+- Compact and recreate are faster on large databases, thanks @JamBalaya56562.
+
+# Windows and macOS
+
+- The installer can start Duplicati at logon for the current user only, with a checkbox or `STARTUP_FOR_CURRENT_USER=1`, thanks @JamBalaya56562.
+- Turning TLS on or off in an upgrade or a change left the TrayIcon on the old address, and a repair removed `--no-hosted-server` from the shortcuts, so the TrayIcon started its own server, thanks @JamBalaya56562.
+- A server that crashed inside the Windows service was reported as a normal stop. It is now reported as a failure, and the service is restarted after 60 seconds, thanks @JamBalaya56562.
+- The automatic updater now keeps the choice of starting at logon for the current user only. The installer could not bring the startup entry for all users back once that choice was made, and an upgrade that left TLS as it was replaced a host URL entered in the TrayIcon.
+- A source given as `\\?\Volume{GUID}\` was not found when the volume is mounted on a folder without a drive letter, thanks @JamBalaya56562.
+- A warning now says when the USN journal is too small to reach the previous backup, and how to enlarge it, thanks @JamBalaya56562.
+- Memory grew with every asset when backing up macOS Photos, thanks @Marukome0743.
+
+# Server and user interface
+
+- A console admin can now ask a connected Duplicati to update to the latest version, when remote control is enabled and automatic updates are supported.
+- The restore page in the new UI can search for files across all versions, thanks @JamBalaya56562.
+- A backup with a passphrase but no encryption module setting, as created through the API, lost its encryption when saved unchanged in the new UI, and the next run failed. Its configuration was also not stored in the backup, thanks @JamBalaya56562.
+- The new UI showed the login page on Synology instead of logging in through DSM, thanks @JamBalaya56562.
+- The Commandline page filled in the backup sources as arguments for every command, so `test` failed. The `test` command also explains a sample count that is not a number, thanks @JamBalaya56562.
+- Folders that cannot be listed, such as the compatibility junctions in a Windows profile, gave "An error occurred" in the source picker. They are now shown as access denied and cannot be expanded, thanks @JamBalaya56562.
+- The purge page in the new UI can choose whether to compact afterwards, thanks @JamBalaya56562.
+- An expired login after an update is no longer logged as an error in the server log and the Windows event log, thanks @JamBalaya56562.
+- `--quiet-console` no longer gives a warning that the option is not supported, thanks @JamBalaya56562.
+- The GPG program and its arguments are logged at the profiling level, thanks @JamBalaya56562.
+- The system information now reports the install folder, the data folder and the executable.
+- The old UI no longer uses jQuery, thanks @JamBalaya56562.
+
+## Detailed list of changes
+
+- Added an MCP server at `/mcp`, enabled with `--webservice-enable-mcp-server`, with tokens that are limited by permission level, backups and restore folders
+- Added the `mcp`, `issue-mcp-token`, `list-mcp-tokens` and `revoke-mcp-token` commands to `duplicati-server-util`
+- Fixed a restore that only cut a file back to its restored length not treating the file as changed
+- Added a file system watcher for backups with `--use-file-watcher`, and `--disable-file-watcher` for the server
+- Changed the command line to stop on a typed option that is not supported, thanks @JamBalaya56562
+- Fixed the command line tool's own options being reported as unsupported, thanks @JamBalaya56562
+- Changed a local folder destination to upload one volume at a time by default, thanks @JamBalaya56562
+- Changed a restore from a local folder to use one volume downloader by default, thanks @JamBalaya56562
+- Fixed `--asynchronous-upload-limit=0` not meaning no limit, thanks @JamBalaya56562
+- Changed change tracking and duplicate path checks to be case-sensitive
+- Added `--filter-case-sensitivity`
+- Added recording the folder of a file that is chosen as a source, thanks @JamBalaya56562
+- Added `--one-file-system`, thanks @JamBalaya56562
+- Added `--skip-files-modified-before` and `--skip-files-modified-after`, thanks @JamBalaya56562
+- Added `--max-upload-per-run`, thanks @JamBalaya56562
+- Added `--use-hardlink-for-get` for the local folder destination, thanks @JamBalaya56562
+- Changed `--alternate-destination-marker` to work without alternate paths, thanks @JamBalaya56562
+- Fixed the log file of the backup being backed up, thanks @JamBalaya56562
+- Fixed drive root filters not applying at the root of a remote source, thanks @JamBalaya56562
+- Fixed entries of a mounted source not being found in a combined source, thanks @JamBalaya56562
+- Added `--sync-snapshot-folders` and `--sync-keep-snapshots` for synchronization versions
+- Added `--sync-keep-modification-time`, thanks @JamBalaya56562
+- Fixed synchronization of a remote source and of several sources, thanks @JamBalaya56562
+- Fixed remote synchronization refusing backends that cannot stream, thanks @JamBalaya56562
+- Added Internxt Drive as a destination
+- Added `--s3-server-side-encryption`, thanks @JamBalaya56562
+- Added assuming a role through STS to the S3 backend, thanks @JamBalaya56562
+- Added Blomp to the OpenStack and S3 provider lists, thanks @fusionfoto
+- Added Dosya and more hosts to the known S3 host suffixes, and fixed the suffix guess checking the bucket name
+- Changed Jottacloud to upload with the allocation API
+- Fixed a refused Minio upload being treated as stored, thanks @JamBalaya56562
+- Fixed failed Storj downloads being reported as a success, thanks @JamBalaya56562
+- Fixed a just uploaded file being reported as missing before it is listed, thanks @JamBalaya56562
+- Fixed Drime listings with a folder ahead of older files, thanks @JamBalaya56562
+- Fixed the Drime total check for listing windows with a date filter, thanks @JamBalaya56562
+- Fixed the Drime name check failing while other uploads add files, thanks @JamBalaya56562
+- Fixed resuming a Google upload of a stream that cannot seek, thanks @JamBalaya56562
+- Fixed a missing FTP folder not being reported when the listing is refused with another code, thanks @JamBalaya56562
+- Fixed SMB and MEGA calls keeping the connection after a timeout, thanks @JamBalaya56562
+- Fixed async calls that ignore the timeout token being waited for, thanks @JamBalaya56562
+- Added a timeout to SharePoint upload chunks, thanks @JamBalaya56562
+- Added stable ids for Google Workspace paths and `--google-use-user-ids-in-paths`
+- Added `--google-use-ou-paths` to group Google Workspace users and shared drives by organizational unit
+- Added a concurrency gate with a shared back-off for Microsoft 365 mailboxes
+- Fixed Microsoft 365 concurrent log access and repeated messages for chats in another tenant
+- Fixed the Microsoft 365 restore into a library
+- Added `--send-mail-body-html`, thanks @JamBalaya56562
+- Fixed path redaction to apply to the values put into a report, thanks @JamBalaya56562
+- Fixed the user and password of an HTTP report URL not being sent, thanks @JamBalaya56562
+- Fixed the logs in a bug report being erased instead of redacted, thanks @JamBalaya56562
+- Improved the speed of path redaction in HTML report bodies, thanks @JamBalaya56562
+- Improved redaction in the reduced report mode
+- Changed database upgrades to run in a transaction, thanks @JamBalaya56562
+- Fixed the server opening its database before checking for a running server, thanks @JamBalaya56562
+- Fixed the database backup copy failing when the file is locked
+- Fixed the files of an interrupted backup missing from the synthetic dlist, thanks @JamBalaya56562
+- Fixed repair uploading replacement dlists at the same time, thanks @JamBalaya56562
+- Fixed repair failing on a local database it cannot open, thanks @JamBalaya56562
+- Fixed an index file being kept when its block volume is gone after recreate, thanks @JamBalaya56562
+- Improved the message for a 7z volume, thanks @JamBalaya56562
+- Fixed a restore running out of disk space before the cache is trimmed, thanks @JamBalaya56562
+- Fixed a restore with a partially recreated local database, thanks @JamBalaya56562
+- Fixed listing the folders of a backup made on another operating system, thanks @JamBalaya56562
+- Fixed immediate tasks on one backup database failing instead of taking turns, thanks @JamBalaya56562
+- Fixed the version time and the total of the first page from search, thanks @JamBalaya56562
+- Fixed the total of a full first page of folder and file version listings, thanks @JamBalaya56562
+- Improved the speed of duplicate block lookups in compact, thanks @JamBalaya56562
+- Improved the speed of blockset entry lookups in recreate, thanks @JamBalaya56562
+- Fixed the file counter's listing reading a source after it is disposed, thanks @JamBalaya56562
+- Fixed a raw disk being disposed during a read, thanks @JamBalaya56562
+- Added starting Duplicati at logon for the current user only to the installer, thanks @JamBalaya56562
+- Fixed the TrayIcon host URL not following TLS on an upgrade or a change, thanks @JamBalaya56562
+- Fixed `--no-hosted-server` being removed from the shortcuts on a repair, thanks @JamBalaya56562
+- Fixed the MSI service config not being set again on a repair, thanks @JamBalaya56562
+- Fixed a crashed in-process server being reported as a normal stop of the Windows service, and added recovery actions, thanks @JamBalaya56562
+- Fixed the secure MSI properties not being listed in wixl builds, thanks @JamBalaya56562
+- Fixed the automatic updater not keeping the startup choice for the current user, and the installer replacing the TrayIcon host URL when TLS is unchanged
+- Fixed a server that crashed with an exception inside the service not giving an error code
+- Fixed volume guid sources on volumes mounted only on a folder, thanks @JamBalaya56562
+- Added a warning when the USN journal is too small to reach the previous backup, thanks @JamBalaya56562
+- Updated the `--usn-policy` help text, thanks @JamBalaya56562
+- Fixed memory growth when backing up macOS Photos, thanks @Marukome0743
+- Added support for an update started from the console
+- Fixed the task config not being stored for a backup that uses the default encryption module, thanks @JamBalaya56562
+- Improved the message when the sample count of the `test` command is not a number, thanks @JamBalaya56562
+- Changed a folder that may not be listed to be reported as forbidden, thanks @JamBalaya56562
+- Added the target of a listed link in its own field, thanks @JamBalaya56562
+- Fixed test files being counted when reporting if a destination folder is empty, thanks @JamBalaya56562
+- Added a choice of compacting to the purge-files API, thanks @JamBalaya56562
+- Fixed expected refresh failures and API answers being logged as errors, thanks @JamBalaya56562
+- Added logging of the GPG program and arguments at the profiling level, thanks @JamBalaya56562
+- Added the install folder, data folder and entry assembly to the system information
+- Updated the `--use-move-for-put` and RecoveryTool recompress help texts, thanks @JamBalaya56562
+- Renamed `IsBlockDevice` to `IsSpecialFile`, thanks @JamBalaya56562
+- Removed jQuery, jQuery UI and unused libraries from the old UI, thanks @JamBalaya56562
+- Fixed the passphrase strength label of the old UI not being translatable, thanks @JamBalaya56562
+- Removed an unused log message queue and an unused flag in repair, thanks @JamBalaya56562
+- Fixed finding a `.cmd` tool given in a ReleaseBuilder environment variable, thanks @JamBalaya56562
+- Changed the builder to use `diskutil` for macOS images
+- Fixed flaky change tracking, throttling, quota, restore cache and disk image tests, thanks @JamBalaya56562
+
+## Updates to ngclient
+
+- Added turning the MCP server on and off in the settings
+- Added creating and deleting MCP access tokens, with setup instructions for common agents
+- Added a toggle in the settings that turns the file system watcher off for all backups
+- Added restoring from synchronization jobs
+- Added configuring the synchronization mode for secondary destinations, thanks @JamBalaya56562
+- Added searching for restore files across all versions, thanks @JamBalaya56562
+- Added a choice of compacting after purging files, shown when the server supports it, thanks @JamBalaya56562
+- Added Internxt Drive as a destination
+- Improved the S3 setup for more providers, with filling in the fields from a pasted URL
+- Added dosya as an S3 destination, thanks @firatkaya1
+- Added tooltips and accessible names to the theme toggle and the home page action icons, thanks @JamBalaya56562
+- Changed navigation buttons to links, thanks @JamBalaya56562
+- Changed locked folders to not expand in the file tree, and locked junctions to show access denied, thanks @JamBalaya56562
+- Fixed restores to Google Workspace and Microsoft 365 not sending overwrite, which those targets require; existing items are handled by their own setting
+- Fixed Cloudflare R2 endpoints outside `r2.cloudflarestorage.com` not being recognized
+- Fixed the login through Synology DSM showing the login page, thanks @JamBalaya56562
+- Fixed a backup with only a passphrase losing its encryption when saved, thanks @JamBalaya56562
+- Fixed the backup sources being used as arguments for every command on the Commandline page, thanks @JamBalaya56562
+- Fixed the WebSocket not reconnecting after a failed authentication refresh, thanks @JamBalaya56562
+- Fixed the UI language not being sent for English API requests, thanks @JamBalaya56562
+- Fixed selected filter types changing during editing, thanks @JamBalaya56562
+- Fixed legacy file attribute exclusions being lost when editing options, thanks @JamBalaya56562
+- Fixed descriptions being lost when saving shared destinations, thanks @JamBalaya56562
+- Fixed failed crash log loads not being retryable, thanks @JamBalaya56562
+- Fixed purge and version deletion confirmations, version label saves and purge selections carrying over to another backup, thanks @JamBalaya56562
+- Fixed duplicate requests for job deletion, update installs and stored log pages, thanks @JamBalaya56562
+- Fixed late responses from database path validation and saved destination loads being shown, thanks @JamBalaya56562
+- Fixed long polling, update checks and task waits continuing after their page is closed, thanks @JamBalaya56562
+- Fixed the size of the filter edit button
+- Changed the forms to Signal Forms, thanks @JamBalaya56562
+- Added browser tests for restore, backup start and stop, schedules, notifications, throttling, pause and deletion, thanks @JamBalaya56562
+
 2026-11-07 - 2.4.1.101_canary_2026-11-07
 ==========
 This release is a canary release intended to be used for testing.
