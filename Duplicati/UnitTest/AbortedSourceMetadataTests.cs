@@ -108,9 +108,23 @@ public class AbortedSourceMetadataTests : BasicSetupHelper
 
         private long GetSize()
         {
-            if (!Folder && (s_stuckAt == StuckAt.Size || (s_stuckAt == StuckAt.CountedSize && CalledFrom("CountFilesHandler"))))
+            if (Folder)
+                return 0L;
+
+            if (s_stuckAt == StuckAt.Size)
                 Stall();
-            return Folder ? 0L : 1L;
+            else if (s_stuckAt == StuckAt.CountedSize)
+            {
+                if (CalledFrom("CountFilesHandler"))
+                    Stall();
+                else
+                    // The count runs on the side, so the backup can be done with its only file
+                    // before the count has reached it, and the count is then stopped without
+                    // getting stuck. The backup is held here until the count is stuck.
+                    SpinWait.SpinUntil(() => Volatile.Read(ref s_stuck) > 0, TimeSpan.FromSeconds(30));
+            }
+
+            return 1L;
         }
 
         // Reading the metadata is synchronous, as it is for a file: the task is only returned
