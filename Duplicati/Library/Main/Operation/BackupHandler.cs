@@ -778,6 +778,8 @@ namespace Duplicati.Library.Main.Operation
                     long filesetid;
                     // A stop before the files are processed leaves the fileset without any of them
                     var stoppedBeforeProcessing = false;
+                    // The latest version is partial, so a full run must create a version even without changes
+                    var previousVersionPartial = false;
                     using var counterToken = CancellationTokenSource.CreateLinkedTokenSource(m_taskReader.ProgressToken);
                     using (var source = await GetSourceProviderAsync(sources, m_options, m_taskReader.ProgressToken).ConfigureAwait(false))
                     {
@@ -797,6 +799,10 @@ namespace Duplicati.Library.Main.Operation
                                 throw new Exception(string.Format("The previous backup has time {0}, but this backup has time {1}. Something is wrong with the clock.", prevfileset.Value.ToLocalTime(), m_database.OperationTimestamp.ToLocalTime()));
 
                             var lastfilesetid = prevfileset.Value.Ticks == 0 ? -1 : prevfileset.Key;
+                            if (lastfilesetid >= 0)
+                                previousVersionPartial = !await m_database
+                                    .IsFilesetFullBackupAsync(prevfileset.Value, m_taskReader.ProgressToken)
+                                    .ConfigureAwait(false);
 
                             // Prepare the operation by registering the filelist
                             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_ProcessingFiles);
@@ -915,8 +921,12 @@ namespace Duplicati.Library.Main.Operation
                     await Backup.RecreateMissingIndexFiles.RunAsync(db, backendManager, m_options, m_result.TaskControl)
                         .ConfigureAwait(false);
 
-                    // Send the actual filelist
-                    var uploadedNewFileset = await Backup.UploadRealFilelist.RunAsync(m_result, db, backendManager, m_options, filesetvolume, filesetid, m_result.TaskControl, lastTempVolumeIncomplete, stoppedBeforeProcessing)
+                    // Send the actual filelist.
+                    // A partial backup that was stopped after it processed every file leaves nothing
+                    // for the next full run to change, so that run is uploaded anyway; otherwise the
+                    // latest version would stay partial (issue #4984)
+                    var forceUpload = lastTempVolumeIncomplete || (previousVersionPartial && !m_result.PartialBackup);
+                    var uploadedNewFileset = await Backup.UploadRealFilelist.RunAsync(m_result, db, backendManager, m_options, filesetvolume, filesetid, m_result.TaskControl, forceUpload, stoppedBeforeProcessing)
                         .ConfigureAwait(false);
 
                     // Warn if the backup examined only folders and/or symlinks but no actual files,

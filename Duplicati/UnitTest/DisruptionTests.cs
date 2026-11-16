@@ -30,6 +30,7 @@ using Duplicati.Library.Logging;
 using Duplicati.Library.Main;
 using Duplicati.Library.Main.Database.Local;
 using Duplicati.Library.Main.Volumes;
+using Duplicati.Library.SQLiteHelper;
 using NUnit.Framework;
 using Utility = Duplicati.Library.Utility.Utility;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
@@ -639,6 +640,47 @@ namespace Duplicati.UnitTest
                     string filename = Path.GetFileName(filepath);
                     TestUtils.AssertFilesAreEqual(filepath, Path.Combine(this.RESTOREFOLDER, filename ?? String.Empty), false, filename);
                 }
+            }
+        }
+
+        [Test]
+        [Category("Disruption")]
+        public async Task UnchangedFullBackupAfterPartialBackupCreatesVersionAsync()
+        {
+            // A partial backup can be stopped after it processed every file (issue #4984).
+            // The following full backup then finds no changes, but it must still create a
+            // version, or the latest version stays partial. The partial backup is simulated
+            // by marking the only version as partial, so the test does not depend on timing.
+            var options = new Dictionary<string, string>(this.TestOptions);
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+
+            await using (var db = await SQLiteLoader.LoadConnectionAsync(this.DBFILE))
+            await using (var cmd = db.CreateCommand())
+            {
+                cmd.CommandText = $@"UPDATE ""Fileset"" SET ""IsFullBackup"" = {BackupType.PARTIAL_BACKUP}";
+                Assert.AreEqual(1, await cmd.ExecuteNonQueryAsync());
+                await db.CloseAsync();
+            }
+
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                var results = await c.BackupAsync(new[] { this.DATAFOLDER });
+                TestUtils.AssertResults(results);
+                Assert.AreEqual(0, results.AddedFiles + results.ModifiedFiles + results.DeletedFiles, "The source should be unchanged");
+
+                var filesets = (await c.ListAsync()).Filesets.ToArray();
+                Assert.AreEqual(2, filesets.Length, "The full backup after a partial backup should create a version");
+                Assert.AreEqual(BackupType.FULL_BACKUP, filesets.Single(x => x.Version == 0).IsFullBackup);
+                Assert.AreEqual(BackupType.PARTIAL_BACKUP, filesets.Single(x => x.Version == 1).IsFullBackup);
+            }
+
+            // A further unchanged full backup does not need a new version
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+            {
+                TestUtils.AssertResults(await c.BackupAsync(new[] { this.DATAFOLDER }));
+                Assert.AreEqual(2, (await c.ListAsync()).Filesets.Count());
             }
         }
 
