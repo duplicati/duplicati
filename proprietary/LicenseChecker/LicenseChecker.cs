@@ -178,7 +178,7 @@ public static class LicenseChecker
                 throw new InvalidLicenseException("License is not valid at the current date");
 
             if (licenseData.IsInGracePeriod)
-                Log.WriteWarningMessage(LOGTAG, "LicenseExpired", null, "License expired on {ValidTo:yyyy-MM-dd}, but is within the grace period until {ExpirationWithGrace:yyyy-MM-dd}.", licenseData.ValidTo, licenseData.ValidToWithGrace);
+                Log.WriteWarningMessage(LOGTAG, "LicenseExpired", null, "License expired on {0:yyyy-MM-dd}, but is within the grace period until {1:yyyy-MM-dd}.", licenseData.ValidTo, licenseData.ValidToWithGrace);
 
             return licenseData;
         }
