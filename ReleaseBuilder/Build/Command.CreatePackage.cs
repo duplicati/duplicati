@@ -557,21 +557,26 @@ public static partial class Command
                 .Where(File.Exists)
                 .ToArray();
 
+            var wixWorkingDirectory = buildRoot;
             if (isWindows)
             {
-                // Update namespace in the .wxs files for WiX v4
-                var tempFiles = fragments
-                    .Select(x =>
-                    {
-                        var tempFile = Path.Combine(buildTmp, Path.GetFileName(x));
-                        File.WriteAllText(tempFile, File.ReadAllText(x).Replace(originalNamespace, wixv4Namespace));
-                        return tempFile;
-                    }).ToArray();
+                // The sources are written for wixl (WiX 3 format), so WiX gets a converted copy,
+                // built from its own folder so relative paths such as the scripts still resolve
+                wixWorkingDirectory = Path.Combine(buildRoot, "tmp-msi-wix");
+                var tempFiles = await WixV4Sources.PrepareAsync(
+                    rtcfg.Configuration.Commands.Wix!,
+                    resourcesSubDir,
+                    fragments.Select(Path.GetFileName).OfType<string>(),
+                    WixV4Sources.GetWixUiDialogNames(Path.Combine(resourcesDir, "WixUIExtension", "ui")),
+                    wixWorkingDirectory);
 
                 wixArgs = [
                     rtcfg.Configuration.Commands.Wix!,
                     "build",
+                    "-ext", "WixToolset.UI.wixext",
                     "-define", $"HarvestPath={sourceFiles}",
+                    "-define", $"BuildEnv={WixV4Sources.BuildEnvWindows}",
+                    ..WixV4Sources.WixUiBindVariables.SelectMany(x => new[] { "-bindvariable", x }),
                     "-arch", msiArch,
                     "-out", msiFile,
                     binFiles,
@@ -593,7 +598,7 @@ public static partial class Command
                 ];
             }
 
-            await ProcessHelper.Execute(wixArgs, workingDirectory: buildRoot);
+            await ProcessHelper.Execute(wixArgs, workingDirectory: wixWorkingDirectory);
 
             // Apply post-wixl MSI table customizations on Linux/macOS. On Windows the
             // real WiX toolchain handles all of these natively via WXS elements
