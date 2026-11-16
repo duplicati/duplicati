@@ -1036,6 +1036,11 @@ namespace Duplicati.Server
                     foreach (var k in data.ExtraOptions)
                         options[k.Key] = k.Value;
 
+                // Scripts get the sources of the job in every operation, also in a restore where the
+                // local path holds the paths being restored. Set here, not in ApplyOptions, as that
+                // also builds the exported command line, which may not carry an internal option.
+                options[Library.Main.Options.BACKUP_SOURCES_OPTION] = string.Join(System.IO.Path.PathSeparator, GetExpandedSources(backup));
+
                 // The file watcher is a server concern; the engine must not see the option. It is
                 // opt-in per backup, so a server-wide default or an option for one run does not count
                 var useFileWatcher = IsFileWatcherEnabled(backup);
