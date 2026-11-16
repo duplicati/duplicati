@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
@@ -10,32 +9,136 @@ using Duplicati.Library.Main.Database.Sync;
 using Duplicati.Library.Utility;
 using Duplicati.Library.Main.Operation.Backup;
 using Duplicati.Library.Main.Operation.Common;
-using Duplicati.Library.Main.Backend;
 
 #nullable enable
 
 namespace Duplicati.Library.Main.Operation.Sync;
 
+/// <summary>
+/// A destination of a sync run. The handler owns none of the members; the caller
+/// creates and disposes the backend manager and the database.
+/// </summary>
+/// <param name="BackendManager">The backend manager of the destination</param>
+/// <param name="Database">The sync database (inventory and intent journal) of the destination</param>
+/// <param name="DisplayName">The name of the destination for log messages, without credentials</param>
+/// <param name="StateMode">How the remote state of the destination is determined</param>
+/// <param name="DryRun">Whether nothing is written to or deleted from the destination</param>
+internal sealed record SyncTarget(
+    IBackendManager BackendManager,
+    LocalSyncDatabase Database,
+    string DisplayName,
+    SyncRemoteState StateMode,
+    bool DryRun
+);
+
+/// <summary>
+/// The counters of one destination of a sync run, bumped per operation as it is
+/// planned or performed.
+/// </summary>
+internal sealed class SyncTargetSummary
+{
+    /// <summary>The name of the destination, without credentials</summary>
+    public required string DisplayName { get; init; }
+    public long Upload;
+    public long Update;
+    public long Delete;
+    public long FoldersCreated;
+    public long FoldersDeleted;
+    public long UnchangedFiles;
+    public long Linked;
+    public long SizeOfUploadedFiles;
+    public long SizeOfDeletedFiles;
+    /// <summary>The number of files that could not be uploaded</summary>
+    public long UploadFailures;
+    /// <summary>The number of files that could not be deleted</summary>
+    public long DeleteFailures;
+    /// <summary>Set when the destination failed as a whole and was skipped for the rest of the run</summary>
+    public bool Failed;
+    /// <summary>The message of the failure that set <see cref="Failed"/></summary>
+    public string? FailureMessage;
+
+    /// <summary>Whether everything the run planned for the destination was done</summary>
+    public bool Succeeded => !Failed && UploadFailures == 0 && DeleteFailures == 0;
+}
+
+/// <summary>
+/// The outcome of a sync run: the counters of each destination, in the order the
+/// destinations were given, and the counters of the single source enumeration.
+/// </summary>
+/// <param name="Targets">The per-destination counters</param>
+/// <param name="SourceFiles">The number of source files seen</param>
+/// <param name="SizeOfSourceFiles">The size of the source files seen</param>
+internal sealed record SyncRunSummary(
+    IReadOnlyList<SyncTargetSummary> Targets,
+    long SourceFiles,
+    long SizeOfSourceFiles
+);
+
 internal class SyncHandler
 {
     private static readonly string LOGTAG = Logging.Log.LogTagFromType<SyncHandler>();
     private readonly Options m_options;
-    private readonly SyncResults m_results;
-    private readonly string[] m_sources;
-    private readonly string? m_backendUrl;
+    private readonly IOperationProgressUpdater m_progress;
+    private string[] m_sources = [];
 
-    public SyncHandler(string[] sources, Options options, SyncResults results, string? backendUrl = null)
+    /// <summary>
+    /// Creates a sync handler
+    /// </summary>
+    /// <param name="options">The options of the run</param>
+    /// <param name="progress">The progress updater that receives file counts and per-file progress</param>
+    public SyncHandler(Options options, IOperationProgressUpdater progress)
     {
-        m_sources = sources;
         m_options = options;
-        m_results = results;
-        m_backendUrl = backendUrl;
+        m_progress = progress;
     }
 
-    public async Task RunAsync(IBackendManager backendManager, IFilter filter)
+    /// <summary>
+    /// Copies the run counters into the results of the sync command
+    /// </summary>
+    /// <param name="results">The results to fill</param>
+    /// <param name="summary">The outcome of the run</param>
+    public static void ApplyToResults(SyncResults results, SyncRunSummary summary)
     {
-        var ct = m_results.TaskControl.ProgressToken;
-        m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Sync_Begin);
+        // Upload+Update is the combined "files uploaded" count. The mirror deletes
+        // unknown remote files and orphaned folders; snapshot retention removes old
+        // snapshot folders.
+        results.FoldersCreated = summary.Targets.Sum(x => x.FoldersCreated);
+        results.FoldersDeleted = summary.Targets.Sum(x => x.FoldersDeleted);
+        results.FilesUploaded = summary.Targets.Sum(x => x.Upload + x.Update);
+        results.UnchangedFiles = summary.Targets.Sum(x => x.UnchangedFiles);
+        results.FilesDeleted = summary.Targets.Sum(x => x.Delete);
+        results.SourceFiles = summary.SourceFiles;
+        results.SizeOfSourceFiles = summary.SizeOfSourceFiles;
+        results.SizeOfUploadedFiles = summary.Targets.Sum(x => x.SizeOfUploadedFiles);
+        results.SizeOfDeletedFiles = summary.Targets.Sum(x => x.SizeOfDeletedFiles);
+    }
+
+    /// <summary>
+    /// Runs the sync: the source is enumerated once, folder by folder, and what it
+    /// holds is applied to every destination.
+    /// </summary>
+    /// <param name="sourceProvider">The provider of the source entries; owned by the caller</param>
+    /// <param name="sources">The source root paths, as the provider knows them</param>
+    /// <param name="targets">The destinations; owned by the caller</param>
+    /// <param name="filter">The filter that selects the source entries, and the remote files a delete may touch</param>
+    /// <param name="maxDepth">The number of folder levels below a source root to descend; zero processes only the files directly in the root, <c>null</c> is unlimited</param>
+    /// <param name="reportPhases">Whether the run reports the sync phases; false when the run is a step of another operation</param>
+    /// <param name="onTargetStarted">Invoked with the index of the destination and the number of destinations when the work moves to another destination</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>The counters of the run</returns>
+    public async Task<SyncRunSummary> RunAsync(ISourceProvider sourceProvider, string[] sources, IReadOnlyList<SyncTarget> targets, IFilter filter, int? maxDepth, bool reportPhases, Action<int, int>? onTargetStarted, CancellationToken ct)
+    {
+        m_sources = sources;
+        if (maxDepth < 0)
+            throw new UserInformationException($"The maximum depth cannot be negative: {maxDepth}", "InvalidSyncMaxDepth");
+
+        void ReportPhase(OperationPhase phase)
+        {
+            if (reportPhases)
+                m_progress.UpdatePhase(phase);
+        }
+
+        ReportPhase(OperationPhase.Sync_Begin);
         Logging.Log.WriteInformationMessage(LOGTAG, "SyncStarted", "Starting sync");
 
         // Sync mirrors files to the destination unencrypted, so a passphrase is
@@ -43,18 +146,12 @@ internal class SyncHandler
         if (!m_options.NoEncryption)
             throw new UserInformationException("Encryption must be disabled for sync as it is not supported.", "EncryptionNotAllowed");
 
-        var primaryDbPath = m_options.Dbpath
-            ?? throw new InvalidOperationException("Unable to locate sync database");
-
-        var isDryRun = m_options.Dryrun;
         var isDelete = m_options.SyncThenDelete;
         var snapshotMode = m_options.SyncSnapshotFolders;
         // The snapshot folder of this run is named after the time the run started, so
         // every destination of the run gets the same name.
         var runStartUtc = DateTime.UtcNow;
         var verifyHash = m_options.SyncVerifyHash;
-        var keepModificationTime = m_options.SyncKeepModificationTime;
-        var configuredStateMode = m_options.SyncRemoteState;
 
         // The handler cannot tell whether a destination distinguishes letter case, so
         // it follows the same declaration the backup path does. On a destination that
@@ -62,23 +159,6 @@ internal class SyncHandler
         // uploading the new casing overwrites it in place, and deleting the old casing
         // afterwards would delete what was just written.
         var nameComparer = m_options.CaseInsensitiveRemote ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
-
-        // --sync-recheck forces a fresh remote listing per folder for this run. Under
-        // UseLocalState that also means the local inventory cache is treated as stale:
-        // the run effectively behaves as UseRemoteState, and (because we keep the
-        // inventory write-through under UseLocalState) the cache is refreshed as we
-        // go, so the next UseLocalState run starts from a fresh baseline. Under
-        // UseRemoteState and BlindlyUpload the flag is a no-op (UseRemoteState already
-        // lists fresh; BlindlyUpload ignores remote state entirely).
-        var initialStateMode = (configuredStateMode == SyncRemoteState.UseLocalState && m_options.SyncRecheck)
-            ? SyncRemoteState.UseRemoteState
-            : configuredStateMode;
-
-        // BlindlyUpload has no remote state to diff against, so deleting remote files
-        // is not meaningful. Warn once at the start so the user is not surprised that
-        // --sync-then-delete is ignored for the run.
-        if (initialStateMode == SyncRemoteState.BlindlyUpload && isDelete && !snapshotMode)
-            Logging.Log.WriteWarningMessage(LOGTAG, "BlindlyUploadIgnoresDelete", null, $"sync-remote-state={SyncRemoteState.BlindlyUpload} cannot determine which remote files to delete; --{Options.SYNC_THEN_DELETE_OPTION} will be ignored for this run.");
 
         // A snapshot folder starts empty and receives only what the source holds, so
         // there is never anything in it to delete.
@@ -91,9 +171,8 @@ internal class SyncHandler
         if (snapshotMode && m_options.SyncSnapshotDisableHardlinks)
             Logging.Log.WriteInformationMessage(LOGTAG, "SnapshotHardLinksDisabled", $"--{Options.SYNC_SNAPSHOT_DISABLE_HARDLINKS_OPTION} is set: unchanged files are copied into each snapshot instead of being hard linked.");
 
-        using var sourceProvider = await SourceProviderFactory.GetSourceProviderAsync(m_sources, m_options, ct).ConfigureAwait(false);
 
-        var blacklistPaths = BackupHandler.GetBlacklistedPaths(m_options, m_sources);
+        var blacklistPaths = BackupHandler.GetBlacklistedPaths(m_options, sources);
         var fileAttributeFilter = m_options.FileAttributeFilter;
         var symlinkPolicy = m_options.SymlinkPolicy;
         var hardlinkPolicy = m_options.HardlinkPolicy;
@@ -101,37 +180,30 @@ internal class SyncHandler
         var excludeEmptyFolders = m_options.ExcludeEmptyFolders;
         var ignoreNames = m_options.IgnoreFilenames;
 
-        // Start a parallel background counter that walks the whole source tree
+        // Start a parallel background counter that walks the source tree. With a
+        // maximum depth of zero the run reads a single folder, so the count comes
+        // from that listing instead.
         using var counterCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
         Task? counterTask = null;
-        if (!m_options.DisableFileScanner)
+        if (!m_options.DisableFileScanner && maxDepth != 0)
         {
-            m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Sync_CountingFiles);
+            ReportPhase(OperationPhase.Sync_CountingFiles);
             counterTask = CountFilesHandler.RunAsync(
                 sourceProvider,
-                journalService: null,
-                m_results,
+                sources,
+                m_progress,
                 fileAttributeFilter,
                 filter,
                 symlinkPolicy,
                 hardlinkPolicy,
                 disableBackupExclusionXattr,
-                excludeEmptyFolders,
                 ignoreNames,
                 blacklistPaths,
+                maxDepth,
                 counterCts.Token);
         }
 
-        var planSummary = new PlanSummary();
-        var additionalManagers = CreateAdditionalBackendManagers();
-        // The primary backend manager belongs to the caller, but the primary sync
-        // database is created here and has to be closed here, after the folder loop
-        // and the additional targets; the additional targets are disposed in the finally.
-        using var primaryDatabase = new LocalSyncDatabase(primaryDbPath);
-        var allManagers = new List<ManagerInstance>([
-            new ManagerInstance(backendManager, primaryDatabase),
-            .. additionalManagers
-            ]);
+        var run = new RunContext(m_progress, onTargetStarted, perTargetProgress: !reportPhases, countFromListing: maxDepth == 0, keepModificationTime: m_options.SyncKeepModificationTime);
 
         // Per-backend run state: each destination has its own database (its own inventory
         // and intent journal) and its own per-run state-mode resolution (the UseLocalState
@@ -140,14 +212,37 @@ internal class SyncHandler
         // and makes a single source enumeration feed every backend, so the same observed
         // local state is replicated to all destinations instead of re-enumerating the
         // source once per backend (where the source could change between enumerations).
-        var backendStates = new List<BackendRunState>(allManagers.Count);
+        var backendStates = run.States;
         try
         {
-            // Collect all initial states from all managers
-            foreach (var mgr in allManagers)
+            // Collect all initial states from all targets
+            foreach (var mgr in targets)
             {
-                var stateMode = initialStateMode;
+                // --sync-recheck forces a fresh remote listing per folder for this run. Under
+                // UseLocalState that also means the local inventory cache is treated as stale:
+                // the run effectively behaves as UseRemoteState, and (because we keep the
+                // inventory write-through under UseLocalState) the cache is refreshed as we
+                // go, so the next UseLocalState run starts from a fresh baseline. Under
+                // UseRemoteState and BlindlyUpload the flag is a no-op (UseRemoteState already
+                // lists fresh; BlindlyUpload ignores remote state entirely).
+                var stateMode = (mgr.StateMode == SyncRemoteState.UseLocalState && m_options.SyncRecheck)
+                    ? SyncRemoteState.UseRemoteState
+                    : mgr.StateMode;
                 var forcePopulateInventory = false;
+                var isDryRun = mgr.DryRun;
+
+                // BlindlyUpload has no remote state to diff against, so deleting remote files
+                // is not meaningful. Say so once per destination so the user is not surprised
+                // that --sync-then-delete is ignored.
+                // A run that is a step of another operation chose the mode itself, so
+                // there it is only a note.
+                if (stateMode == SyncRemoteState.BlindlyUpload && isDelete && !snapshotMode)
+                {
+                    if (reportPhases)
+                        Logging.Log.WriteWarningMessage(LOGTAG, "BlindlyUploadIgnoresDelete", null, $"sync-remote-state={SyncRemoteState.BlindlyUpload} cannot determine which remote files to delete; --{Options.SYNC_THEN_DELETE_OPTION} will be ignored for {{0}} in this run.", mgr.DisplayName);
+                    else
+                        Logging.Log.WriteInformationMessage(LOGTAG, "BlindlyUploadIgnoresDelete", "Every file is uploaded to {0} without listing it first, so nothing is deleted from it in this run.", mgr.DisplayName);
+                }
 
                 // Resume: leftover PendingOperation rows mean a previous run was interrupted
                 // mid-operation. Under UseRemoteState each folder is listed fresh this run, so
@@ -204,7 +299,7 @@ internal class SyncHandler
                     || (stateMode == SyncRemoteState.UseRemoteState && verifyHash)
                     || forcePopulateInventory;
 
-                backendStates.Add(new BackendRunState(mgr.BackendManager, mgr.Database, stateMode, maintainInventory, snapshot));
+                backendStates.Add(new BackendRunState(mgr.BackendManager, mgr.Database, stateMode, maintainInventory, snapshot, isDryRun, new SyncTargetSummary { DisplayName = mgr.DisplayName }));
             }
 
             // Seed the folder queue with one entry per source root. The relative path of a
@@ -226,7 +321,7 @@ internal class SyncHandler
                     Logging.Log.WriteWarningMessage(LOGTAG, "SourceRootMissing", null, "Source folder could not be resolved, skipping: {0}", GetSourceWithoutCredentials(src));
                     continue;
                 }
-                folderQueue.Enqueue(new FolderWorkItem(entry, relRoot));
+                folderQueue.Enqueue(new FolderWorkItem(entry, relRoot, 0));
             }
 
             // With several sources, each source root is a sub-folder of the destination
@@ -236,26 +331,36 @@ internal class SyncHandler
             // deleting anything, so files and folders next to them are kept. In snapshot
             // mode the source folders are created with the snapshot folder, and under
             // BlindlyUpload every folder is created before it is written to.
-            if (m_sources.Length > 1)
+            if (sources.Length > 1)
             {
                 var sourceRoots = folderQueue.Select(x => (x.Entry, x.RelativePath)).ToList();
                 foreach (var bs in backendStates.Where(x => x.Snapshot == null && x.StateMode != SyncRemoteState.BlindlyUpload))
-                    await ProcessFolderForBackendAsync(
-                        "",
-                        new Dictionary<string, (ISourceProviderEntry Entry, long Size, DateTime ModifiedUtc)>(),
-                        sourceRoots,
-                        bs,
-                        m_results,
-                        nameComparer,
-                        isDryRun,
-                        false,
-                        verifyHash,
-                        keepModificationTime,
-                        planSummary,
-                        ct).ConfigureAwait(false);
+                {
+                    try
+                    {
+                        await ProcessFolderForBackendAsync(
+                            "",
+                            new Dictionary<string, (ISourceProviderEntry Entry, long Size, DateTime ModifiedUtc)>(),
+                            sourceRoots,
+                            bs,
+                            run,
+                            nameComparer,
+                            false,
+                            verifyHash,
+                            false,
+                            _ => true,
+                            ct).ConfigureAwait(false);
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException && !ct.IsCancellationRequested)
+                    {
+                        bs.Summary.Failed = true;
+                        bs.Summary.FailureMessage = ex.Message;
+                        Logging.Log.WriteErrorMessage(LOGTAG, "SyncTargetFailed", ex, "Sync to {0} failed and is skipped for the rest of the run: {1}", bs.Summary.DisplayName, ex.Message);
+                    }
+                }
             }
 
-            m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Sync_ProcessingFiles);
+            ReportPhase(OperationPhase.Sync_ProcessingFiles);
             while (folderQueue.Count > 0)
             {
                 if (ct.IsCancellationRequested)
@@ -264,8 +369,8 @@ internal class SyncHandler
                 var current = folderQueue.Dequeue();
                 await ProcessFolderAsync(
                     current,
-                    backendStates,
-                    m_results,
+                    run,
+                    maxDepth,
                     filter,
                     fileAttributeFilter,
                     symlinkPolicy,
@@ -275,11 +380,8 @@ internal class SyncHandler
                     ignoreNames,
                     blacklistPaths,
                     nameComparer,
-                    isDryRun,
                     isDelete,
                     verifyHash,
-                    keepModificationTime,
-                    planSummary,
                     folderQueue,
                     ct).ConfigureAwait(false);
             }
@@ -287,8 +389,8 @@ internal class SyncHandler
             // A snapshot becomes the latest one only when the run went through every
             // folder; an interrupted run leaves its folder behind for the next run to remove.
             if (snapshotMode && !ct.IsCancellationRequested)
-                foreach (var bs in backendStates)
-                    await FinishSnapshotAsync(bs, planSummary, isDryRun, m_options.SyncKeepSnapshots, ct).ConfigureAwait(false);
+                foreach (var bs in backendStates.Where(x => !x.Summary.Failed))
+                    await FinishSnapshotAsync(bs, m_options.SyncKeepSnapshots, ct).ConfigureAwait(false);
         }
         finally
         {
@@ -309,120 +411,29 @@ internal class SyncHandler
                     Logging.Log.WriteWarningMessage(LOGTAG, "FileCountFailed", ex, "Background file count failed; progress totals may be incomplete.");
                 }
             }
-
-            foreach (var bm in additionalManagers)
-            {
-                try
-                {
-                    bm.BackendManager.Dispose();
-                    bm.Database.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "BackendDisposeFailed", ex, "Failed to dispose additional backend manager: {0}", ex.Message);
-                }
-            }
         }
 
-        // The per-folder work is committed; the remaining steps (flushing backend
-        // messages, the plan summary log, and the results flush) are bookkeeping
-        // rather than uploads, so report the wait-for-upload phase here.
-        m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Sync_WaitForUpload);
+        // The per-folder work is committed; the remaining steps (the plan summary
+        // log and the results flush) are bookkeeping rather than uploads, so report
+        // the wait-for-upload phase here.
+        ReportPhase(OperationPhase.Sync_WaitForUpload);
 
-        Logging.Log.WriteInformationMessage(LOGTAG, "SyncPlan", "Plan: Upload {0}, Update {1}, Delete {2}, Link {3}", planSummary.Upload, planSummary.Update, planSummary.Delete, planSummary.Linked);
+        foreach (var bs in backendStates)
+        {
+            var ps = bs.Summary;
+            Logging.Log.WriteInformationMessage(LOGTAG, "SyncPlan", "Plan for {0}: Upload {1}, Update {2}, Delete {3}, Link {4}", ps.DisplayName, ps.Upload, ps.Update, ps.Delete, ps.Linked);
+            if (ps.UploadFailures > 0 || ps.DeleteFailures > 0)
+                Logging.Log.WriteWarningMessage(LOGTAG, "SyncIncomplete", null, "Sync to {0} is incomplete: {1} files could not be uploaded and {2} files could not be deleted.", ps.DisplayName, ps.UploadFailures, ps.DeleteFailures);
+        }
 
-        // Flush the running counters into the results so callers (CLI, IPC, web UI)
-        // see folders created, files uploaded/unchanged/deleted, and the total
-        // files/size encountered. Upload+Update is the combined "files uploaded"
-        // count; Delete maps to files deleted from the remote.
-        m_results.FoldersCreated = planSummary.FoldersCreated;
-        // The mirror deletes unknown remote files only, never remote folders; the only
-        // folders deleted are old snapshot folders removed by snapshot retention.
-        m_results.FoldersDeleted = planSummary.FoldersDeleted;
-        m_results.FilesUploaded = planSummary.Upload + planSummary.Update;
-        m_results.UnchangedFiles = planSummary.UnchangedFiles;
-        m_results.FilesDeleted = planSummary.Delete;
-        m_results.SourceFiles = planSummary.SourceFiles;
-        m_results.SizeOfSourceFiles = planSummary.SizeOfSourceFiles;
-        m_results.SizeOfUploadedFiles = planSummary.SizeOfUploadedFiles;
-        m_results.SizeOfDeletedFiles = planSummary.SizeOfDeletedFiles;
+        var summary = new SyncRunSummary(backendStates.Select(x => x.Summary).ToList(), run.SourceFiles, run.SizeOfSourceFiles);
 
-        m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Sync_Complete);
+        ReportPhase(OperationPhase.Sync_Complete);
         // Final tally: the count is no longer in flux, so mark it done.
-        m_results.OperationProgressUpdater.UpdatefileCount(m_results.SourceFiles, m_results.SizeOfSourceFiles, true);
+        m_progress.UpdatefileCount(summary.SourceFiles, summary.SizeOfSourceFiles, true);
 
-        Logging.Log.WriteInformationMessage(LOGTAG, "SyncFinished", "Sync completed successfully.");
-    }
-
-    /// <summary>
-    /// Parses the <see cref="Options.RemoteSyncJsonConfig" /> value and creates
-    /// <see cref="BackendManager" /> instances for any additional destinations.
-    /// In this version all options are ignored except the destination URL.
-    /// </summary>
-    private List<ManagerInstance> CreateAdditionalBackendManagers()
-    {
-        var managers = new List<ManagerInstance>();
-        if (string.IsNullOrWhiteSpace(m_options.RemoteSyncJsonConfig))
-            return managers;
-
-        string jsonContent;
-        var trimmed = m_options.RemoteSyncJsonConfig.TrimStart();
-        if (trimmed.StartsWith("{"))
-        {
-            jsonContent = m_options.RemoteSyncJsonConfig;
-        }
-        else
-        {
-            try
-            {
-                jsonContent = File.ReadAllText(m_options.RemoteSyncJsonConfig);
-            }
-            catch (Exception ex)
-            {
-                Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncConfigFileReadError", ex, "Failed to read remote sync configuration file '{0}': {1}", m_options.RemoteSyncJsonConfig, ex.Message);
-                return managers;
-            }
-        }
-
-        try
-        {
-            var deserializeOpts = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.KebabCaseLower
-            };
-            var toplevel = JsonSerializer.Deserialize<TopLevelRemoteSyncConfig>(jsonContent, deserializeOpts);
-            if (toplevel == null)
-                return managers;
-
-            foreach (var dest in toplevel.Destinations)
-            {
-                if (!string.IsNullOrWhiteSpace(dest.Url) && !string.Equals(dest.Url, m_backendUrl, StringComparison.OrdinalIgnoreCase))
-                {
-                    try
-                    {
-
-                        var bm = new BackendManager(dest.Url, m_options, m_results.BackendWriter, m_results.TaskControl, collectDatabaseMessages: false);
-                        var db = dest.SyncDatabasePath;
-                        if (string.IsNullOrWhiteSpace(db))
-                            db = CLIDatabaseLocator.GetDatabasePathForCLI(dest.Url, m_options, true, false, true);
-                        if (string.IsNullOrWhiteSpace(db))
-                            throw new UserInformationException($"Failed to locate database for {Library.Utility.Utility.GetUrlWithoutCredentials(dest.Url)}", "DatabaseLocateFailed");
-                        managers.Add(new ManagerInstance(bm, new LocalSyncDatabase(db)));
-                    }
-                    catch (Exception ex)
-                    {
-                        Logging.Log.WriteWarningMessage(LOGTAG, "AdditionalBackendCreateFailed", ex, "Failed to create backend manager for additional target {0}: {1}", Library.Utility.Utility.GetUrlWithoutCredentials(dest.Url), ex.Message);
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncConfigParseError", ex, "Failed to parse remote sync JSON configuration: {0}", ex.Message);
-        }
-
-        return managers;
+        Logging.Log.WriteInformationMessage(LOGTAG, "SyncFinished", "Sync completed.");
+        return summary;
     }
 
     /// <summary>
@@ -437,8 +448,8 @@ internal class SyncHandler
     /// </summary>
     private static async Task ProcessFolderAsync(
         FolderWorkItem current,
-        IReadOnlyList<BackendRunState> backendStates,
-        SyncResults results,
+        RunContext run,
+        int? maxDepth,
         IFilter filter,
         FileAttributes fileAttributeFilter,
         Options.SymlinkStrategy symlinkPolicy,
@@ -448,16 +459,14 @@ internal class SyncHandler
         string[]? ignoreNames,
         HashSet<string> blacklistPaths,
         StringComparer nameComparer,
-        bool isDryRun,
         bool isDelete,
         bool verifyHash,
-        bool keepModificationTime,
-        PlanSummary planSummary,
         Queue<FolderWorkItem> folderQueue,
         CancellationToken ct)
     {
         var folderRelPath = current.RelativePath;
         var folderEntry = current.Entry;
+        var atDepthLimit = maxDepth.HasValue && current.Depth >= maxDepth.Value;
         var caseInsensitive = ReferenceEquals(nameComparer, StringComparer.OrdinalIgnoreCase);
 
         // 1. Enumerate the local folder's direct children (non-recursive) ONCE and
@@ -515,8 +524,8 @@ internal class SyncHandler
                 // SizeOfSourceFiles reflect the full local inventory scanned this run.
                 // The source is enumerated once for the whole run, so the count is the
                 // true source total regardless of how many backends receive it.
-                planSummary.SourceFiles++;
-                planSummary.SizeOfSourceFiles += Math.Max(child.Size, 0);
+                run.SourceFiles++;
+                run.SizeOfSourceFiles += Math.Max(child.Size, 0);
 
                 // INSERT OR IGNORE semantics: the first entry seen for a path wins, so a
                 // later duplicate in the same folder is ignored (paths are unique within
@@ -541,6 +550,21 @@ internal class SyncHandler
         // extra enumeration per sub-folder but keeps memory bounded and ensures an
         // empty folder never triggers a CreateFolder call. The peek only runs when
         // the option is set; without it every sub-folder is ensured/queued as before.
+        //
+        // Maximum depth: the sub-folders of a folder at the depth limit are dropped
+        // before the peek and before they are enqueued, so they are neither read
+        // nor created on any destination.
+        if (atDepthLimit)
+        {
+            foreach (var (_, subRelPath) in localSubfolders)
+                Logging.Log.WriteVerboseMessage(LOGTAG, "SkippingFolderBeyondDepth", "Skipping folder beyond the maximum depth: {0}", subRelPath);
+            localSubfolders.Clear();
+        }
+
+        // With a depth of zero there is no background counter; this listing is the count.
+        if (run.CountFromListing)
+            run.Progress.UpdatefileCount(run.SourceFiles, run.SizeOfSourceFiles, true);
+
         var enqueuedSubfolders = new List<(ISourceProviderEntry Entry, string RelativePath)>();
         foreach (var (subEntry, subRelPath) in localSubfolders)
         {
@@ -562,7 +586,7 @@ internal class SyncHandler
             }
 
             enqueuedSubfolders.Add((subEntry, subRelPath));
-            folderQueue.Enqueue(new FolderWorkItem(subEntry, subRelPath));
+            folderQueue.Enqueue(new FolderWorkItem(subEntry, subRelPath, current.Depth + 1));
         }
 
         // 3. Replicate the captured local state to each backend. For every backend we
@@ -572,39 +596,55 @@ internal class SyncHandler
         // each backend applies the SAME observed source state; the source is not
         // re-enumerated per backend, which keeps the destinations mutually consistent
         // even if the source were to change mid-run.
-        foreach (var bs in backendStates)
-        {
-            if (bs.Snapshot != null)
-            {
-                await ProcessSnapshotFolderForBackendAsync(
-                    folderRelPath,
-                    localFiles,
-                    enqueuedSubfolders,
-                    bs,
-                    bs.Snapshot,
-                    results,
-                    nameComparer,
-                    isDryRun,
-                    verifyHash,
-                    keepModificationTime,
-                    planSummary,
-                    ct).ConfigureAwait(false);
-                continue;
-            }
+        //
+        // A remote file takes part in a delete only when the filter would have let a
+        // source file of that name through: what the filter hides on the source side
+        // is not this run's to remove on the destination side either.
+        var folderPath = Library.Common.IO.Util.AppendDirSeparator(folderEntry.Path);
+        bool PassesFilter(string name) => FilterExpression.Matches(filter, folderPath + name, out _);
 
-            await ProcessFolderForBackendAsync(
-                folderRelPath,
-                localFiles,
-                enqueuedSubfolders,
-                bs,
-                results,
-                nameComparer,
-                isDryRun,
-                isDelete,
-                verifyHash,
-                keepModificationTime,
-                planSummary,
-                ct).ConfigureAwait(false);
+        for (var i = 0; i < run.States.Count; i++)
+        {
+            var bs = run.States[i];
+            // A destination that failed is skipped for the rest of the run, so one
+            // unreachable destination does not stop the others.
+            if (bs.Summary.Failed)
+                continue;
+
+            run.EnterTarget(i);
+            try
+            {
+                if (bs.Snapshot != null)
+                    await ProcessSnapshotFolderForBackendAsync(
+                        folderRelPath,
+                        localFiles,
+                        enqueuedSubfolders,
+                        bs,
+                        bs.Snapshot,
+                        run,
+                        nameComparer,
+                        verifyHash,
+                        ct).ConfigureAwait(false);
+                else
+                    await ProcessFolderForBackendAsync(
+                        folderRelPath,
+                        localFiles,
+                        enqueuedSubfolders,
+                        bs,
+                        run,
+                        nameComparer,
+                        isDelete,
+                        verifyHash,
+                        atDepthLimit,
+                        PassesFilter,
+                        ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException && !ct.IsCancellationRequested)
+            {
+                bs.Summary.Failed = true;
+                bs.Summary.FailureMessage = ex.Message;
+                Logging.Log.WriteErrorMessage(LOGTAG, "SyncTargetFailed", ex, "Sync to {0} failed and is skipped for the rest of the run: {1}", bs.Summary.DisplayName, ex.Message);
+            }
         }
     }
 
@@ -621,16 +661,20 @@ internal class SyncHandler
         Dictionary<string, (ISourceProviderEntry Entry, long Size, DateTime ModifiedUtc)> localFiles,
         List<(ISourceProviderEntry Entry, string RelativePath)> enqueuedSubfolders,
         BackendRunState bs,
-        SyncResults results,
+        RunContext run,
         StringComparer nameComparer,
-        bool isDryRun,
         bool isDelete,
         bool verifyHash,
-        bool keepModificationTime,
-        PlanSummary planSummary,
+        bool atDepthLimit,
+        Func<string, bool> passesFilter,
         CancellationToken ct)
     {
-        var (backendManager, db, stateMode, maintainInventory, _) = bs;
+        var backendManager = bs.BackendManager;
+        var db = bs.Database;
+        var stateMode = bs.StateMode;
+        var maintainInventory = bs.MaintainInventory;
+        var isDryRun = bs.DryRun;
+        var planSummary = bs.Summary;
 
         // Check remote state for the current folder. Under UseRemoteState we list
         // the remote folder; under UseLocalState we read the inventory cache; under
@@ -644,7 +688,18 @@ internal class SyncHandler
 
         if (stateMode == SyncRemoteState.UseRemoteState)
         {
-            var remoteEntries = await backendManager.ListAsync(string.IsNullOrEmpty(folderRelPath) ? null : folderRelPath, ct).ConfigureAwait(false);
+            var remoteEntries = (await backendManager.ListAsync(string.IsNullOrEmpty(folderRelPath) ? null : folderRelPath, ct).ConfigureAwait(false)).ToList();
+
+            // A listing that reports a name twice cannot be mirrored: one of the two
+            // would silently replace the other in the comparison below.
+            Library.Utility.Utility.GetUniqueItems(remoteEntries.Where(x => !x.IsFolder).Select(x => x.Name ?? ""), nameComparer, out var duplicateNames);
+            if (duplicateNames.Count > 0)
+            {
+                var message = string.Format("Found remote files reported as duplicates in the destination {0}, either the backend module is broken or you need to manually remove the extra copies.\nThe following files were found multiple times: {1}", planSummary.DisplayName, string.Join(", ", duplicateNames));
+                Logging.Log.WriteErrorMessage(LOGTAG, "DuplicateRemoteFiles", null, message);
+                throw new RemoteListVerificationException(message, "DuplicateRemoteFiles");
+            }
+
             foreach (var re in remoteEntries)
             {
                 // Several backends (e.g. S3, Google Drive, Box, OneDrive, Dropbox, SMB)
@@ -681,7 +736,7 @@ internal class SyncHandler
                 // Local/Unspecified-kind and the local entry time is UTC; comparing
                 // DateTimes of mixed Kind compares raw ticks without conversion, which
                 // would treat a local noon as later than a UTC morning and skip updates.
-                remoteFileState[name] = new RemoteChild(name, Math.Max(re.Size, 0), re.LastModification.ToUniversalTime(), null);
+                remoteFileState[name] = new RemoteChild(name, Math.Max(re.Size, 0), AsUtc(re.LastModification), null);
             }
 
             // If we are maintaining the inventory (write-through under UseLocalState,
@@ -802,6 +857,8 @@ internal class SyncHandler
         // mutable upload state.
         foreach (var (relPath, (entry, size, modifiedUtc)) in localFiles)
         {
+            ct.ThrowIfCancellationRequested();
+
             var name = GetEntryName(relPath);
             var remoteFound = remoteFileState.TryGetValue(name, out var remoteEntry);
 
@@ -824,7 +881,7 @@ internal class SyncHandler
                     remoteHash = remoteEntry.ContentHash;
                     // A destination that keeps the local time may store it in whole seconds
                     // (WebDAV), which would otherwise look older than the local file on every run
-                    var localModifiedUtc = keepModificationTime
+                    var localModifiedUtc = run.KeepModificationTime
                         ? Library.Utility.Utility.NormalizeDateTime(modifiedUtc)
                         : modifiedUtc;
                     if (remoteEntry.Size != size || remoteEntry.LastModified < localModifiedUtc)
@@ -849,7 +906,7 @@ internal class SyncHandler
                 planSummary.UnchangedFiles++;
                 // Count an unchanged file as processed too, so the processed-files
                 // tally advances even when no upload is performed.
-                results.OperationProgressUpdater.UpdatefilesProcessed(planSummary.Upload + planSummary.Update + planSummary.UnchangedFiles, planSummary.SizeOfUploadedFiles);
+                run.ReportProcessed(bs);
                 continue;
             }
 
@@ -864,7 +921,7 @@ internal class SyncHandler
                         if (hash == remoteHash)
                         {
                             planSummary.UnchangedFiles++;
-                            results.OperationProgressUpdater.UpdatefilesProcessed(planSummary.Upload + planSummary.Update + planSummary.UnchangedFiles, planSummary.SizeOfUploadedFiles);
+                            run.ReportProcessed(bs);
                             continue; // Content unchanged; no upload needed.
                         }
                     }
@@ -890,11 +947,11 @@ internal class SyncHandler
 
             try
             {
-                await UploadOrUpdateAsync(db, backendManager, results, targetRelPath, entry, operation, label, verifyHash, keepModificationTime, maintainInventory, isDryRun, planSummary, ct).ConfigureAwait(false);
+                await UploadOrUpdateAsync(bs, run, targetRelPath, entry, operation, label, verifyHash, ct).ConfigureAwait(false);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                planSummary.Failed++;
+                planSummary.UploadFailures++;
                 Logging.Log.WriteWarningMessage(LOGTAG, "UploadFailed", ex, "Failed to {0} file: {1}", label, relPath);
             }
         }
@@ -933,6 +990,13 @@ internal class SyncHandler
                 if (localFiles.ContainsKey(relPath))
                     continue;
 
+                // The filter scopes the delete as it scopes the upload
+                if (!passesFilter(name))
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "SkippingDeleteByFilter", "Not deleting remote file excluded by the filter: {0}", relPath);
+                    continue;
+                }
+
                 if (isDryRun)
                 {
                     Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would delete: {0}", relPath);
@@ -947,7 +1011,18 @@ internal class SyncHandler
                 // next run if this one crashes before the commit) at the start of the
                 // next run if leftover.
                 await db.UpsertPendingOperationAsync(relPath, SyncOperation.Delete, null, null, ct).ConfigureAwait(false);
-                await backendManager.DeleteWithPathAsync(relPath, 0, true, ct).ConfigureAwait(false);
+                try
+                {
+                    await backendManager.DeleteWithPathAsync(relPath, 0, true, ct).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    // One file that cannot be deleted does not stop the run; the intent
+                    // row stays and is reconciled on the next run.
+                    planSummary.DeleteFailures++;
+                    Logging.Log.WriteWarningMessage(LOGTAG, "DeleteFailed", ex, "Failed to delete file: {0}", relPath);
+                    continue;
+                }
                 deletedPaths.Add(relPath);
                 planSummary.Delete++;
                 planSummary.SizeOfDeletedFiles += Math.Max(rc.Size, 0);
@@ -957,7 +1032,7 @@ internal class SyncHandler
             // so the UI progress reflects deletes too. Deletes do not contribute to
             // the uploaded size, so only the count side moves relative to uploads.
             if (planSummary.Delete > 0)
-                results.OperationProgressUpdater.UpdatefilesProcessed(planSummary.Upload + planSummary.Update + planSummary.UnchangedFiles + planSummary.Delete, planSummary.SizeOfUploadedFiles + planSummary.SizeOfDeletedFiles);
+                run.ReportProcessed(bs, includeDeletes: true);
 
             // Commit the inventory removals and intent clearances for all files deleted
             // in this folder in one transaction, so only one fsync covers the folder.
@@ -975,7 +1050,10 @@ internal class SyncHandler
                 }, ct).ConfigureAwait(false);
             }
 
-            await DeleteOrphanedFoldersAsync(folderRelPath, enqueuedSubfolders, remoteFolderNames, bs, nameComparer, isDryRun, planSummary, ct).ConfigureAwait(false);
+            // At the depth limit the sub-folders were never read, so nothing is known
+            // about them and none of them is an orphan.
+            if (!atDepthLimit)
+                await DeleteOrphanedFoldersAsync(folderRelPath, enqueuedSubfolders, remoteFolderNames, bs, nameComparer, ct).ConfigureAwait(false);
         }
     }
 
@@ -992,8 +1070,6 @@ internal class SyncHandler
     /// <param name="remoteFolderNames">The sub-folder names a listing showed, under <see cref="SyncRemoteState.UseRemoteState"/></param>
     /// <param name="bs">The state of the destination</param>
     /// <param name="nameComparer">The comparer for names on the destination</param>
-    /// <param name="isDryRun">Whether this is a dry run</param>
-    /// <param name="planSummary">The plan summary to count deleted folders in</param>
     /// <param name="ct">The cancellation token</param>
     private static async Task DeleteOrphanedFoldersAsync(
         string folderRelPath,
@@ -1001,11 +1077,13 @@ internal class SyncHandler
         HashSet<string> remoteFolderNames,
         BackendRunState bs,
         StringComparer nameComparer,
-        bool isDryRun,
-        PlanSummary planSummary,
         CancellationToken ct)
     {
-        var (backendManager, db, stateMode, _, _) = bs;
+        var backendManager = bs.BackendManager;
+        var db = bs.Database;
+        var stateMode = bs.StateMode;
+        var isDryRun = bs.DryRun;
+        var planSummary = bs.Summary;
 
         // Under UseRemoteState the listing shows the sub-folders; under UseLocalState the
         // cache knows a sub-folder when it holds a file below it.
@@ -1060,7 +1138,7 @@ internal class SyncHandler
     /// <param name="isDryRun">Whether this is a dry run</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>The snapshot state of the run</returns>
-    private async Task<SnapshotRunState> PrepareSnapshotAsync(ManagerInstance mgr, SyncRemoteState stateMode, DateTime runStartUtc, bool isDryRun, CancellationToken ct)
+    private async Task<SnapshotRunState> PrepareSnapshotAsync(SyncTarget mgr, SyncRemoteState stateMode, DateTime runStartUtc, bool isDryRun, CancellationToken ct)
     {
         var root = await SyncSnapshotLayout.ReadRootStateAsync(mgr.BackendManager, ct).ConfigureAwait(false);
 
@@ -1142,15 +1220,17 @@ internal class SyncHandler
         List<(ISourceProviderEntry Entry, string RelativePath)> enqueuedSubfolders,
         BackendRunState bs,
         SnapshotRunState snapshot,
-        SyncResults results,
+        RunContext run,
         StringComparer nameComparer,
-        bool isDryRun,
         bool verifyHash,
-        bool keepModificationTime,
-        PlanSummary planSummary,
         CancellationToken ct)
     {
-        var (backendManager, db, stateMode, maintainInventory, _) = bs;
+        var backendManager = bs.BackendManager;
+        var db = bs.Database;
+        var stateMode = bs.StateMode;
+        var maintainInventory = bs.MaintainInventory;
+        var isDryRun = bs.DryRun;
+        var planSummary = bs.Summary;
 
         // 1. What the previous snapshot holds in this folder, keyed by name. Under
         // UseRemoteState the previous folder is listed (when it is known to exist); under
@@ -1175,7 +1255,7 @@ internal class SyncHandler
                     if (re.IsFolder)
                         snapshot.PreviousFolders.Add(string.IsNullOrEmpty(folderRelPath) ? name : folderRelPath + "/" + name);
                     else
-                        previousFiles[name] = new RemoteChild(name, Math.Max(re.Size, 0), re.LastModification.ToUniversalTime(), null);
+                        previousFiles[name] = new RemoteChild(name, Math.Max(re.Size, 0), AsUtc(re.LastModification), null);
                 }
 
                 // The listing has no hashes; the inventory remembers the hashes of files
@@ -1220,7 +1300,7 @@ internal class SyncHandler
             previousFiles.TryGetValue(name, out var previous);
 
             // A destination that keeps the local time may store it in whole seconds (WebDAV)
-            var localModifiedUtc = keepModificationTime
+            var localModifiedUtc = run.KeepModificationTime
                 ? Library.Utility.Utility.NormalizeDateTime(modifiedUtc)
                 : modifiedUtc;
             var unchanged = previous != null && previous.Size == size && previous.LastModified >= localModifiedUtc;
@@ -1258,7 +1338,7 @@ internal class SyncHandler
                         await db.UpsertInventoryAsync(targetPath, previous.Size, previous.LastModified, previous.ContentHash, ct).ConfigureAwait(false);
                     planSummary.Linked++;
                     planSummary.UnchangedFiles++;
-                    results.OperationProgressUpdater.UpdatefilesProcessed(planSummary.Upload + planSummary.Update + planSummary.UnchangedFiles, planSummary.SizeOfUploadedFiles);
+                    run.ReportProcessed(bs);
                     continue;
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException && Library.Utility.ExceptionExtensions.FlattenException(ex).Any(x => x is HardLinkNotSupportedException))
@@ -1278,11 +1358,11 @@ internal class SyncHandler
             var label = operation == SyncOperation.Update ? "Updating" : "Uploading";
             try
             {
-                await UploadOrUpdateAsync(db, backendManager, results, targetPath, entry, operation, label, verifyHash, keepModificationTime, maintainInventory, isDryRun, planSummary, ct).ConfigureAwait(false);
+                await UploadOrUpdateAsync(bs, run, targetPath, entry, operation, label, verifyHash, ct).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                planSummary.Failed++;
+                planSummary.UploadFailures++;
                 Logging.Log.WriteWarningMessage(LOGTAG, "UploadFailed", ex, "Failed to {0} file: {1}", label, targetPath);
             }
         }
@@ -1296,12 +1376,12 @@ internal class SyncHandler
     /// pushes a good one out.
     /// </summary>
     /// <param name="bs">The destination state</param>
-    /// <param name="planSummary">The run counters</param>
-    /// <param name="isDryRun">Whether this is a dry run</param>
     /// <param name="keepSnapshots">The number of snapshots to keep; zero keeps all</param>
     /// <param name="ct">The cancellation token</param>
-    private static async Task FinishSnapshotAsync(BackendRunState bs, PlanSummary planSummary, bool isDryRun, int keepSnapshots, CancellationToken ct)
+    private static async Task FinishSnapshotAsync(BackendRunState bs, int keepSnapshots, CancellationToken ct)
     {
+        var isDryRun = bs.DryRun;
+        var planSummary = bs.Summary;
         var snapshot = bs.Snapshot;
         if (snapshot == null)
             return;
@@ -1331,9 +1411,9 @@ internal class SyncHandler
         if (aborted.Count == 0 && expired.Count == 0)
             return;
 
-        if (planSummary.Failed > 0)
+        if (planSummary.UploadFailures > 0)
         {
-            Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotRetentionSkipped", null, "{0} files could not be written to snapshot {1}, so no older snapshot is removed in this run.", planSummary.Failed, snapshot.Name);
+            Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotRetentionSkipped", null, "{0} files could not be written to snapshot {1}, so no older snapshot is removed in this run.", planSummary.UploadFailures, snapshot.Name);
             return;
         }
 
@@ -1380,34 +1460,30 @@ internal class SyncHandler
     /// already; this method does not call <see cref="IBackendManager.EnsureFolderAsync"/>.
     /// Shared by the upload and update paths so the two cannot drift.
     /// </summary>
-    /// <param name="db">The sync database.</param>
-    /// <param name="backendManager">The backend manager used to perform the upload.</param>
-    /// <param name="results">The sync results whose progress updater receives per-file progress.</param>
+    /// <param name="bs">The destination state.</param>
+    /// <param name="run">The run context whose progress updater receives per-file progress.</param>
     /// <param name="relPath">The relative path on the remote destination.</param>
     /// <param name="lf">The local source entry to upload.</param>
     /// <param name="operation">The intent operation to record (<see cref="SyncOperation.Upload"/> or <see cref="SyncOperation.Update"/>).</param>
     /// <param name="logLabel">The label used in the log message (e.g. "Uploading" or "Updating").</param>
     /// <param name="verifyHash">Whether to compute and store a content hash.</param>
-    /// <param name="keepModificationTime">Whether to record the modification time of the local file on the remote file, where the backend supports it.</param>
-    /// <param name="maintainInventory">Whether to write the observed state back into the inventory cache (UseLocalState). Under UseRemoteState/BlindlyUpload the inventory is not maintained.</param>
-    /// <param name="isDryRun">Whether this is a dry run; when true the upload is logged but not performed.</param>
-    /// <param name="planSummary">The running plan counters to bump for the summary log.</param>
     /// <param name="cancellationToken">Cancellation token to monitor for cancellation requests.</param>
     private static async Task UploadOrUpdateAsync(
-        LocalSyncDatabase db,
-        IBackendManager backendManager,
-        SyncResults results,
+        BackendRunState bs,
+        RunContext run,
         string relPath,
         ISourceProviderEntry lf,
         SyncOperation operation,
         string logLabel,
         bool verifyHash,
-        bool keepModificationTime,
-        bool maintainInventory,
-        bool isDryRun,
-        PlanSummary planSummary,
         CancellationToken cancellationToken)
     {
+        var db = bs.Database;
+        var backendManager = bs.BackendManager;
+        var maintainInventory = bs.MaintainInventory;
+        var isDryRun = bs.DryRun;
+        var planSummary = bs.Summary;
+
         if (isDryRun)
         {
             Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would {0}: {1}", logLabel.ToLowerInvariant(), relPath);
@@ -1425,7 +1501,7 @@ internal class SyncHandler
         // the current filename and the total size we expect to write for it. The
         // matching UpdatefilesProcessed below advances the processed count by one
         // file and its size once the upload (or its failure) is accounted for.
-        results.OperationProgressUpdater.StartFile(relPath, Math.Max(lf.Size, 0));
+        run.Progress.StartFile(relPath, Math.Max(lf.Size, 0));
 
         // Record intent BEFORE the upload so a crash during the put is recoverable.
         // This row is cleared at the start of the next run (the journal is reconciled
@@ -1447,7 +1523,7 @@ internal class SyncHandler
 
         // The caller has already ensured the destination folder exists, so we put the
         // file directly. No EnsureFolderAsync call here.
-        await backendManager.PutFileUnencryptedWithPathAsync(relPath, temp, keepModificationTime ? lf.LastModificationUtc : null, cancellationToken);
+        await backendManager.PutFileUnencryptedWithPathAsync(relPath, temp, run.KeepModificationTime ? lf.LastModificationUtc : null, cancellationToken);
 
         // Commit the inventory update and intent clearance atomically so a crash
         // between them cannot leave the inventory and intent journal inconsistent.
@@ -1469,8 +1545,26 @@ internal class SyncHandler
         // The file has been fully processed (uploaded or its attempt is accounted for),
         // so advance the processed-files counter by one file and its size. This pairs
         // with the StartFile call above and lets the UI show N of M files processed.
-        results.OperationProgressUpdater.UpdatefilesProcessed(planSummary.Upload + planSummary.Update + planSummary.UnchangedFiles, planSummary.SizeOfUploadedFiles);
+        run.ReportProcessed(bs);
     }
+
+    /// <summary>
+    /// Brings a timestamp from a backend listing to UTC. Backends do not agree on the
+    /// kind of the DateTime they report: most report UTC, the file backend reports
+    /// local time, and some parse a date without a zone and report it as unspecified.
+    /// A local time is converted; an unspecified kind is taken as UTC, which is what
+    /// the backends that produce it mean by it. Comparing without this is off by the
+    /// zone offset, and makes unchanged files look newer and be copied again.
+    /// </summary>
+    /// <param name="value">The timestamp to convert</param>
+    /// <returns>The timestamp in UTC</returns>
+    internal static DateTime AsUtc(DateTime value)
+        => value.Kind switch
+        {
+            DateTimeKind.Local => value.ToUniversalTime(),
+            DateTimeKind.Unspecified => DateTime.SpecifyKind(value, DateTimeKind.Utc),
+            _ => value
+        };
 
     /// <summary>
     /// Finds the folder entry of a source root. A local source is looked up by its path.
@@ -1482,7 +1576,7 @@ internal class SyncHandler
     /// <param name="source">The source as given</param>
     /// <param name="ct">The cancellation token</param>
     /// <returns>The entry of the source root, or null if it was not found</returns>
-    private static async Task<ISourceProviderEntry?> GetSourceRootAsync(ISourceProvider sourceProvider, string source, CancellationToken ct)
+    internal static async Task<ISourceProviderEntry?> GetSourceRootAsync(ISourceProvider sourceProvider, string source, CancellationToken ct)
     {
         var remoteSource = SourceProviderFactory.ParseRemoteSource(source);
         if (remoteSource == null)
@@ -1615,7 +1709,7 @@ internal class SyncHandler
     /// A queued folder awaiting per-folder processing: the local source entry to
     /// enumerate and the relative path on the remote destination that it maps to.
     /// </summary>
-    private sealed record FolderWorkItem(ISourceProviderEntry Entry, string RelativePath);
+    private sealed record FolderWorkItem(ISourceProviderEntry Entry, string RelativePath, int Depth);
 
     /// <summary>
     /// A remote child entry (file) observed in a folder, as returned by a listing or
@@ -1624,50 +1718,75 @@ internal class SyncHandler
     private sealed record RemoteChild(string Name, long Size, DateTime LastModified, string? ContentHash);
 
     /// <summary>
-    /// Running counters for the plan summary log, bumped per operation as it is
-    /// planned/performed so the final log line reflects the whole run. The same
-    /// counters are flushed into <see cref="SyncResults"/> at the end of the run.
+    /// The state shared by the whole run: the per-destination states, the counters
+    /// of the single source enumeration, and the progress reporting.
     /// </summary>
-    private sealed class PlanSummary
+    private sealed class RunContext(IOperationProgressUpdater progress, Action<int, int>? onTargetStarted, bool perTargetProgress, bool countFromListing, bool keepModificationTime)
     {
-        public long Upload;
-        public long Update;
-        public long Delete;
-        public long FoldersCreated;
-        public long FoldersDeleted;
-        public long UnchangedFiles;
-        public long Linked;
-        public long Failed;
+        /// <summary>The per-destination states, in the order the destinations were given</summary>
+        public List<BackendRunState> States { get; } = [];
+        /// <summary>The progress updater of the run</summary>
+        public IOperationProgressUpdater Progress => progress;
+        /// <summary>Whether the file count is reported from the folder listing instead of a background count</summary>
+        public bool CountFromListing => countFromListing;
+        /// <summary>Whether the modification time of the source file is recorded on the remote file, where the backend supports it</summary>
+        public bool KeepModificationTime => keepModificationTime;
+        /// <summary>The number of source files seen</summary>
         public long SourceFiles;
+        /// <summary>The size of the source files seen</summary>
         public long SizeOfSourceFiles;
-        public long SizeOfUploadedFiles;
-        public long SizeOfDeletedFiles;
-    }
 
-    /// <summary>
-    /// Intermediate record holding a manager and the associated database
-    /// </summary>
-    /// <param name="BackendManager">The backend manager</param>
-    /// <param name="Database">The database for the manager</param>
-    private sealed record ManagerInstance(
-        IBackendManager BackendManager,
-        LocalSyncDatabase Database
-    );
+        private int m_currentTarget = -1;
+
+        /// <summary>
+        /// Notes that the work moves to the destination with the given index
+        /// </summary>
+        /// <param name="index">The index of the destination</param>
+        public void EnterTarget(int index)
+        {
+            if (m_currentTarget == index)
+                return;
+            m_currentTarget = index;
+            onTargetStarted?.Invoke(index, States.Count);
+        }
+
+        /// <summary>
+        /// Reports the number of files handled so far. A stand-alone sync counts across
+        /// all destinations; a run embedded in another operation reports the destination
+        /// being worked on, which is what that operation shows.
+        /// </summary>
+        /// <param name="current">The destination being worked on</param>
+        /// <param name="includeDeletes">Whether deleted files count as handled</param>
+        public void ReportProcessed(BackendRunState current, bool includeDeletes = false)
+        {
+            long count = 0, size = 0;
+            foreach (var ps in perTargetProgress ? [current.Summary] : States.Select(x => x.Summary))
+            {
+                count += ps.Upload + ps.Update + ps.UnchangedFiles + (includeDeletes ? ps.Delete : 0);
+                size += ps.SizeOfUploadedFiles + (includeDeletes ? ps.SizeOfDeletedFiles : 0);
+            }
+            progress.UpdatefilesProcessed(count, size);
+        }
+    }
 
     /// <summary>
     /// Per-backend run state for the shared single-enumeration sync: the backend
     /// manager + database pair, the resolved <see cref="SyncRemoteState"/> for this
-    /// run (after the UseLocalState-fallback is applied), and whether the inventory
-    /// cache is maintained for this backend. Computed once per backend before the
-    /// shared folder loop so the per-folder fan-out applies the same observed local
-    /// state to every backend without re-resolving (or re-enumerating) per backend.
+    /// run (after the UseLocalState-fallback is applied), whether the inventory
+    /// cache is maintained for this backend, whether the destination is only
+    /// simulated, and the counters of the destination. Computed once per backend
+    /// before the shared folder loop so the per-folder fan-out applies the same
+    /// observed local state to every backend without re-resolving (or
+    /// re-enumerating) per backend.
     /// </summary>
     private sealed record BackendRunState(
         IBackendManager BackendManager,
         LocalSyncDatabase Database,
         SyncRemoteState StateMode,
         bool MaintainInventory,
-        SnapshotRunState? Snapshot
+        SnapshotRunState? Snapshot,
+        bool DryRun,
+        SyncTargetSummary Summary
     );
 
     /// <summary>

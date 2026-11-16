@@ -681,10 +681,74 @@ namespace Duplicati.Library.Main
             SourceProviderFactory.EnableMetadataStorageIfRequiredBySources(sourcePaths, m_options.RawOptions);
             SourceProviderFactory.EnableCaseSensitiveFiltersIfRequiredBySources(sourcePaths, m_options.RawOptions);
 
-            return await RunActionAsync(new SyncResults(), sourcePaths, filter, false, config =>
-                new Operation.Sync.SyncHandler(config.Paths, config.Options, config.Result, config.BackendUrl)
-                    .RunAsync(config.BackendManager, config.Filter)
-            );
+            return await RunActionAsync(new SyncResults(), sourcePaths, filter, false, static async config =>
+            {
+                var options = config.Options;
+                var result = config.Result;
+                var ct = result.TaskControl.ProgressToken;
+                var primaryDbPath = options.Dbpath
+                    ?? throw new InvalidOperationException("Unable to locate sync database");
+
+                // The primary backend manager belongs to the action; the primary sync database
+                // and the additional destinations are created here and released here
+                var targets = new List<Operation.Sync.SyncTarget>();
+                try
+                {
+                    targets.Add(new Operation.Sync.SyncTarget(
+                        config.BackendManager,
+                        new Database.Sync.LocalSyncDatabase(primaryDbPath),
+                        Library.Utility.Utility.GetUrlWithoutCredentials(config.BackendUrl),
+                        options.SyncRemoteState,
+                        options.Dryrun));
+
+                    // The additional destinations of --remote-sync-json-config receive the same files
+                    var remoteSync = Operation.RemoteSyncConfig.Parse(options, config.BackendUrl, problemsAreErrors: false);
+                    foreach (var dest in (remoteSync?.Destinations ?? []).Where(x => x.IsUsable))
+                    {
+                        Backend.BackendManager manager = null;
+                        try
+                        {
+                            var targetOptions = new Options(Operation.RemoteSyncConfig.BuildTargetOptions(options.RawOptions, dest.Target));
+                            manager = new Backend.BackendManager(dest.Target.Url, targetOptions, result.BackendWriter, result.TaskControl, collectDatabaseMessages: false);
+                            targets.Add(new Operation.Sync.SyncTarget(
+                                manager,
+                                new Database.Sync.LocalSyncDatabase(Operation.RemoteSyncConfig.LocateSyncDatabase(dest.Target, targetOptions, primaryDbPath)),
+                                dest.DisplayDestination,
+                                dest.Target.Force ? SyncRemoteState.BlindlyUpload : options.SyncRemoteState,
+                                options.Dryrun || dest.Target.DryRun));
+                        }
+                        catch (Exception ex)
+                        {
+                            manager?.Dispose();
+                            Logging.Log.WriteWarningMessage(LOGTAG, "AdditionalBackendCreateFailed", ex, "Failed to create backend manager for additional target {0}: {1}", dest.DisplayDestination, ex.Message);
+                        }
+                    }
+
+                    using var sourceProvider = await SourceProviderFactory.GetSourceProviderAsync(config.Paths, options, ct).ConfigureAwait(false);
+                    var summary = await new Operation.Sync.SyncHandler(options, result.OperationProgressUpdater)
+                        .RunAsync(sourceProvider, config.Paths, targets, config.Filter, options.SyncMaxDepth, reportPhases: true, onTargetStarted: null, ct)
+                        .ConfigureAwait(false);
+
+                    // Flush the counters into the results so callers (CLI, IPC, web UI) see them
+                    Operation.Sync.SyncHandler.ApplyToResults(result, summary);
+                }
+                finally
+                {
+                    for (var i = 0; i < targets.Count; i++)
+                    {
+                        try
+                        {
+                            if (i > 0)
+                                targets[i].BackendManager.Dispose();
+                            targets[i].Database.Dispose();
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteWarningMessage(LOGTAG, "BackendDisposeFailed", ex, "Failed to dispose additional backend manager: {0}", ex.Message);
+                        }
+                    }
+                }
+            });
         }
 
         /// <inheritdoc />

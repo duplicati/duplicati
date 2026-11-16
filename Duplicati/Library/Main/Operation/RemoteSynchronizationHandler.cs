@@ -22,115 +22,22 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.IO;
 using System.Linq;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database;
 using Duplicati.Library.Main.Operation.RemoteSynchronization;
 using Duplicati.Library.SQLiteHelper;
-using Duplicati.Library.Utility;
 
 #nullable enable
 
 namespace Duplicati.Library.Main.Operation;
 
 /// <summary>
-/// Trigger modes for remote synchronization.
-/// </summary>
-public enum RemoteSyncTriggerMode
-{
-    /// <summary>
-    /// Trigger after every successful backup.
-    /// </summary>
-    Inline,
-    /// <summary>
-    /// Trigger based on a time interval.
-    /// </summary>
-    Interval,
-    /// <summary>
-    /// Trigger after a certain number of backups.
-    /// </summary>
-    Counting
-}
-
-/// <summary>
-/// Configuration for a single remote synchronization destination.
-/// </summary>
-public record RemoteSyncDestinationConfig(
-    RemoteSynchronizationConfig Config,
-    RemoteSyncTriggerMode Mode = RemoteSyncTriggerMode.Inline,
-    TimeSpan? Interval = null,
-    int? Count = null
-)
-{
-    /// <summary>
-    /// The destination url with any credentials removed, safe to include in log messages.
-    /// </summary>
-    public string DisplayDestination => Duplicati.Library.Utility.Utility.GetUrlWithoutCredentials(Config.Dst);
-
-    /// <summary>
-    /// Describes the destination without its options, which carry passphrases and backend credentials.
-    /// The generated record ToString would print every member, so it is replaced here to keep the
-    /// record safe to pass into a log message.
-    /// </summary>
-    public override string ToString()
-        => $"Dst: {DisplayDestination}, Mode: {Mode}, Interval: {Interval}, Count: {Count}";
-}
-
-/// <summary>
-/// Raw configuration for a remote synchronization destination, as deserialized from JSON.
-/// </summary>
-public record RemoteSyncDestinationConfigRaw(
-    bool AutoCreateFolders = true,
-    int BackendRetries = 3,
-    int BackendRetryDelay = 1000,
-    bool BackendRetryWithExponentialBackoff = true,
-    bool DryRun = false,
-    bool Force = false,
-    string LogFile = "",
-    string LogLevel = "",
-    bool ParseArgumentsOnly = false,
-    bool Progress = false,
-    bool Retention = false,
-    int Retry = 3,
-    bool VerifyContents = false,
-    bool VerifyGetAfterPut = false,
-    string? SyncDatabasePath = null
-)
-{
-    public string? Url { get; init; }
-
-    public List<string> DstOptions { get; init; } = [];
-    public List<string> GlobalOptions { get; init; } = [];
-
-    public string? Mode { get; init; }
-    public string? Interval { get; init; }
-    public int? Count { get; init; }
-
-    /// <summary>
-    /// Describes the destination without the url credentials or the options, which carry passphrases
-    /// and backend credentials. The generated record ToString would print every member.
-    /// </summary>
-    public override string ToString()
-        => $"Url: {Duplicati.Library.Utility.Utility.GetUrlWithoutCredentials(Url ?? "")}, Mode: {Mode}, Interval: {Interval}, Count: {Count}";
-};
-
-/// <summary>
-/// Top-level configuration for remote synchronization, containing the destinations array and global settings.
-/// </summary>
-public record TopLevelRemoteSyncConfig(
-    bool SyncOnWarnings = true
-)
-{
-    public required List<RemoteSyncDestinationConfigRaw> Destinations { get; init; }
-}
-
-/// <summary>
-/// Module for synchronizing backup data to remote destinations after a successful backup operation.
+/// Synchronizes the backup destination to further destinations after a successful backup.
+/// The handler decides which destinations are due and records the ones that were
+/// synchronized; the copying itself is done by <see cref="RemoteReplication"/>.
 /// </summary>
 internal class RemoteSynchronizationHandler : IDisposable
 {
@@ -142,6 +49,7 @@ internal class RemoteSynchronizationHandler : IDisposable
     private string m_source;
     private bool m_syncOnWarnings = true;
     private BackupResults m_results;
+    private readonly Options m_options;
 
     /// <summary>
     /// Configures the module with the provided command line options.
@@ -153,153 +61,23 @@ internal class RemoteSynchronizationHandler : IDisposable
     {
         m_results = results;
         m_source = backendUrl;
-
-        // Default is no valid JSON config provided, which disables the module
-        m_enabled = false;
-        m_destinations = [];
+        m_options = options;
         m_dbpath = options.Dbpath;
 
-        // Check if JSON config is provided
-        if (!string.IsNullOrWhiteSpace(options.RemoteSyncJsonConfig))
+        // Without a valid configuration the module is disabled
+        var config = RemoteSyncConfig.Parse(options, backendUrl, problemsAreErrors: true);
+        if (config == null)
+            return;
+
+        m_syncOnWarnings = config.SyncOnWarnings;
+        if (config.Destinations.Count == 0)
         {
-            string jsonContent;
-            if (options.RemoteSyncJsonConfig.TrimStart().StartsWith("{"))
-            {
-                // It's a JSON string
-                jsonContent = options.RemoteSyncJsonConfig;
-            }
-            else
-            {
-                // It's a file path
-                try
-                {
-                    jsonContent = File.ReadAllText(options.RemoteSyncJsonConfig);
-                }
-                catch (Exception ex)
-                {
-                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncJsonFileReadError", ex, "Failed to read JSON configuration file '{0}': {1}", options.RemoteSyncJsonConfig, ex.Message);
-                    return;
-                }
-            }
-
-            try
-            {
-                var deserializeOpts = new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.KebabCaseLower
-                };
-                var toplevel = JsonSerializer.Deserialize<TopLevelRemoteSyncConfig>(jsonContent, deserializeOpts);
-
-                if (toplevel is null)
-                {
-                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncJsonParseError", null, "Failed to parse JSON configuration: top-level object is null.");
-                    return;
-                }
-
-                m_syncOnWarnings = toplevel.SyncOnWarnings;
-
-                if (toplevel.Destinations.Count > 0)
-                {
-                    foreach (var destination in toplevel.Destinations)
-                    {
-                        var loglevel = options.LogFileLoglevel;
-                        var mode = !string.IsNullOrWhiteSpace(destination.Mode) && Enum.TryParse<RemoteSyncTriggerMode>(destination.Mode, true, out var parsedMode) ? parsedMode : RemoteSyncTriggerMode.Inline;
-
-                        TimeSpan? interval_parsed;
-                        try
-                        {
-                            interval_parsed = string.IsNullOrWhiteSpace(destination.Interval) ? null : Duplicati.Library.Utility.Timeparser.ParseTimeSpan(destination.Interval);
-                        }
-                        catch (Exception ex)
-                        {
-                            var defaulting_string = string.Empty;
-                            if (mode == RemoteSyncTriggerMode.Interval)
-                            {
-                                mode = RemoteSyncTriggerMode.Inline;
-                                defaulting_string = "; defaulting to inline mode";
-                            }
-                            interval_parsed = null;
-                            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncInvalidInterval", ex, "Invalid interval format '{0}' for remote synchronization destination{1}", destination.Interval, defaulting_string);
-                        }
-
-                        if (string.IsNullOrWhiteSpace(destination.Mode))
-                        {
-                            if (interval_parsed.HasValue && destination.Count.HasValue)
-                            {
-                                Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncBothIntervalAndCount", null, "Both interval and count specified for remote synchronization destination without explicit mode; defaulting to interval mode.");
-                                mode = RemoteSyncTriggerMode.Interval;
-                            }
-                            else if (interval_parsed.HasValue)
-                            {
-                                mode = RemoteSyncTriggerMode.Interval;
-                            }
-                            else if (destination.Count.HasValue)
-                            {
-                                mode = RemoteSyncTriggerMode.Counting;
-                            }
-                        }
-
-                        // An explicit mode needs its parameter, or the destination syncs once and is
-                        // then never triggered again: the trigger check compares against a null
-                        // interval or count, which is always false. Treat it the way an interval
-                        // that cannot be parsed is treated: say so and run the destination inline.
-                        if (mode == RemoteSyncTriggerMode.Interval && !interval_parsed.HasValue)
-                        {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncMissingInterval", null, "Remote synchronization destination uses interval mode but has no interval; defaulting to inline mode");
-                            mode = RemoteSyncTriggerMode.Inline;
-                        }
-                        else if (mode == RemoteSyncTriggerMode.Counting && !destination.Count.HasValue)
-                        {
-                            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncMissingCount", null, "Remote synchronization destination uses counting mode but has no count; defaulting to inline mode");
-                            mode = RemoteSyncTriggerMode.Inline;
-                        }
-
-                        m_destinations.Add(new(
-                            Config: new(
-                                Src: "",
-                                Dst: destination.Url ?? "",
-
-                                AutoCreateFolders: destination.AutoCreateFolders,
-                                BackendRetries: destination.BackendRetries,
-                                BackendRetryDelay: destination.BackendRetryDelay,
-                                BackendRetryWithExponentialBackoff: destination.BackendRetryWithExponentialBackoff,
-                                Confirm: true,
-                                DryRun: destination.DryRun,
-                                DstOptions: destination.DstOptions,
-                                Force: destination.Force,
-                                GlobalOptions: destination.GlobalOptions,
-                                LogFile: destination.LogFile,
-                                LogLevel: loglevel.ToString(),
-                                ParseArgumentsOnly: destination.ParseArgumentsOnly,
-                                Progress: destination.Progress,
-                                Retention: destination.Retention,
-                                Retry: destination.Retry,
-                                SrcOptions: [.. options.RawOptions.Select(x => $"{x.Key}={x.Value}")],
-                                VerifyContents: destination.VerifyContents,
-                                VerifyGetAfterPut: destination.VerifyGetAfterPut
-                            ),
-                            Mode: mode,
-                            Interval: interval_parsed,
-                            Count: destination.Count
-                        ));
-                    }
-
-                    m_enabled = true;
-                }
-                else
-                {
-                    Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncJsonEmptyDestinations", null, "JSON configuration is missing entries in the 'destinations' array.");
-                    m_enabled = false;
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncJsonParseError", ex, "Failed to parse JSON configuration: {0}", ex.Message);
-            }
+            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncJsonEmptyDestinations", null, "JSON configuration is missing entries in the 'destinations' array.");
+            return;
         }
 
+        m_destinations = [.. config.Destinations];
+        m_enabled = true;
     }
 
     /// <inheritdoc />
@@ -341,62 +119,169 @@ internal class RemoteSynchronizationHandler : IDisposable
             return;
         }
 
-        // Store remote sync results to be added to backup results
-        var syncResultsList = new List<IRemoteSynchronizationResults>();
+        var taskControl = m_results.TaskControl;
+        if (taskControl.StopToken.IsCancellationRequested || taskControl.ProgressToken.IsCancellationRequested)
+        {
+            Logging.Log.WriteInformationMessage(LOGTAG, "RemoteSyncSkipped", "Remote synchronization skipped because the backup was stopped.");
+            return;
+        }
 
+        // Pick the destinations whose trigger fires. Only the credential-free url is ever
+        // written to the log; the target itself carries the raw url and its options.
+        var triggered = new List<(int Index, RemoteSyncDestinationConfig Destination)>();
         for (int i = 0; i < m_destinations.Count; i++)
         {
             var dest = m_destinations[i];
-            if (string.IsNullOrWhiteSpace(dest.Config.Dst))
+            if (!dest.IsUsable)
                 continue;
-
-            // Only the credential-free url is ever written to the log; the config itself carries the
-            // raw url and the source options, which include the passphrase and backend credentials
-            var destinationName = dest.DisplayDestination;
 
             try
             {
-                if (!ShouldTriggerSync(i, dest))
-                {
-                    Logging.Log.WriteInformationMessage(LOGTAG, "RemoteSyncSkipped", "Remote synchronization to {0} skipped due to trigger mode conditions not met.", destinationName);
-                    continue;
-                }
-
-                // Update progress to show sync is in progress
-                m_results.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_RemoteSynchronization);
-                m_results.OperationProgressUpdater.UpdateRemoteSyncDestination(i + 1, m_destinations.Count);
-                m_results.OperationProgressUpdater.UpdateProgress(0);
-
-                var config = dest.Config with { Src = m_source! };
-                var date_start = DateTime.UtcNow;
-                var syncResult = new RemoteSynchronizationResults
-                {
-                    Destination = destinationName,
-                };
-                var exitCode = RemoteSynchronizationRunner.RunAsync(config, CancellationToken.None, m_results.OperationProgressUpdater, m_results.BackendProgressUpdater, syncResult).ConfigureAwait(false).GetAwaiter().GetResult();
-                var date_end = DateTime.UtcNow;
-                syncResult.BeginTime = date_start;
-                syncResult.EndTime = date_end;
-                syncResultsList.Add(syncResult);
-
-                if (exitCode == 0)
-                    RecordSyncOperation(i);
+                if (ShouldTriggerSync(i, dest))
+                    triggered.Add((i, dest));
                 else
-                {
-                    // Error is captured into the result's Errors collection via the active log scope
-                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", null, "Remote synchronization to {0} failed with exit code {1}.", destinationName, exitCode);
-                }
+                    Logging.Log.WriteInformationMessage(LOGTAG, "RemoteSyncSkipped", "Remote synchronization to {0} skipped due to trigger mode conditions not met.", dest.DisplayDestination);
             }
             catch (Exception ex)
             {
                 // Error is captured into the result's Errors collection via the active log scope
-                Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", ex, "Remote synchronization to {0} failed: {1}", destinationName, ex.Message);
+                Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", ex, "Remote synchronization to {0} failed: {1}", dest.DisplayDestination, ex.Message);
             }
         }
 
+        if (triggered.Count == 0)
+            return;
+
+        // Update progress to show sync is in progress
+        var progress = m_results.OperationProgressUpdater;
+        progress.UpdatePhase(OperationPhase.Backup_RemoteSynchronization);
+        progress.UpdateRemoteSyncDestination(triggered[0].Index + 1, m_destinations.Count);
+        progress.UpdateProgress(0);
+
+        // Each destination reports on its own, with its own backend statistics, so the
+        // statistics of the backup do not count the uploads of the synchronization. The
+        // transfer progress still goes to the backup, which is what the UI shows.
+        var syncResults = triggered.Select(x => new RemoteSynchronizationResults { Destination = x.Destination.DisplayDestination }).ToList();
+        var writers = syncResults.Select(x => (IBackendWriter)new ReplicationBackendWriter(x.BackendWriter, m_results.BackendProgressUpdater)).ToList();
+
+        // The destinations are written one after the other, so a destination begins
+        // when the work moves to it and ends when it moves on.
+        var current = -1;
+        void OnTargetStarted(int index, int count)
+        {
+            var now = DateTime.UtcNow;
+            if (current >= 0)
+                syncResults[current].EndTime = now;
+            current = index;
+            syncResults[index].BeginTime = now;
+            progress.UpdateRemoteSyncDestination(triggered[index].Index + 1, m_destinations.Count);
+            progress.UpdateProgress(0);
+        }
+
+        IReadOnlyList<RemoteReplicationSummary>? summaries = null;
+        // Stop and abort from the task control both end the synchronization
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(taskControl.StopToken, taskControl.ProgressToken);
+        try
+        {
+            summaries = await RemoteReplication.RunAsync(
+                m_source,
+                m_options.RawOptions,
+                m_options.RawOptions,
+                [.. triggered.Select(x => x.Destination.Target)],
+                m_results.BackendWriter,
+                writers,
+                taskControl,
+                progress,
+                OnTargetStarted,
+                anyPrefix: false,
+                cts.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested)
+        {
+            Logging.Log.WriteWarningMessage(LOGTAG, "RemoteSyncStopped", null, "Remote synchronization was stopped before it completed.");
+        }
+        catch (Exception ex)
+        {
+            // Error is captured into the result's Errors collection via the active log scope
+            foreach (var (_, dest) in triggered)
+                Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", ex, "Remote synchronization to {0} failed: {1}", dest.DisplayDestination, ex.Message);
+        }
+
+        var end = DateTime.UtcNow;
+        for (var i = 0; i < triggered.Count; i++)
+        {
+            var syncResult = syncResults[i];
+            if (syncResult.BeginTime.Ticks == 0)
+                syncResult.BeginTime = end;
+            if (syncResult.EndTime.Ticks == 0)
+                syncResult.EndTime = end;
+
+            if (summaries == null)
+                continue;
+
+            var summary = summaries[i];
+            syncResult.CopiedFileCount = summary.Copied;
+            syncResult.CopiedFileSize = summary.CopiedSize;
+            syncResult.DeletedFileCount = summary.Deleted;
+
+            // A destination that is not a mirror of the source is not recorded, so an
+            // interval or counting destination is tried again after the next backup.
+            if (summary.Succeeded)
+            {
+                try
+                {
+                    RecordSyncOperation(triggered[i].Index);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", ex, "Remote synchronization to {0} could not be recorded: {1}", summary.Destination, ex.Message);
+                }
+            }
+            else if (summary.Failed)
+                Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", null, "Remote synchronization to {0} failed.", summary.Destination);
+            else
+                Logging.Log.WriteErrorMessage(LOGTAG, "RemoteSyncFailed", null, "Remote synchronization to {0} is incomplete: {1} files could not be copied and {2} files could not be deleted.", summary.Destination, summary.UploadFailures, summary.DeleteFailures);
+        }
+
         // Add remote synchronization results to the backup results for reporting
-        if (syncResultsList.Count > 0)
-            m_results.RemoteSynchronizationResults = [.. syncResultsList];
+        m_results.RemoteSynchronizationResults = [.. syncResults];
+    }
+
+    /// <summary>
+    /// Sends the backend events of a destination to the statistics of that destination,
+    /// and the transfer progress to the operation the synchronization is a step of.
+    /// </summary>
+    /// <param name="statistics">The writer that counts the events</param>
+    /// <param name="progress">The progress updater of the outer operation</param>
+    private sealed class ReplicationBackendWriter(IBackendWriter statistics, IBackendProgressUpdater progress) : IBackendWriter
+    {
+        public bool ReportedQuotaError { get => statistics.ReportedQuotaError; set => statistics.ReportedQuotaError = value; }
+        public bool ReportedQuotaWarning { get => statistics.ReportedQuotaWarning; set => statistics.ReportedQuotaWarning = value; }
+        public Action<long> UploadCompleted { get => statistics.UploadCompleted; set => statistics.UploadCompleted = value; }
+        public OperationMode MainOperation => statistics.MainOperation;
+        public IBackendProgressUpdater BackendProgressUpdater => progress;
+        public void SendEvent(BackendActionType action, BackendEventType type, string path, long size, bool updateProgress = true)
+            => statistics.SendEvent(action, type, path, size, updateProgress);
+
+        public long UnknownFileSize { get => statistics.UnknownFileSize; set => statistics.UnknownFileSize = value; }
+        public long UnknownFileCount { get => statistics.UnknownFileCount; set => statistics.UnknownFileCount = value; }
+        public long KnownFileCount { get => statistics.KnownFileCount; set => statistics.KnownFileCount = value; }
+        public long KnownFileSize { get => statistics.KnownFileSize; set => statistics.KnownFileSize = value; }
+        public long KnownFilesets { get => statistics.KnownFilesets; set => statistics.KnownFilesets = value; }
+        public DateTime LastBackupDate { get => statistics.LastBackupDate; set => statistics.LastBackupDate = value; }
+        public long BackupListCount { get => statistics.BackupListCount; set => statistics.BackupListCount = value; }
+        public long TotalQuotaSpace { get => statistics.TotalQuotaSpace; set => statistics.TotalQuotaSpace = value; }
+        public long FreeQuotaSpace { get => statistics.FreeQuotaSpace; set => statistics.FreeQuotaSpace = value; }
+        public long AssignedQuotaSpace { get => statistics.AssignedQuotaSpace; set => statistics.AssignedQuotaSpace = value; }
+
+        public long RemoteCalls => statistics.RemoteCalls;
+        public long BytesUploaded => statistics.BytesUploaded;
+        public long BytesDownloaded => statistics.BytesDownloaded;
+        public long FilesUploaded => statistics.FilesUploaded;
+        public long FilesDownloaded => statistics.FilesDownloaded;
+        public long FilesDeleted => statistics.FilesDeleted;
+        public long FoldersCreated => statistics.FoldersCreated;
+        public long RetryAttempts => statistics.RetryAttempts;
     }
 
     /// <summary>

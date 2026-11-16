@@ -37,7 +37,7 @@ namespace RemoteSynchronization
         public static Task<int> MainAsync(string[] args)
         {
             Duplicati.Library.AutoUpdater.PreloadSettingsLoader.ConfigurePreloadSettings(ref args, Duplicati.Library.AutoUpdater.PackageHelper.NamedExecutable.SyncTool);
-            return RemoteSynchronizationRunner.RunAsync(args);
+            return RemoteSynchronizationTool.RunAsync(args);
         }
     }
 }

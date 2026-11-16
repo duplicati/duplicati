@@ -20,7 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using Duplicati.Library.Main.Operation.RemoteSynchronization;
+using Duplicati.Library.Main.Operation.Sync;
 using NUnit.Framework;
 
 #nullable enable
@@ -47,53 +47,60 @@ public class RemoteSynchronizationTimestampTests
     /// </summary>
     private static readonly DateTime Later = Instant.AddSeconds(44);
 
+    /// <summary>
+    /// The comparison the sync handler makes between a source volume and its copy, on the
+    /// timestamps as the two backends report them
+    /// </summary>
+    private static bool IsSourceNewer(DateTime source, DateTime destination)
+        => SyncHandler.AsUtc(destination) < SyncHandler.AsUtc(source);
+
     [Test]
     public void AUtcSourceIsNotNewerThanALocalTimeDestinationWrittenAfterIt()
-        => Assert.That(RemoteSynchronizationRunner.IsSourceNewer(Instant, Later.ToLocalTime()), Is.False);
+        => Assert.That(IsSourceNewer(Instant, Later.ToLocalTime()), Is.False);
 
     [Test]
     public void ALocalTimeSourceIsNotNewerThanAUtcDestinationWrittenAfterIt()
-        => Assert.That(RemoteSynchronizationRunner.IsSourceNewer(Instant.ToLocalTime(), Later), Is.False);
+        => Assert.That(IsSourceNewer(Instant.ToLocalTime(), Later), Is.False);
 
     [Test]
     public void AUtcSourceWrittenAfterALocalTimeDestinationIsNewer()
-        => Assert.That(RemoteSynchronizationRunner.IsSourceNewer(Later, Instant.ToLocalTime()), Is.True);
+        => Assert.That(IsSourceNewer(Later, Instant.ToLocalTime()), Is.True);
 
     [Test]
     public void ALocalTimeSourceWrittenAfterAUtcDestinationIsNewer()
-        => Assert.That(RemoteSynchronizationRunner.IsSourceNewer(Later.ToLocalTime(), Instant), Is.True);
+        => Assert.That(IsSourceNewer(Later.ToLocalTime(), Instant), Is.True);
 
     [Test]
     public void TwoLocalTimesCompareAsBefore()
     {
-        Assert.That(RemoteSynchronizationRunner.IsSourceNewer(Instant.ToLocalTime(), Later.ToLocalTime()), Is.False);
-        Assert.That(RemoteSynchronizationRunner.IsSourceNewer(Later.ToLocalTime(), Instant.ToLocalTime()), Is.True);
+        Assert.That(IsSourceNewer(Instant.ToLocalTime(), Later.ToLocalTime()), Is.False);
+        Assert.That(IsSourceNewer(Later.ToLocalTime(), Instant.ToLocalTime()), Is.True);
     }
 
     [Test]
     public void TwoUtcTimesCompareAsBefore()
     {
-        Assert.That(RemoteSynchronizationRunner.IsSourceNewer(Instant, Later), Is.False);
-        Assert.That(RemoteSynchronizationRunner.IsSourceNewer(Later, Instant), Is.True);
+        Assert.That(IsSourceNewer(Instant, Later), Is.False);
+        Assert.That(IsSourceNewer(Later, Instant), Is.True);
     }
 
     [Test]
     public void AnUnspecifiedKindIsTakenAsUtc()
     {
         var unspecified = DateTime.SpecifyKind(Instant, DateTimeKind.Unspecified);
-        Assert.That(RemoteSynchronizationRunner.IsSourceNewer(unspecified, Later), Is.False);
-        Assert.That(RemoteSynchronizationRunner.IsSourceNewer(Later, unspecified), Is.True);
-        Assert.That(RemoteSynchronizationRunner.IsSourceNewer(unspecified, Later.ToLocalTime()), Is.False);
+        Assert.That(IsSourceNewer(unspecified, Later), Is.False);
+        Assert.That(IsSourceNewer(Later, unspecified), Is.True);
+        Assert.That(IsSourceNewer(unspecified, Later.ToLocalTime()), Is.False);
     }
 
     [Test]
     public void TheSameInstantIsNotNewerInAnyKind()
     {
-        Assert.That(RemoteSynchronizationRunner.IsSourceNewer(Instant, Instant.ToLocalTime()), Is.False);
-        Assert.That(RemoteSynchronizationRunner.IsSourceNewer(Instant.ToLocalTime(), Instant), Is.False);
+        Assert.That(IsSourceNewer(Instant, Instant.ToLocalTime()), Is.False);
+        Assert.That(IsSourceNewer(Instant.ToLocalTime(), Instant), Is.False);
     }
 
     [Test]
     public void AMissingDestinationTimeMakesTheSourceNewer()
-        => Assert.That(RemoteSynchronizationRunner.IsSourceNewer(Instant, default), Is.True);
+        => Assert.That(IsSourceNewer(Instant, default), Is.True);
 }

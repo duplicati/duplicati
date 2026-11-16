@@ -2698,3 +2698,281 @@ public class SnapshotSyncHandlerTests : BasicSetupHelper
         Assert.IsTrue(Directory.Exists(Path.Combine(targetDir, "not-a-snapshot")), "Folders that are not snapshots are left alone");
     }
 }
+
+/// <summary>
+/// Tests what the sync handler needs to mirror a Duplicati destination as well as a folder
+/// tree: a depth limit, a filter that scopes deletes, and destinations that fail on their own.
+/// </summary>
+[TestFixture]
+public class SyncHandlerTargetTests : BasicSetupHelper
+{
+    private string dataFolder;
+    private string targetDir;
+    private string targetDir2;
+
+    [SetUp]
+    public void Setup()
+    {
+        dataFolder = Path.Combine(BASEFOLDER, "sync_target_data");
+        targetDir = Path.Combine(BASEFOLDER, "sync_target_1");
+        targetDir2 = Path.Combine(BASEFOLDER, "sync_target_2");
+        foreach (var folder in new[] { dataFolder, targetDir, targetDir2 })
+        {
+            if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            Directory.CreateDirectory(folder);
+        }
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        DeterministicErrorBackend.ErrorGenerator = null;
+    }
+
+    private static string Url(string scheme, string folder) => $"{scheme}://" + folder.Replace("\\", "/");
+
+    private Dictionary<string, string> Options(Action<Dictionary<string, string>> configure = null)
+    {
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["sync-then-delete"] = "true",
+            ["number-of-retries"] = "0",
+            ["dbpath"] = Path.Combine(BASEFOLDER, $"sync-target-{Guid.NewGuid():N}.sqlite"),
+        };
+        configure?.Invoke(opts);
+        return opts;
+    }
+
+    private static string SecondTarget(string url)
+        => System.Text.Json.JsonSerializer.Serialize(new { destinations = new[] { new { url } } });
+
+    private async Task<Library.Interface.ISyncResults> SyncAsync(string url, Dictionary<string, string> opts, Library.Utility.IFilter filter = null)
+    {
+        using var c = new Controller(url, opts, null);
+        return await c.SyncAsync([dataFolder], filter);
+    }
+
+    /// <summary>
+    /// Writes a tree with a file at each of three levels, and an empty folder at the first
+    /// </summary>
+    private void WriteThreeLevels()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "root.txt"), "root");
+        Directory.CreateDirectory(Path.Combine(dataFolder, "a", "b"));
+        Directory.CreateDirectory(Path.Combine(dataFolder, "empty"));
+        File.WriteAllText(Path.Combine(dataFolder, "a", "one.txt"), "one");
+        File.WriteAllText(Path.Combine(dataFolder, "a", "b", "two.txt"), "two");
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    [Category("Sync")]
+    public async Task TestMaxDepthZeroSyncsOnlyTheRootFilesAsync(bool excludeEmptyFolders)
+    {
+        WriteThreeLevels();
+        // A folder the destination has and the source keeps out of reach must survive the delete
+        Directory.CreateDirectory(Path.Combine(targetDir, "lost+found"));
+        File.WriteAllText(Path.Combine(targetDir, "lost+found", "x"), "x");
+        File.WriteAllText(Path.Combine(targetDir, "stale.txt"), "stale");
+
+        var res = await SyncAsync(Url("file", targetDir), Options(o =>
+        {
+            o["sync-max-depth"] = "0";
+            o["exclude-empty-folders"] = excludeEmptyFolders ? "true" : "false";
+        }));
+
+        Assert.AreEqual(0, res.Errors.Count(), string.Join(Environment.NewLine, res.Errors));
+        Assert.AreEqual("root", File.ReadAllText(Path.Combine(targetDir, "root.txt")));
+        Assert.IsFalse(Directory.Exists(Path.Combine(targetDir, "a")), "A folder beyond the depth was created.");
+        Assert.IsFalse(Directory.Exists(Path.Combine(targetDir, "empty")), "A folder beyond the depth was created.");
+        Assert.IsFalse(File.Exists(Path.Combine(targetDir, "stale.txt")), "A file the source does not have was left behind.");
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "lost+found", "x")), "A folder that was never read was deleted as an orphan.");
+        Assert.AreEqual(1, res.SourceFiles);
+        Assert.AreEqual(0, res.FoldersCreated);
+        Assert.AreEqual(0, res.FoldersDeleted);
+    }
+
+    [Test]
+    [Category("Sync")]
+    public async Task TestMaxDepthOneStopsBelowTheFirstLevelAsync()
+    {
+        WriteThreeLevels();
+
+        var res = await SyncAsync(Url("file", targetDir), Options(o => o["sync-max-depth"] = "1"));
+
+        Assert.AreEqual(0, res.Errors.Count(), string.Join(Environment.NewLine, res.Errors));
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "root.txt")));
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "a", "one.txt")));
+        Assert.IsTrue(Directory.Exists(Path.Combine(targetDir, "empty")));
+        Assert.IsFalse(Directory.Exists(Path.Combine(targetDir, "a", "b")), "A folder beyond the depth was created.");
+        Assert.AreEqual(2, res.SourceFiles);
+
+        // Without a limit the rest follows
+        res = await SyncAsync(Url("file", targetDir), Options());
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "a", "b", "two.txt")));
+    }
+
+    [Test]
+    [Category("Sync")]
+    public void TestMaxDepthMustNotBeNegative()
+    {
+        var ex = Assert.CatchAsync(async () => await SyncAsync(Url("file", targetDir), Options(o => o["sync-max-depth"] = "-1")));
+        StringAssert.Contains("sync-max-depth", ex.Message);
+    }
+
+    [Test]
+    [Category("Sync")]
+    public async Task TestFilterScopesDeletesAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "keep.txt"), "keep");
+        File.WriteAllText(Path.Combine(dataFolder, "local.log"), "excluded on the source side");
+        File.WriteAllText(Path.Combine(targetDir, "remote.log"), "excluded on the destination side");
+        File.WriteAllText(Path.Combine(targetDir, "gone.txt"), "no longer in the source");
+
+        var res = await SyncAsync(Url("file", targetDir), Options(), new Library.Utility.FilterExpression("*.log", false));
+
+        Assert.AreEqual(0, res.Errors.Count(), string.Join(Environment.NewLine, res.Errors));
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "keep.txt")));
+        Assert.IsFalse(File.Exists(Path.Combine(targetDir, "local.log")), "An excluded file was uploaded.");
+        Assert.IsFalse(File.Exists(Path.Combine(targetDir, "gone.txt")), "A file the filter includes and the source does not have was left behind.");
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "remote.log")), "A remote file the filter excludes was deleted.");
+        Assert.AreEqual(1, res.FilesDeleted);
+    }
+
+    [Test]
+    [Category("Sync")]
+    public async Task TestADestinationThatFailsEveryUploadDoesNotStopTheOtherAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "one.txt"), "one");
+        File.WriteAllText(Path.Combine(dataFolder, "two.txt"), "two");
+
+        Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+        DeterministicErrorBackend.ErrorGenerator = (action, _) => action == DeterministicErrorBackend.BackendAction.PutBefore;
+
+        // The failing destination comes first, so the other one has to get past it
+        var res = await SyncAsync(Url("deterror", targetDir), Options(o => o["remote-sync-json-config"] = SecondTarget(Url("file", targetDir2))));
+
+        Assert.IsEmpty(Directory.EnumerateFiles(targetDir));
+        Assert.AreEqual("one", File.ReadAllText(Path.Combine(targetDir2, "one.txt")));
+        Assert.AreEqual("two", File.ReadAllText(Path.Combine(targetDir2, "two.txt")));
+        Assert.AreEqual(2, res.FilesUploaded, "Only the uploads that succeeded count.");
+        Assert.AreEqual(2, res.Warnings.Count(x => x.Contains("UploadFailed")), string.Join(Environment.NewLine, res.Warnings));
+        Assert.IsTrue(res.Warnings.Any(x => x.Contains("SyncIncomplete")), "The destination with failures was not reported.");
+    }
+
+    [Test]
+    [Category("Sync")]
+    public async Task TestAFailingDeleteDoesNotAbortTheRunAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "new.txt"), "new");
+        File.WriteAllText(Path.Combine(targetDir, "stale1.txt"), "stale");
+        File.WriteAllText(Path.Combine(targetDir, "stale2.txt"), "stale");
+        File.WriteAllText(Path.Combine(targetDir2, "stale1.txt"), "stale");
+
+        Library.DynamicLoader.BackendLoader.AddBackend(new DeterministicErrorBackend());
+        DeterministicErrorBackend.ErrorGenerator = (action, _) => action == DeterministicErrorBackend.BackendAction.DeleteBefore;
+
+        var res = await SyncAsync(Url("deterror", targetDir), Options(o => o["remote-sync-json-config"] = SecondTarget(Url("file", targetDir2))));
+
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "new.txt")));
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "stale1.txt")) && File.Exists(Path.Combine(targetDir, "stale2.txt")), "A file went missing although its delete failed.");
+        Assert.AreEqual(2, res.Warnings.Count(x => x.Contains("DeleteFailed")), string.Join(Environment.NewLine, res.Warnings));
+
+        // The destination after the failing one is still synchronized
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir2, "new.txt")));
+        Assert.IsFalse(File.Exists(Path.Combine(targetDir2, "stale1.txt")));
+        Assert.AreEqual(1, res.FilesDeleted);
+    }
+
+    [Test]
+    [Category("Sync")]
+    public async Task TestDuplicateRemoteNamesFailOnlyThatDestinationAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "one.txt"), "one");
+        File.WriteAllText(Path.Combine(targetDir, "existing.txt"), "listed twice");
+
+        Library.DynamicLoader.BackendLoader.AddBackend(new ToolTests.DuplicateListingBackend());
+
+        var res = await SyncAsync(Url(ToolTests.DuplicateListingBackend.Key, targetDir), Options(o =>
+        {
+            o[ToolTests.DuplicateListingBackend.ModeOption] = "exact";
+            o["remote-sync-json-config"] = SecondTarget(Url("file", targetDir2));
+        }));
+
+        Assert.IsTrue(res.Errors.Any(x => x.Contains("DuplicateRemoteFiles")), string.Join(Environment.NewLine, res.Errors));
+        Assert.IsFalse(File.Exists(Path.Combine(targetDir, "one.txt")), "A destination that cannot be told apart by name was written to.");
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "existing.txt")), "A destination that cannot be told apart by name was deleted from.");
+        Assert.AreEqual("one", File.ReadAllText(Path.Combine(targetDir2, "one.txt")), "The other destination was not synchronized.");
+    }
+
+    /// <summary>
+    /// Records the phases a run reports
+    /// </summary>
+    private sealed class PhaseRecorder : IOperationProgressUpdater
+    {
+        public List<OperationPhase> Phases { get; } = [];
+        public long FileCount { get; private set; } = -1;
+
+        public void UpdatePhase(OperationPhase phase) => Phases.Add(phase);
+        public void UpdateProgress(float progress) { }
+        public void StartFile(string filename, long size) { }
+        public void UpdateFileProgress(long offset) { }
+        public void UpdatefileCount(long filecount, long filesize, bool done) => FileCount = filecount;
+        public void UpdatefilesProcessed(long count, long size) { }
+        public void SetActiveFilesProvider(Func<ActiveFileProgress[]> provider) { }
+        public void UpdateSourceBytesRead(long bytesRead) { }
+        public void UpdateRemoteSyncDestination(int destinationIndex, int destinationCount) { }
+    }
+
+    [TestCase(true)]
+    [TestCase(false)]
+    [Category("Sync")]
+    public async Task TestEmbeddedRunReportsNoSyncPhaseAsync(bool reportPhases)
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "one.txt"), "one");
+        File.WriteAllText(Path.Combine(dataFolder, "two.txt"), "two");
+
+        var options = new Options(Options().ToDictionary(x => x.Key, x => x.Value));
+        var results = new SyncResults();
+        var recorder = new PhaseRecorder();
+        var started = new List<(int Index, int Count)>();
+
+        using var manager1 = new Library.Main.Backend.BackendManager(Url("file", targetDir), options, results.BackendWriter, results.TaskControl, false);
+        using var manager2 = new Library.Main.Backend.BackendManager(Url("file", targetDir2), options, results.BackendWriter, results.TaskControl, false);
+        using var db1 = new Library.Main.Database.Sync.LocalSyncDatabase(Path.Combine(BASEFOLDER, $"embedded-1-{Guid.NewGuid():N}.sqlite"));
+        using var db2 = new Library.Main.Database.Sync.LocalSyncDatabase(Path.Combine(BASEFOLDER, $"embedded-2-{Guid.NewGuid():N}.sqlite"));
+        using var source = await Library.Main.Operation.Common.SourceProviderFactory.GetSourceProviderAsync([dataFolder], options, CancellationToken.None);
+
+        var summary = await new Library.Main.Operation.Sync.SyncHandler(options, recorder).RunAsync(
+            source,
+            [dataFolder],
+            [
+                new Library.Main.Operation.Sync.SyncTarget(manager1, db1, "first", SyncRemoteState.UseRemoteState, false),
+                // The second destination is only simulated
+                new Library.Main.Operation.Sync.SyncTarget(manager2, db2, "second", SyncRemoteState.UseRemoteState, true),
+            ],
+            new Library.Utility.FilterExpression(),
+            maxDepth: 0,
+            reportPhases,
+            (index, count) => started.Add((index, count)),
+            CancellationToken.None);
+
+        if (reportPhases)
+            CollectionAssert.Contains(recorder.Phases, OperationPhase.Sync_ProcessingFiles);
+        else
+            Assert.IsEmpty(recorder.Phases, "A run that is a step of another operation changed the phase.");
+
+        CollectionAssert.AreEqual(new[] { (0, 2), (1, 2) }, started);
+        Assert.AreEqual(2, recorder.FileCount, "At depth zero the file count comes from the listing.");
+
+        // Each destination has its own counters, and its own dry-run flag
+        Assert.AreEqual(2, summary.Targets.Count);
+        Assert.AreEqual(2, summary.Targets[0].Upload);
+        Assert.AreEqual(2, summary.Targets[1].Upload);
+        Assert.IsTrue(summary.Targets.All(x => x.Succeeded));
+        Assert.AreEqual(2, Directory.EnumerateFiles(targetDir).Count());
+        Assert.IsEmpty(Directory.EnumerateFiles(targetDir2), "The dry-run destination was written to.");
+    }
+}
