@@ -28,7 +28,7 @@ public interface IBackupListService
 {
     IEnumerable<Dto.BackupAndScheduleOutputDto> List(string? orderBy);
 
-    Dto.ImportBackupOutputDto Import(bool cmdline, bool import_metadata, bool direct, bool temporary, string passphrase, string tempfile, Dictionary<string, string>? replace_settings);
+    Dto.ImportBackupOutputDto Import(bool cmdline, bool import_metadata, bool direct, bool temporary, string passphrase, string tempfile, Dictionary<string, string>? replace_settings, bool expand_env_vars = false);
 
     Dto.CreateBackupDto Add(Dto.BackupAndScheduleInputDto data, bool temporary, bool existingDb);
 }

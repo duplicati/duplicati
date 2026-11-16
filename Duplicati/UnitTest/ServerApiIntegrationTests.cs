@@ -238,6 +238,72 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task ImportExpandsEnvironmentVariablesWhenAsked_Async(bool expand)
+    {
+        var variable = "DUPLICATI_TEST_IMPORT_" + Guid.NewGuid().ToString("N");
+        var value = Path.Combine(BASEFOLDER, "expanded");
+        var token = $"%{variable}%";
+        var undefined = "%DUPLICATI_TEST_UNDEFINED_VARIABLE%";
+        string Expected(string template) => expand ? template.Replace(token, value) : template;
+
+        Environment.SetEnvironmentVariable(variable, value);
+        try
+        {
+            await WithAuthenticatedServerAsync(async httpClient =>
+            {
+                var backupId = await CreateBackupAsync(httpClient, "integration-passphrase").ConfigureAwait(false);
+
+                // A template made by editing an exported configuration
+                var config = System.Text.Json.Nodes.JsonNode.Parse(await ExportConfigurationAsync(httpClient, backupId).ConfigureAwait(false))!;
+                var backup = config["Backup"]!;
+                var name = $"Template {token}";
+                var description = $"Made for {token} on {undefined}";
+                var targetUrl = $"file://{token}{Path.DirectorySeparatorChar}target";
+                var source = $"{token}{Path.DirectorySeparatorChar}data{Path.DirectorySeparatorChar}";
+                var scriptPath = $"{token}{Path.DirectorySeparatorChar}before.cmd";
+                var filter = $"{token}{Path.DirectorySeparatorChar}skip{Path.DirectorySeparatorChar}";
+                backup["Name"] = name;
+                backup["Description"] = description;
+                backup["TargetURL"] = targetUrl;
+                backup["Sources"] = new System.Text.Json.Nodes.JsonArray(source, undefined);
+                backup["Settings"]!.AsArray().Add(new System.Text.Json.Nodes.JsonObject { ["Name"] = "run-script-before", ["Value"] = scriptPath, ["Filter"] = "" });
+                backup["Filters"] = new System.Text.Json.Nodes.JsonArray(new System.Text.Json.Nodes.JsonObject { ["Order"] = 0, ["Include"] = false, ["Expression"] = filter });
+
+                // Sent as plain JSON, the way ServerUtil and the UI send it
+                var response = await httpClient.PostAsJsonAsync("/api/v1/backups/import", new
+                {
+                    config = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(config.ToJsonString())),
+                    import_metadata = true,
+                    direct = true,
+                    expand_env_vars = expand
+                }, JsonOptions).ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
+                var result = await response.Content.ReadFromJsonAsync<ImportBackupOutputDto>(JsonOptions).ConfigureAwait(false)
+                             ?? throw new InvalidOperationException("Import response was empty");
+
+                var getResponse = await httpClient.GetAsync($"/api/v1/backup/{result.Id}").ConfigureAwait(false);
+                getResponse.EnsureSuccessStatusCode();
+                var imported = (await getResponse.Content.ReadFromJsonAsync<BackupGet.GetBackupResultDto>(JsonOptions).ConfigureAwait(false)
+                                ?? throw new InvalidOperationException("Backup get response was empty")).Backup;
+
+                Assert.That(imported.Name, Is.EqualTo(Expected(name)));
+                Assert.That(imported.Description, Is.EqualTo(Expected(description)), "An undefined variable is left as it is");
+                Assert.That(imported.TargetURL, Is.EqualTo(Expected(targetUrl)));
+                Assert.That(imported.Sources, Is.EqualTo(new[] { Expected(source), undefined }));
+                Assert.That(imported.Settings!.Single(x => x.Name == "run-script-before").Value, Is.EqualTo(Expected(scriptPath)));
+                Assert.That(imported.Filters!.Single().Expression, Is.EqualTo(Expected(filter)));
+            }).ConfigureAwait(false);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(variable, null);
+        }
+    }
+
+    [Test]
+    [Category("Integration")]
     public async Task HttpClientHelperStillCreatesClientsAfterTheServerStops_Async()
     {
         await WithAuthenticatedServerAsync(_ => Task.CompletedTask).ConfigureAwait(false);
