@@ -810,6 +810,7 @@ namespace Duplicati.Library.Backend
         /// of data connection not resumed". .NET does not resume a TLS 1.3 session there, and with several
         /// connections to the same server it may resume the session of another one, so Bouncy Castle, which
         /// resumes the session of its own control connection, is used when the TLS implementation is left on auto.
+        /// The same is done when a TLS 1.3 upload is aborted with 426, see <see cref="IsRefusalBouncyCastleAvoids"/>.
         /// </summary>
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns><c>true</c> if the operation can be tried again with Bouncy Castle</returns>
@@ -834,9 +835,22 @@ namespace Duplicati.Library.Backend
                 }
             }
 
-            return reply.Code == "522"
-                || (reply.Code == "425" && reply.Message.Contains("resum", StringComparison.OrdinalIgnoreCase));
+            return IsRefusalBouncyCastleAvoids(reply.Code, reply.Message, client.SslProtocol);
         }
+
+        /// <summary>
+        /// Checks if a reply is a refusal that the Bouncy Castle TLS implementation avoids. Besides the refused
+        /// session resumption, vsftpd answers 426 "Failure reading network stream" when a TLS 1.3 data connection
+        /// made with the system TLS is reset after the upload, although the client sent its close_notify.
+        /// </summary>
+        /// <param name="code">The reply code</param>
+        /// <param name="message">The reply message</param>
+        /// <param name="sslProtocol">The TLS version of the control connection</param>
+        /// <returns><c>true</c> if the operation can be tried again with Bouncy Castle</returns>
+        internal static bool IsRefusalBouncyCastleAvoids(string code, string message, SslProtocols sslProtocol)
+            => code == "522"
+                || (code == "425" && message.Contains("resum", StringComparison.OrdinalIgnoreCase))
+                || (code == "426" && sslProtocol == SslProtocols.Tls13);
 
         /// <summary>
         /// Closes the client and makes the next client use Bouncy Castle for TLS
