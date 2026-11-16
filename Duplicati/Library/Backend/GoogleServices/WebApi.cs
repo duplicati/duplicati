@@ -188,6 +188,16 @@ namespace Duplicati.Library.Backend.WebApi
         public static string DeleteUrl(string fileId, string? teamDriveId)
             => FileQueryUrl(fileId, AddTeamDriveParam(teamDriveId));
 
+        /// <summary>
+        /// The url that moves a file to the trash. Unlike a delete, this only needs
+        /// the content manager role on a shared drive.
+        /// </summary>
+        /// <param name="fileId">The id of the file to trash</param>
+        public static string TrashUrl(string fileId)
+            => Utility.RelaxedUri.UriBuilderWithEncodedPath(Url.DRIVE,
+                UrlPath.Create(Path.File).Append(Utility.UrlEncoding.UrlPathEncode(fileId)).Append(Path.Trash).ToString(),
+                new NameValueCollection { { QueryParam.SupportsAllDrives, QueryValue.True } }, false);
+
         public static string PutUrl(string? fileId, bool useTeamDrive)
         {
             var queryParams = new NameValueCollection {
@@ -241,11 +251,13 @@ namespace Duplicati.Library.Backend.WebApi
         {
             public const string File = "files";
             public const string About = "about";
+            public const string Trash = "trash";
         }
 
         private static class QueryParam
         {
             public const string SupportsTeamDrive = "supportsTeamDrives";
+            public const string SupportsAllDrives = "supportsAllDrives";
             public const string IncludeTeamDrive = "includeTeamDriveItems";
             public const string TeamDriveId = "teamDriveId";
             public const string corpora = "corpora";

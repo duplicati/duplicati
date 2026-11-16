@@ -38,12 +38,17 @@ namespace Duplicati.Library.Backend.GoogleDrive
     public class GoogleDrive : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend
     {
         private const string TEAMDRIVE_ID = "googledrive-teamdrive-id";
+        private const string USE_TRASH_OPTION = "googledrive-use-trash";
         private const string FOLDER_MIMETYPE = "application/vnd.google-apps.folder";
 
         private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("googledrive", null);
 
         private readonly string m_path;
         private readonly string? m_teamDriveID;
+        /// <summary>
+        /// Whether a delete moves the file to the trash instead of removing it for good
+        /// </summary>
+        private readonly bool m_useTrash;
         private readonly OAuthHelperHttpClient m_oauth;
         private readonly Dictionary<string, GoogleDriveFolderItem[]> m_filecache;
         private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
@@ -69,6 +74,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
             m_timeouts = TimeoutOptionsHelper.Parse(options);
             m_teamDriveID = options.GetValueOrDefault(TEAMDRIVE_ID);
+            m_useTrash = Utility.Utility.ParseBoolOption(options, USE_TRASH_OPTION);
             m_oauth = new GoogleOAuthHelperHttpClient(auth.AuthId!, this.ProtocolKey, auth.OAuthUrl) { AutoAuthHeader = true };
             m_filecache = new Dictionary<string, GoogleDriveFolderItem[]>();
         }
@@ -446,11 +452,17 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
                 foreach (var fileid in entries.Select(x => x.id).WhereNotNullOrWhiteSpace().Distinct())
                 {
-                    var url = WebApi.GoogleDrive.DeleteUrl(fileid, m_teamDriveID);
+                    // A permanent delete on a shared drive needs the Manager role, a
+                    // move to the trash only Content manager (issue #4896). The
+                    // listing asks for trashed=false, so a trashed file is gone from it.
+                    var url = m_useTrash
+                        ? WebApi.GoogleDrive.TrashUrl(fileid)
+                        : WebApi.GoogleDrive.DeleteUrl(fileid, m_teamDriveID);
+                    var method = m_useTrash ? HttpMethod.Post : HttpMethod.Delete;
                     await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken,
                         async ct =>
                         {
-                            using var req = await m_oauth.CreateRequestAsync(url, HttpMethod.Delete, ct).ConfigureAwait(false);
+                            using var req = await m_oauth.CreateRequestAsync(url, method, ct).ConfigureAwait(false);
                             using var resp = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
                         }).ConfigureAwait(false);
                 }
@@ -495,6 +507,11 @@ namespace Duplicati.Library.Backend.GoogleDrive
                                     CommandLineArgument.ArgumentType.String,
                                     Strings.GoogleDrive.TeamDriveIdShort,
                                     Strings.GoogleDrive.TeamDriveIdLong),
+            new CommandLineArgument(USE_TRASH_OPTION,
+                                    CommandLineArgument.ArgumentType.Boolean,
+                                    Strings.GoogleDrive.UseTrashShort,
+                                    Strings.GoogleDrive.UseTrashLong,
+                                    "false"),
             .. TimeoutOptionsHelper.GetOptions(),
         ];
 
