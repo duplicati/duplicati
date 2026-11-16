@@ -44,6 +44,14 @@ namespace Duplicati.Library.Main.Operation
         private readonly Options m_options;
         private readonly RepairResults m_result;
 
+        /// <summary>
+        /// Creates the snapshot used to read source files that could not be opened directly
+        /// while recreating a dblock volume; follows the snapshot-policy and backupread-policy options.
+        /// Can be replaced by tests.
+        /// </summary>
+        internal static Func<IEnumerable<string>, Options, ISnapshotService> CreateSnapshotForLockedFiles =
+            (paths, options) => Common.SourceProviderFactory.GetFileSnapshotService(paths, [], options);
+
         public RepairHandler(Options options, RepairResults result)
         {
             m_options = options;
@@ -1125,6 +1133,45 @@ namespace Duplicati.Library.Main.Operation
                 .ConfigureAwait(false);
             var recoveredSourceBlocks = 0L;
 
+            // Reads a block from the opened source file, and adds it to the new volume if it matches.
+            // Returns true if the block was found in the file.
+            async Task<bool> RecoverSourceBlockAsync(Stream f, LocalRepairDatabase.BlockWithSourceData block)
+            {
+                var size = (int)block.Size;
+                f.Position = block.Offset;
+
+                var buffer = new byte[m_options.Blocksize];
+                if (size != Library.Utility.Utility.ForceStreamRead(f, buffer, size))
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "FileLengthMismatch", null, "Block length mismatch on {0}, expected {1} but got {2}", block.File, size, f.Length);
+                    return false;
+                }
+
+                using var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm);
+                var newhash = Convert.ToBase64String(blockhasher.ComputeHash(buffer, 0, size));
+                if (newhash != block.Hash)
+                {
+                    Logging.Log.WriteVerboseMessage(LOGTAG, "FileHashMismatch", null, "Block hash mismatch on {0}, expected {1} but got {2}", block.File, block.Hash, newhash);
+                    return false;
+                }
+
+                if (await mbl.SetBlockRestoredAsync(block.Hash, block.Size, pendingVolume.VolumeID, cancellationToken).ConfigureAwait(false))
+                {
+                    recoveredSourceBlocks++;
+                    await pendingVolume
+                        .AddBlockAsync(block.Hash, buffer, 0, size, CompressionHint.Default, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+
+                return true;
+            }
+
+            // Files that cannot be opened directly (e.g. locked by another process)
+            // are retried through a snapshot, if snapshots or backup-read are enabled
+            var retryLockedFiles = m_options.SnapShotStrategy != Options.OptimizationStrategy.Off
+                || m_options.BackupReadStrategy != Options.OptimizationStrategy.Off;
+            var lockedBlocks = new List<LocalRepairDatabase.BlockWithSourceData>();
+
             // First we grab all known blocks from local files
             string lastRestoredHash = null;
             long lastRestoredSize = -1;
@@ -1132,8 +1179,6 @@ namespace Duplicati.Library.Main.Operation
             {
                 if (block.Hash == lastRestoredHash && block.Size == lastRestoredSize)
                     continue;
-
-                var size = (int)block.Size;
 
                 try
                 {
@@ -1143,38 +1188,80 @@ namespace Duplicati.Library.Main.Operation
                         continue;
                     }
 
-                    using var f = File.OpenRead(block.File);
-                    f.Position = block.Offset;
-
-                    var buffer = new byte[m_options.Blocksize];
-                    if (size != Library.Utility.Utility.ForceStreamRead(f, buffer, size))
+                    Stream f;
+                    try
                     {
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "FileLengthMismatch", null, "Block length mismatch on {0}, expected {1} but got {2}", block.File, size, f.Length);
+                        f = File.OpenRead(block.File);
+                    }
+                    catch (Exception ex) when (retryLockedFiles && ex is IOException or UnauthorizedAccessException && ex is not FileNotFoundException && ex is not DirectoryNotFoundException)
+                    {
+                        Logging.Log.WriteVerboseMessage(LOGTAG, "FileAccessRetryWithSnapshot", ex, "Failed to open {0}, will retry through a snapshot", block.File);
+                        lockedBlocks.Add(block);
                         continue;
                     }
 
-                    using var blockhasher = HashFactory.CreateHasher(m_options.BlockHashAlgorithm);
-                    var newhash = Convert.ToBase64String(blockhasher.ComputeHash(buffer, 0, size));
-                    if (newhash != block.Hash)
+                    using (f)
                     {
-                        Logging.Log.WriteVerboseMessage(LOGTAG, "FileHashMismatch", null, "Block hash mismatch on {0}, expected {1} but got {2}", block.File, block.Hash, newhash);
-                        continue;
-                    }
-
-                    // Found it, no need to look again
-                    lastRestoredHash = block.Hash;
-                    lastRestoredSize = block.Size;
-                    if (await mbl.SetBlockRestoredAsync(block.Hash, block.Size, pendingVolume.VolumeID, cancellationToken).ConfigureAwait(false))
-                    {
-                        recoveredSourceBlocks++;
-                        await pendingVolume
-                            .AddBlockAsync(block.Hash, buffer, 0, size, CompressionHint.Default, cancellationToken)
-                            .ConfigureAwait(false);
+                        if (await RecoverSourceBlockAsync(f, block).ConfigureAwait(false))
+                        {
+                            // Found it, no need to look again
+                            lastRestoredHash = block.Hash;
+                            lastRestoredSize = block.Size;
+                            if (lockedBlocks.Count > 0)
+                                lockedBlocks.RemoveAll(x => x.Hash == block.Hash && x.Size == block.Size);
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
                     Logging.Log.WriteErrorMessage(LOGTAG, "FileAccessError", ex, "Failed to access file: {0}", block.File);
+                }
+            }
+
+            // Retry the blocks from files that could not be opened, reading them through a snapshot
+            if (lockedBlocks.Count > 0)
+            {
+                ISnapshotService snapshot = null;
+                try
+                {
+                    snapshot = CreateSnapshotForLockedFiles(lockedBlocks.Select(x => x.File).Distinct(StringComparer.Ordinal).ToList(), m_options);
+                }
+                catch (Exception ex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotFailed", ex, "Failed to create a snapshot for reading locked files");
+                }
+
+                if (snapshot == null)
+                {
+                    foreach (var file in lockedBlocks.Select(x => x.File).Distinct(StringComparer.Ordinal))
+                        Logging.Log.WriteErrorMessage(LOGTAG, "FileAccessError", null, "Failed to access file: {0}", file);
+                }
+                else
+                {
+                    using (snapshot)
+                    {
+                        lastRestoredHash = null;
+                        lastRestoredSize = -1;
+                        foreach (var block in lockedBlocks)
+                        {
+                            if (block.Hash == lastRestoredHash && block.Size == lastRestoredSize)
+                                continue;
+
+                            try
+                            {
+                                using var f = snapshot.OpenRead(block.File);
+                                if (await RecoverSourceBlockAsync(f, block).ConfigureAwait(false))
+                                {
+                                    lastRestoredHash = block.Hash;
+                                    lastRestoredSize = block.Size;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Logging.Log.WriteErrorMessage(LOGTAG, "FileAccessError", ex, "Failed to access file: {0}", block.File);
+                            }
+                        }
+                    }
                 }
             }
 
