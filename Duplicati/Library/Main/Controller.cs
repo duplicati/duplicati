@@ -1233,7 +1233,16 @@ namespace Duplicati.Library.Main
                     {
                         try
                         {
+                            // A run-script-before script can change the options by printing them,
+                            // so the changes are logged to show what the operation runs with
+                            var optionsBefore = IsRunScriptModule(mx) ? new Dictionary<string, string>(m_options.RawOptions, m_options.RawOptions.Comparer) : null;
+                            var backendUrlBefore = m_backendUrl;
+                            var pathsBefore = paths;
+
                             RunScriptCallbackWithStatus(result, mx, () => module.OnStart(result.MainOperation.ToString(), ref m_backendUrl, ref paths));
+
+                            if (optionsBefore != null)
+                                LogScriptChanges(optionsBefore, backendUrlBefore, pathsBefore, paths);
                         }
                         catch (OperationAbortException oae) when (startFailure == null && oae.AbortReason == OperationAbortReason.Normal)
                         {
@@ -1292,9 +1301,43 @@ namespace Duplicati.Library.Main
             return (paths, filter);
         }
 
+        /// <summary>
+        /// Returns a value indicating if the module runs the scripts given with the run-script options
+        /// </summary>
+        /// <param name="module">The module to check</param>
+        /// <returns><c>true</c> if the module is the run-script module</returns>
+        private static bool IsRunScriptModule(IGenericModule module)
+            => string.Equals(module?.Key, "runscript", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Logs the options, remote URL and local paths that a run-script-before script changed.
+        /// Only the names of the changed options are logged, as a script can set secrets in options
+        /// of any type, and the credentials in the remote URL are not logged.
+        /// </summary>
+        /// <param name="optionsBefore">The options before the script was run</param>
+        /// <param name="backendUrlBefore">The remote URL before the script was run</param>
+        /// <param name="pathsBefore">The local paths before the script was run</param>
+        /// <param name="paths">The local paths after the script was run</param>
+        private void LogScriptChanges(Dictionary<string, string> optionsBefore, string backendUrlBefore, string[] pathsBefore, string[] paths)
+        {
+            if (!string.Equals(backendUrlBefore, m_backendUrl, StringComparison.Ordinal))
+                Logging.Log.WriteInformationMessage(LOGTAG, "ScriptChangedRemoteUrl", Strings.Controller.ScriptChangedRemoteUrl(Library.Utility.Utility.GetUrlWithoutCredentials(m_backendUrl)));
+
+            if (!(pathsBefore ?? []).SequenceEqual(paths ?? []))
+                Logging.Log.WriteInformationMessage(LOGTAG, "ScriptChangedLocalPath", Strings.Controller.ScriptChangedLocalPath(string.Join(Path.PathSeparator.ToString(), paths ?? [])));
+
+            var changedOptions = m_options.RawOptions
+                .Where(option => !optionsBefore.TryGetValue(option.Key, out var previous) || !string.Equals(previous, option.Value, StringComparison.Ordinal))
+                .Select(option => "--" + option.Key)
+                .ToList();
+
+            if (changedOptions.Count > 0)
+                Logging.Log.WriteInformationMessage(LOGTAG, "ScriptChangedOptions", Strings.Controller.ScriptChangedOptions(string.Join(", ", changedOptions)));
+        }
+
         internal static void RunScriptCallbackWithStatus(object result, IGenericModule module, Action callback)
         {
-            if (!string.Equals(module?.Key, "runscript", StringComparison.OrdinalIgnoreCase) || result is not BasicResults basicResults)
+            if (!IsRunScriptModule(module) || result is not BasicResults basicResults)
             {
                 callback();
                 return;
