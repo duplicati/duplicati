@@ -578,6 +578,62 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
+    public async Task SavingASyncJobWithoutTheOperationTypeKeepsItASyncJob_Async()
+    {
+        var name = $"Sync job {Guid.NewGuid():N}";
+        Directory.CreateDirectory(this.TARGETFOLDER);
+
+        // Built as anonymous objects, so that a missing field is left out of the JSON,
+        // as with the web client that suppresses a warning (issue #7850)
+        object BackupBody(string jobName, string? operationType)
+        {
+            var backup = new Dictionary<string, object?>
+            {
+                ["Name"] = jobName,
+                ["Description"] = "",
+                ["Tags"] = Array.Empty<string>(),
+                ["TargetURL"] = BuildFileBackendUrl(this.TARGETFOLDER),
+                ["Sources"] = new[] { this.DATAFOLDER },
+                ["Settings"] = new[] { new { Name = "--no-encryption", Value = "true", Filter = "" } },
+                ["Filters"] = Array.Empty<object>(),
+                ["Metadata"] = new Dictionary<string, string>()
+            };
+            if (operationType != null)
+                backup["OperationType"] = operationType;
+            return new { Backup = backup };
+        }
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            async Task<Duplicati.Server.Serialization.OperationType> GetOperationTypeAsync(string id)
+            {
+                var single = await httpClient.GetFromJsonAsync<BackupGet.GetBackupResultDto>($"/api/v1/backup/{id}", JsonOptions).ConfigureAwait(false)
+                             ?? throw new InvalidOperationException("Backup get response was empty");
+                return single.Backup.OperationType;
+            }
+
+            var createResponse = await httpClient.PostAsJsonAsync("/api/v1/backups", BackupBody(name, "Sync"), JsonOptions).ConfigureAwait(false);
+            createResponse.EnsureSuccessStatusCode();
+            var id = (await createResponse.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false))?.ID
+                     ?? throw new InvalidOperationException("No backup ID in the response");
+            Assert.That(await GetOperationTypeAsync(id).ConfigureAwait(false), Is.EqualTo(Duplicati.Server.Serialization.OperationType.Sync));
+
+            (await httpClient.PutAsJsonAsync($"/api/v1/backup/{id}", BackupBody(name, null), JsonOptions).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            Assert.That(await GetOperationTypeAsync(id).ConfigureAwait(false), Is.EqualTo(Duplicati.Server.Serialization.OperationType.Sync), "Saving without the operation type should keep the job a sync job");
+
+            (await httpClient.PutAsJsonAsync($"/api/v1/backup/{id}", BackupBody(name, "Backup"), JsonOptions).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            Assert.That(await GetOperationTypeAsync(id).ConfigureAwait(false), Is.EqualTo(Duplicati.Server.Serialization.OperationType.Backup), "An operation type that is sent should still be applied");
+
+            var secondResponse = await httpClient.PostAsJsonAsync("/api/v1/backups", BackupBody(name + " 2", null), JsonOptions).ConfigureAwait(false);
+            secondResponse.EnsureSuccessStatusCode();
+            var secondId = (await secondResponse.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false))?.ID
+                           ?? throw new InvalidOperationException("No backup ID in the response");
+            Assert.That(await GetOperationTypeAsync(secondId).ConfigureAwait(false), Is.EqualTo(Duplicati.Server.Serialization.OperationType.Backup), "A new job without the operation type should be a backup job");
+        }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
     public async Task BackupEnableDisableExtensionCanBeHidden_Async()
     {
         await WithAuthenticatedServerAsync(async httpClient =>

@@ -116,44 +116,57 @@ namespace Duplicati.UnitTest
             }
         }
 
-        private const int BLOCKSIZE = 10 * 1024;
+        /// <summary>
+        /// Writes new random data over every other block of the files in the source folder.
+        /// </summary>
+        private void ReplaceEveryOtherBlock(int seed, int blocksize, params string[] names)
+        {
+            var rng = new Random(seed);
+            var data = new byte[blocksize];
+            foreach (var name in names)
+            {
+                using var fs = new FileStream(Path.Combine(DATAFOLDER, name), FileMode.Open, FileAccess.Write);
+                for (var offset = 0L; offset + blocksize <= fs.Length; offset += 2L * blocksize)
+                {
+                    rng.NextBytes(data);
+                    fs.Position = offset;
+                    fs.Write(data);
+                }
+            }
+        }
 
         [Test]
         [TestCase(true)]
         [TestCase(false)]
         public async Task CompactAndRestoreWorkWithLinkedDownloads(bool encrypted)
         {
+            const int blocksize = 50 * 1024;
+            var names = new[] { "a.bin", "b.bin", "c.bin", "d.bin" };
+
+            // A volume is only downloaded when it holds both blocks that are still in use and
+            // blocks that are not. With one block for each file, that depends on the order the
+            // files are processed in, and the unused volumes can all be deleted without a download.
+            // The files are split into blocks here, and a single compressor stores the blocks of
+            // a file in order, so a volume with more blocks than there are files holds two
+            // neighbouring blocks of one file.
             var opts = TestOptions.Expand(new
             {
-                blocksize = $"{BLOCKSIZE}b",
                 use_hardlink_for_get = true,
                 dblock_size = "300kb",
+                blocksize = blocksize + "b",
+                concurrency_compressors = 1,
                 no_auto_compact = true,
                 keep_versions = 1
             });
             if (!encrypted)
                 opts["no-encryption"] = "true";
 
-            var files = new[] { "a.bin", "b.bin", "c.bin", "d.bin" };
-            WriteSourceFiles(1, files);
+            WriteSourceFiles(1, names);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, opts, null))
                 TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
-            // Replace every other block of every file, so each volume of the deleted version is
-            // partly wasted. Deleting whole files is not enough: the files are processed in
-            // parallel, and their blocks can end up filling whole volumes that compact just deletes.
-            var rng = new Random(2);
-            var replacement = new byte[BLOCKSIZE];
-            foreach (var name in files)
-            {
-                var data = File.ReadAllBytes(Path.Combine(DATAFOLDER, name));
-                for (var offset = 0; offset < data.Length; offset += 2 * BLOCKSIZE)
-                {
-                    rng.NextBytes(replacement);
-                    Array.Copy(replacement, 0, data, offset, Math.Min(BLOCKSIZE, data.Length - offset));
-                }
-                File.WriteAllBytes(Path.Combine(DATAFOLDER, name), data);
-            }
+            // Replace every other block, so each volume of the deleted version is partly wasted
+            ReplaceEveryOtherBlock(2, blocksize, names);
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, opts, null))
                 TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
 
@@ -172,7 +185,7 @@ namespace Duplicati.UnitTest
             using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, restoreopts, null))
                 TestUtils.AssertResults(await c.RestoreAsync(["*"]));
 
-            foreach (var name in files)
+            foreach (var name in names)
                 CollectionAssert.AreEqual(File.ReadAllBytes(Path.Combine(DATAFOLDER, name)), File.ReadAllBytes(Path.Combine(RESTOREFOLDER, name)), name);
         }
 

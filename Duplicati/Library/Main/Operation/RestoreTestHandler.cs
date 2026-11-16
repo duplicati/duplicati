@@ -213,7 +213,8 @@ namespace Duplicati.Library.Main.Operation
                 EnsureFreeSpace(scratchRoot, sampleBytes + m_options.VolumeSize);
 
                 // A full test restores the version with the candidate filter, exactly as a normal restore
-                // would, so the restore engine strips the same path prefix as it does for the candidates.
+                // would, so the restore engine strips the same path prefix as it does for the candidates
+                // (unless dont-compress-restore-paths is set, in which case the full source path is kept).
                 // A sampled test restores just the sampled paths, which are bounded by the sample size.
                 var restoreFolder = Path.Combine(scratchRoot, RESTORE_FOLDER_NAME);
                 Directory.CreateDirectory(restoreFolder);
@@ -222,11 +223,15 @@ namespace Duplicati.Library.Main.Operation
                 if (mode == RestoreTestMode.Full)
                 {
                     restoreFilter = candidateFilter;
-                    prefix = await db.GetLargestPrefixAsync(useCandidates: true, token).ConfigureAwait(false);
+                    prefix = m_options.DontCompressRestorePaths
+                        ? string.Empty
+                        : await db.GetLargestPrefixAsync(useCandidates: true, token).ConfigureAwait(false);
                 }
                 else
                 {
-                    prefix = await db.GetLargestPrefixAsync(useCandidates: false, token).ConfigureAwait(false);
+                    prefix = m_options.DontCompressRestorePaths
+                        ? string.Empty
+                        : await db.GetLargestPrefixAsync(useCandidates: false, token).ConfigureAwait(false);
                     var paths = new List<string>();
                     await foreach (var file in db.GetSampleFilesAsync(filesetId, token).ConfigureAwait(false))
                     {
