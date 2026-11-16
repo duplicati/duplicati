@@ -209,7 +209,8 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
     {
         var con = await GetConnectionAsync(cancellationToken).ConfigureAwait(false);
         foreach (var v in await con.ListAsync(_connectionParameters.Path, cancellationToken).ConfigureAwait(false))
-            yield return v;
+            if (v.Name != "." && v.Name != "..")
+                yield return v;
     }
 
     /// <summary>

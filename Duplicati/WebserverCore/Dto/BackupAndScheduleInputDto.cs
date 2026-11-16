@@ -65,9 +65,11 @@ public sealed record BackupAndScheduleInputDto
         /// </summary>
         public long ConnectionStringID { get; init; } = -1;
         /// <summary>
-        /// The operation this backup performs when it runs.
+        /// The operation this backup performs when it runs. When omitted, a new backup is a
+        /// backup and an updated backup keeps its current operation, so a client that saves only
+        /// some fields does not turn a sync job into a backup job.
         /// </summary>
-        public Duplicati.Server.Serialization.OperationType OperationType { get; init; } = Duplicati.Server.Serialization.OperationType.Backup;
+        public Duplicati.Server.Serialization.OperationType? OperationType { get; init; }
         /// <summary>
         /// The backup source folders and files
         /// </summary>
