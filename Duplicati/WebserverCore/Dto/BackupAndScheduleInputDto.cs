@@ -30,10 +30,28 @@ public sealed record BackupAndScheduleInputDto
     /// The backup DTO
     /// </summary>
     public required BackupInputDto Backup { get; init; }
+    private readonly ScheduleInputDto? _schedule;
+
     /// <summary>
-    /// The schedule DTO
+    /// The schedule DTO. Null removes the schedule. When omitted, an updated backup keeps its
+    /// current schedule, so a client that saves only some fields does not remove it.
     /// </summary>
-    public ScheduleInputDto? Schedule { get; init; }
+    public ScheduleInputDto? Schedule
+    {
+        get => _schedule;
+        init
+        {
+            _schedule = value;
+            HasSchedule = true;
+        }
+    }
+
+    /// <summary>
+    /// Whether the request had the Schedule field, also when it was null. The JSON reader sets
+    /// <see cref="Schedule"/> only for a field that is present.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool HasSchedule { get; private init; }
 
     /// <summary>
     /// The backup DTO
@@ -41,25 +59,25 @@ public sealed record BackupAndScheduleInputDto
     public sealed record BackupInputDto
     {
         /// <summary>
-        /// The backup name
+        /// The backup name. When omitted, an updated backup keeps its current name.
         /// </summary>
-        public string Name { get; init; } = "";
+        public string? Name { get; init; }
         /// <summary>
-        /// The backup description
+        /// The backup description. When omitted, an updated backup keeps its current description.
         /// </summary>
-        public string Description { get; init; } = "";
+        public string? Description { get; init; }
         /// <summary>
         /// The path to the local database
         /// </summary>
         public string? DBPath { get; init; } = null;
         /// <summary>
-        /// The backup tags
+        /// The backup tags. When omitted, an updated backup keeps its current tags.
         /// </summary>
         public string[]? Tags { get; init; }
         /// <summary>
-        /// The backup target url
+        /// The backup target url. When omitted, an updated backup keeps its current target.
         /// </summary>
-        public string TargetURL { get; init; } = "";
+        public string? TargetURL { get; init; }
         /// <summary>
         /// The connection string ID, or -1 if not used
         /// </summary>
@@ -77,17 +95,17 @@ public sealed record BackupAndScheduleInputDto
         /// </summary>
         public bool? Enabled { get; init; }
         /// <summary>
-        /// The backup source folders and files
+        /// The backup source folders and files. When omitted, an updated backup keeps its current sources.
         /// </summary>
-        public string[] Sources { get; init; } = [];
+        public string[]? Sources { get; init; }
 
         /// <summary>
-        /// The backup settings
+        /// The backup settings. When omitted, an updated backup keeps its current settings.
         /// </summary>
         public IEnumerable<SettingInputDto>? Settings { get; init; }
 
         /// <summary>
-        /// The filters applied to the source files
+        /// The filters applied to the source files. When omitted, an updated backup keeps its current filters.
         /// </summary>
         public IEnumerable<FilterInputDto>? Filters { get; init; }
 
@@ -98,7 +116,8 @@ public sealed record BackupAndScheduleInputDto
 
         /// <summary>
         /// Additional target URLs for remote synchronization
-        /// These are used by RemoteSynchronizationModule and are separate from the primary TargetURL
+        /// These are used by RemoteSynchronizationModule and are separate from the primary TargetURL.
+        /// When omitted, an updated backup keeps its current additional target urls.
         /// </summary>
         public IEnumerable<TargetUrlInputDto>? AdditionalTargetURLs { get; init; }
     }
@@ -117,11 +136,11 @@ public sealed record BackupAndScheduleInputDto
         /// </summary>
         public string[]? Tags { get; init; }
         /// <summary>
-        /// The time this schedule is based on
+        /// The time this schedule is based on. When omitted, an updated schedule keeps its current time.
         /// </summary>
         public DateTime? Time { get; init; }
         /// <summary>
-        /// How often the backup is repeated
+        /// How often the backup is repeated. When omitted, an updated schedule keeps its current repetition.
         /// </summary>
         public string? Repeat { get; init; }
         /// <summary>
@@ -133,7 +152,7 @@ public sealed record BackupAndScheduleInputDto
         /// </summary>
         public string? Rule { get; init; }
         /// <summary>
-        /// The days that the backup is allowed to run
+        /// The days that the backup is allowed to run. When omitted, an updated schedule keeps its current days.
         /// </summary>
         public DayOfWeek[]? AllowedDays { get; init; }
     }

@@ -47,14 +47,14 @@ public class BackupListService(Connection connection) : IBackupListService
             var backup = new Backup()
             {
                 ID = null,
-                Name = data.Backup.Name,
-                Description = data.Backup.Description,
+                Name = data.Backup.Name ?? "",
+                Description = data.Backup.Description ?? "",
                 Tags = data.Backup.Tags,
-                TargetURL = data.Backup.TargetURL,
+                TargetURL = data.Backup.TargetURL ?? "",
                 ConnectionStringID = data.Backup.ConnectionStringID,
                 OperationType = data.Backup.OperationType ?? Server.Serialization.OperationType.Backup,
                 Enabled = data.Backup.Enabled ?? true,
-                Sources = data.Backup.Sources,
+                Sources = data.Backup.Sources ?? [],
                 Settings = settings.Select(x => new Setting()
                 {
                     Name = x.Name,
@@ -111,7 +111,7 @@ public class BackupListService(Connection connection) : IBackupListService
             {
                 if (existingDb)
                 {
-                    backup.SetDBPath(Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(data.Backup.TargetURL, null, false, false, false));
+                    backup.SetDBPath(Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(backup.TargetURL, null, false, false, false));
                     if (string.IsNullOrWhiteSpace(data.Backup.DBPath))
                         throw new Exception("Unable to find remote db path?");
                 }
