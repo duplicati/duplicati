@@ -514,6 +514,63 @@ namespace Duplicati.Library.Modules.Builtin
         /// The destination type template key
         /// </summary>
         private const string UPDATE_CHANNEL = "update-channel";
+        /// <summary>
+        /// The operation start time template key
+        /// </summary>
+        private const string BEGINTIME = "BeginTime";
+        /// <summary>
+        /// The operation end time template key
+        /// </summary>
+        private const string ENDTIME = "EndTime";
+        /// <summary>
+        /// The operation duration template key
+        /// </summary>
+        private const string DURATION = "Duration";
+
+        /// <summary>
+        /// The format of the start and end times, in local time, the same as the default of the formatDate template helper
+        /// </summary>
+        private const string RESULT_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
+        /// <summary>
+        /// The template keys taken from the result of the operation.
+        /// They are expanded after the options and extra parameters, so an option with the same name keeps its value.
+        /// </summary>
+        private static readonly IReadOnlyList<string> RESULT_TIME_TEMPLATE_KEYS = [BEGINTIME, ENDTIME, DURATION];
+
+        /// <summary>
+        /// Gets the value of a template key taken from the result of the operation
+        /// </summary>
+        /// <param name="name">The name of the template key</param>
+        /// <param name="result">The result of the operation</param>
+        /// <param name="value">The formatted value</param>
+        /// <returns><c>true</c> if the result has the value; <c>false</c> if the result is not an <see cref="IBasicResults"/></returns>
+        private static bool TryGetResultTimeValue(string name, object result, out string value)
+        {
+            value = "";
+            if (result is not IBasicResults basicResults)
+                return false;
+
+            static string FormatTime(DateTime time)
+                => time.Ticks == 0 ? "" : time.ToLocalTime().ToString(RESULT_TIME_FORMAT, System.Globalization.CultureInfo.InvariantCulture);
+
+            switch (name)
+            {
+                case BEGINTIME:
+                    value = FormatTime(basicResults.BeginTime);
+                    return true;
+                case ENDTIME:
+                    value = FormatTime(basicResults.EndTime);
+                    return true;
+                case DURATION:
+                    // Whole seconds, as "hh:mm:ss", or "d.hh:mm:ss" for a day or more
+                    var duration = basicResults.Duration;
+                    value = TimeSpan.FromSeconds(Math.Floor(duration.TotalSeconds)).ToString("c", System.Globalization.CultureInfo.InvariantCulture);
+                    return true;
+                default:
+                    return false;
+            }
+        }
 
         /// <summary>
         /// The list of regular template keys
@@ -646,6 +703,11 @@ namespace Duplicati.Library.Modules.Builtin
                     if (!extra.ContainsKey(key))
                         extra[key] = GetDefaultValue(key);
 
+                // Add the times of the operation, if found in the template and not set by an option
+                foreach (var key in RESULT_TIME_TEMPLATE_KEYS)
+                    if (!extra.ContainsKey(key) && input.IndexOf($"%{key}%", StringComparison.OrdinalIgnoreCase) >= 0 && TryGetResultTimeValue(key, result, out var timeValue))
+                        extra[key] = timeValue;
+
                 if (m_extraValues != null)
                     foreach (var v in m_extraValues)
                         extra[v.Key] = v.Value;
@@ -709,6 +771,12 @@ namespace Duplicati.Library.Modules.Builtin
                 if (m_extraValues != null && !m_reducedReporting)
                     foreach (var v in m_extraValues)
                         input = Expand(input, v.Key, () => v.Value);
+
+                // The times of the operation come last, so an option or extra parameter with the same name keeps its value.
+                // A result without times leaves the keys to be removed below, as before
+                foreach (var key in RESULT_TIME_TEMPLATE_KEYS)
+                    if (TryGetResultTimeValue(key, result, out var timeValue))
+                        input = Expand(input, key, () => timeValue);
 
                 // Remove any remaining template keys
                 input = Regex.Replace(input, "\\%[^\\%]+\\%", "");
