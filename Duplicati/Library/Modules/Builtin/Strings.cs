@@ -148,6 +148,9 @@ In the message body, certain tokens are replaced:
 %REMOTEURL% - Remote server URL
 %LOCALPATH% - The path to the local files or folders involved in the operation (if any)
 %PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success
+%BEGINTIME% - The local time the operation started, e.g. 2026-11-14 09:30:00
+%ENDTIME% - The local time the operation ended, e.g. 2026-11-14 09:42:05
+%DURATION% - The duration of the operation, e.g. 00:12:05, or 1.02:00:00 for a day or more
 
 All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
         public static string OptionBodyShort { get { return LC.L(@"The message body"); } }
@@ -198,6 +201,9 @@ In the message, certain tokens are replaced:
 %REMOTEURL% - Remote server URL
 %LOCALPATH% - The path to the local files or folders involved in the operation (if any)
 %PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success
+%BEGINTIME% - The local time the operation started, e.g. 2026-11-14 09:30:00
+%ENDTIME% - The local time the operation ended, e.g. 2026-11-14 09:42:05
+%DURATION% - The duration of the operation, e.g. 00:12:05, or 1.02:00:00 for a day or more
 
 All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
         public static string SendxmppmessageShort { get { return LC.L(@"The message template"); } }
@@ -235,6 +241,9 @@ In the message, certain tokens are replaced:
 %REMOTEURL% - Remote server URL
 %LOCALPATH% - The path to the local files or folders involved in the operation (if any)
 %PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success
+%BEGINTIME% - The local time the operation started, e.g. 2026-11-14 09:30:00
+%ENDTIME% - The local time the operation ended, e.g. 2026-11-14 09:42:05
+%DURATION% - The duration of the operation, e.g. 00:12:05, or 1.02:00:00 for a day or more
 
 All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed.");
 
@@ -267,6 +276,9 @@ In the message, certain tokens are replaced:
 %REMOTEURL% - Remote server URL
 %LOCALPATH% - The path to the local files or folders involved in the operation (if any)
 %PARSEDRESULT% - The parsed result, if the operation is a backup. Possible values are: Error, Warning, Success
+%BEGINTIME% - The local time the operation started, e.g. 2026-11-14 09:30:00
+%ENDTIME% - The local time the operation ended, e.g. 2026-11-14 09:42:05
+%DURATION% - The duration of the operation, e.g. 00:12:05, or 1.02:00:00 for a day or more
 
 All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
         public static string SendhttpmessageShort { get { return LC.L(@"The message template"); } }
