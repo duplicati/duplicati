@@ -410,7 +410,7 @@ namespace Duplicati.Library.Main.Strings
         public static string CPUIntensityLong { get { return LC.L("Set the CPU intensity level to limit CPU resource utilization. A higher number translates into a higher utilization budget. E.g. 10 would mean no restrictions. Must be an integer between 1-10."); } }
 
         public static string RemoteSyncJsonConfigShort { get { return LC.L("Remote synchronization configuration"); } }
-        public static string RemoteSyncJsonConfigLong { get { return LC.L("JSON string or file path containing remote synchronization configuration"); } }
+        public static string RemoteSyncJsonConfigLong { get { return LC.L("JSON string or file path containing remote synchronization configuration. The configuration is an object with a \"destinations\" array, and optionally \"sync-on-warnings\". Each destination has a \"url\", and optionally: \"mode\" (inline, interval or counting), \"interval\", \"count\", \"sync-database-path\", \"dry-run\", \"force\", \"auto-create-folders\", \"backend-retries\", \"backend-retry-delay\" (milliseconds), \"backend-retry-with-exponential-backoff\", and \"dst-options\" and \"global-options\" (lists of key=value options for the destination)."); } }
 
         public static string RestoreCacheMaxShort { get { return LC.L("Maximum cache size for restoring files"); } }
         public static string RestoreCacheMaxLong { get { return LC.L($"Use this option to set the maximum size of the cache used for restoring files. The cache is used to store the data blocks that are downloaded from the remote storage. It assumes that the value is divisable by the block size, except for when it is 0, which disables the block cache."); } }
@@ -452,6 +452,8 @@ namespace Duplicati.Library.Main.Strings
         public static string RefreshLockInfoCompleteLong { get { return LC.L("Use this option to perform a complete refresh of lock information from the backend. This will query the backend for the current lock status of each remote volume and update the local database accordingly. If this option is not specified, only the lock information for the remote volumes with no lock information will be refreshed."); } }
         public static string SyncRecheckShort { get { return LC.L("Force remote recheck"); } }
         public static string SyncRecheckLong { get { return LC.L("Forces a full remote listing to rebuild the local sync cache"); } }
+        public static string SyncMaxDepthShort { get { return LC.L("Limit the folder depth"); } }
+        public static string SyncMaxDepthLong { get { return LC.L("The number of folder levels below each source folder that are synchronized. With zero only the files directly in the source folder are synchronized, and no sub-folder is read or created on the destination. If not set, all levels are synchronized."); } }
         public static string SyncThenDeleteShort { get { return LC.L("Delete orphaned files"); } }
         public static string SyncThenDeleteLong { get { return LC.L("Deletes files on the remote that no longer exist locally"); } }
         public static string SyncVerifyHashShort { get { return LC.L("Verify file hashes"); } }

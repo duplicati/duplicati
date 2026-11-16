@@ -68,6 +68,10 @@ namespace Duplicati.Library.Main
         public const string SYNC_THEN_DELETE_OPTION = "sync-then-delete";
 
         /// <summary>
+        /// The option that limits how many folder levels below a source a sync descends
+        /// </summary>
+        public const string SYNC_MAX_DEPTH_OPTION = "sync-max-depth";
+        /// <summary>
         /// The name of the internal option the server uses to pass the source paths of the job,
         /// joined with the path separator, so scripts see them in every operation and not only in a backup
         /// </summary>
@@ -706,6 +710,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument(SYNC_SNAPSHOT_FOLDERS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncSnapshotFoldersShort, Strings.Options.SyncSnapshotFoldersLong(SYNC_THEN_DELETE_OPTION, SYNC_KEEP_SNAPSHOTS_OPTION, SYNC_SNAPSHOT_DISABLE_HARDLINKS_OPTION), "false"),
             new CommandLineArgument(SYNC_SNAPSHOT_DISABLE_HARDLINKS_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.Options.SyncSnapshotDisableHardlinksShort, Strings.Options.SyncSnapshotDisableHardlinksLong(SYNC_SNAPSHOT_FOLDERS_OPTION), "false"),
             new CommandLineArgument(SYNC_KEEP_SNAPSHOTS_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.Options.SyncKeepSnapshotsShort, Strings.Options.SyncKeepSnapshotsLong(SYNC_SNAPSHOT_FOLDERS_OPTION), "0"),
+            new CommandLineArgument(SYNC_MAX_DEPTH_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.Options.SyncMaxDepthShort, Strings.Options.SyncMaxDepthLong),
 
             new CommandLineArgument("restore-test-mode", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.RestoreTestModeShort, Strings.Options.RestoreTestModeLong("restore-test-sample-count", "restore-test-sample-percent", "restore-test-rolling-window"), Enum.GetName(typeof(RestoreTestMode), RestoreTestMode.RandomFiles), null, Enum.GetNames(typeof(RestoreTestMode))),
             new CommandLineArgument("restore-test-sample-count", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreTestSampleCountShort, Strings.Options.RestoreTestSampleCountLong, DEFAULT_RESTORE_TEST_SAMPLE_COUNT.ToString()),
@@ -2469,6 +2474,23 @@ namespace Duplicati.Library.Main
         /// The number of snapshot folders a snapshot sync keeps; zero keeps all of them.
         /// </summary>
         public int SyncKeepSnapshots => Math.Max(0, GetInt(SYNC_KEEP_SNAPSHOTS_OPTION, 0));
+
+        /// <summary>
+        /// The number of folder levels below a source that a sync descends: zero syncs
+        /// only the files directly in the source folder. <c>null</c> when there is no limit.
+        /// </summary>
+        public int? SyncMaxDepth
+        {
+            get
+            {
+                var value = GetString(SYNC_MAX_DEPTH_OPTION, null);
+                if (string.IsNullOrWhiteSpace(value))
+                    return null;
+                if (!int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var depth) || depth < 0)
+                    throw new UserInformationException($"The value \"{value}\" is not valid for --{SYNC_MAX_DEPTH_OPTION}; use zero or a positive number", "InvalidSyncMaxDepth");
+                return depth;
+            }
+        }
 
         /// <summary>
         /// Makes a snapshot sync copy unchanged files into each snapshot instead of hard

@@ -27,19 +27,17 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Operation.Backup;
-using Duplicati.Library.Snapshots.USN;
 
 namespace Duplicati.Library.Main.Operation.Sync;
 
 /// <summary>
 /// Runs a parallel background enumeration of the source tree that counts the
 /// files and accumulates their total size, feeding the running totals into
-/// <see cref="SyncResults.OperationProgressUpdater"/> via
-/// <see cref="IOperationProgressUpdater.UpdatefileCount"/>. This mirrors the
-/// backup <c>CountFilesHandler</c>: the main sync loop (the per-folder work
-/// queue) runs concurrently while this task walks the whole source tree once
-/// to give the UI an early, monotonically-growing estimate of how many files
-/// the run will touch. The main loop is the source of truth for what is
+/// <see cref="IOperationProgressUpdater.UpdatefileCount"/>. The main sync loop
+/// (the per-folder work queue) runs concurrently while this task walks the
+/// source tree once, folder by folder as the main loop does and down to the same
+/// depth, to give the UI an early, monotonically-growing estimate of how many
+/// files the run will touch. The main loop is the source of truth for what is
 /// actually uploaded/deleted; this counter only drives progress reporting, so
 /// it may be cancelled as soon as the main loop finishes without affecting
 /// correctness.
@@ -48,36 +46,36 @@ internal static class CountFilesHandler
 {
     /// <summary>
     /// Counts the files in the source tree in the background, reporting the
-    /// running count and size to <paramref name="results"/>. The task
+    /// running count and size to <paramref name="progress"/>. The task
     /// completes when the enumeration is exhausted or <paramref name="token"/>
     /// is cancelled. The caller is expected to run this concurrently with the
     /// main sync loop and to cancel <paramref name="token"/> once that loop
     /// is done so this task does not outlive the run.
     /// </summary>
-    /// <param name="sources">The source provider tree to enumerate.</param>
-    /// <param name="journalService">The optional USN journal service (may be null; sync does not use one today but the parameter is kept for parity with the backup handler).</param>
-    /// <param name="results">The sync results whose progress updater receives the count.</param>
+    /// <param name="sources">The source provider to enumerate.</param>
+    /// <param name="sourcePaths">The source root paths.</param>
+    /// <param name="progress">The progress updater that receives the count.</param>
     /// <param name="fileAttributeFilter">The file-attribute filter applied during enumeration.</param>
     /// <param name="filter">The include/exclude filter applied during enumeration.</param>
     /// <param name="symlinkPolicy">The symlink policy applied during enumeration.</param>
     /// <param name="hardlinkPolicy">The hardlink policy applied during enumeration.</param>
     /// <param name="disableBackupExclusionXattr">Whether xattr-based backup exclusions are disabled.</param>
-    /// <param name="excludeEmptyFolders">Whether empty folders are excluded from the count.</param>
     /// <param name="ignoreNames">The ignore-names list applied during enumeration.</param>
     /// <param name="blacklistPaths">The set of blacklisted paths excluded from the count.</param>
+    /// <param name="maxDepth">The number of folder levels below a source root to descend, or <c>null</c> for no limit.</param>
     /// <param name="token">A cancellation token that, when cancelled, aborts the enumeration.</param>
     public static async Task RunAsync(
         ISourceProvider sources,
-        UsnJournalService? journalService,
-        SyncResults results,
+        string[] sourcePaths,
+        IOperationProgressUpdater progress,
         FileAttributes fileAttributeFilter,
         Library.Utility.IFilter filter,
         Options.SymlinkStrategy symlinkPolicy,
         Options.HardlinkStrategy hardlinkPolicy,
         bool disableBackupExclusionXattr,
-        bool excludeEmptyFolders,
         string[]? ignoreNames,
         HashSet<string> blacklistPaths,
+        int? maxDepth,
         CancellationToken token)
     {
         var count = 0L;
@@ -85,43 +83,54 @@ internal static class CountFilesHandler
 
         try
         {
-            await foreach (var entry in FileEnumerationProcess.EnumerateAsync(
-                sources,
-                journalService,
-                fileAttributeFilter,
-                filter,
-                symlinkPolicy,
-                hardlinkPolicy,
-                disableBackupExclusionXattr,
-                excludeEmptyFolders,
-                null,
-                ignoreNames,
-                blacklistPaths,
-                changedfilelist: null,
-                changeList: null,
-                token).ConfigureAwait(false))
+            var queue = new Queue<(ISourceProviderEntry Entry, int Depth)>();
+            foreach (var path in sourcePaths)
             {
-                if (token.IsCancellationRequested)
-                    break;
+                var root = await SyncHandler.GetSourceRootAsync(sources, path, token).ConfigureAwait(false);
+                if (root != null && root.IsFolder)
+                    queue.Enqueue((root, 0));
+            }
 
-                if (entry.IsFolder)
-                    continue;
-
-                count++;
-
-                try
+            while (queue.Count > 0 && !token.IsCancellationRequested)
+            {
+                var (folder, depth) = queue.Dequeue();
+                await foreach (var entry in FileEnumerationProcess.EnumerateFolderAsync(
+                    folder,
+                    fileAttributeFilter,
+                    filter,
+                    symlinkPolicy,
+                    hardlinkPolicy,
+                    disableBackupExclusionXattr,
+                    ignoreNames,
+                    blacklistPaths,
+                    token).ConfigureAwait(false))
                 {
-                    var entrySize = entry.Size;
-                    if (entrySize >= 0)
-                        size += entrySize;
-                }
-                catch
-                {
-                    // Some source providers throw on size access for exotic
-                    // entries; skip the size contribution but keep counting.
-                }
+                    if (token.IsCancellationRequested)
+                        break;
 
-                results.OperationProgressUpdater.UpdatefileCount(count, size, false);
+                    if (entry.IsFolder)
+                    {
+                        if (!maxDepth.HasValue || depth < maxDepth.Value)
+                            queue.Enqueue((entry, depth + 1));
+                        continue;
+                    }
+
+                    count++;
+
+                    try
+                    {
+                        var entrySize = entry.Size;
+                        if (entrySize >= 0)
+                            size += entrySize;
+                    }
+                    catch
+                    {
+                        // Some source providers throw on size access for exotic
+                        // entries; skip the size contribution but keep counting.
+                    }
+
+                    progress.UpdatefileCount(count, size, false);
+                }
             }
         }
         finally
@@ -131,7 +140,7 @@ internal static class CountFilesHandler
             // first) the count is incomplete, but the main loop's own
             // per-file reporting takes over as the authoritative progress
             // source, so a partial count here is fine.
-            results.OperationProgressUpdater.UpdatefileCount(count, size, true);
+            progress.UpdatefileCount(count, size, true);
         }
     }
 }
