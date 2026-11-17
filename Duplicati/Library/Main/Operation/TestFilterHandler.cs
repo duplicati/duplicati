@@ -49,6 +49,7 @@ namespace Duplicati.Library.Main.Operation
             var stopToken = m_result.TaskControl.ProgressToken;
             var skipModifiedBefore = m_options.SkipFilesModifiedBefore;
             var skipModifiedAfter = m_options.SkipFilesModifiedAfter;
+            var skipSmallerThan = m_options.SkipFilesSmallerThan;
 
             using (var provider = await Common.SourceProviderFactory.GetSourceProviderAsync(sources, m_options, stopToken).ConfigureAwait(false))
             {
@@ -139,6 +140,8 @@ namespace Duplicati.Library.Main.Operation
 
                                 if (skippedByTime)
                                     Logging.Log.WriteVerboseMessage(LOGTAG, "ExcludeFileByModifiedTime", "Excluding file due to modification time: {0} ({1})", entry.Path, lastWrite.ToLocalTime());
+                                else if (skipSmallerThan > 0 && size >= 0 && size < skipSmallerThan)
+                                    Logging.Log.WriteVerboseMessage(LOGTAG, "ExcludeSmallFile", "Excluding file due to size: {0} ({1})", entry.Path, Duplicati.Library.Utility.Utility.FormatSizeString(size));
                                 else if (m_options.SkipFilesLargerThan == long.MaxValue || m_options.SkipFilesLargerThan == 0 || size < m_options.SkipFilesLargerThan)
                                     Logging.Log.WriteVerboseMessage(LOGTAG, "IncludeFile", "Including file: {0} ({1})", entry.Path, size < 0 ? "unknown" : Duplicati.Library.Utility.Utility.FormatSizeString(size));
                                 else
