@@ -111,8 +111,9 @@ namespace Duplicati.Library.Main.Database.Local
         /// <param name="path">The path to the database file.</param>
         /// <param name="dbnew">An optional existing instance of <see cref="LocalRestoreDatabase"/> to use, or null to create a new one. Used to mimic constructor chaining.</param>
         /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <param name="tempTablesOnDisk">If the temporary tables of the restore are kept in a file instead of in memory.</param>
         /// <returns>A task that when awaited on, returns a new instance of <see cref="LocalRestoreDatabase"/>.</returns>
-        public static async Task<LocalRestoreDatabase> CreateAsync(string path, LocalRestoreDatabase? dbnew, CancellationToken token)
+        public static async Task<LocalRestoreDatabase> CreateAsync(string path, LocalRestoreDatabase? dbnew, CancellationToken token, bool tempTablesOnDisk = false)
         {
             dbnew ??= new LocalRestoreDatabase();
 
@@ -120,6 +121,18 @@ namespace Duplicati.Library.Main.Database.Local
                 await CreateLocalDatabaseAsync(path, "Restore", false, dbnew, token)
                     .ConfigureAwait(false);
             dbnew.ShouldCloseConnection = true;
+
+            // The temporary tables of a restore hold a row for every file and block to restore. In memory,
+            // as for the other operations, they grow with the size of the restore and can use gigabytes for
+            // millions of files (#7538). The connection is opened for the restore alone, and changing the
+            // setting drops the temporary tables, so it is changed here, before any of them is created.
+            if (tempTablesOnDisk)
+            {
+                await using (var cmd = dbnew.m_connection.CreateCommand(dbnew.m_rtr))
+                    await cmd.ExecuteNonQueryAsync("PRAGMA temp_store = FILE", token)
+                        .ConfigureAwait(false);
+                Logging.Log.WriteVerboseMessage(LOGTAG, "TempTablesOnDisk", null, "Keeping the temporary tables of the restore in a file");
+            }
 
             return dbnew;
         }
