@@ -54,6 +54,8 @@ public class BackupListService(Connection connection) : IBackupListService
                 ConnectionStringID = data.Backup.ConnectionStringID,
                 OperationType = data.Backup.OperationType ?? Server.Serialization.OperationType.Backup,
                 Enabled = data.Backup.Enabled ?? true,
+                RunAfterBackupID = string.IsNullOrWhiteSpace(data.Backup.RunAfterBackupID) ? null : data.Backup.RunAfterBackupID,
+                RunAfterCondition = data.Backup.RunAfterCondition ?? Server.Serialization.RunAfterCondition.Success,
                 Sources = data.Backup.Sources ?? [],
                 Settings = settings.Select(x => new Setting()
                 {
@@ -287,7 +289,7 @@ public class BackupListService(Connection connection) : IBackupListService
                 }
                 ,
                 "nextrun" => x => x.Schedule?.Time,
-                "schedule" => x => string.IsNullOrWhiteSpace(x.Schedule?.Repeat),
+                "schedule" => x => string.IsNullOrWhiteSpace(x.Schedule?.Repeat) && string.IsNullOrWhiteSpace(x.Backup.RunAfterBackupID),
                 "backend" => x => Library.Utility.Utility.GuessScheme(x.Backup.TargetURL),
                 "sourcesize" => x =>
                 {
@@ -381,6 +383,8 @@ public class BackupListService(Connection connection) : IBackupListService
                 ConnectionStringID = x.Backup.ConnectionStringID,
                 OperationType = x.Backup.OperationType,
                 Enabled = x.Backup.Enabled,
+                RunAfterBackupID = x.Backup.RunAfterBackupID,
+                RunAfterCondition = x.Backup.RunAfterCondition,
                 DBPath = x.Backup.DBPath,
                 DBPathExists = File.Exists(x.Backup.DBPath),
                 Tags = x.Backup.Tags,

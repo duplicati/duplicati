@@ -62,6 +62,14 @@ public sealed record BackupDto
     /// </summary>
     public bool Enabled { get; init; } = true;
     /// <summary>
+    /// The ID of the backup this backup runs after, or <c>null</c> if it does not follow another backup
+    /// </summary>
+    public required string? RunAfterBackupID { get; init; }
+    /// <summary>
+    /// The outcome the run of the other backup must have for this backup to run after it
+    /// </summary>
+    public required Duplicati.Server.Serialization.RunAfterCondition RunAfterCondition { get; init; }
+    /// <summary>
     /// The path to the local database
     /// </summary>
     public required string DBPath { get; init; }

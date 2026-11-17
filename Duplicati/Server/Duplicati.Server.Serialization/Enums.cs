@@ -69,6 +69,21 @@ namespace Duplicati.Server.Serialization
     }
 
     /// <summary>
+    /// The outcome a backup run must have before the backups that run after it are started.
+    /// </summary>
+    public enum RunAfterCondition
+    {
+        /// <summary>
+        /// The run completed with a success or warning result, and was not interrupted (the default).
+        /// </summary>
+        Success,
+        /// <summary>
+        /// The run finished in any way, including with errors or by being stopped.
+        /// </summary>
+        Always
+    }
+
+    /// <summary>
     /// The kind of operation a backup configuration performs when it runs.
     /// </summary>
     public enum OperationType

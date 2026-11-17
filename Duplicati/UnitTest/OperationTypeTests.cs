@@ -50,7 +50,7 @@ public class OperationTypeTests
     /// <summary>
     /// The latest server database schema version
     /// </summary>
-    private const int LATEST_SERVER_SCHEMA_VERSION = 13;
+    private const int LATEST_SERVER_SCHEMA_VERSION = 14;
 
     private string _tempDataFolder = null!;
     private string _databasePath = null!;
@@ -294,10 +294,15 @@ public class OperationTypeTests
                 Assert.AreEqual(LATEST_SERVER_SCHEMA_VERSION, await ReadVersionAsync(db));
 
                 // The v12 upgrade script does: ALTER TABLE "Backup" ADD COLUMN "OperationType" ...
-                // and the v13 script adds "Enabled". Drop both to simulate the v11 state.
+                // the v13 script adds "Enabled" and the v14 script adds the run-after columns.
+                // Drop them all to simulate the v11 state.
                 cmd.CommandText = @"ALTER TABLE ""Backup"" DROP COLUMN ""OperationType""";
                 await cmd.ExecuteNonQueryAsync();
                 cmd.CommandText = @"ALTER TABLE ""Backup"" DROP COLUMN ""Enabled""";
+                await cmd.ExecuteNonQueryAsync();
+                cmd.CommandText = @"ALTER TABLE ""Backup"" DROP COLUMN ""RunAfterBackupID""";
+                await cmd.ExecuteNonQueryAsync();
+                cmd.CommandText = @"ALTER TABLE ""Backup"" DROP COLUMN ""RunAfterCondition""";
                 await cmd.ExecuteNonQueryAsync();
 
                 // Insert a legacy backup row that predates the column.

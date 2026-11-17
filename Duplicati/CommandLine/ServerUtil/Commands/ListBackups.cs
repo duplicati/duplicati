@@ -82,6 +82,13 @@ public static class ListBackups
                                 : bk.Schedule.Time;
                             output.AppendConsoleMessage($"  Schedule: {bk.Schedule.Repeat} at {timestring}");
                         }
+                        if (bk.RunAfterBackupID != null)
+                        {
+                            var runAfterName = backupEntries.FirstOrDefault(x => x.ID == bk.RunAfterBackupID)?.Name ?? bk.RunAfterBackupID;
+                            output.AppendConsoleMessage(bk.RunAfterCondition == Server.Serialization.RunAfterCondition.Always
+                                ? $"  Runs after: {runAfterName} (also when it fails)"
+                                : $"  Runs after: {runAfterName}");
+                        }
 
                         WriteDetail("Last duration", Server.Serialization.LastRunMetadata.DurationKey(bk.OperationType), s => TimeSpan.TryParse(s, CultureInfo.InvariantCulture, out var ts) ? ts.ToString() : s);
                         WriteDetail("Source files size", "SourceFilesSize", s => Library.Utility.Utility.FormatSizeString(long.Parse(s)));
@@ -103,7 +110,9 @@ public static class ListBackups
                     Name = id.Name,
                     OperationType = id.OperationType.ToString(),
                     Metadata = id.Metadata,
-                    Schedule = id.Schedule
+                    Schedule = id.Schedule,
+                    RunAfterBackupID = id.RunAfterBackupID,
+                    RunAfterCondition = id.RunAfterBackupID == null ? null : id.RunAfterCondition.ToString()
                 }).ToArray());
             }
             else

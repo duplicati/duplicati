@@ -283,6 +283,99 @@ namespace Duplicati.Server
         }
 
         /// <summary>
+        /// Creates the task that runs a backup, unless the backup must not be queued now:
+        /// it is already queued or running, it is disabled, or it does not run on battery power
+        /// </summary>
+        /// <param name="entry">The backup to run</param>
+        /// <param name="taskOptions">The extra options for the run, or <c>null</c> if there are none</param>
+        /// <returns>The task to queue, or <c>null</c> if the backup must not be queued</returns>
+        private Runner.IRunnerData? TryCreateBackupTask(IBackup entry, Dictionary<string, string?>? taskOptions)
+        {
+            //See if it is already queued
+            var tmplst = from n in m_queueRunnerService.GetCurrentTasks()
+                         where n.Operation == Serialization.DuplicatiOperation.BackupOrSync
+                         select n.BackupID;
+            var tastTemp = m_queueRunnerService.GetCurrentTask();
+            if (tastTemp != null && tastTemp.Operation == Serialization.DuplicatiOperation.BackupOrSync)
+                tmplst = tmplst.Union(new[] { tastTemp.BackupID });
+
+            if (tmplst.Any(x => x == entry.ID))
+                return null;
+
+            if (!entry.Enabled)
+            {
+                // The schedule still advances, so the backup resumes at its next slot once enabled
+                Library.Logging.Log.WriteInformationMessage(LOGTAG,
+                    "BackupDisabled",
+                    "Skipping scheduled run of backup {0} because it is disabled.", entry.Name);
+                return null;
+            }
+
+            var options = Server.Runner.GetCommonOptions(m_dataConnection);
+            Server.Runner.ApplyOptions(m_dataConnection, entry, options, out var _);
+            if (new Library.Main.Options(options).DisableOnBattery &&
+                (Library.Utility.Power.PowerSupply.GetSource() ==
+                 Library.Utility.Power.PowerSupply.Source.Battery))
+            {
+                Library.Logging.Log.WriteInformationMessage(LOGTAG,
+                    "BackupDisabledOnBattery",
+                    "Scheduled backup disabled while on battery power.");
+                return null;
+            }
+
+            return Server.Runner.CreateTask(Serialization.DuplicatiOperation.BackupOrSync, entry, taskOptions);
+        }
+
+        /// <summary>
+        /// Queues the backups that are set to run after a backup, when a run of that backup has finished.
+        /// This is called from the task queue between two tasks, so it never throws.
+        /// </summary>
+        /// <param name="result">The result of the task that finished</param>
+        public void OnTaskCompleted(CachedTaskResult result)
+        {
+            try
+            {
+                // Only a backup run that took place can start other backups
+                if (result.Operation != Serialization.DuplicatiOperation.BackupOrSync || result.BackupId == null || result.Skipped)
+                    return;
+
+                var succeeded = result.Exception == null
+                    && result.Summary != null
+                    && !result.Summary.Interrupted
+                    && result.Summary.ParsedResult is Library.Interface.ParsedResultType.Success or Library.Interface.ParsedResultType.Warning;
+
+                foreach (var id in m_dataConnection.GetBackupIDsRunningAfter(result.BackupId))
+                {
+                    var entry = m_dataConnection.GetBackup(id);
+                    if (entry == null)
+                        continue;
+
+                    if (!succeeded && entry.RunAfterCondition != Serialization.RunAfterCondition.Always)
+                    {
+                        Library.Logging.Log.WriteInformationMessage(LOGTAG,
+                            "RunAfterSkipped",
+                            "Not running backup {0} after backup {1}, because that run did not complete successfully.", entry.Name, result.BackupId);
+                        continue;
+                    }
+
+                    var job = TryCreateBackupTask(entry, null);
+                    if (job == null)
+                        continue;
+
+                    Library.Logging.Log.WriteInformationMessage(LOGTAG,
+                        "RunAfterQueued",
+                        "Queueing backup {0} to run after backup {1}.", entry.Name, result.BackupId);
+                    m_queueRunnerService.AddTask(job);
+                }
+            }
+            catch (Exception ex)
+            {
+                Library.Logging.Log.WriteErrorMessage(LOGTAG, "RunAfterFailed", ex,
+                    "Failed to queue the backups that run after backup {0}", result.BackupId);
+            }
+        }
+
+        /// <summary>
         /// Returns a fingerprint of the schedule fields that determine the next run time.
         /// The cached next-run computed by <see cref="Runner"/> is invalidated when this
         /// changes, so that editing the time, the repetition interval or the allowed
@@ -362,61 +455,31 @@ namespace Duplicati.Server
                             foreach (var id in m_dataConnection.GetBackupIDsForTags(sc.Tags).Distinct()
                                          .Select(x => x.ToString()))
                             {
-                                //See if it is already queued
-                                var tmplst = from n in m_queueRunnerService.GetCurrentTasks()
-                                             where n.Operation == Serialization.DuplicatiOperation.BackupOrSync
-                                             select n.BackupID;
-                                var tastTemp = m_queueRunnerService.GetCurrentTask();
-                                if (tastTemp != null && tastTemp.Operation ==
-                                    Serialization.DuplicatiOperation.BackupOrSync)
-                                    tmplst = tmplst.Union(new[] { tastTemp.BackupID });
+                                var entry = m_dataConnection.GetBackup(id);
+                                if (entry == null)
+                                    continue;
 
-                                //If it is not already in queue, put it there
-                                if (!tmplst.Any(x => x == id))
+                                Dictionary<string, string?>? taskOptions = null;
+                                try
                                 {
-                                    var entry = m_dataConnection.GetBackup(id);
-                                    if (entry != null && !entry.Enabled)
-                                    {
-                                        // The schedule still advances, so the backup resumes at its next slot once enabled
-                                        Library.Logging.Log.WriteInformationMessage(LOGTAG,
-                                            "BackupDisabled",
-                                            "Skipping scheduled run of backup {0} because it is disabled.", entry.Name);
-                                    }
-                                    else if (entry != null)
-                                    {
-                                        var options = Server.Runner.GetCommonOptions(m_dataConnection);
-                                        Server.Runner.ApplyOptions(m_dataConnection, entry, options, out var _);
-                                        if (new Library.Main.Options(options).DisableOnBattery &&
-                                            (Library.Utility.Power.PowerSupply.GetSource() ==
-                                             Library.Utility.Power.PowerSupply.Source.Battery))
-                                        {
-                                            Library.Logging.Log.WriteInformationMessage(LOGTAG,
-                                                "BackupDisabledOnBattery",
-                                                "Scheduled backup disabled while on battery power.");
-                                        }
-                                        else
-                                        {
-                                            Dictionary<string, string?>? taskOptions = null;
-                                            try
-                                            {
-                                                var nextRun = GetNextValidTime(start,
-                                                    new DateTime(
-                                                        Math.Max(DateTime.UtcNow.AddSeconds(1).Ticks, start.AddSeconds(1).Ticks),
-                                                        DateTimeKind.Utc), sc.Repeat, sc.AllowedDays, timeZoneInfo);
+                                    var nextRun = GetNextValidTime(start,
+                                        new DateTime(
+                                            Math.Max(DateTime.UtcNow.AddSeconds(1).Ticks, start.AddSeconds(1).Ticks),
+                                            DateTimeKind.Utc), sc.Repeat, sc.AllowedDays, timeZoneInfo);
 
-                                                taskOptions = new Dictionary<string, string?>()
-                                                { { "next-scheduled-run", Utility.SerializeDateTime(nextRun.ToUniversalTime()) } };
-                                            }
-                                            catch
-                                            {
-                                            }
+                                    taskOptions = new Dictionary<string, string?>()
+                                    { { "next-scheduled-run", Utility.SerializeDateTime(nextRun.ToUniversalTime()) } };
+                                }
+                                catch
+                                {
+                                }
 
-                                            var job = Server.Runner.CreateTask(Serialization.DuplicatiOperation.BackupOrSync, entry, taskOptions);
-                                            job.OnStarting = () => OnStartingWorkAsync(job);
-                                            job.OnFinished = (_) => OnCompletedAsync(job);
-                                            collectedJobs.Add((start, job));
-                                        }
-                                    }
+                                var job = TryCreateBackupTask(entry, taskOptions);
+                                if (job != null)
+                                {
+                                    job.OnStarting = () => OnStartingWorkAsync(job);
+                                    job.OnFinished = (_) => OnCompletedAsync(job);
+                                    collectedJobs.Add((start, job));
                                 }
                             }
 

@@ -101,6 +101,8 @@ public class FolderStatusServiceTests
         public long ConnectionStringID { get; set; } = -1;
         public OperationType OperationType { get; set; } = OperationType.Backup;
         public bool Enabled { get; set; } = true;
+        public string RunAfterBackupID { get; set; } = null!;
+        public RunAfterCondition RunAfterCondition { get; set; } = RunAfterCondition.Success;
         public string DBPath => string.Empty;
         public string[] Sources { get; set; } = Array.Empty<string>();
         public ISetting[] Settings { get; set; } = Array.Empty<ISetting>();

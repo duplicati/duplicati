@@ -94,6 +94,32 @@ public sealed record BackupAndScheduleInputDto
         /// about this field do not re-enable a disabled backup when saving it.
         /// </summary>
         public bool? Enabled { get; init; }
+        private readonly string? _runAfterBackupID;
+        /// <summary>
+        /// The ID of the backup this backup runs after. Null removes the reference. When omitted,
+        /// an updated backup keeps its current value, so clients that do not know about this
+        /// field do not remove the reference when saving the backup.
+        /// </summary>
+        public string? RunAfterBackupID
+        {
+            get => _runAfterBackupID;
+            init
+            {
+                _runAfterBackupID = value;
+                HasRunAfterBackupID = true;
+            }
+        }
+        /// <summary>
+        /// Whether the request had the RunAfterBackupID field, also when it was null. The JSON reader
+        /// sets <see cref="RunAfterBackupID"/> only for a field that is present.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonIgnore]
+        public bool HasRunAfterBackupID { get; private init; }
+        /// <summary>
+        /// The outcome the run of the other backup must have for this backup to run after it.
+        /// When omitted, a new backup runs after a successful run and an updated backup keeps its current value.
+        /// </summary>
+        public Duplicati.Server.Serialization.RunAfterCondition? RunAfterCondition { get; init; }
         /// <summary>
         /// The backup source folders and files. When omitted, an updated backup keeps its current sources.
         /// </summary>

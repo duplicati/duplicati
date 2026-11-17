@@ -41,13 +41,17 @@ public class Connection
     /// <param name="Metadata">The metadata of the backup</param>
     /// <param name="Schedule">The schedule of the backup</param>
     /// <param name="OperationType">The operation the backup performs when it runs</param>
+    /// <param name="RunAfterBackupID">The ID of the backup this backup runs after, or <c>null</c> if it has none</param>
+    /// <param name="RunAfterCondition">The outcome the other backup must have for this backup to run after it</param>
     public sealed record BackupEntry(
         string ID,
         string Name,
         string Description,
         Dictionary<string, string>? Metadata,
         BackupSchedule? Schedule,
-        Server.Serialization.OperationType OperationType
+        Server.Serialization.OperationType OperationType,
+        string? RunAfterBackupID,
+        Server.Serialization.RunAfterCondition RunAfterCondition
     );
 
     /// <summary>
@@ -82,13 +86,17 @@ public class Connection
         /// <param name="DBPath">The path to the local database</param>
         /// <param name="Metadata">The metadata of the backup</param>
         /// <param name="OperationType">The name of the operation type; missing from older servers</param>
+        /// <param name="RunAfterBackupID">The ID of the backup this backup runs after; missing from older servers</param>
+        /// <param name="RunAfterCondition">The name of the run-after condition; missing from older servers</param>
         public sealed record ResponseBackupDetailsEntry(
             string ID,
             string Name,
             string? Description,
             string? DBPath,
             Dictionary<string, string>? Metadata,
-            string? OperationType
+            string? OperationType,
+            string? RunAfterBackupID,
+            string? RunAfterCondition
         );
 
         /// <summary>
@@ -99,7 +107,11 @@ public class Connection
             => new BackupEntry(Backup.ID, Backup.Name, Backup.Description ?? "", Backup.Metadata, Schedule,
                 Enum.TryParse<Server.Serialization.OperationType>(Backup.OperationType, true, out var operationType)
                     ? operationType
-                    : Server.Serialization.OperationType.Backup);
+                    : Server.Serialization.OperationType.Backup,
+                string.IsNullOrWhiteSpace(Backup.RunAfterBackupID) ? null : Backup.RunAfterBackupID,
+                Enum.TryParse<Server.Serialization.RunAfterCondition>(Backup.RunAfterCondition, true, out var runAfterCondition)
+                    ? runAfterCondition
+                    : Server.Serialization.RunAfterCondition.Success);
     }
 
     /// <summary>

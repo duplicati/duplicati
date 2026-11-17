@@ -39,7 +39,9 @@ namespace Duplicati.WebserverCore.Abstractions;
 /// <param name="Exception">The exception that was thrown</param>
 /// <param name="ErrorMessage">The errors reported by a task that finished without throwing, or <c>null</c> if it reported none</param>
 /// <param name="Summary">The summary of the results of a task that finished without throwing, or <c>null</c> if it has no results</param>
-public sealed record CachedTaskResult(long TaskID, string? BackupId, DateTime? TaskStarted, DateTime? TaskFinished, Exception? Exception, string? ErrorMessage, TaskResultSummary? Summary);
+/// <param name="Operation">The operation the task performed</param>
+/// <param name="Skipped">True if the task was skipped before it started, so the operation did not run</param>
+public sealed record CachedTaskResult(long TaskID, string? BackupId, DateTime? TaskStarted, DateTime? TaskFinished, Exception? Exception, string? ErrorMessage, TaskResultSummary? Summary, Duplicati.Server.Serialization.DuplicatiOperation Operation, bool Skipped);
 
 /// <summary>
 /// Class to encapsulate a thread that runs a list of queued operations

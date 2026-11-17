@@ -137,6 +137,8 @@ public class BackupGet : IEndpointV1
                 ConnectionStringID = bk.ConnectionStringID,
                 OperationType = bk.OperationType,
                 Enabled = bk.Enabled,
+                RunAfterBackupID = bk.RunAfterBackupID,
+                RunAfterCondition = bk.RunAfterCondition,
                 DBPath = bk.DBPath,
                 DBPathExists = File.Exists(bk.DBPath),
                 IsTemporary = bk.IsTemporary,

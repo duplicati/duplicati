@@ -48,6 +48,8 @@ public sealed record McpServerStatus(string Version, bool Paused, IReadOnlyList<
 /// <param name="Name">The name of the backup</param>
 /// <param name="Description">The description of the backup</param>
 /// <param name="OperationType">Backup or Sync</param>
+/// <param name="RunAfterBackupId">The ID of the backup this backup runs after, if any</param>
+/// <param name="RunAfterCondition">Success if this backup only runs after a successful run of the other backup, Always if it runs after any run; only set with <paramref name="RunAfterBackupId"/></param>
 /// <param name="Sources">The source paths</param>
 /// <param name="DestinationType">The storage type of the destination, such as s3 or file</param>
 /// <param name="LastBackupStarted">When the last successful backup started</param>
@@ -61,6 +63,8 @@ public sealed record McpBackupInfo(
     string Name,
     string? Description,
     string OperationType,
+    string? RunAfterBackupId,
+    string? RunAfterCondition,
     IReadOnlyList<string> Sources,
     string? DestinationType,
     string? LastBackupStarted,
