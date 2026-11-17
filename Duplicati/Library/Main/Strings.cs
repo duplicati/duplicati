@@ -354,6 +354,8 @@ namespace Duplicati.Library.Main.Strings
         public static string DisablefilelistconsistencychecksShort { get { return LC.L(@"Disable filelist consistency checks"); } }
         public static string DisableOnBatteryLong { get { return LC.L("Use this option to disable a scheduled backup if the system is detected to be running on battery power (manual or command line backups will still be run). If the detected power source is mains (e.g., AC) or unknown, then scheduled backups will proceed as normal."); } }
         public static string DisableOnBatteryShort { get { return LC.L("Disable the backup when on battery power"); } }
+        public static string MinTimeBetweenScheduledRunsLong { get { return LC.L("Use this option to skip a scheduled run if the last completed run of the backup finished less than this amount of time ago. The skipped run is not queued later, and the backup runs at the next scheduled time that is far enough from the last completed run. Manual or command line backups are not affected."); } }
+        public static string MinTimeBetweenScheduledRunsShort { get { return LC.L("Minimum time between scheduled runs"); } }
 
         public static string LogfileloglevelLong { get { return LC.L(@"Specify the amount of log information to write into the file specified by the option --{0}.", "log-file"); } }
         public static string LogfileloglevelShort { get { return LC.L(@"Log file information level"); } }

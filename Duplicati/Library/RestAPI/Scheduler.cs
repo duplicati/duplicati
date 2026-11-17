@@ -230,6 +230,45 @@ namespace Duplicati.Server
                 .Any(sc => m_dataConnection.GetBackupIDsForTags(sc.Tags).Any(id => id.ToString() == backupId));
 
         /// <summary>
+        /// Checks if a scheduled run comes too soon after the last completed run of the backup,
+        /// as limited by the min-time-between-scheduled-runs option
+        /// </summary>
+        /// <param name="backup">The backup to check</param>
+        /// <param name="options">The options that apply to the backup</param>
+        /// <param name="now">The current time, in UTC</param>
+        /// <param name="lastFinished">The time the last completed run finished, if any</param>
+        /// <returns><c>true</c> if the scheduled run should be skipped</returns>
+        private static bool IsTooSoonAfterLastRun(IBackup backup, Library.Main.Options options, DateTime now, out DateTime lastFinished)
+        {
+            lastFinished = default;
+            TimeSpan? minTime;
+            try
+            {
+                minTime = options.MinTimeBetweenScheduledRuns;
+            }
+            catch
+            {
+                // An invalid value must not stop the scheduler; the run goes ahead and its option validation reports it.
+                // The value is not logged, as option values can hold secrets.
+                Library.Logging.Log.WriteWarningMessage(LOGTAG,
+                    "InvalidMinTimeBetweenScheduledRuns", null,
+                    "Ignoring the min-time-between-scheduled-runs option for backup {0} because its value is not a valid timespan.",
+                    backup.Name);
+                return false;
+            }
+
+            if (minTime == null || minTime.Value <= TimeSpan.Zero)
+                return false;
+
+            if (backup.Metadata == null
+                || !backup.Metadata.TryGetValue(Serialization.LastRunMetadata.FinishedKey(backup.OperationType), out var value)
+                || !Utility.TryDeserializeDateTime(value, out lastFinished))
+                return false;
+
+            return now - lastFinished.ToUniversalTime() < minTime.Value;
+        }
+
+        /// <summary>
         /// Thrown when a queued scheduled run is about to start, but its backup is no longer scheduled
         /// </summary>
         /// <param name="backupId">The ID of the backup</param>
@@ -284,12 +323,14 @@ namespace Duplicati.Server
 
         /// <summary>
         /// Creates the task that runs a backup, unless the backup must not be queued now:
-        /// it is already queued or running, it is disabled, or it does not run on battery power
+        /// it is already queued or running, it is disabled, it does not run on battery power, or,
+        /// for a scheduled run, its last run finished too recently
         /// </summary>
         /// <param name="entry">The backup to run</param>
         /// <param name="taskOptions">The extra options for the run, or <c>null</c> if there are none</param>
+        /// <param name="scheduledRun">If the run comes from the schedule of the backup, so --min-time-between-scheduled-runs applies</param>
         /// <returns>The task to queue, or <c>null</c> if the backup must not be queued</returns>
-        private Runner.IRunnerData? TryCreateBackupTask(IBackup entry, Dictionary<string, string?>? taskOptions)
+        private Runner.IRunnerData? TryCreateBackupTask(IBackup entry, Dictionary<string, string?>? taskOptions, bool scheduledRun = false)
         {
             //See if it is already queued
             var tmplst = from n in m_queueRunnerService.GetCurrentTasks()
@@ -313,13 +354,24 @@ namespace Duplicati.Server
 
             var options = Server.Runner.GetCommonOptions(m_dataConnection);
             Server.Runner.ApplyOptions(m_dataConnection, entry, options, out var _);
-            if (new Library.Main.Options(options).DisableOnBattery &&
+            var parsedOptions = new Library.Main.Options(options);
+            if (parsedOptions.DisableOnBattery &&
                 (Library.Utility.Power.PowerSupply.GetSource() ==
                  Library.Utility.Power.PowerSupply.Source.Battery))
             {
                 Library.Logging.Log.WriteInformationMessage(LOGTAG,
                     "BackupDisabledOnBattery",
                     "Scheduled backup disabled while on battery power.");
+                return null;
+            }
+
+            if (scheduledRun && IsTooSoonAfterLastRun(entry, parsedOptions, DateTime.UtcNow, out var lastFinished))
+            {
+                // The schedule still advances, so the backup runs at the next slot that is far enough away
+                Library.Logging.Log.WriteInformationMessage(LOGTAG,
+                    "BackupSkippedTooSoonAfterLastRun",
+                    "Skipping scheduled run of backup {0} because its last run finished at {1}, less than {2} ago.",
+                    entry.Name, lastFinished, parsedOptions.MinTimeBetweenScheduledRuns);
                 return null;
             }
 
@@ -474,7 +526,7 @@ namespace Duplicati.Server
                                 {
                                 }
 
-                                var job = TryCreateBackupTask(entry, taskOptions);
+                                var job = TryCreateBackupTask(entry, taskOptions, scheduledRun: true);
                                 if (job != null)
                                 {
                                     job.OnStarting = () => OnStartingWorkAsync(job);
