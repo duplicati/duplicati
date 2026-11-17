@@ -500,6 +500,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("list-prefix-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListprefixonlyShort, Strings.Options.ListprefixonlyLong, "false"),
             new CommandLineArgument("soft-delete-prefix", CommandLineArgument.ArgumentType.String, Strings.Options.SoftdeleteprefixShort, Strings.Options.SoftdeleteprefixLong),
             new CommandLineArgument("prevent-backend-rename", CommandLineArgument.ArgumentType.Boolean, Strings.Options.PreventbackendrenameShort, Strings.Options.PreventbackendrenameLong, "false"),
+            new CommandLineArgument("truncate-before-delete", CommandLineArgument.ArgumentType.Boolean, Strings.Options.TruncatebeforedeleteShort, Strings.Options.TruncatebeforedeleteLong, "false"),
             new CommandLineArgument("list-folder-contents", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListfoldercontentsShort, Strings.Options.ListfoldercontentsLong, "false"),
             new CommandLineArgument("list-sets-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ListsetsonlyShort, Strings.Options.ListsetsonlyLong, "false"),
             new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
@@ -1579,6 +1580,11 @@ namespace Duplicati.Library.Main
         /// Gets a flag indicating if the backend rename operation should be avoided
         /// </summary>
         public bool PreventBackendRename => GetBool("prevent-backend-rename");
+
+        /// <summary>
+        /// Gets a flag indicating if a file that fails to delete should be truncated and the delete retried
+        /// </summary>
+        public bool TruncateBeforeDelete => GetBool("truncate-before-delete");
 
         /// <summary>
         /// Gets the display name of the backup

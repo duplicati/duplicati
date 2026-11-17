@@ -137,6 +137,55 @@ partial class BackendManager
             throw new Exception("Failed to perform soft-delete on file");
         }
 
+        /// <summary>
+        /// Checks if the exception indicates that the remote file does not exist
+        /// </summary>
+        /// <param name="ex">The exception to check</param>
+        /// <returns>True if the exception is a file-missing exception</returns>
+        private static bool IsFileMissingException(Exception ex)
+        {
+            var isFileMissingException = ex is Library.Interface.FileMissingException || ex is System.IO.FileNotFoundException;
+            var wr = (ex as System.Net.WebException)?.Response as System.Net.HttpWebResponse;
+            var isWrFileMissingException = wr != null && (wr.StatusCode == System.Net.HttpStatusCode.NotFound || wr.StatusCode == System.Net.HttpStatusCode.Gone);
+            var isHttpFileMissingException = ex is HttpRequestException && (ex as HttpRequestException)?.StatusCode == System.Net.HttpStatusCode.NotFound;
+            return isFileMissingException || isWrFileMissingException || isHttpFileMissingException;
+        }
+
+        /// <summary>
+        /// Deletes the file, and if that fails and truncation is enabled,
+        /// overwrites the file with an empty file and tries the delete again.
+        /// On copy-on-write file systems a delete can fail when the storage is full,
+        /// and truncating the file first frees up the space needed for the delete.
+        /// </summary>
+        /// <param name="backend">The backend to use</param>
+        /// <param name="effectiveName">The name of the file, as the backend understands it</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        private async Task DeleteWithOptionalTruncateAsync(IBackend backend, string effectiveName, CancellationToken cancelToken)
+        {
+            try
+            {
+                await backend.DeleteAsync(effectiveName, cancelToken).ConfigureAwait(false);
+                return;
+            }
+            catch (Exception ex) when (Context.Options.TruncateBeforeDelete && !IsFileMissingException(ex) && !cancelToken.IsCancellationRequested)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "DeleteRemoteFileFailedTruncating", ex, LC.L($"Delete operation failed for {RemoteFilename}, truncating the file and retrying"));
+
+                try
+                {
+                    using (var emptyFile = new Library.Utility.TempFile())
+                        await backend.PutAsync(effectiveName, emptyFile, cancelToken).ConfigureAwait(false);
+                }
+                catch (Exception tex)
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "TruncateRemoteFileFailed", tex, LC.L($"Failed to truncate file {RemoteFilename}"));
+                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(ex).Throw();
+                }
+            }
+
+            await backend.DeleteAsync(effectiveName, cancelToken).ConfigureAwait(false);
+        }
+
         /// <inheritdoc/>
         public override async Task<bool> ExecuteAsync(IBackend backend, CancellationToken cancelToken)
         {
@@ -156,20 +205,16 @@ partial class BackendManager
                 }
                 else
                 {
-                    await backend.DeleteAsync(effectiveName, cancelToken).ConfigureAwait(false);
+                    await DeleteWithOptionalTruncateAsync(backend, effectiveName, cancelToken).ConfigureAwait(false);
                 }
                 deleteSucceeded = true;
             }
             catch (Exception ex)
             {
                 // Check if the file was not found, and if so, check if it was actually deleted
-                var isFileMissingException = ex is Library.Interface.FileMissingException || ex is System.IO.FileNotFoundException;
-                var wr = (ex as System.Net.WebException)?.Response as System.Net.HttpWebResponse;
-                var isWrFileMissingException = wr != null && (wr.StatusCode == System.Net.HttpStatusCode.NotFound || wr.StatusCode == System.Net.HttpStatusCode.Gone);
-                var isHttpFileMissingException = ex is HttpRequestException && (ex as HttpRequestException)?.StatusCode == System.Net.HttpStatusCode.NotFound;
                 bool recovered = false;
 
-                if (isFileMissingException || isWrFileMissingException || isHttpFileMissingException)
+                if (IsFileMissingException(ex))
                 {
                     Logging.Log.WriteInformationMessage(LOGTAG, "DeleteRemoteFileFailed", LC.L($"Delete operation failed for {RemoteFilename} with FileNotFound, listing contents"));
 
