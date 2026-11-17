@@ -79,7 +79,9 @@ namespace Duplicati.Library.Main.Operation.Restore
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", "Decompressing block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
 
                         sw_decompress_alloc?.Start();
-                        var data = ArrayPool<byte>.Shared.Rent(options.Blocksize);
+                        // The buffer only needs to hold this block. A buffer of the full block size would be
+                        // mostly empty for small files, and the block cache keeps thousands of them
+                        var data = ArrayPool<byte>.Shared.Rent((int)block_request.BlockSize);
                         sw_decompress_alloc?.Stop();
                         Logging.Log.WriteExplicitMessage(LOGTAG, "DecompressBlock", "Allocated buffer for block {0} from volume {1}", block_request.BlockID, block_request.VolumeID);
 
