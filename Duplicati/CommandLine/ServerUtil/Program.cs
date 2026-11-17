@@ -53,6 +53,7 @@ public static class Program
                 Logout.Create(),
                 Import.Create(),
                 Export.Create(),
+                UpdateBackup.Create(),
                 Health.Create(),
                 IssueForeverToken.Create(),
                 IssueMcpToken.Create(),

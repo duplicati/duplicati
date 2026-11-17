@@ -21,6 +21,7 @@
 
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.WebserverCore.Middlewares;
 using Duplicati.WebserverCore.Services;
@@ -165,7 +166,8 @@ public class Connection
     /// <summary>
     /// Initializes a new instance of the <see cref="Connection"/> class
     /// </summary>
-    private Connection(HttpClient client)
+    /// <param name="client">The HTTP client, with the base address and authorization set</param>
+    internal Connection(HttpClient client)
     {
         this.client = client;
     }
@@ -497,6 +499,29 @@ public class Connection
         return (JsonSerializer.Deserialize<ResponseBackupEntry>(await response.Content.ReadAsStringAsync())
             ?? throw new UserReportedException("Failed to parse response"))
             .ToBackupEntry();
+    }
+
+    /// <summary>
+    /// Updates a backup configuration with a partial configuration, keeping everything the patch does not mention
+    /// </summary>
+    /// <param name="backupId">The ID of the backup</param>
+    /// <param name="patch">The partial configuration, as described in <see cref="BackupPatch"/></param>
+    /// <returns>The updated backup</returns>
+    public async Task<BackupEntry> UpdateBackupAsync(string backupId, JsonObject patch)
+    {
+        var response = await client.GetAsync($"backup/{Uri.EscapeDataString(backupId)}");
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
+
+        var current = JsonNode.Parse(await response.Content.ReadAsStringAsync()) as JsonObject
+            ?? throw new UserReportedException("Failed to parse response");
+
+        // The server reports secrets masked, and restores the stored values for masked values it receives back
+        var updated = BackupPatch.Apply(current, patch);
+        var putResponse = await client.PutAsync($"backup/{Uri.EscapeDataString(backupId)}",
+            new StringContent(updated.ToJsonString(), System.Text.Encoding.UTF8, "application/json"));
+        await EnsureSuccessStatusCodeWithParsingAsync(putResponse);
+
+        return await GetBackupAsync(backupId);
     }
 
     /// <summary>
