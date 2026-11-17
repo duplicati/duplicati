@@ -227,7 +227,9 @@ namespace Duplicati.Server.Database
                 ? connectionStrings.GetValueOrDefault(previous.ConnectionStringID)
                 : previous.TargetURL;
 
-            TargetURL = QuerystringMasking.Unmask(TargetURL, [constr, previous.TargetURL]);
+            // An empty target is left for the validation to report, rather than failing here
+            if (!string.IsNullOrEmpty(TargetURL))
+                TargetURL = QuerystringMasking.Unmask(TargetURL, [constr, previous.TargetURL]);
             Sources = SourceMasking.UnmaskSources(Sources, previous.Sources);
 
             // Unmask additional target URLs
