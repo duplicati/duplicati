@@ -25,6 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -69,6 +70,7 @@ public class GPGEncryptionTests
         public string? ErrorMessage { get; init; }
         public int ExitCode { get; init; }
         public string? PidFile { get; init; }
+        public string? ArgumentsFile { get; init; }
     }
 
     /// <summary>
@@ -93,7 +95,8 @@ public class GPGEncryptionTests
             ps.Append($"exit {fake.ExitCode}");
 
             var path = Path.Combine(m_folder, "fake-gpg.cmd");
-            File.WriteAllText(path, $"@powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"{ps}\"\r\n");
+            var recordArguments = fake.ArgumentsFile != null ? $"@echo %*> \"{fake.ArgumentsFile}\"\r\n" : "";
+            File.WriteAllText(path, $"{recordArguments}@powershell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"{ps}\"\r\n");
             return path;
         }
         else
@@ -101,6 +104,8 @@ public class GPGEncryptionTests
             var sh = new StringBuilder("#!/bin/sh\n");
             if (fake.PidFile != null)
                 sh.Append($"echo $$ > '{fake.PidFile}'\n");
+            if (fake.ArgumentsFile != null)
+                sh.Append($"echo \"$@\" > '{fake.ArgumentsFile}'\n");
             if (fake.ErrorOutputBytes > 0)
                 sh.Append($"head -c {fake.ErrorOutputBytes} /dev/zero | tr '\\0' x >&2\n");
             if (fake.ReadInput)
@@ -378,6 +383,62 @@ public class GPGEncryptionTests
 
         Assert.That(ex!.Message, Does.Contain(program).And.Contain("--compress-algo none"));
         Assert.That(ex.Message, Does.Not.Contain(Secret));
+    }
+
+    /// <summary>
+    /// Runs gpg the way the options say, and returns the arguments it got for encryption and for decryption
+    /// </summary>
+    private (string Encrypt, string Decrypt) GpgArguments(Dictionary<string, string> options)
+    {
+        var argumentsFile = Path.Combine(m_folder, "arguments");
+        options[GPGEncryption.COMMANDLINE_OPTIONS_PATH] = CreateFakeGpg(new FakeGpg { ArgumentsFile = argumentsFile });
+        var gpg = new GPGEncryption("passphrase", options);
+        var data = RandomData(1024);
+
+        gpg.Encrypt(new MemoryStream(data), new MemoryStream());
+        var encrypt = File.ReadAllText(argumentsFile).Trim();
+        gpg.Decrypt(new MemoryStream(data), new MemoryStream());
+        var decrypt = File.ReadAllText(argumentsFile).Trim();
+        return (encrypt, decrypt);
+    }
+
+    /// <summary>
+    /// The chosen cipher is passed to gpg when encrypting; gpg reads it from the file when decrypting (#530)
+    /// </summary>
+    [Test]
+    public void TheCipherAlgorithmIsPassedWhenEncrypting()
+    {
+        var (encrypt, decrypt) = GpgArguments(new Dictionary<string, string> { ["gpg-encryption-cipher-algo"] = "AES256" });
+
+        Assert.That(encrypt, Does.Contain("--cipher-algo AES256"));
+        Assert.That(encrypt.IndexOf("--cipher-algo", StringComparison.Ordinal), Is.LessThan(encrypt.IndexOf("--symmetric", StringComparison.Ordinal)), "Options go before the command");
+        Assert.That(decrypt, Does.Not.Contain("--cipher-algo"));
+    }
+
+    /// <summary>
+    /// Without the option, gpg keeps choosing its own cipher, and a --cipher-algo in the switches still reaches gpg
+    /// </summary>
+    [Test]
+    public void TheCipherAlgorithmIsNotPassedByDefault()
+    {
+        var (encrypt, _) = GpgArguments(new Dictionary<string, string>());
+        Assert.That(encrypt, Does.Not.Contain("--cipher-algo"));
+
+        var (fromSwitches, _) = GpgArguments(new Dictionary<string, string> { ["gpg-encryption-switches"] = "--cipher-algo TWOFISH" });
+        Assert.That(fromSwitches, Does.Contain("--cipher-algo TWOFISH"));
+    }
+
+    /// <summary>
+    /// The option lists the ciphers, so the user interface can offer them to choose from
+    /// </summary>
+    [Test]
+    public void TheCipherAlgorithmOptionListsTheCiphers()
+    {
+        var option = new GPGEncryption().SupportedCommands.Single(x => x.Name == "gpg-encryption-cipher-algo");
+
+        Assert.That(option.Type, Is.EqualTo(Library.Interface.CommandLineArgument.ArgumentType.Enumeration));
+        Assert.That(option.ValidValues, Does.Contain("AES256").And.Contain("TWOFISH").And.Contain("CAMELLIA256"));
+        Assert.That(option.DefaultValue, Is.Null.Or.Empty);
     }
 
     private static bool HasExited(int pid)
