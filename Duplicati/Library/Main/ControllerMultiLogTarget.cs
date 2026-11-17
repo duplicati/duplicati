@@ -31,7 +31,7 @@ namespace Duplicati.Library.Main
     /// <summary>
     /// The log target handler for the controller, which sends to multiple log targets
     /// </summary>
-    public class ControllerMultiLogTarget : ILogDestination, IDisposable
+    public class ControllerMultiLogTarget : ILogDestination, ILogFilter, IDisposable
     {
         /// <summary>
         /// The target entry for the log target
@@ -142,26 +142,12 @@ namespace Duplicati.Library.Main
         /// <param name="entry">Entry.</param>
         public void WriteMessage(LogEntry entry)
         {
-            // If the message is a warning, check if we should suppress it
-            if (m_supressWarningFilter != null && entry.Level == LogMessageType.Warning && m_supressWarningFilter.Contains(entry.Id))
-                entry = new LogEntry(entry.Message, entry.Arguments, LogMessageType.Information, entry.Tag, entry.Id, entry.Exception);
+            entry = ApplyWarningSuppression(entry);
 
             foreach (var e in m_targets)
             {
-                var found = e.Filter.Matches(entry.FilterTag, out var result, out var _);
-
-                // If there is a filter match, use that
-                if (found)
-                {
-                    if (!result)
-                        continue;
-                }
-                else
-                {
-                    // Otherwise, filter by log-level
-                    if (entry.Level < e.Level)
-                        continue;
-                }
+                if (!TargetAccepts(e, entry))
+                    continue;
 
                 // If we get here, write the message, to the nested result in place of the outer one
                 var nestedResult = m_nestedResult;
@@ -170,6 +156,50 @@ namespace Duplicati.Library.Main
                 else
                     e.Target.WriteMessage(entry);
             }
+        }
+
+        /// <summary>
+        /// Checks if a message would be written to at least one of the destinations
+        /// </summary>
+        /// <param name="entry">The entry to examine</param>
+        /// <returns><c>true</c> if the message is written; <c>false</c> otherwise</returns>
+        public bool Accepts(LogEntry entry)
+        {
+            entry = ApplyWarningSuppression(entry);
+
+            foreach (var e in m_targets)
+                if (TargetAccepts(e, entry) && (e.Target is not ILogFilter targetFilter || targetFilter.Accepts(entry)))
+                    return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Changes a suppressed warning message into an information message
+        /// </summary>
+        /// <param name="entry">The entry to examine</param>
+        /// <returns>The entry to write</returns>
+        private LogEntry ApplyWarningSuppression(LogEntry entry)
+        {
+            if (m_supressWarningFilter != null && entry.Level == LogMessageType.Warning && m_supressWarningFilter.Contains(entry.Id))
+                return new LogEntry(entry.Message, entry.Arguments, LogMessageType.Information, entry.Tag, entry.Id, entry.Exception);
+
+            return entry;
+        }
+
+        /// <summary>
+        /// Checks if the filter and log level of a target lets the message through
+        /// </summary>
+        /// <param name="target">The target to check</param>
+        /// <param name="entry">The entry to examine</param>
+        /// <returns><c>true</c> if the target should get the message; <c>false</c> otherwise</returns>
+        private static bool TargetAccepts(TargetEntry target, LogEntry entry)
+        {
+            // If there is a filter match, use that, otherwise filter by log-level
+            if (target.Filter.Matches(entry.FilterTag, out var result, out var _))
+                return result;
+
+            return entry.Level >= target.Level;
         }
     }
 }

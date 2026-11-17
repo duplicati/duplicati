@@ -45,6 +45,21 @@ public static class ChangeStatistics
     private static readonly string FILELOGTAG = LOGTAG + ".FileEntry";
 
     /// <summary>
+    /// The message id used when logging the path of a deleted file
+    /// </summary>
+    private const string DELETED_FILE_ID = "DeletedFile";
+
+    /// <summary>
+    /// The message id used when logging the path of a deleted folder
+    /// </summary>
+    private const string DELETED_FOLDER_ID = "DeletedFolder";
+
+    /// <summary>
+    /// The message id used when logging the path of a deleted symlink
+    /// </summary>
+    private const string DELETED_SYMLINK_ID = "DeletedSymlink";
+
+    /// <summary>
     /// Calculates the change statistics for the current and previous fileset.
     /// </summary>
     /// <param name="cmd">The database command to use.</param>
@@ -122,8 +137,9 @@ public static class ChangeStatistics
                 .ConfigureAwait(false);
 
             // The paths of new and changed files are logged as they are processed,
-            // but deleted entries are only known here, so log their paths now
-            if (results.DeletedFolders + results.DeletedSymlinks + results.DeletedFiles > 0)
+            // but deleted entries are only known here, so log their paths now.
+            // Finding the paths takes an extra query, so skip it if nothing captures the messages
+            if (results.DeletedFolders + results.DeletedSymlinks + results.DeletedFiles > 0 && IsDeletedEntryLogged())
                 await LogDeletedEntriesAsync(cmd, tmpName, token)
                     .ConfigureAwait(false);
 
@@ -207,6 +223,15 @@ public static class ChangeStatistics
     }
 
     /// <summary>
+    /// Checks if any log destination captures the messages for deleted entries
+    /// </summary>
+    /// <returns><c>true</c> if at least one of the messages is captured; <c>false</c> otherwise</returns>
+    private static bool IsDeletedEntryLogged()
+        => Logging.Log.IsLogged(Logging.LogMessageType.Verbose, FILELOGTAG, DELETED_FILE_ID)
+            || Logging.Log.IsLogged(Logging.LogMessageType.Verbose, FILELOGTAG, DELETED_FOLDER_ID)
+            || Logging.Log.IsLogged(Logging.LogMessageType.Verbose, FILELOGTAG, DELETED_SYMLINK_ID);
+
+    /// <summary>
     /// Writes a verbose log message with the path of each entry that was in the previous
     /// fileset but is not in the current one.
     /// </summary>
@@ -246,11 +271,11 @@ public static class ChangeStatistics
             var path = reader.ConvertValueToString(0);
             var blocksetId = reader.ConvertValueToInt64(1);
             if (blocksetId == LocalDatabase.FOLDER_BLOCKSET_ID)
-                Logging.Log.WriteVerboseMessage(FILELOGTAG, "DeletedFolder", "Folder has been deleted {0}", path);
+                Logging.Log.WriteVerboseMessage(FILELOGTAG, DELETED_FOLDER_ID, "Folder has been deleted {0}", path);
             else if (blocksetId == LocalDatabase.SYMLINK_BLOCKSET_ID)
-                Logging.Log.WriteVerboseMessage(FILELOGTAG, "DeletedSymlink", "Symlink has been deleted {0}", path);
+                Logging.Log.WriteVerboseMessage(FILELOGTAG, DELETED_SYMLINK_ID, "Symlink has been deleted {0}", path);
             else
-                Logging.Log.WriteVerboseMessage(FILELOGTAG, "DeletedFile", "File has been deleted {0}", path);
+                Logging.Log.WriteVerboseMessage(FILELOGTAG, DELETED_FILE_ID, "File has been deleted {0}", path);
         }
     }
 

@@ -20,7 +20,6 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Linq;
 
 namespace Duplicati.Library.Logging
 {
@@ -86,6 +85,20 @@ namespace Duplicati.Library.Logging
         {
             if (m_log != null && (m_filter == null || m_filter.Accepts(entry)))
                 m_log.WriteMessage(entry);
+        }
+
+        /// <summary>
+        /// Checks if a message would be written by this scope, without writing it
+        /// </summary>
+        /// <param name="entry">The log entry to examine</param>
+        /// <returns><c>true</c> if the destination in this scope would write the entry; <c>false</c> otherwise</returns>
+        public bool Accepts(LogEntry entry)
+        {
+            if (m_log == null || (m_filter != null && !m_filter.Accepts(entry)))
+                return false;
+
+            // Destinations that filter on their own are asked as well
+            return m_log is not ILogFilter destinationFilter || destinationFilter.Accepts(entry);
         }
 
         /// <summary>

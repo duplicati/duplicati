@@ -336,6 +336,36 @@ namespace Duplicati.Library.Logging
         }
 
         /// <summary>
+        /// Checks if a message with the given type, tag and id would be written by any of the
+        /// current log destinations. Use this to skip work that is only needed to produce log messages.
+        /// </summary>
+        /// <remarks>
+        /// Destinations that filter messages on their own must implement <see cref="ILogFilter"/>
+        /// to be asked, otherwise they are assumed to write all messages that pass the scope filter.
+        /// </remarks>
+        /// <param name="type">The type of the message</param>
+        /// <param name="tag">The tag-type for the message</param>
+        /// <param name="id">The message id</param>
+        /// <returns><c>true</c> if at least one destination would write the message; <c>false</c> otherwise</returns>
+        public static bool IsLogged(LogMessageType type, string tag, string id)
+        {
+            var msg = new LogEntry(string.Empty, null, type, tag, id, null);
+
+            lock (m_lock)
+            {
+                var cs = CurrentScope;
+                while (cs != null && !cs.IsolatingScope)
+                {
+                    if (cs.Accepts(msg))
+                        return true;
+                    cs = cs.Parent;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Starts a new scope, that can be closed by disposing the returned instance
         /// </summary>
         /// <param name="detached">Flag indicating if the scope should be detached from the parent</param>
@@ -406,6 +436,18 @@ namespace Duplicati.Library.Logging
         public static IDisposable StartScope(Action<LogEntry> log, Func<LogEntry, bool> filter = null)
         {
             return new LogScope(new FunctionLogDestination(log), filter == null ? null : new FunctionFilter(filter), CurrentScope, false);
+        }
+
+        /// <summary>
+        /// Starts a new scope that sees all messages but does not write them anywhere,
+        /// such as a scope that only attaches context data to the messages.
+        /// The scope is not counted as a destination by <see cref="IsLogged"/>.
+        /// </summary>
+        /// <param name="decorator">The method called for each message</param>
+        /// <returns>The new scope.</returns>
+        public static IDisposable StartDecoratingScope(Action<LogEntry> decorator)
+        {
+            return new LogScope(new DecoratingLogDestination(decorator), null, CurrentScope, false);
         }
 
         /// <summary>

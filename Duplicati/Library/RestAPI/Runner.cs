@@ -966,7 +966,7 @@ namespace Duplicati.Server
                     eventPollNotify.SignalProgressUpdate(sink.Copy);
 
                     // Attach a log scope that tags all messages to relay the TaskID and BackupID
-                    using var _ = Library.Logging.Log.StartScope(log =>
+                    using var _ = Library.Logging.Log.StartDecoratingScope(log =>
                     {
                         log[ILogWriteHandler.LiveLogEntry.LOG_EXTRA_TASKID] = data.TaskID.ToString();
                     });
@@ -1060,7 +1060,7 @@ namespace Duplicati.Server
                 var useOutOfProcess = databaseConnection.ApplicationSettings.UseOutOfProcessController;
 
                 // Attach a log scope that tags all messages to relay the TaskID and BackupID
-                using (Library.Logging.Log.StartScope(log =>
+                using (Library.Logging.Log.StartDecoratingScope(log =>
                 {
                     log[ILogWriteHandler.LiveLogEntry.LOG_EXTRA_TASKID] = data.TaskID.ToString();
                     log[ILogWriteHandler.LiveLogEntry.LOG_EXTRA_BACKUPID] = data.BackupID;
