@@ -269,6 +269,12 @@ namespace Duplicati.CommandLine
                 foreach (var n in options)
                     outwriter.WriteLine("{0}: {1}", n.Key, n.Value);
                 outwriter.WriteLine();
+
+                // --include and --exclude are taken out of the options and into the filter, so they are listed here
+                outwriter.WriteLine("Input filters: ");
+                foreach (var f in FilterExpression.Serialize(filter))
+                    outwriter.WriteLine("\t{0}", f);
+                outwriter.WriteLine();
             }
 
 
