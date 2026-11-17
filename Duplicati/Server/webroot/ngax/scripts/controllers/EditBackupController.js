@@ -167,10 +167,31 @@ backupApp.controller('EditBackupController', function ($rootScope, $scope, $rout
             });
         }
 
-        if (scope.manualSourcePath.substr(scope.manualSourcePath.length - 1, 1) != dirsep) {
+        function askIncludeFile() {
             DialogService.dialog(gettextCatalog.getString('Include a file?'), gettextCatalog.getString("The path does not end with a '{{dirsep}}' character, which means that you include a file, not a folder.\n\nDo you want to include the specified file?", {dirsep: dirsep}), [gettextCatalog.getString('No'), gettextCatalog.getString('Yes')], function(ix) {
                 if (ix == 1)
                     continuation();
+            });
+        }
+
+        if (scope.manualSourcePath.substr(scope.manualSourcePath.length - 1, 1) != dirsep) {
+            // Ask the server whether the path is a folder or a file, and only ask the user when it is neither
+            var path = scope.manualSourcePath;
+            scope.validatingSourcePath = true;
+
+            AppService.postJson('/filesystem/validate', {path: path + dirsep}).then(function() {
+                scope.validatingSourcePath = false;
+                scope.Backup.Sources.push(path + dirsep);
+                scope.manualSourcePath = null;
+            }, function() {
+                AppService.postJson('/filesystem/validate', {path: path}).then(function() {
+                    scope.validatingSourcePath = false;
+                    scope.Backup.Sources.push(path);
+                    scope.manualSourcePath = null;
+                }, function() {
+                    scope.validatingSourcePath = false;
+                    askIncludeFile();
+                });
             });
         } else {
             continuation();
