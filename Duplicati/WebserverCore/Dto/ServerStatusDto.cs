@@ -103,6 +103,12 @@ public sealed record ServerStatusDto
     public required double UpdateDownloadProgress { get; init; }
 
     /// <summary>
+    /// Gets the action that is performed on the computer when the task queue has run empty.
+    /// Not required, as a server without the feature does not report it.
+    /// </summary>
+    public QueueCompletionAction QueueCompletionAction { get; init; } = QueueCompletionAction.None;
+
+    /// <summary>
     /// Gets the type of the DTO, used for websocket messages.
     /// </summary>
     public string Type => "legacystatus";

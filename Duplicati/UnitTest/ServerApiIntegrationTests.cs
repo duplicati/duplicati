@@ -770,6 +770,56 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
+    public async Task QueueCompletionActionIsRefusedOnAnIdleServer_Async()
+    {
+        // Only the idle server is tested here: an accepted action would shut down the computer running the tests
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            async Task<string?> GetActionAsync()
+            {
+                var state = await httpClient.GetFromJsonAsync<JsonElement>("/api/v1/serverstate", JsonOptions).ConfigureAwait(false);
+                return state.TryGetProperty("QueueCompletionAction", out var action) ? action.GetString() : null;
+            }
+
+            Assert.That(await GetApiExtensionsAsync(httpClient).ConfigureAwait(false), Does.Contain(SystemInfoProvider.QueueCompletionActionExtension),
+                "System info should advertise the queue completion action");
+            Assert.That(await GetActionAsync().ConfigureAwait(false), Is.EqualTo("None"), "No action should be pending on a new server");
+
+            // Which actions are supported depends on the computer and the account running the tests
+            var capabilities = await httpClient.GetFromJsonAsync<JsonElement>("/api/v1/serverstate/queue-completion-action", JsonOptions).ConfigureAwait(false);
+            Assert.That(capabilities.GetProperty("PendingAction").GetString(), Is.EqualTo("None"));
+            Assert.That(capabilities.GetProperty("SupportedActions").EnumerateArray().Select(x => x.GetString()), Is.SubsetOf(new[] { "Shutdown", "Reboot" }),
+                "The script should not be offered when none is set");
+
+            // The script is set through the server settings, and is offered when the file exists.
+            // It is never chosen here, so it never runs.
+            var script = Path.Combine(this.DATAFOLDER, "post-queue-script");
+            Directory.CreateDirectory(this.DATAFOLDER);
+            File.WriteAllText(script, "");
+            (await httpClient.PatchAsJsonAsync("/api/v1/serversettings", new Dictionary<string, string> { [Duplicati.Server.Database.ServerSettings.CONST.POST_QUEUE_PROCESSING_SCRIPT] = script }, JsonOptions).ConfigureAwait(false)).EnsureSuccessStatusCode();
+
+            var settings = await httpClient.GetFromJsonAsync<Dictionary<string, string>>("/api/v1/serversettings", JsonOptions).ConfigureAwait(false);
+            Assert.That(settings?[Duplicati.Server.Database.ServerSettings.CONST.POST_QUEUE_PROCESSING_SCRIPT], Is.EqualTo(script));
+
+            capabilities = await httpClient.GetFromJsonAsync<JsonElement>("/api/v1/serverstate/queue-completion-action", JsonOptions).ConfigureAwait(false);
+            Assert.That(capabilities.GetProperty("SupportedActions").EnumerateArray().Select(x => x.GetString()), Does.Contain("RunScript"));
+
+            foreach (var action in new[] { "Shutdown", "Reboot", "RunScript" })
+            {
+                var refused = await httpClient.PostAsJsonAsync("/api/v1/serverstate/queue-completion-action", new { Action = action }, JsonOptions).ConfigureAwait(false);
+                Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.Conflict), $"{action} should be refused when nothing is running or queued");
+                Assert.That(await GetActionAsync().ConfigureAwait(false), Is.EqualTo("None"), "A refused action should not be pending");
+            }
+
+            (await httpClient.PostAsJsonAsync("/api/v1/serverstate/queue-completion-action", new { Action = "None" }, JsonOptions).ConfigureAwait(false)).EnsureSuccessStatusCode();
+
+            var invalid = await httpClient.PostAsJsonAsync("/api/v1/serverstate/queue-completion-action", new { Action = "Explode" }, JsonOptions).ConfigureAwait(false);
+            Assert.That(invalid.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), "An unknown action should be rejected");
+        }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
     public async Task SavingASyncJobWithoutTheOperationTypeKeepsItASyncJob_Async()
     {
         var name = $"Sync job {Guid.NewGuid():N}";
