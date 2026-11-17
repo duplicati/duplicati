@@ -223,7 +223,7 @@ public class BackupEnabledTests
     public async Task FreshSchema_HasEnabledColumnDefaultingToEnabledAsync()
     {
         await using var db = await SQLiteLoader.LoadConnectionAsync(_databasePath);
-        Assert.AreEqual(ENABLED_SCHEMA_VERSION, await ReadVersionAsync(db),
+        Assert.GreaterOrEqual(await ReadVersionAsync(db), ENABLED_SCHEMA_VERSION,
             "A fresh server database should be created at the latest schema version.");
         Assert.IsTrue(await ColumnExistsAsync(db, "Backup", "Enabled"),
             "The Enabled column should exist on a fresh database.");
@@ -255,7 +255,12 @@ public class BackupEnabledTests
             {
                 DatabaseUpgrader.UpgradeDatabase(db, dbPath, typeof(DatabaseSchemaMarker));
 
+                // The later scripts are applied again by the upgrade, so their columns are dropped too
                 cmd.CommandText = @"ALTER TABLE ""Backup"" DROP COLUMN ""Enabled""";
+                await cmd.ExecuteNonQueryAsync();
+                cmd.CommandText = @"ALTER TABLE ""Backup"" DROP COLUMN ""RunAfterBackupID""";
+                await cmd.ExecuteNonQueryAsync();
+                cmd.CommandText = @"ALTER TABLE ""Backup"" DROP COLUMN ""RunAfterCondition""";
                 await cmd.ExecuteNonQueryAsync();
                 cmd.CommandText = @"INSERT INTO ""Backup"" (""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"") VALUES ('legacy', '', 'tag', 'file:///legacy', 'legacy.sqlite')";
                 await cmd.ExecuteNonQueryAsync();
@@ -268,7 +273,7 @@ public class BackupEnabledTests
             {
                 DatabaseUpgrader.UpgradeDatabase(db, dbPath, typeof(DatabaseSchemaMarker));
 
-                Assert.AreEqual(ENABLED_SCHEMA_VERSION, await ReadVersionAsync(db),
+                Assert.GreaterOrEqual(await ReadVersionAsync(db), ENABLED_SCHEMA_VERSION,
                     "The upgrader should apply the Enabled column script.");
                 Assert.IsTrue(await ColumnExistsAsync(db, "Backup", "Enabled"),
                     "The upgrade script should add the Enabled column.");

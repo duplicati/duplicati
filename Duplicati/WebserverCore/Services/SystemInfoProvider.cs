@@ -62,6 +62,12 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
     public const string McpServerExtension = "v2:mcp:server";
 
     /// <summary>
+    /// The API extension that signals a backup can be set to run after another backup:
+    /// the backup "RunAfterBackupID" and "RunAfterCondition" fields
+    /// </summary>
+    public const string BackupRunAfterExtension = "v1:backup:run-after";
+
+    /// <summary>
     /// The API extensions that are available
     /// </summary>
     public static readonly string[] SupportedAPIExtensions = [
@@ -97,6 +103,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v2:systemstatus",
         "v2:backup:restore-test",
         BackupEnableDisableExtension,
+        BackupRunAfterExtension,
         SyncSnapshotsExtension,
         SyncRestoreExtension,
         McpServerExtension,

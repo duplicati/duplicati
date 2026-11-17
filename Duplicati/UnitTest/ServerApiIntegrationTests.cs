@@ -664,6 +664,112 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
+    public async Task BackupRunsAfterAnotherBackupThroughTheApi_Async()
+    {
+        const string passphrase = "integration-passphrase";
+        var secondTarget = Path.Combine(this.TARGETFOLDER, "run-after-second");
+
+        // Built as dictionaries, so that a missing field is left out of the JSON,
+        // as with a client that does not know about the run-after fields
+        object BackupBody(string jobName, Dictionary<string, object?> extra)
+        {
+            var backup = new Dictionary<string, object?>
+            {
+                ["Name"] = jobName,
+                ["Description"] = "",
+                ["Tags"] = Array.Empty<string>(),
+                ["TargetURL"] = BuildFileBackendUrl(secondTarget),
+                ["Sources"] = new[] { this.DATAFOLDER },
+                ["Settings"] = new[] { new { Name = "passphrase", Value = passphrase, Filter = "" } },
+                ["Filters"] = Array.Empty<object>(),
+                ["Metadata"] = new Dictionary<string, string>()
+            };
+            foreach (var kvp in extra)
+                backup[kvp.Key] = kvp.Value;
+            return new { Backup = backup };
+        }
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            async Task<BackupDto> GetAsync(string id)
+            {
+                var listed = await AssertBackupListedAsync(httpClient, id).ConfigureAwait(false);
+                var single = await httpClient.GetFromJsonAsync<BackupGet.GetBackupResultDto>($"/api/v1/backup/{id}", JsonOptions).ConfigureAwait(false)
+                             ?? throw new InvalidOperationException("Backup get response was empty");
+                Assert.That(single.Backup.RunAfterBackupID, Is.EqualTo(listed.RunAfterBackupID), "List and single-backup GET should agree on the backup to run after");
+                Assert.That(single.Backup.RunAfterCondition, Is.EqualTo(listed.RunAfterCondition), "List and single-backup GET should agree on the run-after condition");
+                return listed;
+            }
+
+            Assert.That(await GetApiExtensionsAsync(httpClient).ConfigureAwait(false), Does.Contain(SystemInfoProvider.BackupRunAfterExtension),
+                "System info should advertise that a backup can run after another backup");
+
+            var firstId = await CreateBackupAsync(httpClient, passphrase, $"Run-after first {Guid.NewGuid():N}").ConfigureAwait(false);
+            Assert.That((await GetAsync(firstId).ConfigureAwait(false)).RunAfterBackupID, Is.Null, "A new backup should not run after another backup");
+
+            Directory.CreateDirectory(secondTarget);
+            var secondName = $"Run-after second {Guid.NewGuid():N}";
+            var createResponse = await httpClient.PostAsJsonAsync("/api/v1/backups", BackupBody(secondName, new() { ["RunAfterBackupID"] = firstId }), JsonOptions).ConfigureAwait(false);
+            createResponse.EnsureSuccessStatusCode();
+            var secondId = (await createResponse.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false))?.ID
+                           ?? throw new InvalidOperationException("No backup ID in the response");
+
+            var second = await GetAsync(secondId).ConfigureAwait(false);
+            Assert.That(second.RunAfterBackupID, Is.EqualTo(firstId));
+            Assert.That(second.RunAfterCondition, Is.EqualTo(Duplicati.Server.Serialization.RunAfterCondition.Success), "The condition should default to a successful run");
+
+            // A client that does not know about the fields must not remove the reference when it saves the backup
+            (await httpClient.PutAsJsonAsync($"/api/v1/backup/{secondId}", BackupBody(secondName, new()), JsonOptions).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            Assert.That((await GetAsync(secondId).ConfigureAwait(false)).RunAfterBackupID, Is.EqualTo(firstId), "Saving without the field should keep the reference");
+
+            (await httpClient.PutAsJsonAsync($"/api/v1/backup/{secondId}", BackupBody(secondName, new() { ["RunAfterCondition"] = "Always" }), JsonOptions).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            second = await GetAsync(secondId).ConfigureAwait(false);
+            Assert.That(second.RunAfterBackupID, Is.EqualTo(firstId), "Changing only the condition should keep the reference");
+            Assert.That(second.RunAfterCondition, Is.EqualTo(Duplicati.Server.Serialization.RunAfterCondition.Always));
+
+            // References that cannot work are rejected
+            var loop = await httpClient.PutAsJsonAsync($"/api/v1/backup/{firstId}", new { Backup = new Dictionary<string, object?> { ["RunAfterBackupID"] = secondId } }, JsonOptions).ConfigureAwait(false);
+            Assert.That(loop.IsSuccessStatusCode, Is.False, "Two backups that run after each other should be rejected");
+            var missing = await httpClient.PutAsJsonAsync($"/api/v1/backup/{secondId}", BackupBody(secondName, new() { ["RunAfterBackupID"] = "999999" }), JsonOptions).ConfigureAwait(false);
+            Assert.That(missing.IsSuccessStatusCode, Is.False, "Running after an unknown backup should be rejected");
+            Assert.That((await GetAsync(secondId).ConfigureAwait(false)).RunAfterBackupID, Is.EqualTo(firstId), "A rejected save should not change the reference");
+
+            // A backup ID has no meaning in an exported configuration
+            var importedId = await ImportConfigurationAsync(httpClient, await ExportConfigurationAsync(httpClient, secondId).ConfigureAwait(false)).ConfigureAwait(false);
+            Assert.That((await GetAsync(importedId).ConfigureAwait(false)).RunAfterBackupID, Is.Null, "Import should not bring a reference along");
+
+            // Running the first backup runs the second one after it
+            Assert.That((await GetAsync(secondId).ConfigureAwait(false)).Metadata?.ContainsKey("LastBackupFinished") ?? false, Is.False);
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{firstId}/run").ConfigureAwait(false);
+
+            var stopwatch = Stopwatch.StartNew();
+            while (!((await GetAsync(secondId).ConfigureAwait(false)).Metadata?.ContainsKey("LastBackupFinished") ?? false))
+            {
+                Assert.That(stopwatch.Elapsed, Is.LessThan(TimeSpan.FromMinutes(2)), "The second backup should run after the first one");
+                await Task.Delay(250).ConfigureAwait(false);
+            }
+            Assert.That((await GetAsync(importedId).ConfigureAwait(false)).Metadata?.ContainsKey("LastBackupFinished") ?? false, Is.False,
+                "A backup without a reference should not run");
+
+            // An explicit null removes the reference
+            (await httpClient.PutAsJsonAsync($"/api/v1/backup/{secondId}", BackupBody(secondName, new() { ["RunAfterBackupID"] = null }), JsonOptions).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            Assert.That((await GetAsync(secondId).ConfigureAwait(false)).RunAfterBackupID, Is.Null, "Saving a null reference should remove it");
+
+            // Deleting a backup keeps the backups that ran after it
+            (await httpClient.PutAsJsonAsync($"/api/v1/backup/{secondId}", BackupBody(secondName, new() { ["RunAfterBackupID"] = firstId }), JsonOptions).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            (await httpClient.DeleteAsync($"/api/v1/backup/{firstId}").ConfigureAwait(false)).EnsureSuccessStatusCode();
+            stopwatch.Restart();
+            while ((await GetBackupsAsync(httpClient).ConfigureAwait(false)).Any(x => x.Backup.ID == firstId))
+            {
+                Assert.That(stopwatch.Elapsed, Is.LessThan(TimeSpan.FromMinutes(2)), "The first backup should be deleted");
+                await Task.Delay(250).ConfigureAwait(false);
+            }
+            Assert.That((await GetAsync(secondId).ConfigureAwait(false)).RunAfterBackupID, Is.Null, "Deleting a backup should remove the references to it");
+        }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
     public async Task SavingASyncJobWithoutTheOperationTypeKeepsItASyncJob_Async()
     {
         var name = $"Sync job {Guid.NewGuid():N}";

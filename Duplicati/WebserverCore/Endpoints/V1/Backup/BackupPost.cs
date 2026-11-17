@@ -263,6 +263,7 @@ public class BackupPost : IEndpointV1
 
             item.Backup.ID = null;
             item.Backup.SetDBPath(null);
+            item.Backup.RunAfterBackupID = null;
 
             var assignedId = connection.RegisterTemporaryBackup(item.Backup, item.Schedule);
 

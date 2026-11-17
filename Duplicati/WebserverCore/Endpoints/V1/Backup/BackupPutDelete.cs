@@ -69,6 +69,10 @@ public class BackupPutDelete : IEndpointV1
                 ConnectionStringID = input.Backup.ConnectionStringID,
                 OperationType = input.Backup.OperationType ?? existing.OperationType,
                 Enabled = input.Backup.Enabled ?? existing.Enabled,
+                RunAfterBackupID = input.Backup.HasRunAfterBackupID
+                    ? (string.IsNullOrWhiteSpace(input.Backup.RunAfterBackupID) ? null : input.Backup.RunAfterBackupID)
+                    : existing.RunAfterBackupID,
+                RunAfterCondition = input.Backup.RunAfterCondition ?? existing.RunAfterCondition,
                 Sources = input.Backup.Sources ?? existing.Sources,
                 Settings = input.Backup.Settings?.Select(x => (Server.Serialization.Interface.ISetting)new Setting()
                 {
