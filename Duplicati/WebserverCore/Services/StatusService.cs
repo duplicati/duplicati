@@ -34,7 +34,8 @@ public class StatusService(
     ISettingsService settingsService,
     ISchedulerService scheduler,
     EventPollNotify eventPollNotify,
-    INotificationUpdateService notificationUpdateService)
+    INotificationUpdateService notificationUpdateService,
+    IQueueCompletionActionService queueCompletionActionService)
     : IStatusService
 {
     public ServerStatusDto GetStatus()
@@ -57,7 +58,8 @@ public class StatusService(
             HasError = settingsService.GetSettings().UnackedError,
             EstimatedPauseEnd = liveControls.EstimatedPauseEnd.ToUniversalTime(),
             SuggestedStatusIcon = MapStateToIcon(),
-            UpdateDownloadLink = settingsService.GetSettings().NewVersionUpdateUrl
+            UpdateDownloadLink = settingsService.GetSettings().NewVersionUpdateUrl,
+            QueueCompletionAction = queueCompletionActionService.PendingAction
         };
         PullSettings(status);
         PullLiveControls(status);

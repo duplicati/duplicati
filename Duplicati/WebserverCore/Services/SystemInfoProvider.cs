@@ -68,6 +68,13 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
     public const string BackupRunAfterExtension = "v1:backup:run-after";
 
     /// <summary>
+    /// The API extension that signals the server can shut down or restart the computer, or run the script from
+    /// the "post-queue-processing-script" server setting, when the task queue has run empty: the "serverstate/queue-completion-action" endpoints and the "QueueCompletionAction" status field.
+    /// The extension is reported on every server; the GET endpoint tells which actions the computer allows.
+    /// </summary>
+    public const string QueueCompletionActionExtension = "v1:serverstate:queue-completion-action";
+
+    /// <summary>
     /// The API extensions that are available
     /// </summary>
     public static readonly string[] SupportedAPIExtensions = [
@@ -104,6 +111,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v2:backup:restore-test",
         BackupEnableDisableExtension,
         BackupRunAfterExtension,
+        QueueCompletionActionExtension,
         SyncSnapshotsExtension,
         SyncRestoreExtension,
         McpServerExtension,

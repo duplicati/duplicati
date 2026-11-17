@@ -146,6 +146,7 @@ namespace Duplicati.Server.Database
             [GuardedInput, GuardedOutput]
             public const string MCP_TOKENS = "mcp-tokens";
             public const string USE_OUT_OF_PROCESS_CONTROLLER = "use-out-of-process-controller";
+            public const string POST_QUEUE_PROCESSING_SCRIPT = "post-queue-processing-script";
 
             // UI support settings
             public const string SHOWN_WELCOME_PAGE_V1 = "shown-welcome-page-v1";
@@ -1021,6 +1022,16 @@ namespace Duplicati.Server.Database
         {
             get => Utility.ParseBool(settings[CONST.ENABLE_FOLDER_STATUS_SERVICE], false);
             set => SetAndSaveSetting(CONST.ENABLE_FOLDER_STATUS_SERVICE, value.ToString());
+        }
+
+        /// <summary>
+        /// Gets or sets the path to the script that can be chosen to run when the task queue has run empty.
+        /// The script is only run when it is chosen for a set of queued tasks, not after every queue.
+        /// </summary>
+        public string? PostQueueProcessingScript
+        {
+            get => settings.GetValueOrDefault(CONST.POST_QUEUE_PROCESSING_SCRIPT);
+            set => SetAndSaveSetting(CONST.POST_QUEUE_PROCESSING_SCRIPT, value);
         }
 
         /// <summary>

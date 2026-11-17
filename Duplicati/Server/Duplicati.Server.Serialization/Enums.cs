@@ -84,6 +84,29 @@ namespace Duplicati.Server.Serialization
     }
 
     /// <summary>
+    /// What the server does to the computer once the task queue has run empty.
+    /// </summary>
+    public enum QueueCompletionAction
+    {
+        /// <summary>
+        /// Nothing is done (the default).
+        /// </summary>
+        None,
+        /// <summary>
+        /// The computer is shut down.
+        /// </summary>
+        Shutdown,
+        /// <summary>
+        /// The computer is restarted.
+        /// </summary>
+        Reboot,
+        /// <summary>
+        /// The script from the "post-queue-processing-script" server setting is run.
+        /// </summary>
+        RunScript
+    }
+
+    /// <summary>
     /// The kind of operation a backup configuration performs when it runs.
     /// </summary>
     public enum OperationType
