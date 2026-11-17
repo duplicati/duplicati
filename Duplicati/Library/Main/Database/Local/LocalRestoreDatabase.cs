@@ -687,18 +687,9 @@ namespace Duplicati.Library.Main.Database.Local
                         await EnsureAlternateDataStreamParentsAsync(filesetId, cmd, token).ConfigureAwait(false);
 
                     //creating indexes after insertion is much faster
-                    await cmd.ExecuteNonQueryAsync($@"
-                        CREATE INDEX ""{m_tempfiletable}_ID""
-                        ON ""{m_tempfiletable}"" (""ID"")
-                    ", token)
-                        .ConfigureAwait(false);
-
-                    await cmd.ExecuteNonQueryAsync($@"
-                        CREATE INDEX ""{m_tempfiletable}_TargetPath""
-                        ON ""{m_tempfiletable}"" (""TargetPath"")
-                    ", token)
-                        .ConfigureAwait(false);
-
+                    // There is no index on "ID", which is the rowid, or on "TargetPath", which no query
+                    // looks up or sorts by. The temporary tables are kept in memory, and the
+                    // "TargetPath" index alone held more than a quarter of them (#7538).
                     await cmd.ExecuteNonQueryAsync($@"
                         CREATE INDEX ""{m_tempfiletable}_Path""
                         ON ""{m_tempfiletable}"" (""Path"")
