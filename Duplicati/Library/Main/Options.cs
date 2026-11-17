@@ -508,6 +508,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("prevent-empty-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.PreventemptysourceShort, Strings.Options.PreventemptysourceLong, "false"),
 
             new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong, "false"),
+            new CommandLineArgument("disable-filetime-check-for", CommandLineArgument.ArgumentType.String, Strings.Options.DisablefiletimecheckforShort, Strings.Options.DisablefiletimecheckforLong),
             new CommandLineArgument("check-filetime-only", CommandLineArgument.ArgumentType.Boolean, Strings.Options.CheckfiletimeonlyShort, Strings.Options.CheckfiletimeonlyLong, "false"),
             new CommandLineArgument("disable-time-tolerance", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisabletimetoleranceShort, Strings.Options.DisabletimetoleranceLong, "false"),
 
@@ -932,6 +933,12 @@ namespace Duplicati.Library.Main
         /// A value indicating if file time checks are skipped
         /// </summary>
         public bool DisableFiletimeCheck => GetBool("disable-filetime-check");
+
+        /// <summary>
+        /// The files that are scanned for changes even when their timestamp, size and metadata are unchanged
+        /// </summary>
+        public IFilter DisableFiletimeCheckFor
+            => new FilterExpression(m_options.GetValueOrDefault("disable-filetime-check-for")?.Split(System.IO.Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
         /// <summary>
         /// A value indicating if only the file timestamp is checked (ignoring metadata and file size) when deciding to scan a file

@@ -64,6 +64,8 @@ namespace Duplicati.Library.Main.Strings
         public static string PrefixShort { get { return LC.L(@"Remote filename prefix"); } }
         public static string DisablefiletimecheckLong { get { return LC.L(@"The operating system keeps track of the last time a file was written. Using this information, Duplicati can quickly determine if the file has been modified. If some application deliberately modifies this information, Duplicati won't work correctly unless this option is set."); } }
         public static string DisablefiletimecheckShort { get { return LC.L(@"Disable checks based on file time"); } }
+        public static string DisablefiletimecheckforLong { get { return LC.L(@"Use this option to scan only some files for changes on every backup, as --disable-filetime-check does for all files. This is meant for files that change without updating their timestamp or size, such as encrypted file containers. The value is one or more filter expressions, separated by the path separator ({0}), for example *.vc or *.hc.", System.IO.Path.PathSeparator); } }
+        public static string DisablefiletimecheckforShort { get { return LC.L(@"Disable checks based on file time for some files"); } }
         public static string RestorepathLong { get { return LC.L(@"By default, files will be restored in the source folders. Use this option to restore to another folder."); } }
         public static string RestorepathShort { get { return LC.L(@"Restore to another folder"); } }
         public static string AllowsleepLong { get { return LC.L(@"Allow system to enter sleep power modes for inactivity during backup/restore operations"); } }
