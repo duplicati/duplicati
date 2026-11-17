@@ -88,5 +88,36 @@ namespace Duplicati.UnitTest
             Assert.IsTrue(sink.Entries.Where(x => x.Id == "DeletedFile").All(x => x.FilterTag.EndsWith("-DeletedFile")),
                 string.Join(", ", sink.Entries.Where(x => x.Id == "DeletedFile").Select(x => x.FilterTag)));
         }
+
+        [Test]
+        public async Task BackupLogsPathsOfDeletedEntriesForLogFileFilterAsync()
+        {
+            var removed = Path.Combine(DATAFOLDER, "removed.txt");
+            File.WriteAllText(Path.Combine(DATAFOLDER, "keep.txt"), "keep");
+            File.WriteAllText(removed, "removed");
+
+            using (var c = new Controller("file://" + TARGETFOLDER, TestOptions, null))
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
+
+            File.Delete(removed);
+
+            // The log level alone does not include the verbose messages, but the filter picks out the deleted files
+            var logfile = Path.Combine(BASEFOLDER, "deleted-entries.log");
+            File.Delete(logfile);
+            var options = new Dictionary<string, string>(TestOptions)
+            {
+                ["log-file"] = logfile,
+                ["log-file-log-level"] = nameof(LogMessageType.Warning),
+                ["log-file-log-filter"] = "+*-DeletedFile"
+            };
+
+            using (Log.StartIsolatingScope(true))
+            using (var c = new Controller("file://" + TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
+
+            var logged = File.ReadAllText(logfile);
+            File.Delete(logfile);
+            Assert.IsTrue(logged.Contains("File has been deleted " + removed), logged);
+        }
     }
 }

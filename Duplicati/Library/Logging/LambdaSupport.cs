@@ -52,6 +52,31 @@ namespace Duplicati.Library.Logging
     }
 
     /// <summary>
+    /// A log destination that invokes a method for all messages, but does not write them anywhere
+    /// </summary>
+    internal class DecoratingLogDestination : FunctionLogDestination, ILogFilter
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Duplicati.Library.Logging.DecoratingLogDestination"/> class.
+        /// </summary>
+        /// <param name="entry">The method to call for each message.</param>
+        public DecoratingLogDestination(Action<LogEntry> entry)
+            : base(entry)
+        {
+        }
+
+        /// <summary>
+        /// Reports that no messages are written by this destination
+        /// </summary>
+        /// <returns>Always <c>false</c>.</returns>
+        /// <param name="entry">The log entry to examine.</param>
+        public bool Accepts(LogEntry entry)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
     /// A log filter that wraps a callback method
     /// </summary>
     internal class FunctionFilter : ILogFilter

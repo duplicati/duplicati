@@ -33,7 +33,7 @@ namespace Duplicati.Server
     /// and provides an entry point for the runner
     /// to redirect log output to a file
     /// </summary>
-    public class LogWriteHandler : ILogWriteHandler
+    public class LogWriteHandler : ILogWriteHandler, ILogFilter
     {
         /// <summary>
         /// The number of messages to keep when inactive
@@ -207,6 +207,20 @@ namespace Duplicati.Server
                 (LogMessageType)GetActiveTimeouts().Append((int)m_target.MinimumLevel).Min();
         }
 
+
+        #region ILogFilter implementation
+
+        /// <summary>
+        /// Checks if a message would be written to the server log or kept for the live log
+        /// </summary>
+        /// <param name="entry">The entry to examine</param>
+        /// <returns><c>true</c> if the message is used; <c>false</c> otherwise</returns>
+        public bool Accepts(LogEntry entry)
+        {
+            return entry.Level >= m_logLevel;
+        }
+
+        #endregion
 
         #region ILog implementation
 

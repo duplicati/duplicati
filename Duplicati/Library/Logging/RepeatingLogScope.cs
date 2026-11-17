@@ -27,7 +27,7 @@ namespace Duplicati.Library.Logging
     /// <summary>
     /// Creates a log-scope that repeats the last emitted message, if there is no log activity
     /// </summary>
-    public class RepeatingLogScope : ILogDestination, IDisposable
+    public class RepeatingLogScope : ILogDestination, ILogFilter, IDisposable
     {
         /// <summary>
         /// A string that is written as the message to the log
@@ -117,6 +117,16 @@ namespace Duplicati.Library.Logging
         {
             m_completed = true;
             m_scope.Dispose();
+        }
+
+        /// <summary>
+        /// Reports that no messages are written by this destination, as it only observes them
+        /// </summary>
+        /// <returns>Always <c>false</c>.</returns>
+        /// <param name="entry">The log entry to examine.</param>
+        public bool Accepts(LogEntry entry)
+        {
+            return false;
         }
 
         /// <summary>
