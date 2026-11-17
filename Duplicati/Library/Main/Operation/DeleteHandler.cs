@@ -433,6 +433,22 @@ namespace Duplicati.Library.Main.Operation
                 Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "DeleteMostRecent", "Deleting most recent backup: {0}", mostRecentBackup.Time);
             }
 
+            // Keep the most recent of the backups marked for deletion until the minimum number of full versions remains
+            int minimumVersions = this.Options.RetentionPolicyMinimumVersions;
+            if (minimumVersions > 0)
+            {
+                int fullVersionsRemaining = sortedFilesets.Count(x => x.IsFullBackup == BackupType.FULL_BACKUP) - versionsToDelete.Count(x => x.IsFullBackup == BackupType.FULL_BACKUP);
+                foreach (IListResultFileset fileset in versionsToDelete.Where(x => x.IsFullBackup == BackupType.FULL_BACKUP).OrderByDescending(x => x.Time).ToList())
+                {
+                    if (fullVersionsRemaining >= minimumVersions)
+                        break;
+
+                    versionsToDelete.Remove(fileset);
+                    fullVersionsRemaining++;
+                    Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "KeepForMinimumVersions", "Keeping backup {0} to keep at least {1} versions", fileset.Time, minimumVersions);
+                }
+            }
+
             Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "AllBackupsToDelete", "All backups to delete: {0}", string.Join(", ", versionsToDelete.Select(x => x.Time).OrderByDescending(x => x)));
 
             return versionsToDelete;
