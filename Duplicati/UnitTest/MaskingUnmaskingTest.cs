@@ -493,5 +493,34 @@ public class BackupConfigMaskingTests
         Assert.That(edited.TargetURL, Is.EqualTo(url));
         Assert.That(edited.AdditionalTargetURLs.Single().TargetUrl, Is.EqualTo("ftp://u:second-secret@host/x"));
     }
+
+    [Test]
+    public void AnExportWithoutPasswordsKeepsTheRestOfTheUrls()
+    {
+        var backup = new Backup
+        {
+            ID = "1",
+            Name = "Test",
+            Description = string.Empty,
+            Tags = Array.Empty<string>(),
+            TargetURL = "ssh://fixture-user:fixture-secret@Example.COM:022/archive%2fpart?auth-password=p%2525&buffer-size=64MB&empty=&future=a+b&future=two&flag",
+            AdditionalTargetURLs =
+            [
+                new TargetUrlEntry { TargetUrlKey = "second", TargetUrl = "ftp://u:second-secret@host/a%2Fb?AUTH-PASSWORD=x&dup=1&dup=2" },
+                new TargetUrlEntry { TargetUrlKey = "third", TargetUrl = "s3://bucket/p?auth-password=only" },
+            ],
+            Sources = ["/local/folder/", "@/mnt/remote|ssh://u:source-secret@host//data%2fx/?auth-password=y&flag"],
+            Settings = [new Setting { Name = "passphrase", Value = "secretpass", Filter = string.Empty }],
+            Filters = Array.Empty<IFilter>(),
+            Metadata = new Dictionary<string, string>()
+        };
+
+        backup.RemoveSensitiveInformation();
+
+        Assert.That(backup.TargetURL, Is.EqualTo("ssh://fixture-user@Example.COM:022/archive%2fpart?buffer-size=64MB&empty=&future=a+b&future=two&flag"));
+        Assert.That(backup.AdditionalTargetURLs.Select(x => x.TargetUrl), Is.EqualTo(new[] { "ftp://u@host/a%2Fb?dup=1&dup=2", "s3://bucket/p" }));
+        Assert.That(backup.Sources, Is.EqualTo(new[] { "/local/folder/", "@/mnt/remote|ssh://u@host//data%2fx/?flag" }));
+        Assert.That(backup.Settings, Is.Empty);
+    }
 }
 
