@@ -2583,6 +2583,39 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// Removes files from the prepared restore file list that were last modified before
+        /// the given time, as recorded in the fileset being restored. Used by the
+        /// <c>--restore-files-modified-after</c> option. Folders and symlinks (which use
+        /// special negative blockset IDs) are never removed by this call.
+        /// </summary>
+        /// <param name="limit">The earliest modification time of a file to keep.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>The number of files removed from the restore list.</returns>
+        public async Task<long> RemoveFilesModifiedBeforeAsync(DateTime limit, CancellationToken token)
+        {
+            if (m_tempfiletable == null || m_restoreFilesetId < 0)
+                return 0;
+
+            await using var cmd = m_connection.CreateCommand($@"
+                DELETE FROM ""{m_tempfiletable}""
+                WHERE ""ID"" IN (
+                    SELECT ""{m_tempfiletable}"".""ID""
+                    FROM ""{m_tempfiletable}""
+                    INNER JOIN ""FilesetEntry""
+                        ON ""FilesetEntry"".""FileID"" = ""{m_tempfiletable}"".""ID""
+                    WHERE
+                        ""FilesetEntry"".""FilesetID"" = @FilesetId
+                        AND ""{m_tempfiletable}"".""BlocksetID"" >= 0
+                        AND ""FilesetEntry"".""Lastmodified"" < @Limit
+                )
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@FilesetId", m_restoreFilesetId)
+                .SetParameterValue("@Limit", limit.ToUniversalTime().Ticks);
+            return await cmd.ExecuteNonQueryAsync(writeLog: false, token).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Returns a list of files and symlinks to restore.
         /// </summary>
         /// <remarks>At its current state, this method is designed to be called by Duplicati.Library.Main.Operation.Restore.FileLister. It locks the database to ensure that calls from Duplicati.Library.Main.Operation.Restore.BlockManager do not interfere with each other.</remarks>
