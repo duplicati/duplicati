@@ -5,7 +5,38 @@ backupApp.controller('AppController', function($rootScope, $scope, $cookies, $lo
 
     $scope.localized = {};
     $scope.location = $location;
-    $scope.saved_theme = $scope.active_theme = $cookies.get('current-theme') || 'default';
+    var themeStorageKey = 'duplicati:ngax:theme';
+
+    function readCurrentTheme() {
+        try {
+            var stored = localStorage.getItem(themeStorageKey);
+            if (stored != null && stored.trim().length > 0)
+                return stored;
+
+            var legacy = $cookies.get('current-theme');
+            if (legacy != null && legacy.trim().length > 0) {
+                localStorage.setItem(themeStorageKey, legacy);
+                return legacy;
+            }
+        } catch (e) {
+            // Keep the cookie fallback when browser storage is unavailable.
+        }
+        return $cookies.get('current-theme') || 'default';
+    }
+
+    function saveCurrentTheme(theme) {
+        try {
+            localStorage.setItem(themeStorageKey, theme);
+            return;
+        } catch (e) {
+            // Preserve theme selection even when browser storage is blocked.
+        }
+        var now = new Date();
+        var exp = new Date(now.getFullYear()+10, now.getMonth(), now.getDate());
+        $cookies.put('current-theme', theme, { expires: exp });
+    }
+
+    $scope.saved_theme = $scope.active_theme = readCurrentTheme();
     $scope.throttle_active = false;
 
     // If we want the theme settings
@@ -123,9 +154,7 @@ backupApp.controller('AppController', function($rootScope, $scope, $cookies, $lo
                     if (data.data != null && (data.data['theme'] || '').trim().length > 0)
                         theme = data.data['theme'];
 
-                    var now = new Date();
-                    var exp = new Date(now.getFullYear()+10, now.getMonth(), now.getDate());
-                    $cookies.put('current-theme', theme, { expires: exp });
+                    saveCurrentTheme(theme);
                     $scope.saved_theme = $scope.active_theme = theme;
                 }, function() {}
             );
@@ -146,16 +175,12 @@ backupApp.controller('AppController', function($rootScope, $scope, $cookies, $lo
 
             AppService.patch('/uisettings/ngax', { 'theme': theme }, {'headers': {'Content-Type': 'application/json'}}).then(
                 function(data) {
-                    var now = new Date();
-                    var exp = new Date(now.getFullYear()+10, now.getMonth(), now.getDate());
-                    $cookies.put('current-theme', theme, { expires: exp });
+                    saveCurrentTheme(theme);
                     $scope.saved_theme = $scope.active_theme = theme;
                 }, function() {}
             );
         } else {
-            var now = new Date();
-            var exp = new Date(now.getFullYear()+10, now.getMonth(), now.getDate());
-            $cookies.put('current-theme', theme, { expires: exp });
+            saveCurrentTheme(theme);
             $scope.saved_theme = $scope.active_theme = theme;
         }
 
