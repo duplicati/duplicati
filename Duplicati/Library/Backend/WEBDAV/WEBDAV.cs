@@ -52,6 +52,19 @@ namespace Duplicati.Library.Backend
         /// The use legacy propfind parsing option name
         /// </summary>
         private const string USE_LEGACY_PROPFIND_PARSING_OPTION = "use-legacy-parsing";
+        /// <summary>
+        /// The client certificate option name
+        /// </summary>
+        private const string CLIENT_CERTIFICATE_OPTION = "webdav-client-certificate";
+        /// <summary>
+        /// The client certificate password option name
+        /// </summary>
+        private const string CLIENT_CERTIFICATE_PASSWORD_OPTION = "webdav-client-certificate-password";
+
+        /// <summary>
+        /// The client certificate to present to the server, if any
+        /// </summary>
+        private readonly System.Security.Cryptography.X509Certificates.X509Certificate2? m_clientCertificate;
 
         /// <summary>
         /// The credentials to use for the connection
@@ -189,6 +202,21 @@ namespace Duplicati.Library.Backend
             m_useExtendedPropfind = Utility.Utility.ParseBoolOption(options, USE_EXTENDED_PROPFIND_OPTION);
             m_useLegacyParsing = Utility.Utility.ParseBoolOption(options, USE_LEGACY_PROPFIND_PARSING_OPTION);
             m_debugPropfindFile = options.GetValueOrDefault(DEBUG_PROPFIND_FILE_OPTION);
+
+            var clientCertificatePath = options.GetValueOrDefault(CLIENT_CERTIFICATE_OPTION);
+            if (!string.IsNullOrWhiteSpace(clientCertificatePath))
+            {
+                try
+                {
+                    m_clientCertificate = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12FromFile(
+                        clientCertificatePath,
+                        options.GetValueOrDefault(CLIENT_CERTIFICATE_PASSWORD_OPTION));
+                }
+                catch (Exception ex)
+                {
+                    throw new UserInformationException(Strings.WEBDAV.ClientCertificateLoadError(clientCertificatePath, ex.Message), "WebDAVClientCertificateLoadFailed", ex);
+                }
+            }
 
             // Explicitly support setups with no username and password
             if (m_forceDigestAuthentication && m_userInfo == null)
@@ -380,6 +408,12 @@ namespace Duplicati.Library.Backend
             {
                 var httpHandler = new HttpClientHandler();
                 HttpClientHelper.ConfigureHandlerCertificateValidator(httpHandler, m_certificateOptions.AcceptAllCertificates, m_certificateOptions.AcceptSpecificCertificateHashes, m_certificateOptions.IgnoreRevocationFailure);
+
+                if (m_clientCertificate != null)
+                {
+                    httpHandler.ClientCertificateOptions = ClientCertificateOption.Manual;
+                    httpHandler.ClientCertificates.Add(m_clientCertificate);
+                }
 
                 if (m_useIntegratedAuthentication)
                 {
@@ -588,6 +622,8 @@ namespace Duplicati.Library.Backend
             new CommandLineArgument(DEBUG_PROPFIND_FILE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.WEBDAV.DescriptionDebugPropfindShort, Strings.WEBDAV.DescriptionDebugPropfindLong),
             new CommandLineArgument(USE_EXTENDED_PROPFIND_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionUseExtendedPropfindShort, Strings.WEBDAV.DescriptionUseExtendedPropfindLong),
             new CommandLineArgument(USE_LEGACY_PROPFIND_PARSING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.WEBDAV.DescriptionUseLegacyPropfindParsingShort, Strings.WEBDAV.DescriptionUseLegacyPropfindParsingLong, "false"),
+            new CommandLineArgument(CLIENT_CERTIFICATE_OPTION, CommandLineArgument.ArgumentType.Path, Strings.WEBDAV.DescriptionClientCertificateShort, Strings.WEBDAV.DescriptionClientCertificateLong),
+            new CommandLineArgument(CLIENT_CERTIFICATE_PASSWORD_OPTION, CommandLineArgument.ArgumentType.Password, Strings.WEBDAV.DescriptionClientCertificatePasswordShort, Strings.WEBDAV.DescriptionClientCertificatePasswordLong),
             .. SslOptionsHelper.GetOptions(),
             .. TimeoutOptionsHelper.GetOptions()
         ];
@@ -622,7 +658,7 @@ namespace Duplicati.Library.Backend
 
         public void Dispose()
         {
-
+            m_clientCertificate?.Dispose();
         }
 
         #endregion
