@@ -176,5 +176,5 @@ public class BuiltinZipArchive : IZipArchive
             .Where(x => MatchesPrefix(x.Key, prefix));
 
     public Stream? OpenRead(string file)
-        => m_archive.GetEntry(file)?.Open();
+        => GetEntry(file)?.Open();
 }
