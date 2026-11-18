@@ -1237,11 +1237,11 @@ namespace Duplicati.CommandLine
                     if (result.ModifiedFolders > 0)
                         outwriter.WriteLine("  Modified folders:  {0}", result.ModifiedFolders);
                     if (result.ModifiedSymlinks > 0)
-                        outwriter.WriteLine("  Modified symlinka: {0}", result.ModifiedSymlinks);
+                        outwriter.WriteLine("  Modified symlinks: {0}", result.ModifiedSymlinks);
                     if (result.ModifiedFiles > 0)
                         outwriter.WriteLine("  Modified files:    {0}", result.ModifiedFiles);
 
-                    if (result.AddedFolders + result.AddedSymlinks + result.AddedFolders +
+                    if (result.AddedFolders + result.AddedSymlinks + result.AddedFiles +
                         result.ModifiedFolders + result.ModifiedSymlinks + result.ModifiedFiles +
                         result.DeletedFolders + result.DeletedSymlinks + result.DeletedFiles == 0)
                         outwriter.WriteLine("  No changes found");
