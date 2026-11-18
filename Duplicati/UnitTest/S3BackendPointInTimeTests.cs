@@ -238,6 +238,7 @@ public class S3BackendPointInTimeTests
         {
             ["put"] = () => backend.PutAsync("a.zip", new MemoryStream(new byte[] { 1 }), CancellationToken.None),
             ["delete"] = () => backend.DeleteAsync("a.zip", CancellationToken.None),
+            ["delete-folder"] = () => backend.DeleteFolderRecursiveAsync("folder", CancellationToken.None),
             ["rename"] = () => backend.RenameAsync("a.zip", "b.zip", CancellationToken.None),
             ["createfolder"] = () => backend.CreateFolderAsync(CancellationToken.None),
             ["set-lock"] = () => backend.SetObjectLockUntilAsync("a.zip", At.AddDays(30), CancellationToken.None),

@@ -47,7 +47,7 @@ namespace Duplicati.Library.Backend
     /// Note that instead of using Task.Result to wait for the results of asynchronous operations,
     /// this class uses the Utility.Await() extension method, since it doesn't wrap exceptions in AggregateExceptions.
     /// </remarks>
-    public abstract class MicrosoftGraphBackend : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend
+    public abstract class MicrosoftGraphBackend : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend, IFolderDeleteEnabledBackend
     {
         private static readonly string LOGTAG = Log.LogTagFromType<MicrosoftGraphBackend>();
 
@@ -655,6 +655,26 @@ namespace Duplicati.Library.Backend
             {
                 // Wrap the existing item not found error in a 'FolderMissingException'
                 throw new FileMissingException(ex);
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task DeleteFolderRecursiveAsync(string path, CancellationToken cancellationToken)
+        {
+            BackendExtensions.ValidateFolderDeletePath(path);
+
+            try
+            {
+                // Deleting a folder item takes everything below it along
+                var drivePrefix = await GetDrivePrefix(cancellationToken).ConfigureAwait(false);
+                await m_retryAfter.WaitForRetryAfterAsync(cancellationToken).ConfigureAwait(false);
+                var deleteUrl = RootItemUrl(drivePrefix, path);
+                using (var response = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancellationToken, ct => this.m_client.DeleteAsync(deleteUrl, ct)).ConfigureAwait(false))
+                    this.CheckResponse(response);
+            }
+            catch (DriveItemNotFoundException)
+            {
+                // Already gone, which is the outcome the caller asked for
             }
         }
 

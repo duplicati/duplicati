@@ -31,7 +31,7 @@ using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Backend
 {
-    public class Idrivee2Backend : IStreamingBackend, IFolderEnabledBackend, ILockingBackend
+    public class Idrivee2Backend : IStreamingBackend, IFolderEnabledBackend, IFolderDeleteEnabledBackend, ILockingBackend
     //, IRenameEnabledBackend 
     // Renaming "works" but gives errors when trying to download the renamed file:
     // Expected hash not equal to calculated hash
@@ -297,7 +297,7 @@ namespace Duplicati.Library.Backend
                 filterPath = Util.AppendDirSeparator(filterPath, "/");
 
             var con = await GetConnection(cancellationToken).ConfigureAwait(false);
-            await foreach (var files in con.ListBucketAsync(_bucket, filterPath, true, cancellationToken).ConfigureAwait(false))
+            await foreach (var files in con.ListBucketAsync(_bucket, filterPath, false, cancellationToken).ConfigureAwait(false))
                 yield return files;
         }
 
@@ -316,6 +316,15 @@ namespace Duplicati.Library.Backend
         {
             var con = await GetConnection(cancellationToken).ConfigureAwait(false);
             await con.RenameFileAsync(_bucket, GetFullKey(oldname), GetFullKey(newname), cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc/>
+        public async Task DeleteFolderRecursiveAsync(string path, CancellationToken cancellationToken)
+        {
+            BackendExtensions.ValidateFolderDeletePath(path);
+
+            var con = await GetConnection(cancellationToken).ConfigureAwait(false);
+            await con.DeleteFolderAsync(_bucket, GetFullKey(path), cancellationToken).ConfigureAwait(false);
         }
     }
 }

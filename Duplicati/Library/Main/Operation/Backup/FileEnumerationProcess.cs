@@ -525,7 +525,7 @@ namespace Duplicati.Library.Main.Operation.Backup
         /// </summary>
         /// <param name="emitfilter">The emit filter</param>
         /// <returns>The enumeration filter</returns>
-        private static Library.Utility.IFilter GetEnumerateFilter(Library.Utility.IFilter emitfilter)
+        internal static Library.Utility.IFilter GetEnumerateFilter(Library.Utility.IFilter emitfilter)
         {
             Library.Utility.FilterExpression.AnalyzeFilters(emitfilter, out var includes, out var excludes);
             if (includes && !excludes)

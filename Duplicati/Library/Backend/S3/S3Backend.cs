@@ -32,7 +32,7 @@ using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Backend
 {
-    public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend, ILockingBackend
+    public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend, IFolderDeleteEnabledBackend, ILockingBackend
     {
         private const string AUTH_USERNAME_OPTION = "aws-access-key-id";
         private const string AUTH_PASSWORD_OPTION = "aws-secret-access-key";
@@ -609,6 +609,18 @@ namespace Duplicati.Library.Backend
         {
             EnsureWritable();
             return Connection.RenameFileAsync(m_bucket, GetFullKey(source), GetFullKey(target), cancelToken);
+        }
+
+        #endregion
+
+        #region IFolderDeleteEnabledBackend Members
+
+        /// <inheritdoc/>
+        public Task DeleteFolderRecursiveAsync(string path, CancellationToken cancellationToken)
+        {
+            BackendExtensions.ValidateFolderDeletePath(path);
+            EnsureWritable();
+            return Connection.DeleteFolderAsync(m_bucket, GetFullKey(path), cancellationToken);
         }
 
         #endregion

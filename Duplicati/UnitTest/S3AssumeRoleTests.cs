@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -92,10 +93,12 @@ public class S3AssumeRoleTests
                 {
                     using (var reader = new StreamReader(context.Request.InputStream))
                         StsBodies.Enqueue(Uri.UnescapeDataString((await reader.ReadToEndAsync().ConfigureAwait(false)).Replace('+', ' ')));
+                    // ':' in a custom format is the culture's time separator, so the format must not follow the current culture
+                    var expiration = DateTime.UtcNow.Add(CredentialLifetime).ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
                     body =
                         "<AssumeRoleResponse xmlns=\"https://sts.amazonaws.com/doc/2011-06-15/\"><AssumeRoleResult>" +
                         $"<Credentials><AccessKeyId>{TemporaryKeyId}</AccessKeyId><SecretAccessKey>temp-secret</SecretAccessKey>" +
-                        $"<SessionToken>{SessionToken}</SessionToken><Expiration>{DateTime.UtcNow.Add(CredentialLifetime):yyyy-MM-ddTHH:mm:ssZ}</Expiration></Credentials>" +
+                        $"<SessionToken>{SessionToken}</SessionToken><Expiration>{expiration}</Expiration></Credentials>" +
                         "<AssumedRoleUser><Arn>arn:aws:sts::123456789012:assumed-role/backup/duplicati</Arn><AssumedRoleId>AROATEST:duplicati</AssumedRoleId></AssumedRoleUser>" +
                         "</AssumeRoleResult><ResponseMetadata><RequestId>1</RequestId></ResponseMetadata></AssumeRoleResponse>";
                 }
