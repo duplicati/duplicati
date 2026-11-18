@@ -665,9 +665,6 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
             new CommandLineArgument("disable-file-scanner", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilescannerShort, Strings.Options.DisablefilescannerLong, "false"),
             new CommandLineArgument("disable-filelist-consistency-checks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilelistconsistencychecksShort, Strings.Options.DisablefilelistconsistencychecksLong, "false"),
-            new CommandLineArgument("disable-on-battery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableOnBatteryShort, Strings.Options.DisableOnBatteryLong, "false"),
-            new CommandLineArgument("min-time-between-scheduled-runs", CommandLineArgument.ArgumentType.Timespan, Strings.Options.MinTimeBetweenScheduledRunsShort, Strings.Options.MinTimeBetweenScheduledRunsLong),
-            new CommandLineArgument("run-skipped-on-ac-power", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RunSkippedOnAcPowerShort, Strings.Options.RunSkippedOnAcPowerLong, "false"),
 
             new CommandLineArgument("exclude-empty-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludeemptyfoldersShort, Strings.Options.ExcludeemptyfoldersLong, "false"),
             new CommandLineArgument("one-file-system", CommandLineArgument.ArgumentType.Boolean, Strings.Options.OnefilesystemShort, Strings.Options.OnefilesystemLong, "false"),
@@ -2025,34 +2022,6 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <value><c>true</c> if the filelist consistency checks should be disabled; otherwise, <c>false</c>.</value>
         public bool DisableFilelistConsistencyChecks => GetBool("disable-filelist-consistency-checks");
-
-        /// <summary>
-        /// Gets a flag indicating whether the backup should be disabled when on battery power.
-        /// </summary>
-        /// <value><c>true</c> if the backup should be disabled when on battery power; otherwise, <c>false</c>.</value>
-        public bool DisableOnBattery => GetBool("disable-on-battery");
-
-        /// <summary>
-        /// Gets the minimum time that must pass after the last completed run before a scheduled run starts, if specified
-        /// </summary>
-        public TimeSpan? MinTimeBetweenScheduledRuns
-        {
-            get
-            {
-                m_options.TryGetValue("min-time-between-scheduled-runs", out var value);
-
-                if (string.IsNullOrWhiteSpace(value))
-                    return null;
-
-                return Library.Utility.Timeparser.ParseTimeSpan(value);
-            }
-        }
-
-        /// <summary>
-        /// Gets a flag indicating whether a scheduled backup skipped on battery power should run once the system is no longer on battery power.
-        /// </summary>
-        /// <value><c>true</c> if the skipped backup should run when the system is no longer on battery power; otherwise, <c>false</c>.</value>
-        public bool RunSkippedOnAcPower => GetBool("run-skipped-on-ac-power");
 
         /// <summary>
         /// Gets a value indicating if missing dblock files are attempted created
