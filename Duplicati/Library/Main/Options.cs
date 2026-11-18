@@ -506,6 +506,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
             new CommandLineArgument("allow-missing-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowmissingsourceShort, Strings.Options.AllowmissingsourceLong, "false"),
             new CommandLineArgument("abort-if-source-missing", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AbortifsourcemissingShort, Strings.Options.AbortifsourcemissingLong, "false"),
+            new CommandLineArgument("keep-missing-sources", CommandLineArgument.ArgumentType.Boolean, Strings.Options.KeepmissingsourcesShort, Strings.Options.KeepmissingsourcesLong, "false"),
             new CommandLineArgument("prevent-empty-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.PreventemptysourceShort, Strings.Options.PreventemptysourceLong, "false"),
 
             new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong, "false"),
@@ -1893,6 +1894,11 @@ namespace Duplicati.Library.Main
         /// Gets a flag indicating if empty source elements should cause backups to fail
         /// </summary>
         public bool PreventEmptySource => GetBool("prevent-empty-source");
+
+        /// <summary>
+        /// Gets a flag indicating if the files of a missing source are kept as they were in the previous version
+        /// </summary>
+        public bool KeepMissingSources => GetBool("keep-missing-sources");
 
         /// <summary>
         /// Gets a value indicating if a verification file should be uploaded after changing the remote store
