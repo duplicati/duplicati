@@ -354,6 +354,20 @@ public class BackupConfigMaskingTests
             "s3://bucket/a%2Fb?AUTH-PASSWORD=one&auth-password=two&s3-server-name=x",
             "s3://bucket/a%2Fb?AUTH-PASSWORD=***************&auth-password=***************&s3-server-name=x"
         },
+        // A repeated protected key with other parameters between its entries
+        new object[] {
+            "s3://bucket/a%2Fb?AUTH-PASSWORD=one&keep=middle&auth-password=two&flag",
+            "s3://bucket/a%2Fb?AUTH-PASSWORD=***************&keep=middle&auth-password=***************&flag"
+        },
+        new object[] {
+            "s3://bucket/path?auth-password=one&empty=&auth-password=two%26x&keep=a+b",
+            "s3://bucket/path?auth-password=***************&empty=&auth-password=***************&keep=a+b"
+        },
+        // Two protected keys and a repeated key that is not protected, all interleaved
+        new object[] {
+            "pcloud://api.pcloud.com/Folder?authid=a&dup=1&auth-password=b&dup=2&authid=c&flag",
+            "pcloud://api.pcloud.com/Folder?authid=***************&dup=1&auth-password=***************&dup=2&authid=***************&flag"
+        },
     ];
 
     [Test]
@@ -418,6 +432,45 @@ public class BackupConfigMaskingTests
         // A new password replaces the stored one
         var changed = Server.QuerystringMasking.Unmask($"ssh://host:022/archive%2fpart?auth-password=new%2B1&future=a+b&future=two&flag", url);
         Assert.That(changed, Is.EqualTo("ssh://host:022/archive%2fpart?auth-password=new%2B1&future=a+b&future=two&flag"));
+    }
+
+    [Test]
+    public void ChangingOneEntryOfARepeatedProtectedKeyKeepsTheOtherEntriesInPlace()
+    {
+        var url = "s3://bucket/a%2Fb?AUTH-PASSWORD=one&keep=middle&auth-password=two&flag";
+        var placeholder = Connection.PASSWORD_PLACEHOLDER;
+
+        // The second entry is changed, the first is kept masked
+        Assert.That(
+            Server.QuerystringMasking.Unmask($"s3://bucket/a%2Fb?AUTH-PASSWORD={placeholder}&keep=middle&auth-password=new&flag", url),
+            Is.EqualTo("s3://bucket/a%2Fb?AUTH-PASSWORD=one&keep=middle&auth-password=new&flag"));
+
+        // The first entry is changed, the second is kept masked
+        Assert.That(
+            Server.QuerystringMasking.Unmask($"s3://bucket/a%2Fb?AUTH-PASSWORD=new&keep=middle&auth-password={placeholder}&flag", url),
+            Is.EqualTo("s3://bucket/a%2Fb?AUTH-PASSWORD=new&keep=middle&auth-password=two&flag"));
+
+        // A parameter is added and the other one is removed, the entries keep their values and places
+        Assert.That(
+            Server.QuerystringMasking.Unmask($"s3://bucket/a%2Fb?added=1&AUTH-PASSWORD={placeholder}&auth-password={placeholder}", url),
+            Is.EqualTo("s3://bucket/a%2Fb?added=1&AUTH-PASSWORD=one&auth-password=two"));
+    }
+
+    [Test]
+    public void AddingOrRemovingAMaskedEntryOfARepeatedKeyRestoresAllPreviousEntries()
+    {
+        // The masked entries do not tell which entry was added or removed, so all the previous
+        // entries are restored where the first entry is, as before
+        var url = "s3://bucket/a%2Fb?AUTH-PASSWORD=one&keep=middle&auth-password=two&flag";
+        var placeholder = Connection.PASSWORD_PLACEHOLDER;
+
+        Assert.That(
+            Server.QuerystringMasking.Unmask($"s3://bucket/a%2Fb?keep=middle&auth-password={placeholder}&flag", url),
+            Is.EqualTo("s3://bucket/a%2Fb?keep=middle&AUTH-PASSWORD=one&auth-password=two&flag"));
+
+        Assert.That(
+            Server.QuerystringMasking.Unmask($"s3://bucket/a%2Fb?AUTH-PASSWORD={placeholder}&keep=middle&auth-password={placeholder}&auth-password={placeholder}", url),
+            Is.EqualTo("s3://bucket/a%2Fb?AUTH-PASSWORD=one&auth-password=two&keep=middle"));
     }
 
     [Test]
