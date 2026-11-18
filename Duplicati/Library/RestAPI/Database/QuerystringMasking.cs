@@ -138,7 +138,7 @@ public static class QuerystringMasking
         if (!TrySplitQuery(url, out var beforeQuery, out var parameters))
             return url;
 
-        // If any value of a key contains the mask, the entire set for that key is replaced from the previous URLs
+        // The keys with a masked value get their entries from the previous URLs
         var maskedKeys = parameters
             .Where(x => Connection.IsPasswordPlaceholder(GetEncodedValue(x)))
             .Select(GetKey)
@@ -149,19 +149,45 @@ public static class QuerystringMasking
             return url;
 
         var result = new List<string>(parameters.Length);
-        var replacedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var previousByKey = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        var seenByKey = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         foreach (var parameter in parameters)
         {
             var key = GetKey(parameter);
             if (!maskedKeys.Contains(key))
+            {
                 result.Add(parameter);
-            // The previous entries go where the first entry for the key was, the other entries are dropped
-            else if (replacedKeys.Add(key))
-                result.AddRange(GetPreviousParameters(key, GetEncodedKey(parameter), previousUrls));
+                continue;
+            }
+
+            if (!previousByKey.TryGetValue(key, out var previous))
+                previousByKey[key] = previous = GetPreviousParameters(key, GetEncodedKey(parameter), previousUrls);
+
+            var index = seenByKey.GetValueOrDefault(key);
+            seenByKey[key] = index + 1;
+
+            // When the key has as many entries as before, each entry is the one at the same place before, so
+            // a masked entry gets the previous entry there and the other parameters keep their place between them.
+            // An entry that is not masked was changed by the user and is kept.
+            if (previous.Count == CountEntries(parameters, key))
+                result.Add(Connection.IsPasswordPlaceholder(GetEncodedValue(parameter)) ? previous[index] : parameter);
+            // Otherwise an entry was added or removed, and the masked entries do not tell which one, so the
+            // previous entries go where the first entry for the key was, and the other entries are dropped
+            else if (index == 0)
+                result.AddRange(previous);
         }
 
         return beforeQuery + string.Join("&", result);
     }
+
+    /// <summary>
+    /// Counts the entries for a key in the query parameters.
+    /// </summary>
+    /// <param name="parameters">The query parameters, still encoded.</param>
+    /// <param name="key">The decoded key to count (case-insensitive).</param>
+    /// <returns>The number of entries for the key.</returns>
+    private static int CountEntries(string[] parameters, string key)
+        => parameters.Count(x => string.Equals(GetKey(x), key, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// The name of the option that a backend also reads from the user info of its URL
