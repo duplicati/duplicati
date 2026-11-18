@@ -697,6 +697,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("restore-legacy", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreLegacyShort, Strings.Options.RestoreLegacyLong, "false"),
             new CommandLineArgument("restore-files-modified-after", CommandLineArgument.ArgumentType.DateTime, Strings.Options.RestoreFilesModifiedAfterShort, Strings.Options.RestoreFilesModifiedAfterLong),
             new CommandLineArgument("restore-preallocate-size", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorePreallocateSizeShort, Strings.Options.RestorePreallocateSizeLong, "false"),
+            new CommandLineArgument("restore-temp-tables-on-disk", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreTempTablesOnDiskShort, Strings.Options.RestoreTempTablesOnDiskLong, "false"),
             new CommandLineArgument("restore-volume-cache-hint", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreVolumeCacheHintShort, Strings.Options.RestoreVolumeCacheHintLong, DEFAULT_RESTORE_VOLUME_CACHE_HINT),
             new CommandLineArgument("restore-volume-cache-min-free", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreVolumeCacheMinFreeShort, Strings.Options.RestoreVolumeCacheMinFreeLong, DEFAULT_RESTORE_VOLUME_CACHE_MIN_FREE),
             new CommandLineArgument("restore-volume-decompressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecompressorsShort, Strings.Options.RestoreVolumeDecompressorsLong, DEFAULT_RESTORE_VOLUME_DECOMPRESSORS.ToString()),
@@ -2285,6 +2286,11 @@ namespace Duplicati.Library.Main
         /// Gets whether to use the legacy restore method
         /// </summary>
         public bool RestoreLegacy => GetBool("restore-legacy");
+
+        /// <summary>
+        /// Gets whether a restore keeps its temporary tables in a file instead of in memory
+        /// </summary>
+        public bool RestoreTempTablesOnDisk => GetBool("restore-temp-tables-on-disk");
 
         /// <summary>
         /// Gets the sampling mode used by the restore test operation

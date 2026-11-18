@@ -248,7 +248,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     if (string.IsNullOrWhiteSpace(dbpath))
                         throw new InvalidOperationException("Unexpected empty database path");
-                    db = await LocalRestoreDatabase.CreateAsync(dbpath, null, m_result.TaskControl.ProgressToken)
+                    db = await LocalRestoreDatabase.CreateAsync(dbpath, null, m_result.TaskControl.ProgressToken, m_options.RestoreTempTablesOnDisk)
                         .ConfigureAwait(false);
 
                     // A partially recreated database, such as the one rebuilt with the paths only to
@@ -267,7 +267,7 @@ namespace Duplicati.Library.Main.Operation
                     Logging.Log.WriteInformationMessage(LOGTAG, "NoLocalDatabase", "No local database, building a temporary database");
                     tmpdb = new TempFile();
                     var filelistfilter = GetNumberedFilelistFilterDelegate(time, versions);
-                    db = await LocalRestoreDatabase.CreateAsync(tmpdb, null, m_result.TaskControl.ProgressToken)
+                    db = await LocalRestoreDatabase.CreateAsync(tmpdb, null, m_result.TaskControl.ProgressToken, m_options.RestoreTempTablesOnDisk)
                         .ConfigureAwait(false);
                     m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
                     using (new Logging.Timer(LOGTAG, "RecreateTempDbForRestore", "Recreate temporary database for restore"))
