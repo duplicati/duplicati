@@ -161,6 +161,8 @@ Error message: {0}", error); }
         public static string MinTimeBetweenScheduledRunsShort { get { return LC.L("Minimum time between scheduled runs"); } }
         public static string RunSkippedOnAcPowerLong { get { return LC.L("Use this option together with --disable-on-battery to run a scheduled backup that was skipped on battery power as soon as the system is no longer detected to be running on battery power. The skipped backup runs once, with its settings at that time, and only if it is still scheduled and enabled. Without this option, a skipped backup waits for its next scheduled run."); } }
         public static string RunSkippedOnAcPowerShort { get { return LC.L("Run skipped backups when on AC power"); } }
+        public static string SkipMissedScheduledBackupsLong { get { return LC.L("By default, a scheduled backup whose start time passed while Duplicati was not running, or while the machine was off or asleep, is started as soon as Duplicati notices it. Use this option to skip such a missed run and wait for the next scheduled time instead. A run counts as missed when its scheduled time is more than 10 minutes in the past. Manual and command line backups are not affected."); } }
+        public static string SkipMissedScheduledBackupsShort { get { return LC.L("Skip missed scheduled backups"); } }
     }
     internal static class Scheduler
     {
