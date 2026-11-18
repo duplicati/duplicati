@@ -535,6 +535,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("throttle-upload", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottleuploadShort, Strings.Options.ThrottleuploadLong, "0kb"),
             new CommandLineArgument("throttle-download", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottledownloadShort, Strings.Options.ThrottledownloadLong, "0kb"),
             new CommandLineArgument("max-upload-per-run", CommandLineArgument.ArgumentType.Size, Strings.Options.MaxUploadPerRunShort, Strings.Options.MaxUploadPerRunLong),
+            new CommandLineArgument("max-backup-runtime", CommandLineArgument.ArgumentType.Timespan, Strings.Options.MaxBackupRuntimeShort, Strings.Options.MaxBackupRuntimeLong),
             new CommandLineArgument("throttle-disabled", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablethrottleShort, Strings.Options.DisablethrottleLong, "false"),
             new CommandLineArgument("throttle-disabled-backends", CommandLineArgument.ArgumentType.String, Strings.Options.DisablethrottlebackendsShort, Strings.Options.DisablethrottlebackendsLong("throttle-disabled"), DEFAULT_THROTTLE_DISABLED_BACKENDS),
             new CommandLineArgument("skip-files-larger-than", CommandLineArgument.ArgumentType.Size, Strings.Options.SkipfileslargerthanShort, Strings.Options.SkipfileslargerthanLong),
@@ -1264,6 +1265,18 @@ namespace Duplicati.Library.Main
             {
                 var value = m_options.GetValueOrDefault("max-upload-per-run");
                 return string.IsNullOrWhiteSpace(value) ? 0 : Math.Max(0, Library.Utility.Sizeparser.ParseSize(value, "mb"));
+            }
+        }
+
+        /// <summary>
+        /// Gets how long a backup may run before it stops after the current file, or <see cref="TimeSpan.Zero"/> for no limit
+        /// </summary>
+        public TimeSpan MaxBackupRuntime
+        {
+            get
+            {
+                var value = Library.Utility.Utility.ParseTimespanOption(m_options, "max-backup-runtime", "0");
+                return value < TimeSpan.Zero ? TimeSpan.Zero : value;
             }
         }
 
