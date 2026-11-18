@@ -69,6 +69,12 @@ Restore a specific file
 
   "%APP_PATH%" restore ftp://me:example.com@ftp.example.com/target "%EXAMPLE_SOURCE_FILE%" --overwrite
 
+Make a backup to Google Drive
+=============================
+  Google Drive does not use a username and password. Instead it needs an AuthID, which is a token that allows Duplicati to access the Google Drive account. To get an AuthID, open %GOOGLEDRIVE_AUTHID_URL% in a browser, log in with the Google account that should store the backup, and copy the AuthID that is shown. The following command will make an encrypted backup to the folder "Backups/MyComputer" in Google Drive. Use "%CLI_EXE% help googledrive" to see all options for Google Drive.
+
+  "%APP_PATH%" backup googledrive://Backups/MyComputer "%EXAMPLE_SOURCE_PATH%" --authid="<AuthID>"
+
 
 # =============================================================================
 > duplicati.commandline.exe help backup

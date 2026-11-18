@@ -125,6 +125,7 @@ namespace Duplicati.CommandLine
                 tp = tp.Replace("%EXAMPLE_SOURCE_PATH%", !OperatingSystem.IsWindows() ? "/source" : @"D:\source");
                 tp = tp.Replace("%EXAMPLE_SOURCE_FILE%", !OperatingSystem.IsWindows() ? "/source/myfile.txt" : @"D:\source\file.txt");
                 tp = tp.Replace("%EXAMPLE_RESTORE_PATH%", !OperatingSystem.IsWindows() ? "/restore" : @"D:\restore");
+                tp = tp.Replace("%GOOGLEDRIVE_AUTHID_URL%", Library.Utility.Options.AuthIdOptionsHelper.GetOAuthLoginUrl("googledrive", null));
                 tp = tp.Replace("%ENCRYPTIONMODULES%", string.Join(", ", Library.DynamicLoader.EncryptionLoader.Keys));
                 tp = tp.Replace("%COMPRESSIONMODULES%", string.Join(", ", Library.DynamicLoader.CompressionLoader.Keys));
                 tp = tp.Replace("%DEFAULTENCRYPTIONMODULE%", opts.EncryptionModule);
