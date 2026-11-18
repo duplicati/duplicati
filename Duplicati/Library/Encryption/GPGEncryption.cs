@@ -65,6 +65,10 @@ namespace Duplicati.Library.Encryption
         /// The commandline option that selects the cipher used for encryption (--gpg-encryption-cipher-algo)
         /// </summary>
         private const string COMMANDLINE_OPTIONS_CIPHER_ALGO = "gpg-encryption-cipher-algo";
+        /// <summary>
+        /// The commandline option that encrypts to a public key instead of the passphrase (--gpg-encryption-recipient)
+        /// </summary>
+        private const string COMMANDLINE_OPTIONS_RECIPIENT = "gpg-encryption-recipient";
         #endregion
 
         /// <summary>
@@ -76,6 +80,16 @@ namespace Duplicati.Library.Encryption
         /// The commandline option that selects the cipher (--cipher-algo)
         /// </summary>
         private const string GPG_CIPHER_ALGO_OPTION = "--cipher-algo";
+
+        /// <summary>
+        /// The commandline option that names the key to encrypt to (--recipient)
+        /// </summary>
+        private const string GPG_RECIPIENT_OPTION = "--recipient";
+
+        /// <summary>
+        /// The command used to signal encryption to a public key (--encrypt)
+        /// </summary>
+        private const string GPG_ASYMMETRIC_ENCRYPTION_COMMAND = "--encrypt";
 
         /// <summary>
         /// Always present commandline options (--passphrase-fd 0)
@@ -154,12 +168,18 @@ namespace Duplicati.Library.Encryption
             }
 
             var encryptOptions = options.ContainsKey(COMMANDLINE_OPTIONS_ENCRYPTION_OPTIONS) ? options[COMMANDLINE_OPTIONS_ENCRYPTION_OPTIONS] : GPG_ENCRYPTION_DEFAULT_OPTIONS;
-            var encryptCmd = options.ContainsKey(COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND) ? options[COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND] : GPG_ENCRYPTION_COMMAND;
             // Only encryption needs the cipher, gpg reads it from the file when decrypting.
             // It goes before the switches, so a --cipher-algo given there still wins.
             var cipherAlgo = options.TryGetValue(COMMANDLINE_OPTIONS_CIPHER_ALGO, out var cipher) ? cipher?.Trim() : null;
             var cipherOption = string.IsNullOrEmpty(cipherAlgo) ? "" : GPG_CIPHER_ALGO_OPTION + " " + cipherAlgo + " ";
-            m_encryption_args += " " + GPG_COMMANDLINE_STANDARD_OPTIONS + " " + cipherOption + encryptOptions + " " + encryptCmd;
+            // A recipient encrypts to that public key, unless the command is given explicitly.
+            // It goes before the switches, so recipients given there are added to it.
+            var recipient = options.TryGetValue(COMMANDLINE_OPTIONS_RECIPIENT, out var r) ? r?.Trim() : null;
+            var recipientOption = string.IsNullOrEmpty(recipient) ? "" : GPG_RECIPIENT_OPTION + " \"" + recipient.Replace("\"", "\\\"") + "\" ";
+            var encryptCmd = options.ContainsKey(COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND)
+                ? options[COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND]
+                : string.IsNullOrEmpty(recipient) ? GPG_ENCRYPTION_COMMAND : GPG_ASYMMETRIC_ENCRYPTION_COMMAND;
+            m_encryption_args += " " + GPG_COMMANDLINE_STANDARD_OPTIONS + " " + recipientOption + cipherOption + encryptOptions + " " + encryptCmd;
 
             var decryptOptions = options.ContainsKey(COMMANDLINE_OPTIONS_DECRYPTION_OPTIONS) ? options[COMMANDLINE_OPTIONS_DECRYPTION_OPTIONS] : GPG_DECRYPTION_DEFAULT_OPTIONS;
             var decryptCmd = options.ContainsKey(COMMANDLINE_OPTIONS_DECRYPTION_COMMAND) ? options[COMMANDLINE_OPTIONS_DECRYPTION_COMMAND] : GPG_DECRYPTION_COMMAND;
@@ -197,6 +217,7 @@ namespace Duplicati.Library.Encryption
                     new CommandLineArgument(COMMANDLINE_OPTIONS_ENABLE_ARMOR, CommandLineArgument.ArgumentType.Boolean, Strings.GPGEncryption.GpgencryptionenablearmorShort, Strings.GPGEncryption.GpgencryptionenablearmorLong, "false"),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND , CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptionencryptioncommandShort, Strings.GPGEncryption.GpgencryptionencryptioncommandLong(GPG_ENCRYPTION_COMMAND, "--encrypt"), GPG_ENCRYPTION_COMMAND),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_DECRYPTION_COMMAND , CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptiondecryptioncommandShort, Strings.GPGEncryption.GpgencryptiondecryptioncommandLong, GPG_DECRYPTION_COMMAND),
+                    new CommandLineArgument(COMMANDLINE_OPTIONS_RECIPIENT, CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptionrecipientShort, Strings.GPGEncryption.GpgencryptionrecipientLong(GPG_RECIPIENT_OPTION, GPG_ASYMMETRIC_ENCRYPTION_COMMAND, COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND)),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_ENCRYPTION_OPTIONS , CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptionencryptionswitchesShort, Strings.GPGEncryption.GpgencryptionencryptionswitchesLong, GPG_ENCRYPTION_DEFAULT_OPTIONS),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_CIPHER_ALGO, CommandLineArgument.ArgumentType.Enumeration, Strings.GPGEncryption.GpgencryptioncipheralgoShort, Strings.GPGEncryption.GpgencryptioncipheralgoLong(GPG_CIPHER_ALGO_OPTION, COMMANDLINE_OPTIONS_ENCRYPTION_OPTIONS), null, null, GPG_CIPHER_ALGORITHMS),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_DECRYPTION_OPTIONS, CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptiondecryptionswitchesShort, Strings.GPGEncryption.GpgencryptiondecryptionswitchesLong, GPG_DECRYPTION_DEFAULT_OPTIONS),
