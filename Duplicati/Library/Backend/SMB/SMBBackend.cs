@@ -167,7 +167,7 @@ public class SMBBackend : IStreamingBackend, IFolderEnabledBackend, IRenameEnabl
         writeBufferSize = writeBufferSize < 1024 * 10 ? null : writeBufferSize;
 
         var transportType = _transportMap.TryGetValue(
-            string.IsNullOrEmpty(transport) ? DEFAULT_TRANSPORT : transport.ToLower(),
+            string.IsNullOrEmpty(transport) ? DEFAULT_TRANSPORT : transport.ToLowerInvariant(),
             out SMBTransportType type)
             ? type
             : throw new UserInformationException($"Transport must be one of: {string.Join(", ", _transportMap.Keys)}", "CIFSConfig");
