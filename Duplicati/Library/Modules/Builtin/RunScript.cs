@@ -377,6 +377,16 @@ namespace Duplicati.Library.Modules.Builtin
         }
 
         /// <summary>
+        /// Gets the path to Windows PowerShell, which is part of every supported Windows version
+        /// </summary>
+        /// <returns>The full path to powershell.exe, or the bare name if it is not in the system folder</returns>
+        private static string GetWindowsPowerShellPath()
+        {
+            var path = System.IO.Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
+            return System.IO.File.Exists(path) ? path : "powershell.exe";
+        }
+
+        /// <summary>
         /// Executes the script.
         /// </summary>
         /// <param name="scriptpath">The path to the script.</param>
@@ -406,7 +416,15 @@ namespace Duplicati.Library.Modules.Builtin
                     }
                 }
 
-                var psi = new System.Diagnostics.ProcessStartInfo(scriptpath, arguments)
+                var executable = scriptpath;
+                if (OperatingSystem.IsWindows() && string.Equals(System.IO.Path.GetExtension(scriptpath), ".ps1", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Windows cannot start a PowerShell script directly, so it is handed to Windows PowerShell
+                    arguments.InsertRange(0, ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", scriptpath]);
+                    executable = GetWindowsPowerShellPath();
+                }
+
+                var psi = new System.Diagnostics.ProcessStartInfo(executable, arguments)
                 {
                     WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden,
                     CreateNoWindow = true,
