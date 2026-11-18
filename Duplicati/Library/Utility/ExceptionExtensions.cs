@@ -26,6 +26,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.Versioning;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Common.IO;
@@ -166,6 +168,11 @@ public static class ExceptionExtensions
         if (ex is Win32Exception win32Ex && OperatingSystem.IsWindows())
             return WindowsPermissionDeniedCodes.Contains(win32Ex.NativeErrorCode);
 
+        // PosixException is an IOException that carries the errno in a field and not in HResult,
+        // so it must be checked before the generic IOException handling
+        if ((OperatingSystem.IsLinux() || OperatingSystem.IsMacOS()) && IsPosixPermissionDeniedException(ex))
+            return true;
+
         if (ex is IOException ioEx)
         {
             if (ioEx.HResult == unchecked((int)0x80070005)) // E_ACCESSDENIED
@@ -182,16 +189,21 @@ public static class ExceptionExtensions
             }
         }
 
-        if (ex is PosixFile.PosixException posixEx)
-        {
-            if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
-            {
-                return posixEx.Errno == Mono.Unix.Native.Errno.EPERM || posixEx.Errno == Mono.Unix.Native.Errno.EACCES;
-            }
-        }
-
         return false;
     }
+
+    /// <summary>
+    /// Checks if an exception is a <see cref="PosixFile.PosixException"/> with a permission denied errno.
+    /// This is kept in a separate non-inlined method, because the PosixException type references Mono.Unix,
+    /// and the calling method must be usable on Windows without loading that assembly.
+    /// </summary>
+    /// <param name="ex">The exception to check</param>
+    /// <returns><c>true</c> if the exception is a Posix permission denied error, <c>false</c> otherwise</returns>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    [SupportedOSPlatform("linux")]
+    [SupportedOSPlatform("macOS")]
+    private static bool IsPosixPermissionDeniedException(Exception? ex)
+        => ex is PosixFile.PosixException posixEx && PosixPermissionErrnos.Contains(posixEx.ErrorCode);
 
     /// <summary>
     /// Checks if an exception is a file lock error
