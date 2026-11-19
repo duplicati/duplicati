@@ -25,9 +25,11 @@ using Duplicati.Library.Utility;
 namespace Duplicati.Library.SourceProvider.Builtin.PostgreSQL;
 
 /// <summary>
-/// The options of the PostgreSQL source provider, read from the source URL and the backup options
+/// The options of the PostgreSQL source provider, read from the source URL and the backup options.
+/// A root certificate given as text is kept in a temporary file while the options are in use, as the
+/// client programs read it from a file; disposing the options removes it.
 /// </summary>
-public sealed class PostgreSQLOptions
+public sealed class PostgreSQLOptions : IDisposable
 {
     /// <summary>
     /// The URL scheme that selects the provider
@@ -48,6 +50,12 @@ public sealed class PostgreSQLOptions
     public const string SslModeOption = "postgresql-sslmode";
     /// <summary>The option with the path to the root certificate that the server certificate is verified against</summary>
     public const string SslRootCertOption = "postgresql-sslrootcert";
+    /// <summary>
+    /// The option with the root certificate itself, as PEM text, for where there is no file to point to
+    /// </summary>
+    public const string SslRootCertContentOption = "postgresql-sslrootcert-content";
+    /// <summary>What a certificate in PEM text starts with</summary>
+    private const string PemCertificateHeader = "-----BEGIN CERTIFICATE-----";
     /// <summary>The option that includes large objects in the backup</summary>
     public const string IncludeLargeObjectsOption = "postgresql-include-large-objects";
     /// <summary>The option with the folder that holds the PostgreSQL client programs</summary>
@@ -82,8 +90,14 @@ public sealed class PostgreSQLOptions
     public required string? Password { get; init; }
     /// <summary>The TLS mode</summary>
     public required string SslMode { get; init; }
-    /// <summary>The root certificate file, or null</summary>
+    /// <summary>
+    /// The root certificate file, or null. When the certificate was given as text, this is the
+    /// temporary file that holds it.
+    /// </summary>
     public required string? SslRootCert { get; init; }
+
+    /// <summary>The temporary file with a root certificate that was given as text, or null</summary>
+    private Library.Utility.TempFile? m_rootCertFile;
     /// <summary>True when large objects are part of the backup</summary>
     public required bool IncludeLargeObjects { get; init; }
     /// <summary>The folder with the client programs, or null to look in the standard places</summary>
@@ -103,6 +117,7 @@ public sealed class PostgreSQLOptions
         new CommandLineArgument(PasswordOption, CommandLineArgument.ArgumentType.Password, Strings.PostgreSQLSourceProvider.PasswordShort, Strings.PostgreSQLSourceProvider.PasswordLong),
         new CommandLineArgument(SslModeOption, CommandLineArgument.ArgumentType.Enumeration, Strings.PostgreSQLSourceProvider.SslModeShort, Strings.PostgreSQLSourceProvider.SslModeLong, DefaultSslMode, [], SslModes),
         new CommandLineArgument(SslRootCertOption, CommandLineArgument.ArgumentType.Path, Strings.PostgreSQLSourceProvider.SslRootCertShort, Strings.PostgreSQLSourceProvider.SslRootCertLong),
+        new CommandLineArgument(SslRootCertContentOption, CommandLineArgument.ArgumentType.String, Strings.PostgreSQLSourceProvider.SslRootCertContentShort, Strings.PostgreSQLSourceProvider.SslRootCertContentLong),
         new CommandLineArgument(IncludeLargeObjectsOption, CommandLineArgument.ArgumentType.Boolean, Strings.PostgreSQLSourceProvider.IncludeLargeObjectsShort, Strings.PostgreSQLSourceProvider.IncludeLargeObjectsLong, "false"),
         new CommandLineArgument(ClientPathOption, CommandLineArgument.ArgumentType.Path, Strings.PostgreSQLSourceProvider.ClientPathShort, Strings.PostgreSQLSourceProvider.ClientPathLong),
     ];
@@ -134,18 +149,55 @@ public sealed class PostgreSQLOptions
         if (blockSize <= 0 || blockSize > int.MaxValue)
             throw new UserInformationException(Strings.PostgreSQLSourceProvider.InvalidOption(BlockSizeOption, blockSize.ToString()), PostgreSQLEventIds.InvalidOption);
 
+        var rootCert = Get(SslRootCertOption);
+        var rootCertContent = Get(SslRootCertContentOption);
+        if (rootCert != null && rootCertContent != null)
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.RootCertGivenTwice(SslRootCertOption, SslRootCertContentOption), PostgreSQLEventIds.InvalidOption);
+        if (rootCertContent != null && !rootCertContent.Contains(PemCertificateHeader, StringComparison.Ordinal))
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.RootCertNotPem(SslRootCertContentOption), PostgreSQLEventIds.InvalidOption);
+
+        // The rest is read first, so no file is left behind when an option is refused
+        var host = Required(HostOption);
+        var database = Required(DatabaseOption);
+        var username = Required(UsernameOption);
+
+        Library.Utility.TempFile? rootCertFile = null;
+        if (rootCertContent != null)
+        {
+            rootCertFile = new Library.Utility.TempFile();
+            try
+            {
+                File.WriteAllText(rootCertFile, rootCertContent.Trim() + "\n");
+            }
+            catch
+            {
+                rootCertFile.Dispose();
+                throw;
+            }
+        }
+
         return new PostgreSQLOptions
         {
-            Host = Required(HostOption),
+            Host = host,
             Port = port,
-            Database = Required(DatabaseOption),
-            Username = Required(UsernameOption),
+            Database = database,
+            Username = username,
             Password = Get(PasswordOption),
             SslMode = sslMode,
-            SslRootCert = Get(SslRootCertOption),
+            SslRootCert = rootCertFile != null ? (string)rootCertFile : rootCert,
             IncludeLargeObjects = Library.Utility.Utility.ParseBool(Get(IncludeLargeObjectsOption), false),
             ClientPath = Get(ClientPathOption),
             BlockSize = (int)blockSize,
+            m_rootCertFile = rootCertFile,
         };
+    }
+
+    /// <summary>
+    /// Removes the temporary file of a root certificate that was given as text
+    /// </summary>
+    public void Dispose()
+    {
+        m_rootCertFile?.Dispose();
+        m_rootCertFile = null;
     }
 }

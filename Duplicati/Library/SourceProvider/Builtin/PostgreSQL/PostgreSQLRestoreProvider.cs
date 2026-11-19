@@ -945,5 +945,6 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
     {
         m_prepareLock.Dispose();
         m_createTableLock.Dispose();
+        m_options?.Connection.Dispose();
     }
 }

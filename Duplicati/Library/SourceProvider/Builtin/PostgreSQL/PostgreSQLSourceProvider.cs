@@ -112,6 +112,7 @@ public sealed class PostgreSQLSourceProvider : ISourceProviderModule, ISequentia
     private readonly string m_mountPoint;
     private readonly Dictionary<string, string?> m_rawOptions;
     private PostgreSQLDumpSession? m_session;
+    private PostgreSQLOptions? m_options;
     private PostgreSQLSourceEntry? m_root;
 
     /// <summary>
@@ -190,7 +191,9 @@ public sealed class PostgreSQLSourceProvider : ISourceProviderModule, ISequentia
     /// <inheritdoc />
     public async Task InitializeAsync(CancellationToken cancellationToken)
     {
-        var options = PostgreSQLOptions.Parse(m_rawOptions);
+        // Kept until the provider is disposed, as the dump runs with them for as long as it is read
+        m_options?.Dispose();
+        var options = m_options = PostgreSQLOptions.Parse(m_rawOptions);
         var server = await GetServerInfoAsync(options, cancellationToken).ConfigureAwait(false);
 
         // A dump is only restored by the tools of the same major version, so it is made with them
@@ -207,7 +210,10 @@ public sealed class PostgreSQLSourceProvider : ISourceProviderModule, ISequentia
 
     /// <inheritdoc />
     public async Task TestAsync(CancellationToken cancellationToken)
-        => await GetServerInfoAsync(PostgreSQLOptions.Parse(m_rawOptions), cancellationToken).ConfigureAwait(false);
+    {
+        using var options = PostgreSQLOptions.Parse(m_rawOptions);
+        await GetServerInfoAsync(options, cancellationToken).ConfigureAwait(false);
+    }
 
     /// <inheritdoc />
     public async IAsyncEnumerable<ISourceProviderEntry> EnumerateAsync([EnumeratorCancellation] CancellationToken cancellationToken)
@@ -225,6 +231,8 @@ public sealed class PostgreSQLSourceProvider : ISourceProviderModule, ISequentia
     {
         m_session?.Dispose();
         m_session = null;
+        m_options?.Dispose();
+        m_options = null;
     }
 
     /// <summary>

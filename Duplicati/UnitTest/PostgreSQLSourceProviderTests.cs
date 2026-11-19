@@ -152,6 +152,37 @@ public class PostgreSQLSourceProviderTests
     }
 
     [Test]
+    public void ARootCertificateGivenAsTextIsKeptInAFileWhileTheOptionsAreInUse()
+    {
+        const string pem = "-----BEGIN CERTIFICATE-----\nMIIBszCCAVmgAwIBAgIUexample\n-----END CERTIFICATE-----";
+
+        string path;
+        using (var options = PostgreSQLTestOptions.Parse(Url, new Dictionary<string, string?> { [PostgreSQLOptions.SslRootCertContentOption] = "\n" + pem + "\n\n" }))
+        {
+            path = options.SslRootCert!;
+            Assert.That(File.ReadAllText(path), Is.EqualTo(pem + "\n"));
+
+            // The client programs are pointed at the file, as they are for a certificate given as a path
+            var psi = PostgreSQLClientTools.BuildStartInfo("psql", [], options);
+            Assert.That(psi.Environment["PGSSLROOTCERT"], Is.EqualTo(path));
+        }
+
+        Assert.That(File.Exists(path), Is.False, "The file is removed with the options");
+
+        using var withPath = PostgreSQLTestOptions.Parse(Url, new Dictionary<string, string?> { [PostgreSQLOptions.SslRootCertOption] = "/certs/root.crt" });
+        Assert.That(withPath.SslRootCert, Is.EqualTo("/certs/root.crt"));
+
+        Assert.That(() => PostgreSQLTestOptions.Parse(Url, new Dictionary<string, string?>
+        {
+            [PostgreSQLOptions.SslRootCertOption] = "/certs/root.crt",
+            [PostgreSQLOptions.SslRootCertContentOption] = pem,
+        }), Throws.InstanceOf<UserInformationException>(), "A certificate is given one way");
+
+        Assert.That(() => PostgreSQLTestOptions.Parse(Url, new Dictionary<string, string?> { [PostgreSQLOptions.SslRootCertContentOption] = "/certs/root.crt" }),
+            Throws.InstanceOf<UserInformationException>(), "A path is not a certificate");
+    }
+
+    [Test]
     public void ThePasswordIsOnlyInTheEnvironment()
     {
         var options = PostgreSQLTestOptions.Parse(Url, new Dictionary<string, string?>());

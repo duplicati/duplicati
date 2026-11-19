@@ -41,6 +41,10 @@ internal static class PostgreSQLSourceProvider
     public static string SslModeLong => LC.L(@"How the connection is encrypted and the server verified, with the values PostgreSQL uses for sslmode.");
     public static string SslRootCertShort => LC.L(@"The root certificate file");
     public static string SslRootCertLong => LC.L(@"The path to a file with the root certificate that the server certificate is verified against, for the verify-ca and verify-full modes.");
+    public static string SslRootCertContentShort => LC.L(@"The root certificate");
+    public static string SslRootCertContentLong => LC.L(@"The root certificate that the server certificate is verified against, as PEM text, for the verify-ca and verify-full modes. Use this where there is no file to point to.");
+    public static string RootCertGivenTwice(string fileOption, string contentOption) => LC.L(@"Set the root certificate with --{0} or with --{1}, not with both", fileOption, contentOption);
+    public static string RootCertNotPem(string option) => LC.L(@"The value of --{0} is not a certificate in PEM format", option);
     public static string IncludeLargeObjectsShort => LC.L(@"Include large objects");
     public static string IncludeLargeObjectsLong => LC.L(@"Include large objects in the backup. The role must be able to read every large object, or the backup fails.");
     public static string ClientPathShort => LC.L(@"The folder with the PostgreSQL client programs");
