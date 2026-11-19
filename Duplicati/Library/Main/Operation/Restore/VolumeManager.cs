@@ -120,6 +120,37 @@ namespace Duplicati.Library.Main.Operation.Restore
                     return await r.ConfigureAwait(false);
                 }
             }
+
+            /// <summary>
+            /// Waits for the reads that are still open and returns what they read.
+            /// </summary>
+            /// <remarks>
+            /// A read can complete with a value that is never processed, when the other read ends
+            /// the loop. The channels have to be retired first, so the open reads finish.
+            /// </remarks>
+            /// <returns>The objects that were read and not processed.</returns>
+            public async Task<List<object>> TakeUnprocessedAsync()
+            {
+                var unprocessed = new List<object>();
+                foreach (var t in new[] { t1, t2 })
+                {
+                    if (t == null)
+                        continue;
+                    try
+                    {
+                        unprocessed.Add(await t.ConfigureAwait(false));
+                    }
+                    catch (Exception)
+                    {
+                        // Retired or cancelled, so nothing was read
+                    }
+                }
+                t1 = t2 = null;
+                c1?.Dispose();
+                c2?.Dispose();
+                c1 = c2 = null;
+                return unprocessed;
+            }
         }
 
         /// <summary>
@@ -483,7 +514,39 @@ namespace Duplicati.Library.Main.Operation.Restore
                         // completes and every writer, the ones already waiting and any later one,
                         // stays blocked.
                         await self.VolumeRequest.RetireAsync(true).ConfigureAwait(false);
-                        await self.VolumeResponse.RetireAsync(true).ConfigureAwait(false);
+
+                        // The decrypted volumes are not retired immediately, as an immediate retirement
+                        // drops the buffered ones, and those are already handed over, so their decrypted
+                        // temporary files would stay behind. A plain retirement keeps them readable and
+                        // fails the writers that still wait, which dispose their own volume. So the
+                        // volumes that were handed over, and not processed, are read and disposed here.
+                        var retiring = self.VolumeResponse.RetireAsync(false);
+                        try
+                        {
+                            foreach (var msg in await rfa.TakeUnprocessedAsync().ConfigureAwait(false))
+                                if (msg is (long, VolumeWrapper unprocessed))
+                                    unprocessed.Dispose();
+
+                            while (true)
+                            {
+                                object msg;
+                                try
+                                {
+                                    msg = await self.VolumeResponse.ReadAsync().ConfigureAwait(false);
+                                }
+                                catch (RetiredException)
+                                {
+                                    break;
+                                }
+                                if (msg is (long, VolumeWrapper unread))
+                                    unread.Dispose();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.Log.WriteWarningMessage(LOGTAG, "UnreadVolumeDrainError", ex, "Failed to dispose the volumes that were not processed");
+                        }
+                        await retiring.ConfigureAwait(false);
                     }
                 }
             );
