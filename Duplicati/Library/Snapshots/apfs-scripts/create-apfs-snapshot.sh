@@ -34,10 +34,11 @@ if [ -z "$CREATED_DATE" ]; then
 fi
 
 # Get the snapshot name (tmutil creates snapshots with timestamps)
-# We need to find the most recent snapshot for this volume
 # The format is: com.apple.TimeMachine.2026-02-04-125719.local
-SNAPSHOT_FULL=$(tmutil listlocalsnapshots "$MOUNT_POINT" | tail -1)
-SNAPSHOT_NAME="$SNAPSHOT_FULL"
+# Look up the snapshot by its created date instead of taking the last line,
+# because other snapshots (e.g. com.apple.os.update-* from pending OS updates)
+# can be listed after the Time Machine snapshots.
+SNAPSHOT_NAME=$(tmutil listlocalsnapshots "$MOUNT_POINT" | grep -F "com.apple.TimeMachine.$CREATED_DATE.local" | tail -1)
 
 if [ -z "$SNAPSHOT_NAME" ]; then
     echo "Error: Could not find created snapshot"
