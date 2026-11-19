@@ -256,6 +256,50 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
         }).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// A temporary backup, as made for a direct restore, is listed with its passwords masked
+    /// until it is deleted, so a client can offer to return to it
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task TemporaryBackupsAreListedUntilDeleted_Async()
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            Assert.That(await GetApiExtensionsAsync(httpClient).ConfigureAwait(false), Does.Contain(SystemInfoProvider.TemporaryBackupListExtension));
+
+            var permanentId = await CreateBackupAsync(httpClient, "integration-passphrase").ConfigureAwait(false);
+
+            var secret = $"secret{Guid.NewGuid():N}";
+            var request = new BackupAndScheduleInputDto
+            {
+                Backup = new BackupAndScheduleInputDto.BackupInputDto
+                {
+                    Name = "Direct restore draft",
+                    TargetURL = BuildFileBackendUrl(this.TARGETFOLDER) + "?auth-password=" + secret,
+                }
+            };
+            var created = await httpClient.PostAsJsonAsync("/api/v1/backups?temporary=true", request, JsonOptions).ConfigureAwait(false);
+            created.EnsureSuccessStatusCode();
+            var temporaryId = (await created.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false))?.ID
+                ?? throw new InvalidOperationException("Temporary backup creation did not return an ID");
+
+            var listed = await httpClient.GetFromJsonAsync<TemporaryBackupDto[]>("/api/v1/backups/temporary", JsonOptions).ConfigureAwait(false);
+            Assert.That(listed!.Select(x => x.ID), Does.Contain(temporaryId).And.Not.Contain(permanentId));
+            var entry = listed!.Single(x => x.ID == temporaryId);
+            Assert.That(entry.Name, Is.EqualTo("Direct restore draft"));
+            Assert.That(entry.TargetURL, Does.StartWith("file://").And.Contain("auth-password=").And.Not.Contain(secret));
+
+            var deleted = await httpClient.DeleteAsync($"/api/v1/backup/{temporaryId}").ConfigureAwait(false);
+            deleted.EnsureSuccessStatusCode();
+            var deleteTask = await deleted.Content.ReadFromJsonAsync<DeleteBackupOutputDto>(JsonOptions).ConfigureAwait(false);
+            await WaitForTaskCompletionAsync(httpClient, deleteTask?.ID ?? throw new InvalidOperationException("Delete did not start a task")).ConfigureAwait(false);
+
+            listed = await httpClient.GetFromJsonAsync<TemporaryBackupDto[]>("/api/v1/backups/temporary", JsonOptions).ConfigureAwait(false);
+            Assert.That(listed!.Select(x => x.ID), Does.Not.Contain(temporaryId));
+        }).ConfigureAwait(false);
+    }
+
     [Test]
     [Category("Integration")]
     [TestCase(true)]
