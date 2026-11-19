@@ -245,7 +245,7 @@ namespace Duplicati.CommandLine.BackendTester
                 var trimFilenameSpaces = Library.Utility.Utility.ParseBoolOption(options, "trim-filename-spaces");
                 var waitAfterUpload = TimeSpan.Zero;
                 var waitAfterDelete = TimeSpan.Zero;
-                var useStreaming = backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming && !disableStreaming;
+                var useStreaming = backend.TryGetCapability<IStreamingBackend>(out var streamingBackend) && streamingBackend.SupportsStreaming && !disableStreaming;
 
                 var throttleUpload = 0L;
                 if (options.TryGetValue("throttle-upload", out var throttleUploadString))
@@ -343,7 +343,7 @@ namespace Duplicati.CommandLine.BackendTester
 
                     TempFile originalRenamedFile = null;
                     string renamedFileNewName = null;
-                    if (backend is IRenameEnabledBackend renameEnabledBackend)
+                    if (backend.TryGetCapability<IRenameEnabledBackend>(out var renameEnabledBackend))
                     {
                         // Rename the second file in the list, if there are more than one. If not, just do the first one.
                         int renameIndex = files.Count > 1 ? 1 : 0;
@@ -403,7 +403,7 @@ namespace Duplicati.CommandLine.BackendTester
                             {
                                 Retry(async () =>
                                 {
-                                    if (backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming && !disableStreaming)
+                                    if (backend.TryGetCapability<IStreamingBackend>(out var streamingBackend) && streamingBackend.SupportsStreaming && !disableStreaming)
                                     {
                                         using (var fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
                                         using (var timeoutStream = new TimeoutObservingStream(fs) { WriteTimeout = readWriteTimeout })
@@ -502,7 +502,7 @@ namespace Duplicati.CommandLine.BackendTester
                 }
 
                 // Test quota retrieval
-                if (backend is IQuotaEnabledBackend quotaEnabledBackend)
+                if (backend.TryGetCapability<IQuotaEnabledBackend>(out var quotaEnabledBackend))
                 {
                     Console.WriteLine($"{LogTimeStamp}Checking quota...");
                     IQuotaInfo quota = null;
@@ -574,7 +574,7 @@ namespace Duplicati.CommandLine.BackendTester
 
             try
             {
-                if (backend is IStreamingBackend streamingBackend && streamingBackend.SupportsStreaming && !disableStreaming)
+                if (backend.TryGetCapability<IStreamingBackend>(out var streamingBackend) && streamingBackend.SupportsStreaming && !disableStreaming)
                 {
                     using (var fs = new System.IO.FileStream(localfilename, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read))
                     using (var timeoutStream = new TimeoutObservingStream(fs) { ReadTimeout = readWriteTimeout })

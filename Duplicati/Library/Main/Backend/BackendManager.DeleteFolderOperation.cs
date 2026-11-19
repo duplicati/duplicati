@@ -39,7 +39,7 @@ partial class BackendManager
         /// <returns>An awaitable task returning true when the folder is gone</returns>
         public override async Task<bool> ExecuteAsync(IBackend backend, CancellationToken cancelToken)
         {
-            if (backend is not IFolderDeleteEnabledBackend folderBackend)
+            if (!backend.TryGetCapability<IFolderDeleteEnabledBackend>(out var folderBackend))
                 throw new NotSupportedException($"The backend {backend.DisplayName} cannot delete folders");
 
             Context.Statwriter.SendEvent(BackendActionType.DeleteFolder, BackendEventType.Started, RemoteFilename, 0);
