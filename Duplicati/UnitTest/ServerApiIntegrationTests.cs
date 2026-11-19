@@ -300,6 +300,60 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
         }).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// The response to creating a job says whether the job is temporary,
+    /// both for a new job and for the copy of a saved job.
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task TheCreatedJobIsReportedAsTemporaryOnlyWhenItIs_Async()
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            async Task<CreateBackupDto> ReadAsync(HttpResponseMessage response)
+            {
+                response.EnsureSuccessStatusCode();
+                return await response.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false)
+                    ?? throw new InvalidOperationException("The response was empty");
+            }
+
+            BackupAndScheduleInputDto NewJob() => new()
+            {
+                Backup = new BackupAndScheduleInputDto.BackupInputDto
+                {
+                    Name = $"Temporary flag {Guid.NewGuid():N}",
+                    Description = "Integration test backup",
+                    TargetURL = BuildFileBackendUrl(this.TARGETFOLDER),
+                    Sources = new[] { this.DATAFOLDER },
+                    Settings = new[] { new BackupAndScheduleInputDto.SettingInputDto { Name = "passphrase", Value = "integration-passphrase" } },
+                    Filters = Array.Empty<BackupAndScheduleInputDto.FilterInputDto>(),
+                    Metadata = new Dictionary<string, string>()
+                }
+            };
+
+            Directory.CreateDirectory(this.TARGETFOLDER);
+            var permanent = await ReadAsync(await httpClient.PostAsJsonAsync("/api/v1/backups", NewJob(), JsonOptions).ConfigureAwait(false)).ConfigureAwait(false);
+            Assert.That(permanent.Temporary, Is.False, "A saved job is not temporary");
+
+            var temporary = await ReadAsync(await httpClient.PostAsJsonAsync("/api/v1/backups?temporary=true", NewJob(), JsonOptions).ConfigureAwait(false)).ConfigureAwait(false);
+            Assert.That(temporary.Temporary, Is.True, "A job created with temporary=true is temporary");
+
+            var copy = await ReadAsync(await httpClient.PostAsync($"/api/v1/backup/{permanent.ID}/copytotemp", null).ConfigureAwait(false)).ConfigureAwait(false);
+            Assert.That(copy.Temporary, Is.True, "The copy of a saved job is temporary");
+
+            var listed = await httpClient.GetFromJsonAsync<TemporaryBackupDto[]>("/api/v1/backups/temporary", JsonOptions).ConfigureAwait(false);
+            Assert.That(listed!.Select(x => x.ID), Does.Contain(temporary.ID).And.Contain(copy.ID).And.Not.Contain(permanent.ID));
+
+            foreach (var id in new[] { temporary.ID, copy.ID })
+            {
+                var deleted = await httpClient.DeleteAsync($"/api/v1/backup/{id}").ConfigureAwait(false);
+                deleted.EnsureSuccessStatusCode();
+                var deleteTask = await deleted.Content.ReadFromJsonAsync<DeleteBackupOutputDto>(JsonOptions).ConfigureAwait(false);
+                await WaitForTaskCompletionAsync(httpClient, deleteTask?.ID ?? throw new InvalidOperationException("Delete did not start a task")).ConfigureAwait(false);
+            }
+        }).ConfigureAwait(false);
+    }
+
     [Test]
     [Category("Integration")]
     [TestCase(true)]
