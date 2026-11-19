@@ -475,6 +475,8 @@ namespace Duplicati.Library.Main
 
                     config.Result.OperationProgressUpdater.UpdatePhase(OperationPhase.Delete_Deleting);
                     config.Result.OperationProgressUpdater.UpdateProgress(0);
+                    // The files that could not be deleted are the result, so a caller can tell whether any are left
+                    var failed = new List<IFileEntry>();
                     for (var i = 0; i < list.Count; i++)
                     {
                         try
@@ -491,10 +493,12 @@ namespace Duplicati.Library.Main
                         catch (Exception ex)
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "DeleteFilesetError", ex, "Failed to delete remote file: {0}", list[i].File.Name);
+                            failed.Add(list[i].File);
                         }
                         config.Result.OperationProgressUpdater.UpdateProgress((float)i / list.Count);
                     }
                     config.Result.OperationProgressUpdater.UpdateProgress(1);
+                    config.Result.SetResult(failed);
                 }
             }).ConfigureAwait(false);
         }
