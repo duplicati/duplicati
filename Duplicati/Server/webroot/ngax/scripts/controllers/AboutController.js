@@ -46,9 +46,28 @@ backupApp.controller('AboutController', function($scope, $location, BrandingServ
         $location.path('/updatechangelog');
     };
 
-    $scope.doCheckForUpdates = function() {
-        AppService.post('/updates/check');
+    // The finish time of the last check when a check was started here, undefined until one is.
+    // The finish time changing tells that the check finished, also when the checking state was missed.
+    var checkStartedAfter;
 
+    $scope.doCheckForUpdates = function() {
+        checkStartedAfter = $scope.state.updateCheckFinished || null;
+        AppService.post('/updates/check').then(null, function() {
+            // The check did not start, so a later check that finishes is not its result
+            checkStartedAfter = undefined;
+        });
+    };
+
+    // The result of the check started here: 'error', 'latest' or null.
+    // A server that does not report the finish time never shows a result,
+    // as it cannot tell a failed check from no update.
+    $scope.updateCheckResult = function() {
+        var state = $scope.state;
+        if (checkStartedAfter === undefined || state.updaterState != 'Waiting' || !state.updateCheckFinished || state.updateCheckFinished == checkStartedAfter)
+            return null;
+        if (state.updateCheckError)
+            return 'error';
+        return state.updatedVersion ? null : 'latest';
     };
 
 });

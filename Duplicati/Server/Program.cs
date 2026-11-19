@@ -272,6 +272,7 @@ namespace Duplicati.Server
             EventPollNotify eventPollNotify = null;
             ISchedulerService scheduler = null;
             IChangeTrackingService changeTracking = null;
+            Action<Exception> updaterErrorHandler = null;
             try
             {
                 // Opening the database can create or upgrade it, which a second server must not do
@@ -308,10 +309,12 @@ namespace Duplicati.Server
                 if (adjustres.HasValue)
                     return adjustres.Value;
 
-                UpdaterManager.OnError += obj =>
+                // Removed when the server stops, as the event is static and outlives the connection
+                updaterErrorHandler = obj =>
                 {
                     connection.LogError(null, "Error in updater", obj);
                 };
+                UpdaterManager.OnError += updaterErrorHandler;
 
                 // Rewrite the sensitive fields before anything else can use the connection.
                 // Once the webserver is up, the scheduler re-reads every backup on each save,
@@ -438,6 +441,11 @@ namespace Duplicati.Server
                     () => eventPollNotify?.SignalNewEvent(),
                     () => ShutdownModernWebserver(),
                     () => updatePollThread?.Terminate(),
+                    () =>
+                    {
+                        if (updaterErrorHandler != null)
+                            UpdaterManager.OnError -= updaterErrorHandler;
+                    },
                     () => scheduler?.Terminate(true),
                     () => queueRunner?.Terminate(true),
                     () => changeTracking?.DisposeAsync().AsTask().Await(),
