@@ -434,7 +434,11 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             DefaultOAuthURLv2 = AuthIdOptionsHelper.DUPLICATI_OAUTH_SERVICE_NEW,
             PowerModeProviders = systeminfo.PowerModeProviders,
             LocalLicenseStatus = SystemInfoDto.LicenseStatusDto.Map(Proprietary.LicenseChecker.LicenseHelper.GetLocalLicenseData()),
-            RemoteLicenseStatus = SystemInfoDto.LicenseStatusDto.Map(Proprietary.LicenseChecker.LicenseHelper.GetRemoteLicenseData())
+            RemoteLicenseStatus = SystemInfoDto.LicenseStatusDto.Map(Proprietary.LicenseChecker.LicenseHelper.GetRemoteLicenseData()),
+            DatabaseFieldsEncrypted = connection.ApplicationSettings.EncryptedFields,
+            PreloadSettingsPaths = PreloadSettingsLoader.GetPreloadSettingsPaths()
+                .Select(x => new SystemInfoDto.PreloadSettingsPathDto { Path = x.Path, Exists = x.Exists })
+                .ToArray()
         };
     }
 
