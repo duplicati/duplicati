@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using Duplicati.Library.RestAPI;
 using Duplicati.Server;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto;
@@ -59,7 +60,8 @@ public class TaskQueueService(IQueueRunnerService queueRunnerService) : ITaskQue
                 TaskStarted: task.TaskStarted,
                 TaskFinished: task.TaskFinished,
                 ErrorMessage: finished.Exception?.Message ?? finished.ErrorMessage,
-                Exception: finished.Exception?.ToString()
+                Exception: finished.Exception?.ToString(),
+                FailedDestinations: (finished.Exception as RemoteDestinationDeleteException)?.FailedDestinations
             );
         }
 
@@ -73,7 +75,8 @@ public class TaskQueueService(IQueueRunnerService queueRunnerService) : ITaskQue
                 TaskStarted: res.TaskStarted,
                 TaskFinished: res.TaskFinished,
                 ErrorMessage: res.Exception?.Message ?? res.ErrorMessage,
-                Exception: res.Exception?.ToString()
+                Exception: res.Exception?.ToString(),
+                FailedDestinations: (res.Exception as RemoteDestinationDeleteException)?.FailedDestinations
             );
 
         if (tasks.FirstOrDefault(x => x.TaskID == taskid) == null)
@@ -109,7 +112,8 @@ public class TaskQueueService(IQueueRunnerService queueRunnerService) : ITaskQue
                 TaskStarted: x.TaskStarted,
                 TaskFinished: finished ? x.TaskFinished : null,
                 ErrorMessage: res?.Exception?.Message ?? res?.ErrorMessage,
-                Exception: res?.Exception?.ToString()
+                Exception: res?.Exception?.ToString(),
+                FailedDestinations: (res?.Exception as RemoteDestinationDeleteException)?.FailedDestinations
             );
         });
     }

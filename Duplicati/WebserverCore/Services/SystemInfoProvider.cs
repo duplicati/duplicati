@@ -23,6 +23,7 @@ using Duplicati.Library.AutoUpdater;
 using Duplicati.Library.Localization;
 using Duplicati.Library.Snapshots;
 using Duplicati.Library.Utility.Options;
+using Duplicati.Library.RestAPI;
 using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.Server.Serialization.Interface;
@@ -125,6 +126,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         BackupRunAfterExtension,
         QueueCompletionActionExtension,
         SkipNextRunExtension,
+        RemoteDestinationDelete.ApiExtension,
         SyncSnapshotsExtension,
         SyncRestoreExtension,
         McpServerExtension,
