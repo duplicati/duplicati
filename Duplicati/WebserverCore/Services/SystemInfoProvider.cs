@@ -146,6 +146,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         BackupRunAfterExtension,
         QueueCompletionActionExtension,
         SkipNextRunExtension,
+        CopyToTempDestination.ApiExtension,
         RemoteDestinationDelete.ApiExtension,
         RestoreDownloadExtension,
         UpdateCheckErrorExtension,
