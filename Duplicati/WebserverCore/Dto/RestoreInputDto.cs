@@ -33,6 +33,7 @@ namespace Duplicati.WebserverCore.Dto;
 /// <param name="connection_string_id">The connection string ID to use, if the destination is a masked remote source</param>
 /// <param name="source_prefix">The source prefix to use, if the destination is a masked remote source</param>
 /// <param name="options">Additional options to apply to the restore operation, with or without the leading dashes</param>
+/// <param name="download">Whether to restore to a temporary folder for the browser to download, instead of to a path</param>
 public sealed record RestoreInputDto(
     string[]? paths,
     string? passphrase,
@@ -43,4 +44,5 @@ public sealed record RestoreInputDto(
     bool? skip_metadata,
     long? connection_string_id,
     string? source_prefix,
-    Dictionary<string, string?>? options = null);
+    Dictionary<string, string?>? options = null,
+    bool? download = null);

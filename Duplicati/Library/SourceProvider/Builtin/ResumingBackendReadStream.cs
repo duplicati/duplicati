@@ -161,7 +161,7 @@ internal sealed class ResumingBackendReadStream : Stream
     public ResumingBackendReadStream(IStreamingBackend backend, string remotename, string displayPath, long length, int maxResumeAttempts, TimeSpan resumeDelay, CancellationToken cancellationToken)
     {
         this.backend = backend;
-        this.resumeEnabledBackend = backend as IResumeEnabledBackend;
+        backend.TryGetCapability(out resumeEnabledBackend);
         this.remotename = remotename;
         this.displayPath = displayPath;
         this.length = length;

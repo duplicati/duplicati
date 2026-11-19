@@ -187,7 +187,7 @@ namespace Duplicati.CommandLine.BackendTool
                         if (args.Count > 3)
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
 
-                        if (backend is not ILockingBackend lockingBackend)
+                        if (!backend.TryGetCapability<ILockingBackend>(out var lockingBackend))
                             throw new ObjectLockNotSupportedException();
 
                         var lockUntilUtc = lockingBackend.GetObjectLockUntilAsync(Path.GetFileName(args[2]), CancellationToken.None).Await();
@@ -204,7 +204,7 @@ namespace Duplicati.CommandLine.BackendTool
                         if (args.Count > 4)
                             throw new UserInformationException(string.Format("too many arguments: {0}", string.Join(",", args)), "BackendToolTooManyArguments");
 
-                        if (backend is not ILockingBackend lockingBackend)
+                        if (!backend.TryGetCapability<ILockingBackend>(out var lockingBackend))
                             throw new ObjectLockNotSupportedException();
 
                         TimeSpan lockDuration;

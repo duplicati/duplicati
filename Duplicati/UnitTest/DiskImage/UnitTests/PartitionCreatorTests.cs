@@ -3,8 +3,8 @@ using System.Buffers.Binary;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Duplicati.Proprietary.DiskImage.General;
-using Duplicati.Proprietary.DiskImage.Partition;
+using Duplicati.Library.SourceProvider.DiskImage.General;
+using Duplicati.Library.SourceProvider.DiskImage.Partition;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
@@ -196,12 +196,12 @@ public partial class DiskImageUnitTests : BasicSetupHelper
         var storedCrc = BinaryPrimitives.ReadUInt32LittleEndian(gptData.AsSpan(sectorSize + 16, 4));
         var crcBuffer = gptData[sectorSize..(sectorSize + PartitionConstants.GptHeaderSize)];
         BinaryPrimitives.WriteUInt32LittleEndian(crcBuffer.AsSpan(16, 4), 0u);
-        var computedCrc = Crc32.Calculate(crcBuffer, 0, PartitionConstants.GptHeaderSize);
+        var computedCrc = System.IO.Hashing.Crc32.HashToUInt32(crcBuffer.AsSpan(0, PartitionConstants.GptHeaderSize));
         Assert.AreEqual(computedCrc, storedCrc, "The patched GPT header CRC should be valid.");
 
         // Verify the entries CRC is valid
         var storedEntriesCrc = BinaryPrimitives.ReadUInt32LittleEndian(gptData.AsSpan(sectorSize + 88, 4));
-        var computedEntriesCrc = Crc32.Calculate(gptData, entriesOffset, entriesByteSize);
+        var computedEntriesCrc = System.IO.Hashing.Crc32.HashToUInt32(gptData.AsSpan(entriesOffset, entriesByteSize));
         Assert.AreEqual(computedEntriesCrc, storedEntriesCrc, "The patched GPT entries CRC should be valid.");
 
         // Parse the modified table and verify both partitions are present

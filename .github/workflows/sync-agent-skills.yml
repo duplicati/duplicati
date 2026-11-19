@@ -1,0 +1,74 @@
+name: Sync agent skills
+
+# Copies the skills/ folder to a small repository of its own, as some skill
+# installers (such as `npx skills add`) clone the whole repository they install
+# from. The skills are edited here; the target repository is only a mirror, and
+# changes made to skills/ there are overwritten by the next sync.
+#
+# Setup: create the target repository, add the public half of a deploy key with
+# write access to it, and store the private half in this repository as the
+# secret AGENT_SKILLS_DEPLOY_KEY.
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "skills/**"
+      - ".github/workflows/sync-agent-skills.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A sync that starts while another runs waits for it, so the pushes do not race
+concurrency:
+  group: sync-agent-skills
+  cancel-in-progress: false
+
+env:
+  TARGET_REPOSITORY: duplicati/agent-skills
+
+jobs:
+  sync:
+    name: Sync skills
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          path: source
+
+      - name: Checkout target
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ env.TARGET_REPOSITORY }}
+          ssh-key: ${{ secrets.AGENT_SKILLS_DEPLOY_KEY }}
+          path: target
+
+      # Only skills/ is replaced, so files at the top of the target repository,
+      # such as its README and LICENSE, are kept
+      - name: Copy skills
+        run: |
+          mkdir -p target/skills
+          rsync -a --delete --exclude=.git source/skills/ target/skills/
+
+      - name: Commit and push
+        working-directory: target
+        env:
+          SOURCE_REPOSITORY: ${{ github.repository }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          git add -A skills
+          if git diff --cached --quiet; then
+            echo "The skills are already up to date."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Sync skills from ${SOURCE_REPOSITORY}@${SOURCE_SHA:0:9}" \
+            -m "https://github.com/${SOURCE_REPOSITORY}/commit/${SOURCE_SHA}"
+          git push

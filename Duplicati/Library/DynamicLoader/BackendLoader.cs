@@ -66,11 +66,26 @@ namespace Duplicati.Library.DynamicLoader
             /// <returns>The instanciated backend or null if the url is not supported</returns>
             public IBackend GetBackend(string url, Dictionary<string, string> options)
             {
+                var backend = CreateBackend(url, options, out var newOpts);
+                if (backend != null && newOpts.TryGetValue(RemoteFilenameSuffixBackend.OptionName, out var suffix) && !string.IsNullOrEmpty(suffix))
+                    return new RemoteFilenameSuffixBackend(backend, suffix);
+                return backend;
+            }
+
+            /// <summary>
+            /// Instanciates a specific backend, given the url and options
+            /// </summary>
+            /// <param name="url">The url to create the instance for</param>
+            /// <param name="options">The options to pass to the instance constructor</param>
+            /// <param name="newOpts">The options with the url query parameters added</param>
+            /// <returns>The instanciated backend or null if the url is not supported</returns>
+            private IBackend CreateBackend(string url, Dictionary<string, string> options, out Dictionary<string, string> newOpts)
+            {
                 var uri = new Utility.RelaxedUri(url);
 
                 LoadInterfaces();
 
-                var newOpts = new Dictionary<string, string>(options);
+                newOpts = new Dictionary<string, string>(options);
                 foreach (var key in uri.QueryParameters.AllKeys)
                     newOpts[key] = uri.QueryParameters[key];
 

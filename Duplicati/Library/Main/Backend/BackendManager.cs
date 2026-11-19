@@ -121,7 +121,7 @@ internal partial class BackendManager : IBackendManager
                 return false;
             try
             {
-                return backend is ILockingBackend;
+                return backend.Supports<ILockingBackend>();
             }
             finally
             {
@@ -136,7 +136,7 @@ internal partial class BackendManager : IBackendManager
                 return false;
             try
             {
-                return backend is IFolderEnabledBackend;
+                return backend.Supports<IFolderEnabledBackend>();
             }
             finally
             {
@@ -173,14 +173,14 @@ internal partial class BackendManager : IBackendManager
     /// </summary>
     /// <typeparam name="T">The capability interface</typeparam>
     /// <returns><c>true</c> if the backend implements the interface</returns>
-    private bool BackendIs<T>()
+    private bool BackendIs<T>() where T : class, IBackend
     {
         var backend = DynamicLoader.BackendLoader.GetBackend(backendUrl, context.Options.RawOptions);
         if (backend == null)
             return false;
         try
         {
-            return backend is T;
+            return backend.Supports<T>();
         }
         finally
         {

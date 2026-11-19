@@ -36,8 +36,7 @@ public static class WebModules
     private static Lazy<IReadOnlyList<IWebModule>> LicensedWebModulesLazy = new(() =>
         new IWebModule?[] {
             LicenseHelper.IsOffice365Enabled ? new Office365.WebModule() : null,
-            LicenseHelper.IsGoogleWorkspaceEnabled ? new GoogleWorkspace.WebModule() : null,
-            new DiskImage.WebModule()
+            LicenseHelper.IsGoogleWorkspaceEnabled ? new GoogleWorkspace.WebModule() : null
         }
         .WhereNotNull()
         .ToList()
