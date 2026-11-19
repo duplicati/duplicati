@@ -217,7 +217,48 @@ namespace Duplicati.Library.Backend
             }).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Deletes a folder and everything below it. Dropbox deletes the whole tree
+        /// before it answers, which can take as long as a listing.
+        /// </summary>
+        /// <param name="path">The absolute path of the folder</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        public async Task DeleteFolderAsync(string path, CancellationToken cancelToken)
+        {
+            await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancelToken, async ct =>
+            {
+                using var req = await CreateRequestAsync(WebApi.Dropbox.DeleteUrl(), HttpMethod.Post, ct).ConfigureAwait(false);
+                req.Options.Set(FolderDeleteRequestOption, true);
+                req.Content = JsonContent.Create(new PathArg { path = path });
+                using var response = await GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
+            }).ConfigureAwait(false);
+        }
+
         private static readonly HttpRequestOptionsKey<bool> FileRequestOption = new HttpRequestOptionsKey<bool>("FileRequestOption");
+
+        /// <summary>
+        /// Marks a folder delete. Dropbox answers every error of a delete with 409, and only
+        /// a missing path means the folder is gone; any other error, such as a folder with
+        /// too many files to delete in one call, is kept as the Dropbox error it is.
+        /// </summary>
+        private static readonly HttpRequestOptionsKey<bool> FolderDeleteRequestOption = new HttpRequestOptionsKey<bool>("FolderDeleteRequestOption");
+
+        /// <summary>
+        /// Reads the error summary of a Dropbox error response
+        /// </summary>
+        /// <param name="errJson">The parsed error response</param>
+        /// <returns>The error summary, or null if the response has none</returns>
+        private static string? GetErrorSummary(JsonNode? errJson)
+        {
+            try
+            {
+                return errJson?["error_summary"]?.GetValue<string>();
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or FormatException)
+            {
+                return null;
+            }
+        }
 
         public override async Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage? response, CancellationToken cancellationToken)
         {
@@ -235,12 +276,33 @@ namespace Duplicati.Library.Backend
                 }
 
                 var isFileRequest = response.RequestMessage?.Options.TryGetValue(FileRequestOption, out var fileRequest) == true && fileRequest;
+                var isFolderDeleteRequest = response.RequestMessage?.Options.TryGetValue(FolderDeleteRequestOption, out var folderDeleteRequest) == true && folderDeleteRequest;
 
                 // Map HTTP status codes
                 switch (response.StatusCode)
                 {
                     case HttpStatusCode.NotFound:
                     case HttpStatusCode.Conflict:
+                        if (isFolderDeleteRequest)
+                        {
+                            JsonNode? deleteError = null;
+                            try
+                            {
+                                if (!string.IsNullOrWhiteSpace(json))
+                                    deleteError = JsonNode.Parse(json);
+                            }
+                            catch (System.Text.Json.JsonException)
+                            {
+                                // Not a Dropbox error response
+                            }
+
+                            if (response.StatusCode == HttpStatusCode.NotFound || (GetErrorSummary(deleteError)?.StartsWith("path_lookup/not_found", StringComparison.Ordinal) ?? false))
+                                throw new Interface.FolderMissingException(json);
+
+                            // Any other error is reported as the Dropbox error below
+                            break;
+                        }
+
                         if (isFileRequest)
                             throw new Interface.FileMissingException(json);
                         else
@@ -273,7 +335,12 @@ namespace Duplicati.Library.Backend
             }
 
             if (errJson != null)
-                throw new DropboxException(ex) { errorJSON = errJson };
+            {
+                var summary = GetErrorSummary(errJson);
+                throw string.IsNullOrWhiteSpace(summary)
+                    ? new DropboxException(ex) { errorJSON = errJson }
+                    : new DropboxException($"Dropbox API error: {summary}", ex) { errorJSON = errJson };
+            }
             else if (response != null)
                 throw new InvalidDataException($"Non-json response (code: {(int)response.StatusCode}, message: {response.ReasonPhrase}): {json}", ex);
             else
@@ -285,6 +352,11 @@ namespace Duplicati.Library.Backend
     {
         public DropboxException(Exception innerException)
             : base("Dropbox API error", innerException)
+        {
+        }
+
+        public DropboxException(string message, Exception innerException)
+            : base(message, innerException)
         {
         }
         public JsonNode? errorJSON { get; set; }

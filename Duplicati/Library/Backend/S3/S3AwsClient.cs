@@ -584,12 +584,19 @@ namespace Duplicati.Library.Backend
                         };
                         var listResponsev1 = await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancellationToken, ct => m_client.ListObjectsAsync(listRequest, ct)).ConfigureAwait(false);
 
-                        // Map the V1 response to the V2 response
+                        // Map the V1 response to the V2 response. Without a delimiter S3 leaves
+                        // out NextMarker, and the next page starts after the last key returned.
+                        var nextMarker = listResponsev1.NextMarker;
+                        if (string.IsNullOrEmpty(nextMarker) && (listResponsev1.IsTruncated ?? false))
+                            nextMarker = listResponsev1.S3Objects?.LastOrDefault()?.Key;
+                        if (string.IsNullOrEmpty(nextMarker) && (listResponsev1.IsTruncated ?? false))
+                            throw new InvalidOperationException($"The listing of {prefix} was cut short without saying where to continue");
+
                         listResponse = new ListObjectsV2Response
                         {
                             CommonPrefixes = listResponsev1.CommonPrefixes,
                             IsTruncated = listResponsev1.IsTruncated,
-                            NextContinuationToken = listResponsev1.NextMarker,
+                            NextContinuationToken = nextMarker,
                             S3Objects = listResponsev1.S3Objects
                         };
                     }

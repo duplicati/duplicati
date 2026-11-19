@@ -63,7 +63,7 @@ namespace Duplicati.Library.Main
         public const string SYNC_SNAPSHOT_DISABLE_HARDLINKS_OPTION = "sync-snapshot-disable-hardlinks";
 
         /// <summary>
-        /// The name of the option that makes a sync delete remote files that no longer exist locally
+        /// The name of the option that makes a sync delete remote files and folders that no longer exist locally
         /// </summary>
         public const string SYNC_THEN_DELETE_OPTION = "sync-then-delete";
 
@@ -2501,7 +2501,7 @@ namespace Duplicati.Library.Main
         public bool SyncRecheck => GetBool("sync-recheck");
 
         /// <summary>
-        /// Deletes files on the remote that no longer exist locally.
+        /// Deletes files and folders on the remote that no longer exist locally.
         /// </summary>
         public bool SyncThenDelete => GetBool(SYNC_THEN_DELETE_OPTION);
 

@@ -23,6 +23,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -226,6 +227,19 @@ public static class BackendExtensions
     public static bool IsTestFileName(string name)
         => name == TEST_FILE_NAME
             || (name.StartsWith(TEST_FILE_PREFIX, StringComparison.Ordinal) && name.EndsWith(TEST_FILE_EXTENSION, StringComparison.Ordinal));
+
+    /// <summary>
+    /// Checks the path given to <see cref="IFolderDeleteEnabledBackend.DeleteFolderRecursiveAsync"/>.
+    /// Only a relative path below the backend folder is accepted, so the delete
+    /// cannot reach the backend folder itself or anything outside it.
+    /// </summary>
+    /// <param name="path">The folder to delete, relative to the backend folder, using '/' as separator</param>
+    /// <exception cref="ArgumentException">The path is empty, rooted, or has an empty, "." or ".." segment or a backslash</exception>
+    public static void ValidateFolderDeletePath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || path.StartsWith('/') || path.Split('/').Any(x => x is "" or "." or ".." || x.Contains('\\')))
+            throw new ArgumentException($"Refusing to delete the folder \"{path}\"", nameof(path));
+    }
 
     /// <summary>
     /// Tests a backend by invoking the List() method.

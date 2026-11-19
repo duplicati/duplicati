@@ -30,7 +30,7 @@ namespace Duplicati.Library.Backend
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class Dropbox : IBackend, IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend
+    public class Dropbox : IBackend, IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend, IFolderDeleteEnabledBackend
     {
         private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("dropbox", null);
         private readonly string m_path;
@@ -293,6 +293,21 @@ namespace Duplicati.Library.Backend
             {
                 ThrowFolderMissingException(de);
                 throw;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task DeleteFolderRecursiveAsync(string path, CancellationToken cancellationToken)
+        {
+            BackendExtensions.ValidateFolderDeletePath(path);
+
+            try
+            {
+                await dbx.DeleteFolderAsync(GetAbsolutePath(path), cancellationToken).ConfigureAwait(false);
+            }
+            catch (FolderMissingException)
+            {
+                // Already gone, which is the outcome the caller asked for
             }
         }
     }

@@ -35,7 +35,7 @@ using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Backend.Box
 {
-    public class BoxBackend : IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend
+    public class BoxBackend : IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend, IFolderDeleteEnabledBackend
     {
         private static readonly string TOKEN_URL = AuthIdOptionsHelper.GetOAuthLoginUrl("box.com", null);
         private const string REALLY_DELETE_OPTION = "box-delete-from-trash";
@@ -63,7 +63,22 @@ namespace Duplicati.Library.Backend.Box
         private readonly bool _deleteFromTrash;
 
         private string? _currentFolder;
-        private readonly Dictionary<string, string> _fileCache = new();
+        /// <summary>
+        /// The ids of the files of one folder, by name. Box addresses a file by its id, and
+        /// two folders can each have a file of the same name, so the cache is only used for
+        /// the folder it holds (<see cref="_fileCacheFolderPath"/>). Box does not allow two
+        /// items in a folder whose names differ only in case, so names are matched that way.
+        /// </summary>
+        private readonly Dictionary<string, string> _fileCache = new(StringComparer.OrdinalIgnoreCase);
+        /// <summary>
+        /// The absolute path of the folder the file cache holds, or null when it holds none.
+        /// It is set once the folder has been listed to the end.
+        /// </summary>
+        private string? _fileCacheFolderPath;
+        /// <summary>
+        /// The id of the folder the file cache holds
+        /// </summary>
+        private string? _fileCacheFolderId;
         private readonly TimeoutOptionsHelper.Timeouts _timeouts;
 
         private class BoxHelper : OAuthHelperHttpClient
@@ -310,7 +325,7 @@ namespace Duplicati.Library.Backend.Box
                 yield break;
             }
 
-            await foreach (var n in PagedFileListResponse(folderId, false, cancellationToken).ConfigureAwait(false))
+            await foreach (var n in ListAndCacheAsync(NormalizeFolderPath(fullPath), folderId, cancellationToken).ConfigureAwait(false))
             {
                 yield return ParseEntry(n);
             }
@@ -336,7 +351,7 @@ namespace Duplicati.Library.Backend.Box
             }
 
             var item = await PagedFileListResponse(parentId, false, cancellationToken)
-                .FirstOrDefaultAsync(x => x.Name == name, cancellationToken)
+                .FirstOrDefaultAsync(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase), cancellationToken)
                 .ConfigureAwait(false);
 
             if (item == null) return null;
@@ -344,40 +359,140 @@ namespace Duplicati.Library.Backend.Box
             return ParseEntry(item);
         }
 
-        private async Task<string> GetFileIdAsync(string name, CancellationToken cancelToken)
+        /// <summary>
+        /// The absolute path of the backend folder, as the file cache names a folder
+        /// </summary>
+        private string RootFolderPath => NormalizeFolderPath(_path);
+
+        /// <summary>
+        /// Brings the absolute path of a folder into the form the file cache names a folder by
+        /// </summary>
+        /// <param name="path">The absolute path of the folder</param>
+        /// <returns>The path without leading, trailing or repeated separators</returns>
+        private static string NormalizeFolderPath(string path)
+            => string.Join("/", path.Split('/', StringSplitOptions.RemoveEmptyEntries));
+
+        /// <summary>
+        /// Splits a remote name into the folder the file is in and the name of the file.
+        /// A name without a path is a file in the backend folder.
+        /// </summary>
+        /// <param name="remotename">The remote name, which may contain a path below the backend folder</param>
+        /// <returns>The absolute path of the folder, and the name of the file in it</returns>
+        private (string FolderPath, string Name) SplitRemoteName(string remotename)
         {
-            if (string.IsNullOrWhiteSpace(name))
+            if (string.IsNullOrWhiteSpace(remotename))
                 throw new FileMissingException();
 
-            if (name.Contains('/'))
+            if (!remotename.Contains('/'))
+                return (RootFolderPath, remotename);
+
+            var parts = GetAbsolutePath(remotename).Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+                throw new FileMissingException();
+
+            return (string.Join("/", parts[..^1]), parts[^1]);
+        }
+
+        /// <summary>
+        /// Whether the file cache holds the given folder. Box matches names without regard
+        /// to case, so two paths that differ only in case are the same folder.
+        /// </summary>
+        /// <param name="folderPath">The absolute path of the folder, normalized</param>
+        /// <returns>True if the cache holds the folder</returns>
+        private bool IsCachedFolder(string folderPath)
+            => _fileCacheFolderPath != null && IsSameFolder(_fileCacheFolderPath, folderPath);
+
+        /// <summary>
+        /// Whether two normalized folder paths name the same Box folder
+        /// </summary>
+        /// <param name="a">The first path</param>
+        /// <param name="b">The second path</param>
+        /// <returns>True if the paths name the same folder</returns>
+        private static bool IsSameFolder(string a, string b)
+            => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Empties the file cache, so the next file operation lists the folder again
+        /// </summary>
+        private void ClearFileCache()
+        {
+            _fileCache.Clear();
+            _fileCacheFolderPath = null;
+            _fileCacheFolderId = null;
+        }
+
+        /// <summary>
+        /// Lists a folder and keeps the ids of its files in the file cache. The cache holds
+        /// the folder once the listing has been read to the end; a listing that is not read
+        /// to the end leaves the cache holding no folder.
+        /// </summary>
+        /// <param name="folderPath">The absolute path of the folder, normalized</param>
+        /// <param name="folderId">The id of the folder</param>
+        /// <param name="cancelToken">The cancellation token to use</param>
+        /// <returns>The items in the folder</returns>
+        private async IAsyncEnumerable<FileEntity> ListAndCacheAsync(string folderPath, string folderId, [EnumeratorCancellation] CancellationToken cancelToken)
+        {
+            ClearFileCache();
+
+            await foreach (var f in PagedFileListResponse(folderId, false, cancelToken).ConfigureAwait(false))
             {
-                var parts = GetAbsolutePath(name).Split('/', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length == 0)
-                    throw new FileMissingException();
+                if (f.Type == "file" && f.Name != null && f.ID != null)
+                    _fileCache[f.Name] = f.ID;
 
-                var fileName = parts.Last();
-                var folderPath = string.Join("/", parts.Take(parts.Length - 1));
-
-                var folderId = await GetFolderIdAsync(folderPath, false, cancelToken).ConfigureAwait(false);
-                var item = await PagedFileListResponse(folderId, false, cancelToken)
-                    .FirstOrDefaultAsync(x => x.Name == fileName, cancelToken)
-                    .ConfigureAwait(false);
-
-                if (item == null || string.IsNullOrWhiteSpace(item.ID))
-                    throw new FileMissingException();
-
-                return item.ID;
+                yield return f;
             }
 
-            if (_fileCache.TryGetValue(name, out var async))
-                return async;
+            _fileCacheFolderPath = folderPath;
+            _fileCacheFolderId = folderId;
+        }
 
-            // Make sure we enumerate this, otherwise the m_filecache is empty.
-            var currentFolder = await GetCurrentFolderWithCacheAsync(cancelToken).ConfigureAwait(false);
-            await PagedFileListResponse(currentFolder, false, cancelToken).LastOrDefaultAsync(cancellationToken: cancelToken).ConfigureAwait(false);
+        /// <summary>
+        /// Gets the id of a folder that has to exist
+        /// </summary>
+        /// <param name="folderPath">The absolute path of the folder, normalized</param>
+        /// <param name="cancelToken">The cancellation token to use</param>
+        /// <returns>The id of the folder</returns>
+        private async Task<string> GetExistingFolderIdAsync(string folderPath, CancellationToken cancelToken)
+        {
+            // Finding a folder lists every folder on the way to it, so the folder
+            // the file cache holds is not looked up again
+            if (IsCachedFolder(folderPath) && _fileCacheFolderId != null)
+                return _fileCacheFolderId;
 
-            if (_fileCache.TryGetValue(name, out var idAsync))
-                return idAsync;
+            return folderPath == RootFolderPath
+                ? await GetCurrentFolderWithCacheAsync(cancelToken).ConfigureAwait(false)
+                : await GetFolderIdAsync(folderPath, false, cancelToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Makes the file cache hold the files of a folder, by listing the folder
+        /// </summary>
+        /// <param name="folderPath">The absolute path of the folder, normalized</param>
+        /// <param name="refresh">Whether the folder is listed again when the cache already holds it</param>
+        /// <param name="cancelToken">The cancellation token to use</param>
+        /// <returns>The id of the folder</returns>
+        private async Task<string> LoadFolderAsync(string folderPath, bool refresh, CancellationToken cancelToken)
+        {
+            var folderId = await GetExistingFolderIdAsync(folderPath, cancelToken).ConfigureAwait(false);
+            if (refresh || !IsCachedFolder(folderPath))
+                await ListAndCacheAsync(folderPath, folderId, cancelToken).LastOrDefaultAsync(cancelToken).ConfigureAwait(false);
+
+            return folderId;
+        }
+
+        private async Task<string> GetFileIdAsync(string name, CancellationToken cancelToken)
+        {
+            var (folderPath, fileName) = SplitRemoteName(name);
+
+            if (IsCachedFolder(folderPath) && _fileCache.TryGetValue(fileName, out var cached))
+                return cached;
+
+            // The file can have been made after the folder was listed, so the folder
+            // is listed again before the file is reported as missing
+            await LoadFolderAsync(folderPath, true, cancelToken).ConfigureAwait(false);
+
+            if (_fileCache.TryGetValue(fileName, out var id))
+                return id;
 
             throw new FileMissingException();
         }
@@ -385,9 +500,6 @@ namespace Duplicati.Library.Backend.Box
         private async IAsyncEnumerable<FileEntity> PagedFileListResponse(string parentid, bool onlyfolders, [EnumeratorCancellation] CancellationToken cancelToken)
         {
             var offset = 0;
-
-            if (!onlyfolders)
-                _fileCache.Clear();
 
             while (true)
             {
@@ -406,9 +518,6 @@ namespace Duplicati.Library.Backend.Box
                     if (onlyfolders && f.Type != "folder")
                         continue;
 
-                    if (!onlyfolders && f.Type == "file")
-                        _fileCache[f.Name] = f.ID;
-
                     yield return f;
                 }
 
@@ -423,20 +532,20 @@ namespace Duplicati.Library.Backend.Box
 
         public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
         {
-            var currentFolder = await GetCurrentFolderWithCacheAsync(cancelToken).ConfigureAwait(false);
+            // A name with a path is a file in a folder below the backend folder. The
+            // folder has to exist, as the backend folder has to.
+            var (folderPath, fileName) = SplitRemoteName(remotename);
+            var folderId = await LoadFolderAsync(folderPath, false, cancelToken).ConfigureAwait(false);
             var createreq = new CreateItemRequest
             {
-                Name = remotename,
+                Name = fileName,
                 Parent = new IDReference
                 {
-                    ID = currentFolder
+                    ID = folderId
                 }
             };
 
-            if (_fileCache.Count == 0)
-                await PagedFileListResponse(currentFolder, false, cancelToken).LastOrDefaultAsync(cancelToken).ConfigureAwait(false);
-
-            var existing = _fileCache.ContainsKey(remotename);
+            var existing = _fileCache.TryGetValue(fileName, out var existingId);
 
             var multipartForm = new MultipartFormDataContent();
 
@@ -445,7 +554,7 @@ namespace Duplicati.Library.Backend.Box
                 string url;
 
                 if (existing)
-                    url = $"{BOX_UPLOAD_URL}/{_fileCache[remotename]}/content";
+                    url = $"{BOX_UPLOAD_URL}/{existingId}/content";
                 else
                 {
                     url = $"{BOX_UPLOAD_URL}/content";
@@ -453,16 +562,16 @@ namespace Duplicati.Library.Backend.Box
                 }
 
                 using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
-                multipartForm.Add(new StreamContent(timeoutStream), "file", remotename);
+                multipartForm.Add(new StreamContent(timeoutStream), "file", fileName);
 
                 var res = (await _oAuthHelper.PostMultipartAndGetJsonDataAsync<FileList>(url, cancelToken, multipartForm)).Entries?.FirstOrDefault();
                 if (res == null || string.IsNullOrWhiteSpace(res.ID))
                     throw new InvalidDataException("No file ID returned after upload");
-                _fileCache[remotename] = res.ID;
+                _fileCache[fileName] = res.ID;
             }
             catch
             {
-                _fileCache.Clear();
+                ClearFileCache();
                 throw;
             }
         }
@@ -480,7 +589,7 @@ namespace Duplicati.Library.Backend.Box
         public async IAsyncEnumerable<IFileEntry> ListAsync([EnumeratorCancellation] CancellationToken cancelToken)
         {
             var currentFolder = await GetCurrentFolderWithCacheAsync(cancelToken).ConfigureAwait(false);
-            await foreach (var n in PagedFileListResponse(currentFolder, false, cancelToken).ConfigureAwait(false))
+            await foreach (var n in ListAndCacheAsync(RootFolderPath, currentFolder, cancelToken).ConfigureAwait(false))
                 yield return ParseEntry(n);
         }
 
@@ -513,32 +622,78 @@ namespace Duplicati.Library.Backend.Box
                     {
                     }
                 }
+
+                // The cache holds the folder of the file, and the file is no longer in it
+                _fileCache.Remove(SplitRemoteName(remotename).Name);
             }
             catch
             {
-                _fileCache.Clear();
+                ClearFileCache();
                 throw;
             }
         }
 
         public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
         {
+            var (oldFolderPath, oldFileName) = SplitRemoteName(oldname);
+            var (newFolderPath, newFileName) = SplitRemoteName(newname);
             var fileId = await GetFileIdAsync(oldname, cancellationToken).ConfigureAwait(false);
             try
             {
+                // A new name in another folder moves the file there; the folder has to exist
+                var request = new CreateItemRequest { Name = newFileName };
+                if (!IsSameFolder(newFolderPath, oldFolderPath))
+                    request.Parent = new IDReference { ID = await GetExistingFolderIdAsync(newFolderPath, cancellationToken).ConfigureAwait(false) };
+
                 await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, ct => _oAuthHelper.PutAndGetJsonDataAsync<FileEntity>(
                     $"{BOX_API_URL}/files/{fileId}",
-                    new CreateItemRequest { Name = newname },
+                    request,
                     ct
                 )).ConfigureAwait(false);
 
-                _fileCache.Remove(oldname);
-                _fileCache[newname] = fileId;
+                // The cache holds the folder the file was in
+                _fileCache.Remove(oldFileName);
+                if (IsSameFolder(newFolderPath, oldFolderPath))
+                    _fileCache[newFileName] = fileId;
             }
             catch
             {
-                _fileCache.Clear();
+                ClearFileCache();
                 throw;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task DeleteFolderRecursiveAsync(string path, CancellationToken cancellationToken)
+        {
+            BackendExtensions.ValidateFolderDeletePath(path);
+
+            string folderId;
+            try
+            {
+                folderId = await GetFolderIdAsync(GetAbsolutePath(path), false, cancellationToken).ConfigureAwait(false);
+            }
+            catch (FolderMissingException)
+            {
+                // Already gone, which is the outcome the caller asked for
+                return;
+            }
+
+            // The file cache can hold the folder, or one below it
+            ClearFileCache();
+
+            // Box deletes the whole tree before it answers, which can take as long as a listing
+            using (var request = await _oAuthHelper.CreateRequestAsync($"{BOX_API_URL}/folders/{folderId}?recursive=true", HttpMethod.Delete, cancellationToken).ConfigureAwait(false))
+            using (var r = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancellationToken, ct => _oAuthHelper.GetResponseAsync(request, HttpCompletionOption.ResponseContentRead, ct)).ConfigureAwait(false))
+            {
+            }
+
+            if (_deleteFromTrash)
+            {
+                using (var request = await _oAuthHelper.CreateRequestAsync($"{BOX_API_URL}/folders/{folderId}/trash", HttpMethod.Delete, cancellationToken).ConfigureAwait(false))
+                using (var r = await Utility.Utility.WithTimeout(_timeouts.ListTimeout, cancellationToken, ct => _oAuthHelper.GetResponseAsync(request, HttpCompletionOption.ResponseContentRead, ct)).ConfigureAwait(false))
+                {
+                }
             }
         }
 

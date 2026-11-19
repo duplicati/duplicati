@@ -130,7 +130,7 @@ internal static class SyncSnapshotLayout
                 else
                     Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotMarkerInvalid", null, "The snapshot marker file {0} names \"{1}\", which is not a snapshot folder on the destination; using the newest snapshot folder instead.", MarkerFileName, content);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex) when (ex is not OperationCanceledException && !cancellationToken.IsCancellationRequested)
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotMarkerReadFailed", ex, "Failed to read the snapshot marker file {0}; using the newest snapshot folder instead.", MarkerFileName);
             }
@@ -157,12 +157,14 @@ internal static class SyncSnapshotLayout
     /// </summary>
     /// <param name="backendManager">The backend manager of the destination</param>
     /// <param name="snapshot">The snapshot folder name</param>
+    /// <param name="dryRun">Whether nothing is deleted</param>
     /// <param name="cancellationToken">The cancellation token</param>
-    public static Task DeleteSnapshotAsync(IBackendManager backendManager, string snapshot, CancellationToken cancellationToken)
+    /// <returns>What was deleted, or in a dry run would be</returns>
+    public static Task<DeleteTreeResult> DeleteSnapshotAsync(IBackendManager backendManager, string snapshot, bool dryRun, CancellationToken cancellationToken)
     {
         if (!TryParseFolderName(snapshot, out _))
             throw new ArgumentException($"Not a snapshot folder name: {snapshot}", nameof(snapshot));
 
-        return SyncRemoteFolders.DeleteTreeAsync(backendManager, snapshot, cancellationToken);
+        return SyncRemoteFolders.DeleteTreeAsync(backendManager, snapshot, null, dryRun, cancellationToken);
     }
 }

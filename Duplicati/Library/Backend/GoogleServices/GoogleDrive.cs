@@ -35,7 +35,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class GoogleDrive : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend
+    public class GoogleDrive : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, IFolderEnabledBackend, IFolderDeleteEnabledBackend
     {
         private const string TEAMDRIVE_ID = "googledrive-teamdrive-id";
         private const string USE_TRASH_OPTION = "googledrive-use-trash";
@@ -475,6 +475,39 @@ namespace Duplicati.Library.Backend.GoogleDrive
 
                 throw;
             }
+        }
+
+        /// <inheritdoc/>
+        public async Task DeleteFolderRecursiveAsync(string path, CancellationToken cancellationToken)
+        {
+            BackendExtensions.ValidateFolderDeletePath(path);
+
+            string folderId;
+            try
+            {
+                folderId = await GetFolderIdAsync(GetAbsolutePath(path), false, cancellationToken).ConfigureAwait(false);
+            }
+            catch (FolderMissingException)
+            {
+                // Already gone, which is the outcome the caller asked for
+                return;
+            }
+
+            // The cache can hold files below the folder
+            m_filecache.Clear();
+
+            // Deleting or trashing a folder takes everything below it along. As for a
+            // file, the trash only needs Content manager on a shared drive.
+            var url = m_useTrash
+                ? WebApi.GoogleDrive.TrashUrl(folderId)
+                : WebApi.GoogleDrive.DeleteUrl(folderId, m_teamDriveID);
+            var method = m_useTrash ? HttpMethod.Post : HttpMethod.Delete;
+            await Utility.Utility.WithTimeout(m_timeouts.ListTimeout, cancellationToken,
+                async ct =>
+                {
+                    using var req = await m_oauth.CreateRequestAsync(url, method, ct).ConfigureAwait(false);
+                    using var resp = await m_oauth.GetResponseAsync(req, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
+                }).ConfigureAwait(false);
         }
 
         public Task TestAsync(bool alsoWrite, CancellationToken cancelToken)

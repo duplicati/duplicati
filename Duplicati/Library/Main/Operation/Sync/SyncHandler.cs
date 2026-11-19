@@ -50,7 +50,7 @@ internal sealed class SyncTargetSummary
     public long SizeOfDeletedFiles;
     /// <summary>The number of files that could not be uploaded</summary>
     public long UploadFailures;
-    /// <summary>The number of files that could not be deleted</summary>
+    /// <summary>The number of files and folders that could not be deleted</summary>
     public long DeleteFailures;
     /// <summary>Set when the destination failed as a whole and was skipped for the rest of the run</summary>
     public bool Failed;
@@ -349,6 +349,8 @@ internal class SyncHandler
                             verifyHash,
                             false,
                             _ => true,
+                            _ => true,
+                            null,
                             ct).ConfigureAwait(false);
                     }
                     catch (Exception ex) when (ex is not OperationCanceledException && !ct.IsCancellationRequested)
@@ -599,9 +601,23 @@ internal class SyncHandler
         //
         // A remote file takes part in a delete only when the filter would have let a
         // source file of that name through: what the filter hides on the source side
-        // is not this run's to remove on the destination side either.
+        // is not this run's to remove on the destination side either. The same goes
+        // for a remote folder, which is matched as the enumeration matches a source
+        // folder: with only includes in the filter every folder is let through, so an
+        // include can match a file below it. A remote folder that is deleted is deleted
+        // only as far as the filter reaches: what the filter excludes below it is kept.
         var folderPath = Library.Common.IO.Util.AppendDirSeparator(folderEntry.Path);
+        var folderFilter = FileEnumerationProcess.GetEnumerateFilter(filter);
         bool PassesFilter(string name) => FilterExpression.Matches(filter, folderPath + name, out _);
+        bool PassesFolderFilter(string name) => FilterExpression.Matches(folderFilter, Library.Common.IO.Util.AppendDirSeparator(folderPath + name), out _);
+        bool InFilterScope(string relativePath, bool isFolder)
+        {
+            var path = folderPath + relativePath.Replace("/", Library.Common.IO.Util.DirectorySeparatorString);
+            return isFolder
+                ? FilterExpression.Matches(folderFilter, Library.Common.IO.Util.AppendDirSeparator(path), out _)
+                : FilterExpression.Matches(filter, path, out _);
+        }
+        Func<string, bool, bool>? orphanTreeScope = filter == null || filter.Empty ? null : InFilterScope;
 
         for (var i = 0; i < run.States.Count; i++)
         {
@@ -637,6 +653,8 @@ internal class SyncHandler
                         verifyHash,
                         atDepthLimit,
                         PassesFilter,
+                        PassesFolderFilter,
+                        orphanTreeScope,
                         ct).ConfigureAwait(false);
             }
             catch (Exception ex) when (ex is not OperationCanceledException && !ct.IsCancellationRequested)
@@ -667,6 +685,8 @@ internal class SyncHandler
         bool verifyHash,
         bool atDepthLimit,
         Func<string, bool> passesFilter,
+        Func<string, bool> passesFolderFilter,
+        Func<string, bool, bool>? orphanTreeScope,
         CancellationToken ct)
     {
         var backendManager = bs.BackendManager;
@@ -799,6 +819,26 @@ internal class SyncHandler
             }
         }
         // BlindlyUpload: no remote state. remoteFileState and remoteFolderNames stay empty.
+
+        // The sub-folders the destination has and the source does not are deleted
+        // after the files, further down. They are worked out here, before anything is
+        // written, so a destination that must not be mirrored onto is left as it was.
+        // At the depth limit the sub-folders were never read, so nothing is known
+        // about them and none of them is an orphan.
+        List<string> orphanedFolders = [];
+        if (isDelete && !atDepthLimit && stateMode != SyncRemoteState.BlindlyUpload)
+        {
+            orphanedFolders = await GetOrphanedFoldersAsync(folderRelPath, enqueuedSubfolders, remoteFolderNames, bs, nameComparer, passesFolderFilter, ct).ConfigureAwait(false);
+
+            // The snapshot folders of a destination written with --sync-snapshot-folders
+            // are in its root, and to a mirror they are folders the source does not have.
+            if (string.IsNullOrEmpty(folderRelPath))
+            {
+                var snapshots = orphanedFolders.Where(x => SyncSnapshotLayout.TryParseFolderName(x, out _)).Order(StringComparer.Ordinal).ToList();
+                if (snapshots.Count > 0)
+                    throw new UserInformationException($"The destination {planSummary.DisplayName} holds snapshot folders written with --{Options.SYNC_SNAPSHOT_FOLDERS_OPTION} ({string.Join(", ", snapshots)}), and --{Options.SYNC_THEN_DELETE_OPTION} would delete them because the source has no folders with these names. Use --{Options.SYNC_SNAPSHOT_FOLDERS_OPTION} to keep writing snapshots, or remove the snapshot folders from the destination before mirroring to it.", "SyncDestinationHasSnapshots");
+            }
+        }
 
         // Create any sub-folders that are missing on THIS backend. Under UseRemoteState
         // we know exactly which sub-folders already exist (from the listing); under
@@ -949,7 +989,7 @@ internal class SyncHandler
             {
                 await UploadOrUpdateAsync(bs, run, targetRelPath, entry, operation, label, verifyHash, ct).ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex) when (ex is not OperationCanceledException && !ct.IsCancellationRequested)
             {
                 planSummary.UploadFailures++;
                 Logging.Log.WriteWarningMessage(LOGTAG, "UploadFailed", ex, "Failed to {0} file: {1}", label, relPath);
@@ -1015,7 +1055,7 @@ internal class SyncHandler
                 {
                     await backendManager.DeleteWithPathAsync(relPath, 0, true, ct).ConfigureAwait(false);
                 }
-                catch (Exception ex) when (ex is not OperationCanceledException)
+                catch (Exception ex) when (ex is not OperationCanceledException && !ct.IsCancellationRequested)
                 {
                     // One file that cannot be deleted does not stop the run; the intent
                     // row stays and is reconciled on the next run.
@@ -1050,52 +1090,50 @@ internal class SyncHandler
                 }, ct).ConfigureAwait(false);
             }
 
-            // At the depth limit the sub-folders were never read, so nothing is known
-            // about them and none of them is an orphan.
-            if (!atDepthLimit)
-                await DeleteOrphanedFoldersAsync(folderRelPath, enqueuedSubfolders, remoteFolderNames, bs, nameComparer, ct).ConfigureAwait(false);
+            // The files in a folder that is deleted file by file count as deleted files
+            var deletedBeforeFolders = planSummary.Delete;
+            await DeleteOrphanedFoldersAsync(folderRelPath, orphanedFolders, bs, orphanTreeScope, ct).ConfigureAwait(false);
+            if (planSummary.Delete != deletedBeforeFolders)
+                run.ReportProcessed(bs, includeDeletes: true);
         }
     }
 
     /// <summary>
-    /// Deletes the sub-folders of a folder that exist on the destination but no longer
-    /// in the source, with everything in them. The folder loop only visits folders the
-    /// source has, so without this pass a folder removed from the source would stay on
-    /// the destination with all its files. A backend that can delete a folder tree does
-    /// so in one call; otherwise the files are deleted one by one
-    /// (<see cref="SyncRemoteFolders.DeleteTreeAsync"/>).
+    /// Finds the sub-folders of a folder that exist on the destination but no longer in
+    /// the source. The folder loop only visits folders the source has, so a folder
+    /// removed from the source would otherwise stay on the destination with all its
+    /// files. A folder the filter keeps out of the source is not an orphan: what the
+    /// filter hides on the source side is not this run's to remove.
     /// </summary>
     /// <param name="folderRelPath">The relative path of the folder being processed</param>
     /// <param name="enqueuedSubfolders">The sub-folders the source has and that are synchronized</param>
     /// <param name="remoteFolderNames">The sub-folder names a listing showed, under <see cref="SyncRemoteState.UseRemoteState"/></param>
     /// <param name="bs">The state of the destination</param>
     /// <param name="nameComparer">The comparer for names on the destination</param>
+    /// <param name="passesFolderFilter">Whether the filter lets a source sub-folder of the given name through</param>
     /// <param name="ct">The cancellation token</param>
-    private static async Task DeleteOrphanedFoldersAsync(
+    /// <returns>The relative paths of the orphaned sub-folders</returns>
+    private static async Task<List<string>> GetOrphanedFoldersAsync(
         string folderRelPath,
         List<(ISourceProviderEntry Entry, string RelativePath)> enqueuedSubfolders,
         HashSet<string> remoteFolderNames,
         BackendRunState bs,
         StringComparer nameComparer,
+        Func<string, bool> passesFolderFilter,
         CancellationToken ct)
     {
-        var backendManager = bs.BackendManager;
-        var db = bs.Database;
-        var stateMode = bs.StateMode;
-        var isDryRun = bs.DryRun;
-        var planSummary = bs.Summary;
-
         // Under UseRemoteState the listing shows the sub-folders; under UseLocalState the
         // cache knows a sub-folder when it holds a file below it.
-        IEnumerable<string> remoteSubfolders = stateMode switch
+        IEnumerable<string> remoteSubfolders = bs.StateMode switch
         {
             SyncRemoteState.UseRemoteState => remoteFolderNames,
-            SyncRemoteState.UseLocalState => await db.GetInventorySubfolderNamesAsync(folderRelPath, ct).ConfigureAwait(false),
+            SyncRemoteState.UseLocalState => await bs.Database.GetInventorySubfolderNamesAsync(folderRelPath, ct).ConfigureAwait(false),
             _ => []
         };
 
+        var orphans = new List<string>();
         var localSubfolderNames = new HashSet<string>(enqueuedSubfolders.Select(x => GetEntryName(x.RelativePath)), nameComparer);
-        foreach (var name in remoteSubfolders.Distinct(nameComparer).ToList())
+        foreach (var name in remoteSubfolders.Distinct(nameComparer))
         {
             if (localSubfolderNames.Contains(name))
                 continue;
@@ -1106,24 +1144,130 @@ internal class SyncHandler
                 continue;
             }
 
-            planSummary.FoldersDeleted++;
-            if (isDryRun)
+            // The filter scopes the delete as it scopes the upload
+            if (!passesFolderFilter(name))
             {
-                Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would delete folder: {0}", relPath);
+                Logging.Log.WriteVerboseMessage(LOGTAG, "SkippingDeleteByFilter", "Not deleting remote folder excluded by the filter: {0}", relPath);
                 continue;
             }
 
-            Logging.Log.WriteInformationMessage(LOGTAG, "DeletingFolder", "Deleting folder {0}", relPath);
+            orphans.Add(relPath);
+        }
+
+        return orphans;
+    }
+
+    /// <summary>
+    /// Deletes the orphaned sub-folders of a folder, with everything in them
+    /// (<see cref="GetOrphanedFoldersAsync"/>).
+    /// </summary>
+    /// <param name="folderRelPath">The relative path of the folder holding the orphaned sub-folders</param>
+    /// <param name="orphanedFolders">The relative paths of the folders to delete</param>
+    /// <param name="bs">The state of the destination</param>
+    /// <param name="treeScope">Whether an entry may be deleted, given its path relative to <paramref name="folderRelPath"/> ('/'-separated) and whether it is a folder; null when the filter is empty and everything may be deleted</param>
+    /// <param name="ct">The cancellation token</param>
+    private static async Task DeleteOrphanedFoldersAsync(string folderRelPath, List<string> orphanedFolders, BackendRunState bs, Func<string, bool, bool>? treeScope, CancellationToken ct)
+    {
+        var db = bs.Database;
+        foreach (var relPath in orphanedFolders)
+        {
+            var name = GetEntryName(relPath);
+            Func<string, bool, bool>? scope = treeScope == null
+                ? null
+                : (rel, isFolder) => treeScope(name + "/" + rel, isFolder);
+
             // Record the intent before the backend call, as for a file delete, so an
             // interrupted delete is reported on the next run.
-            await db.UpsertPendingOperationAsync(relPath, SyncOperation.Delete, null, null, ct).ConfigureAwait(false);
-            await SyncRemoteFolders.DeleteTreeAsync(backendManager, relPath, ct).ConfigureAwait(false);
+            if (!bs.DryRun)
+                await db.UpsertPendingOperationAsync(relPath, SyncOperation.Delete, null, null, ct).ConfigureAwait(false);
+
+            DeleteTreeResult result;
+            try
+            {
+                result = await DeleteFolderTreeAsync(bs, relPath, "folder", "DeletingFolder", (mgr, path, dryRun, c) => SyncRemoteFolders.DeleteTreeAsync(mgr, path, scope, dryRun, c), ct).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException && !ct.IsCancellationRequested)
+            {
+                // One folder that cannot be deleted does not stop the run; the intent
+                // row stays and is reconciled on the next run.
+                bs.Summary.DeleteFailures++;
+                Logging.Log.WriteWarningMessage(LOGTAG, "DeleteFolderFailed", ex, "Failed to delete folder: {0}", relPath);
+                continue;
+            }
+
+            if (bs.DryRun)
+                continue;
+
             await db.ExecuteInTransactionAsync(async txCt =>
             {
-                await db.RemoveInventoryBelowFolderAsync(relPath, txCt).ConfigureAwait(false);
-                await db.RemovePendingOperationAsync(relPath, txCt).ConfigureAwait(false);
+                // A file that is still there, because it could not be deleted or the filter
+                // excludes it, keeps its row, so the cache keeps knowing the folder; only the
+                // deleted files lose theirs
+                if (result.FilesFailed > 0 || result.EntriesKept > 0)
+                    foreach (var deleted in result.DeletedFiles)
+                        await db.RemoveInventoryAsync(deleted, txCt).ConfigureAwait(false);
+                else
+                    await db.RemoveInventoryBelowFolderAsync(relPath, txCt).ConfigureAwait(false);
+
+                // A failed file leaves the intent row, so the next run reports it
+                if (result.FilesFailed == 0)
+                    await db.RemovePendingOperationAsync(relPath, txCt).ConfigureAwait(false);
             }, ct).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// Deletes a folder tree from a destination, or in a dry run works out what would be
+    /// deleted, and logs and counts the outcome. A backend that can delete a folder tree
+    /// does so in one call. Otherwise the files are deleted one by one and the emptied
+    /// folders stay; a later run finds them again with nothing in them, which is neither
+    /// logged nor counted as a delete.
+    /// </summary>
+    /// <param name="bs">The state of the destination</param>
+    /// <param name="relPath">The relative path of the folder</param>
+    /// <param name="description">What the folder is, for the log messages</param>
+    /// <param name="logId">The id of the log message that reports the delete</param>
+    /// <param name="deleteTree">The method that deletes the tree</param>
+    /// <param name="ct">The cancellation token</param>
+    /// <returns>What was deleted, or in a dry run would be</returns>
+    private static async Task<DeleteTreeResult> DeleteFolderTreeAsync(BackendRunState bs, string relPath, string description, string logId, Func<IBackendManager, string, bool, CancellationToken, Task<DeleteTreeResult>> deleteTree, CancellationToken ct)
+    {
+        var isDryRun = bs.DryRun;
+        var planSummary = bs.Summary;
+
+        if (!isDryRun && bs.BackendManager.SupportsFolderDelete)
+            Logging.Log.WriteInformationMessage(LOGTAG, logId, "Now deleting {0} {1}", description, relPath);
+
+        var result = await deleteTree(bs.BackendManager, relPath, isDryRun, ct).ConfigureAwait(false);
+
+        planSummary.Delete += result.FilesDeleted;
+        planSummary.SizeOfDeletedFiles += result.SizeOfDeletedFiles;
+        planSummary.DeleteFailures += result.FilesFailed;
+        if (result.FolderRemoved)
+            planSummary.FoldersDeleted++;
+
+        if (isDryRun)
+        {
+            if (result.FolderRemoved)
+                Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would delete {0}: {1}", description, relPath);
+            else if (result.FilesDeleted > 0 && result.EntriesKept > 0)
+                Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would delete the {0} files of {1} {2}; {3} entries below it that the filter excludes would be kept", result.FilesDeleted, description, relPath, result.EntriesKept);
+            else if (result.FilesDeleted > 0)
+                Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would delete the {0} files of {1} {2}; the destination cannot delete folders, so the empty folders would be left behind", result.FilesDeleted, description, relPath);
+        }
+        else if (result.FolderRemoved)
+        {
+            Logging.Log.WriteInformationMessage(LOGTAG, logId, "Deleted {0} {1}", description, relPath);
+        }
+        else if (result.FilesDeleted > 0)
+        {
+            if (result.EntriesKept > 0)
+                Logging.Log.WriteInformationMessage(LOGTAG, logId, "Deleted the {0} files of {1} {2}; {3} entries below it that the filter excludes are kept", result.FilesDeleted, description, relPath, result.EntriesKept);
+            else
+                Logging.Log.WriteInformationMessage(LOGTAG, logId, "Deleted the {0} files of {1} {2}; the destination cannot delete folders, so the empty folders are left behind", result.FilesDeleted, description, relPath);
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -1312,7 +1456,7 @@ internal class SyncHandler
                     using var hasher = HashFactory.CreateHasher("SHA256");
                     unchanged = Convert.ToBase64String(hasher.ComputeHash(stream)) == previous.ContentHash;
                 }
-                catch (Exception ex) when (ex is not OperationCanceledException)
+                catch (Exception ex) when (ex is not OperationCanceledException && !ct.IsCancellationRequested)
                 {
                     Logging.Log.WriteWarningMessage(LOGTAG, "FailedToReadFileHash", ex, "Failed to read local file hash for: {0}", relPath);
                     unchanged = false;
@@ -1341,12 +1485,12 @@ internal class SyncHandler
                     run.ReportProcessed(bs);
                     continue;
                 }
-                catch (Exception ex) when (ex is not OperationCanceledException && Library.Utility.ExceptionExtensions.FlattenException(ex).Any(x => x is HardLinkNotSupportedException))
+                catch (Exception ex) when (ex is not OperationCanceledException && !ct.IsCancellationRequested && Library.Utility.ExceptionExtensions.FlattenException(ex).Any(x => x is HardLinkNotSupportedException))
                 {
                     snapshot.LinksUnavailable = true;
                     Logging.Log.WriteWarningMessage(LOGTAG, "HardLinksUnavailable", ex, "The destination cannot create hard links, so unchanged files are copied into the snapshot again: {0}", ex.Message);
                 }
-                catch (Exception ex) when (ex is not OperationCanceledException)
+                catch (Exception ex) when (ex is not OperationCanceledException && !ct.IsCancellationRequested)
                 {
                     Logging.Log.WriteWarningMessage(LOGTAG, "LinkFailed", ex, "Failed to link {0} from the previous snapshot; uploading it instead", relPath);
                 }
@@ -1360,7 +1504,7 @@ internal class SyncHandler
             {
                 await UploadOrUpdateAsync(bs, run, targetPath, entry, operation, label, verifyHash, ct).ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex) when (ex is not OperationCanceledException && !ct.IsCancellationRequested)
             {
                 planSummary.UploadFailures++;
                 Logging.Log.WriteWarningMessage(LOGTAG, "UploadFailed", ex, "Failed to {0} file: {1}", label, targetPath);
@@ -1420,21 +1564,14 @@ internal class SyncHandler
         foreach (var folder in aborted.Concat(expired))
         {
             var reason = aborted.Contains(folder) ? "incomplete" : "expired";
-            if (isDryRun)
-            {
-                Logging.Log.WriteDryrunMessage(LOGTAG, "DryRun", "Would delete {0} snapshot: {1}", reason, folder);
-                planSummary.FoldersDeleted++;
-                continue;
-            }
-
             try
             {
-                Logging.Log.WriteInformationMessage(LOGTAG, "SnapshotDeleted", "Deleting {0} snapshot {1}", reason, folder);
-                await SyncSnapshotLayout.DeleteSnapshotAsync(bs.BackendManager, folder, ct).ConfigureAwait(false);
-                planSummary.FoldersDeleted++;
+                await DeleteFolderTreeAsync(bs, folder, $"{reason} snapshot", "SnapshotDeleted", SyncSnapshotLayout.DeleteSnapshotAsync, ct).ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex) when (ex is not OperationCanceledException && !ct.IsCancellationRequested)
             {
+                // Counted like a file that cannot be deleted one by one
+                planSummary.DeleteFailures++;
                 Logging.Log.WriteWarningMessage(LOGTAG, "SnapshotDeleteFailed", ex, "Failed to delete snapshot {0}: {1}", folder, ex.Message);
             }
         }
