@@ -71,7 +71,7 @@ public sealed class PostgreSQLDumpSession : IDisposable
             // The program ended before it wrote a table of contents; what it wrote as errors says why
             var (exitCode, errorOutput) = await tool.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
             tool.Dispose();
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolFailed(tool.Tool, exitCode, errorOutput), "PostgreSQLToolFailed");
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolFailed(tool.Tool, exitCode, errorOutput), PostgreSQLEventIds.ToolFailed);
         }
         catch
         {

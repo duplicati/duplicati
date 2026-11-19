@@ -169,29 +169,29 @@ public sealed class PostgreSQLArchiveReader
     {
         var magic = await ReadBytesAsync(Magic.Length, cancellationToken).ConfigureAwait(false);
         if (!magic.AsSpan().SequenceEqual(Magic))
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.UnexpectedArchive("it does not start with the archive signature"), "PostgreSQLUnexpectedArchive");
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.UnexpectedArchive("it does not start with the archive signature"), PostgreSQLEventIds.UnexpectedArchive);
 
         var version = await ReadBytesAsync(3, cancellationToken).ConfigureAwait(false);
         ArchiveVersion = $"{version[0]}.{version[1]}.{version[2]}";
         if (!SupportedVersions.Contains((version[0], version[1])))
             throw new UserInformationException(
                 Strings.PostgreSQLSourceProvider.UnsupportedArchiveVersion(ArchiveVersion, string.Join(", ", SupportedVersions.Select(x => $"{x.Major}.{x.Minor}"))),
-                "PostgreSQLUnsupportedArchiveVersion");
+                PostgreSQLEventIds.UnsupportedArchiveVersion);
 
         var minor = version[1];
 
         var sizes = await ReadBytesAsync(3, cancellationToken).ConfigureAwait(false);
         if (sizes[0] != IntegerSize || sizes[1] != OffsetSize)
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.UnexpectedArchive($"integer size {sizes[0]} and offset size {sizes[1]}"), "PostgreSQLUnexpectedArchive");
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.UnexpectedArchive($"integer size {sizes[0]} and offset size {sizes[1]}"), PostgreSQLEventIds.UnexpectedArchive);
         if (sizes[2] != CustomFormat)
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.UnexpectedArchive($"format {sizes[2]} is not the custom format"), "PostgreSQLUnexpectedArchive");
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.UnexpectedArchive($"format {sizes[2]} is not the custom format"), PostgreSQLEventIds.UnexpectedArchive);
 
         // The compression is a method byte, and in the older formats a level written as an integer
         var compression = minor >= FormatMinorCompressionMethod
             ? (await ReadBytesAsync(1, cancellationToken).ConfigureAwait(false))[0]
             : await ReadIntAsync(cancellationToken).ConfigureAwait(false);
         if (compression != NoCompression)
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.UnexpectedArchive($"it is compressed with method or level {compression}"), "PostgreSQLUnexpectedArchive");
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.UnexpectedArchive($"it is compressed with method or level {compression}"), PostgreSQLEventIds.UnexpectedArchive);
 
         for (var i = 0; i < TimestampFields; i++)
             await ReadIntAsync(cancellationToken).ConfigureAwait(false);
@@ -203,7 +203,7 @@ public sealed class PostgreSQLArchiveReader
 
         var count = await ReadIntAsync(cancellationToken).ConfigureAwait(false);
         if (count < 0)
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.UnexpectedArchive($"the table of contents has {count} entries"), "PostgreSQLUnexpectedArchive");
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.UnexpectedArchive($"the table of contents has {count} entries"), PostgreSQLEventIds.UnexpectedArchive);
 
         var entries = new List<PostgreSQLArchiveEntry>(count);
         for (var i = 0; i < count; i++)
@@ -263,7 +263,7 @@ public sealed class PostgreSQLArchiveReader
         var type = m_buffer[m_position++];
         var dumpId = await ReadIntAsync(cancellationToken).ConfigureAwait(false);
         if (type != BlockTypeData && type != BlockTypeLargeObjects)
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.UnexpectedArchive($"block type {type}"), "PostgreSQLUnexpectedArchive");
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.UnexpectedArchive($"block type {type}"), PostgreSQLEventIds.UnexpectedArchive);
 
         m_inBlock = type == BlockTypeData;
         m_chunkRemaining = 0;
@@ -285,7 +285,7 @@ public sealed class PostgreSQLArchiveReader
         {
             m_chunkRemaining = await ReadIntAsync(cancellationToken).ConfigureAwait(false);
             if (m_chunkRemaining < 0)
-                throw new UserInformationException(Strings.PostgreSQLSourceProvider.UnexpectedArchive($"a data chunk of length {m_chunkRemaining}"), "PostgreSQLUnexpectedArchive");
+                throw new UserInformationException(Strings.PostgreSQLSourceProvider.UnexpectedArchive($"a data chunk of length {m_chunkRemaining}"), PostgreSQLEventIds.UnexpectedArchive);
             if (m_chunkRemaining == 0)
             {
                 m_inBlock = false;

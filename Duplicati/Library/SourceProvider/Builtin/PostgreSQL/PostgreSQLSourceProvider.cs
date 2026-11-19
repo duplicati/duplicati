@@ -110,7 +110,6 @@ public sealed class PostgreSQLSourceProvider : ISourceProviderModule, ISequentia
     internal const int LargeObjectsId = -1;
 
     private readonly string m_mountPoint;
-    private readonly string m_url;
     private readonly Dictionary<string, string?> m_rawOptions;
     private PostgreSQLDumpSession? m_session;
     private PostgreSQLSourceEntry? m_root;
@@ -121,19 +120,17 @@ public sealed class PostgreSQLSourceProvider : ISourceProviderModule, ISequentia
     public PostgreSQLSourceProvider()
     {
         m_mountPoint = string.Empty;
-        m_url = string.Empty;
         m_rawOptions = [];
     }
 
     /// <summary>
     /// Creates the provider for a source
     /// </summary>
-    /// <param name="url">The source URL</param>
+    /// <param name="url">The source URL; its options are already among <paramref name="options"/></param>
     /// <param name="mountPoint">The path the database is placed at in the backup</param>
-    /// <param name="options">The backup options</param>
+    /// <param name="options">The backup options, with those of the URL</param>
     public PostgreSQLSourceProvider(string url, string mountPoint, Dictionary<string, string?> options)
     {
-        m_url = url;
         m_mountPoint = mountPoint;
         m_rawOptions = options;
     }
@@ -179,13 +176,13 @@ public sealed class PostgreSQLSourceProvider : ISourceProviderModule, ISequentia
         var output = (await PostgreSQLClientTools.QueryAsync(PostgreSQLClientTools.LocateAnyPsql(options), ServerInfoQuery, options, cancellationToken).ConfigureAwait(false)).Trim();
         var parts = output.Split('|');
         if (parts.Length != 2 || !int.TryParse(parts[0], out var versionNum) || !long.TryParse(parts[1], out var size))
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolFailed(PostgreSQLClientTools.Psql, 0, output), "PostgreSQLToolFailed");
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolFailed(PostgreSQLClientTools.Psql, 0, output), PostgreSQLEventIds.ToolFailed);
 
         var info = new ServerInfo(versionNum, size);
         if (!PostgreSQLClientTools.SupportedMajorVersions.Contains(info.Major))
             throw new UserInformationException(
                 Strings.PostgreSQLSourceProvider.UnsupportedServerVersion(info.Major, string.Join(", ", PostgreSQLClientTools.SupportedMajorVersions.Order())),
-                "PostgreSQLUnsupportedServerVersion");
+                PostgreSQLEventIds.UnsupportedServerVersion);
 
         return info;
     }
@@ -193,7 +190,7 @@ public sealed class PostgreSQLSourceProvider : ISourceProviderModule, ISequentia
     /// <inheritdoc />
     public async Task InitializeAsync(CancellationToken cancellationToken)
     {
-        var options = PostgreSQLOptions.Parse(m_url, m_rawOptions);
+        var options = PostgreSQLOptions.Parse(m_rawOptions);
         var server = await GetServerInfoAsync(options, cancellationToken).ConfigureAwait(false);
 
         // A dump is only restored by the tools of the same major version, so it is made with them
@@ -210,7 +207,7 @@ public sealed class PostgreSQLSourceProvider : ISourceProviderModule, ISequentia
 
     /// <inheritdoc />
     public async Task TestAsync(CancellationToken cancellationToken)
-        => await GetServerInfoAsync(PostgreSQLOptions.Parse(m_url, m_rawOptions), cancellationToken).ConfigureAwait(false);
+        => await GetServerInfoAsync(PostgreSQLOptions.Parse(m_rawOptions), cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc />
     public async IAsyncEnumerable<ISourceProviderEntry> EnumerateAsync([EnumeratorCancellation] CancellationToken cancellationToken)

@@ -57,7 +57,7 @@ namespace Duplicati.UnitTest
         /// A restore destination that restores to a local folder and records
         /// what the restore tells it on Finalize.
         /// </summary>
-        private sealed class RecordingRestoreDestinationProvider : IRestoreDestinationProviderModule
+        private sealed class RecordingRestoreDestinationProvider : IRestoreDestinationProviderModule, IRestoreSelectionReceiver
         {
             /// <summary>
             /// The folder the provider restores to.
@@ -78,6 +78,16 @@ namespace Duplicati.UnitTest
             /// The completion flag of each Finalize call.
             /// </summary>
             public static ConcurrentQueue<bool> FinalizeCalls { get; } = new();
+
+            /// <summary>
+            /// The selections the restore gave the provider, with the number of files opened for writing before each.
+            /// </summary>
+            public static ConcurrentQueue<(IReadOnlyCollection<string> TargetPaths, int WritesBefore)> Selections { get; } = new();
+
+            /// <summary>
+            /// True to refuse the selection.
+            /// </summary>
+            public static bool RefuseSelection { get; set; }
 
             private readonly IRestoreDestinationProvider? _inner;
             private int _writes;
@@ -151,6 +161,14 @@ namespace Duplicati.UnitTest
             public Task DeleteFile(string path, CancellationToken cancel) => Inner.DeleteFile(path, cancel);
             public IList<string> GetPriorityFiles() => Inner.GetPriorityFiles();
             public void Dispose() => _inner?.Dispose();
+
+            public Task SetRestoreSelection(IReadOnlyCollection<string> targetPaths, CancellationToken cancel)
+            {
+                Selections.Enqueue((targetPaths.ToList(), Volatile.Read(ref _writes)));
+                if (RefuseSelection)
+                    throw new UserInformationException("Test refusal of the selection", "TestSelectionRefused");
+                return Task.CompletedTask;
+            }
         }
 
         [SetUp]
@@ -161,6 +179,8 @@ namespace Duplicati.UnitTest
             RecordingRestoreDestinationProvider.FailingFileName = null;
             RecordingRestoreDestinationProvider.StopOnFirstWrite = null;
             RecordingRestoreDestinationProvider.FinalizeCalls.Clear();
+            RecordingRestoreDestinationProvider.Selections.Clear();
+            RecordingRestoreDestinationProvider.RefuseSelection = false;
         }
 
         [TearDown]
@@ -168,6 +188,7 @@ namespace Duplicati.UnitTest
         {
             RecordingRestoreDestinationProvider.FailingFileName = null;
             RecordingRestoreDestinationProvider.StopOnFirstWrite = null;
+            RecordingRestoreDestinationProvider.RefuseSelection = false;
         }
 
         /// <summary>
@@ -281,6 +302,37 @@ namespace Duplicati.UnitTest
                 await TryRestoreAsync(c);
 
             CollectionAssert.DoesNotContain(RecordingRestoreDestinationProvider.FinalizeCalls, true, "A restore with a missing volume is never finalized as complete.");
+        }
+
+        [Test]
+        [Category("RestoreHandler")]
+        public async Task Restore_SelectionIsGivenBeforeAnyFileIsWritten()
+        {
+            await BackupAsync();
+
+            using (var c = new Controller("file://" + TARGETFOLDER, RestoreOptions(), null))
+                TestUtils.AssertResults(await c.RestoreAsync([Path.Combine(DATAFOLDER, FileNames[1]), Path.Combine(DATAFOLDER, FileNames[2])]));
+
+            Assert.AreEqual(1, RecordingRestoreDestinationProvider.Selections.Count, "The selection is given once.");
+            var (targetPaths, writesBefore) = RecordingRestoreDestinationProvider.Selections.Single();
+            Assert.AreEqual(0, writesBefore, "The selection is given before any file is written.");
+            CollectionAssert.AreEquivalent(new[] { FileNames[1], FileNames[2] }, targetPaths.Select(Path.GetFileName).ToArray(), "The selection holds the restored files only.");
+        }
+
+        [Test]
+        [Category("RestoreHandler")]
+        public async Task Restore_RefusedSelection_WritesNothing()
+        {
+            await BackupAsync();
+            RecordingRestoreDestinationProvider.RefuseSelection = true;
+
+            RestoreResults? results;
+            using (var c = new Controller("file://" + TARGETFOLDER, RestoreOptions(), null))
+                results = await TryRestoreAsync(c);
+
+            Assert.IsNull(results, "A refused selection fails the restore.");
+            foreach (var name in FileNames)
+                Assert.IsFalse(File.Exists(Path.Combine(RESTOREFOLDER, name)), $"{name} should not be written.");
         }
     }
 }

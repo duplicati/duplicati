@@ -78,18 +78,18 @@ public class PostgreSQLRestoreProviderTests
     [Test]
     public void TheOptionsAreReadFromTheUrlAndTheRestoreOptions()
     {
-        var defaults = PostgreSQLRestoreOptions.Parse(Url, new Dictionary<string, string?>());
+        var defaults = PostgreSQLTestOptions.ParseRestore(Url, new Dictionary<string, string?>());
         Assert.That(defaults.TablesOnly, Is.False);
         Assert.That(defaults.Overwrite, Is.False);
         Assert.That(defaults.CreateTables, Is.False);
         Assert.That(defaults.AllowMixedVersions, Is.False);
         Assert.That(defaults.AllowMissingTables, Is.False);
         Assert.That(defaults.DryRun, Is.False);
-        Assert.That(PostgreSQLRestoreOptions.Parse(Url, new Dictionary<string, string?> { [PostgreSQLRestoreOptions.DryRunOption] = "true" }).DryRun, Is.True);
-        Assert.That(PostgreSQLRestoreOptions.Parse(Url, new Dictionary<string, string?> { [PostgreSQLRestoreOptions.DryRunAliasOption] = "true" }).DryRun, Is.True);
+        Assert.That(PostgreSQLTestOptions.ParseRestore(Url, new Dictionary<string, string?> { [PostgreSQLRestoreOptions.DryRunOption] = "true" }).DryRun, Is.True);
+        Assert.That(PostgreSQLTestOptions.ParseRestore(Url, new Dictionary<string, string?> { [PostgreSQLRestoreOptions.DryRunAliasOption] = "true" }).DryRun, Is.True);
         Assert.That(defaults.Connection.Database, Is.EqualTo("app"));
 
-        var options = PostgreSQLRestoreOptions.Parse(Url + "&postgresql-restore-mode=tables", new Dictionary<string, string?>
+        var options = PostgreSQLTestOptions.ParseRestore(Url + "&postgresql-restore-mode=tables", new Dictionary<string, string?>
         {
             [PostgreSQLRestoreOptions.ModeOption] = PostgreSQLRestoreOptions.ModeDatabase,
             [PostgreSQLRestoreOptions.OverwriteOption] = "true",
@@ -101,12 +101,34 @@ public class PostgreSQLRestoreProviderTests
         Assert.That(options.CreateTables, Is.True, "An option without a value is switched on");
         Assert.That(options.AllowMixedVersions, Is.True);
 
-        Assert.That(() => PostgreSQLRestoreOptions.Parse(Url + "&postgresql-restore-mode=everything", new Dictionary<string, string?>()),
+        Assert.That(() => PostgreSQLTestOptions.ParseRestore(Url + "&postgresql-restore-mode=everything", new Dictionary<string, string?>()),
             Throws.InstanceOf<UserInformationException>());
 
         // The legacy engine writes an entry once for each volume, at the offsets of its blocks
-        Assert.That(() => PostgreSQLRestoreOptions.Parse(Url, new Dictionary<string, string?> { [PostgreSQLRestoreOptions.RestoreLegacyOption] = "true" }),
+        Assert.That(() => PostgreSQLTestOptions.ParseRestore(Url, new Dictionary<string, string?> { [PostgreSQLRestoreOptions.RestoreLegacyOption] = "true" }),
             Throws.InstanceOf<UserInformationException>());
+    }
+
+    [Test]
+    public async Task AWholeDatabaseRestoreNeedsTheTableOfContentsInTheSelection()
+    {
+        using var database = new PostgreSQLRestoreProvider(Url, PostgreSQLTestOptions.FromUrl(Url, new Dictionary<string, string?>()));
+        Assert.That(() => database.SetRestoreSelection(["/postgresql/tables/app.orders"], CancellationToken.None), Throws.InstanceOf<UserInformationException>());
+        await database.SetRestoreSelection(["/postgresql/toc", "/postgresql/tables/app.orders", "/postgresql/tables/app.orders" + StreamedSource.PartialEntrySuffix], CancellationToken.None);
+
+        using var tables = new PostgreSQLRestoreProvider(Url, PostgreSQLTestOptions.FromUrl(Url + "&postgresql-restore-mode=tables", new Dictionary<string, string?>()));
+        await tables.SetRestoreSelection(["/postgresql/tables/app.orders"], CancellationToken.None);
+    }
+
+    [TestCaseSource(nameof(RecordedDumps))]
+    public async Task AWholeDatabaseRestoreNeedsEveryTableAndTheLargeObjects(string name)
+    {
+        var archive = await OpenDumpAsync(name);
+        var required = PostgreSQLRestoreProvider.RequiredEntryNames(archive);
+
+        Assert.That(required, Has.Member(PostgreSQLSourceProvider.TableEntryName("app", "orders")));
+        Assert.That(required, Has.Member(PostgreSQLSourceProvider.LargeObjectsName));
+        Assert.That(required, Has.No.Member(PostgreSQLSourceProvider.TableOfContentsName));
     }
 
     [Test]
@@ -132,7 +154,7 @@ public class PostgreSQLRestoreProviderTests
     [Test]
     public void TheProviderWritesEveryEntryFromItsStart()
     {
-        using var provider = new PostgreSQLRestoreProvider(Url, new Dictionary<string, string?>());
+        using var provider = new PostgreSQLRestoreProvider(Url, PostgreSQLTestOptions.FromUrl(Url, new Dictionary<string, string?>()));
 
         Assert.That(provider.FileExists("/postgresql/tables/app.orders", CancellationToken.None).Result, Is.False);
         Assert.That(provider.TargetDestination, Is.Not.Empty);
@@ -221,6 +243,9 @@ public class PostgreSQLRestoreProviderTests
 
         var guarded = PostgreSQLRestoreProvider.BuildLoadScript(archive, "app", "orders", true, false, "key1");
         Assert.That(guarded, Does.Contain("IF EXISTS (SELECT 1 FROM \"app\".\"orders\") THEN RAISE EXCEPTION"));
+        // No time limit of the role or database may end a COPY that waits for the restore to write the rows
+        Assert.That(guarded, Does.Contain("BEGIN;\n" + PostgreSQLRestoreProvider.LoadSessionSettings));
+        Assert.That(guarded, Does.Contain("SET statement_timeout = 0;").And.Contain("transaction_timeout"));
         // The quote of the body is one a table name cannot end
         Assert.That(guarded, Does.Contain("DO $dkey1$ BEGIN").And.Contain("END $dkey1$;"));
         Assert.That(guarded, Does.Not.Contain("TRUNCATE"));
@@ -232,7 +257,7 @@ public class PostgreSQLRestoreProviderTests
 
         // Without the table of contents the table is named from the entry and takes its columns in its own order
         var bare = PostgreSQLRestoreProvider.BuildLoadScript(null, "App", "it's \"odd\"", true, true, "key1");
-        Assert.That(bare, Does.StartWith("\\restrict key1\nBEGIN;\nTRUNCATE TABLE ONLY \"App\".\"it's \"\"odd\"\"\";\n"));
+        Assert.That(bare, Does.StartWith("\\restrict key1\nBEGIN;\n" + PostgreSQLRestoreProvider.LoadSessionSettings + "TRUNCATE TABLE ONLY \"App\".\"it's \"\"odd\"\"\";\n"));
         Assert.That(bare, Does.EndWith("COPY \"App\".\"it's \"\"odd\"\"\" FROM stdin;\n"));
     }
 
@@ -406,7 +431,7 @@ public class PostgreSQLRestoreProviderTests
     [Test]
     public async Task TheTableOfContentsIsKeptAndThePartOfAFailedDumpIsDropped()
     {
-        using var provider = new PostgreSQLRestoreProvider(Url, new Dictionary<string, string?>());
+        using var provider = new PostgreSQLRestoreProvider(Url, PostgreSQLTestOptions.FromUrl(Url, new Dictionary<string, string?>()));
 
         await using (var toc = await provider.OpenReadWrite("/postgresql/toc", CancellationToken.None))
         {

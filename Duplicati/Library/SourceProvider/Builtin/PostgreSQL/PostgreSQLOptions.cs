@@ -108,50 +108,31 @@ public sealed class PostgreSQLOptions
     ];
 
     /// <summary>
-    /// Combines the options given to the operation with the ones in the URL, where the URL wins
+    /// Reads the options. The loader of the provider has already added the options in the URL,
+    /// where a value in the URL wins over the same option given to the operation.
     /// </summary>
-    /// <param name="url">The source or target URL</param>
-    /// <param name="options">The options of the operation</param>
-    /// <returns>The combined options</returns>
-    public static Dictionary<string, string?> MergeUrlOptions(string url, IReadOnlyDictionary<string, string?> options)
-    {
-        var merged = new Dictionary<string, string?>(options, StringComparer.OrdinalIgnoreCase);
-        var query = new RelaxedUri(url).QueryParameters;
-        foreach (var key in query.AllKeys)
-            if (key != null)
-                merged[key] = query[key];
-
-        return merged;
-    }
-
-    /// <summary>
-    /// Reads the options. A value in the URL wins over the same option given to the backup.
-    /// </summary>
-    /// <param name="url">The source URL</param>
-    /// <param name="options">The backup options</param>
+    /// <param name="options">The options, with those of the URL</param>
     /// <returns>The parsed options</returns>
-    public static PostgreSQLOptions Parse(string url, IReadOnlyDictionary<string, string?> options)
+    public static PostgreSQLOptions Parse(IReadOnlyDictionary<string, string?> options)
     {
-        var merged = MergeUrlOptions(url, options);
-
         string? Get(string name)
-            => merged.TryGetValue(name, out var value) && !string.IsNullOrWhiteSpace(value) ? value : null;
+            => options.TryGetValue(name, out var value) && !string.IsNullOrWhiteSpace(value) ? value : null;
 
         string Required(string name)
-            => Get(name) ?? throw new UserInformationException(Strings.PostgreSQLSourceProvider.MissingOption(name), "PostgreSQLMissingOption");
+            => Get(name) ?? throw new UserInformationException(Strings.PostgreSQLSourceProvider.MissingOption(name), PostgreSQLEventIds.MissingOption);
 
         var port = DefaultPort;
         var portText = Get(PortOption);
         if (portText != null && (!int.TryParse(portText, out port) || port <= 0 || port > 65535))
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.InvalidOption(PortOption, portText), "PostgreSQLInvalidOption");
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.InvalidOption(PortOption, portText), PostgreSQLEventIds.InvalidOption);
 
         var sslMode = Get(SslModeOption) ?? DefaultSslMode;
         if (!SslModes.Contains(sslMode, StringComparer.Ordinal))
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.InvalidOption(SslModeOption, sslMode), "PostgreSQLInvalidOption");
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.InvalidOption(SslModeOption, sslMode), PostgreSQLEventIds.InvalidOption);
 
         var blockSize = Sizeparser.ParseSize(Get(BlockSizeOption) ?? DefaultBlockSize, "kb");
         if (blockSize <= 0 || blockSize > int.MaxValue)
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.InvalidOption(BlockSizeOption, blockSize.ToString()), "PostgreSQLInvalidOption");
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.InvalidOption(BlockSizeOption, blockSize.ToString()), PostgreSQLEventIds.InvalidOption);
 
         return new PostgreSQLOptions
         {

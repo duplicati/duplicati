@@ -40,7 +40,7 @@ namespace Duplicati.Library.SourceProvider.Builtin.PostgreSQL;
 /// A restore of tables only loads the rows of the restored tables into tables that exist.
 /// </para>
 /// </summary>
-public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModule
+public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModule, IRestoreSelectionReceiver
 {
     private static readonly string LOGTAG = Logging.Log.LogTagFromType<PostgreSQLRestoreProvider>();
 
@@ -53,7 +53,7 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
         + " where c.relkind in ('r', 'p') and n.nspname !~ '^pg_' and n.nspname <> 'information_schema'";
 
     /// <summary>The pg_restore arguments that remove each large object that exists before it is created</summary>
-    public static readonly string[] LargeObjectReplaceArguments = ["--clean", "--if-exists"];
+    public static readonly string[] LargeObjectReplaceArguments = [PostgreSQLArguments.Clean, PostgreSQLArguments.IfExists];
 
     /// <summary>How many names a message lists before it gives the number of the rest</summary>
     private const int MaxNamesListed = 10;
@@ -83,6 +83,8 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
     private volatile string? m_tableOfContentsRunId;
     /// <summary>True when the large objects were restored</summary>
     private volatile bool m_largeObjectsLoaded;
+    /// <summary>The names of the entries the restore writes, or null when the restore engine did not tell</summary>
+    private volatile IReadOnlySet<string>? m_selectedEntries;
 
     /// <summary>
     /// Creates an instance that only describes the provider
@@ -95,11 +97,11 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
     /// <summary>
     /// Creates the provider for a target
     /// </summary>
-    /// <param name="url">The target URL</param>
-    /// <param name="options">The restore options</param>
+    /// <param name="url">The target URL; its options are already among <paramref name="options"/></param>
+    /// <param name="options">The restore options, with those of the URL</param>
     public PostgreSQLRestoreProvider(string url, Dictionary<string, string?> options)
     {
-        m_options = PostgreSQLRestoreOptions.Parse(url, options);
+        m_options = PostgreSQLRestoreOptions.Parse(options);
     }
 
     private PostgreSQLRestoreOptions Options => m_options ?? throw new InvalidOperationException("The provider was created to describe itself only");
@@ -147,7 +149,7 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
         if (probeExitCode != 0)
         {
             Logging.Log.WriteVerboseMessage(LOGTAG, "PsqlRestrictProbe", "Checking that psql supports {0} failed: {1}", RestrictCommand.Trim(), probeErrors);
-            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.ClientTooOld(PostgreSQLClientTools.Psql), "PostgreSQLRestoreClientTooOld");
+            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.ClientTooOld(PostgreSQLClientTools.Psql), PostgreSQLEventIds.RestoreClientTooOld);
         }
 
         // Restoring over a database by accident cannot be undone, so it has to be asked for
@@ -155,9 +157,9 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
         {
             var output = (await PostgreSQLClientTools.QueryAsync(m_psql, UserTableCountQuery, Connection, cancel).ConfigureAwait(false)).Trim();
             if (!long.TryParse(output, out var tables))
-                throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolFailed(PostgreSQLClientTools.Psql, 0, output), "PostgreSQLToolFailed");
+                throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolFailed(PostgreSQLClientTools.Psql, 0, output), PostgreSQLEventIds.ToolFailed);
             if (tables > 0)
-                throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TargetNotEmpty(Connection.Database, tables), "PostgreSQLRestoreTargetNotEmpty");
+                throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TargetNotEmpty(Connection.Database, tables), PostgreSQLEventIds.RestoreTargetNotEmpty);
         }
     }
 
@@ -193,7 +195,7 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
         // The separator is escaped inside the names, so the first one is between them
         var separator = name.IndexOf(PostgreSQLSourceProvider.SchemaSeparator);
         if (separator <= 0 || separator == name.Length - 1)
-            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.NotADatabaseEntry(path), "PostgreSQLRestoreUnknownEntry");
+            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.NotADatabaseEntry(path), PostgreSQLEventIds.RestoreUnknownEntry);
 
         return (EntryKind.Table, name, PostgreSQLSourceProvider.UnescapeName(name.Substring(0, separator)), PostgreSQLSourceProvider.UnescapeName(name.Substring(separator + 1)));
     }
@@ -255,7 +257,7 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
     /// <param name="arguments">The arguments of this run</param>
     /// <returns>The arguments</returns>
     public static IReadOnlyList<string> BuildRestoreArguments(string database, IEnumerable<string> arguments)
-        => [.. arguments, "--no-owner", "--no-acl", "--exit-on-error", "--no-password", "--dbname=" + DatabaseConnectionString(database)];
+        => [.. arguments, PostgreSQLArguments.NoOwner, PostgreSQLArguments.NoAcl, PostgreSQLArguments.ExitOnError, PostgreSQLArguments.NoPassword, PostgreSQLArguments.DbNamePrefix + DatabaseConnectionString(database)];
 
     /// <summary>
     /// The arguments for a psql that runs the statements it reads from its standard input
@@ -264,8 +266,8 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
     /// <returns>The arguments</returns>
     public static IReadOnlyList<string> BuildScriptArguments(bool stopOnError)
         => stopOnError
-            ? ["--no-psqlrc", "--no-password", "--quiet", "--set=ON_ERROR_STOP=1"]
-            : ["--no-psqlrc", "--no-password", "--quiet"];
+            ? [PostgreSQLArguments.NoPsqlrc, PostgreSQLArguments.NoPassword, PostgreSQLArguments.Quiet, PostgreSQLArguments.StopOnError]
+            : [PostgreSQLArguments.NoPsqlrc, PostgreSQLArguments.NoPassword, PostgreSQLArguments.Quiet];
 
     /// <summary>
     /// The statements a psql reads before the rows of a table: they start a transaction, set up
@@ -285,6 +287,8 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
         // What follows holds text from the backup, which must only ever be read as statements and rows
         sb.Append(RestrictCommand).Append(restrictKey).Append('\n');
         sb.Append("BEGIN;\n");
+        // The COPY runs for as long as the restore takes to write the rows, so no limit of the role or database may end it
+        sb.Append(LoadSessionSettings);
 
         string copy;
         if (archive != null)
@@ -296,7 +300,7 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
 
             var data = archive.Entries.FirstOrDefault(x => x.HasData && x.Description == PostgreSQLArchiveReader.TableDataDescription && x.Namespace == schema && x.Tag == table);
             if (data == null || string.IsNullOrWhiteSpace(data.CopyStatement))
-                throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TableNotInArchive(schema + "." + table), "PostgreSQLRestoreTableNotInArchive");
+                throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TableNotInArchive(schema + "." + table), PostgreSQLEventIds.RestoreTableNotInArchive);
             copy = data.CopyStatement.TrimEnd();
         }
         else
@@ -320,6 +324,18 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
         sb.Append(copy).Append('\n');
         return sb.ToString();
     }
+
+    /// <summary>
+    /// The settings of a session that loads rows, as pg_restore sets them: no time limits, as the
+    /// rows arrive as fast as the restore writes them, and XML values read as content.
+    /// The transaction time limit exists from PostgreSQL 17, so it is only set there.
+    /// </summary>
+    public const string LoadSessionSettings =
+        "SET statement_timeout = 0;\n"
+        + "SET lock_timeout = 0;\n"
+        + "SET idle_in_transaction_session_timeout = 0;\n"
+        + "SET xmloption = content;\n"
+        + "SELECT pg_catalog.set_config('transaction_timeout', '0', false) WHERE pg_catalog.current_setting('server_version_num')::int >= 170000;\n";
 
     /// <summary>The psql command that refuses every psql command after it, until it is lifted with the same key</summary>
     public const string RestrictCommand = "\\restrict ";
@@ -522,29 +538,44 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
             catch (Exception ex) when (ex is EndOfStreamException or UserInformationException)
             {
                 // A table of contents whose restore failed is handed over with what was written of it
-                throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TableOfContentsDamaged(ex.Message), "PostgreSQLRestoreTableOfContentsDamaged", ex);
+                throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TableOfContentsDamaged(ex.Message), PostgreSQLEventIds.RestoreTableOfContentsDamaged, ex);
             }
 
             // pg_restore reads the archives of its own version and older ones
             var archiveMajor = ArchiveClientMajor(m_archive.ClientVersion);
             if (archiveMajor == null || !PostgreSQLClientTools.SupportedMajorVersions.Contains(archiveMajor.Value))
-                throw new UserInformationException(Strings.PostgreSQLRestoreProvider.UnsupportedArchiveClient(m_archive.ClientVersion), "PostgreSQLRestoreUnsupportedArchive");
+                throw new UserInformationException(Strings.PostgreSQLRestoreProvider.UnsupportedArchiveClient(m_archive.ClientVersion), PostgreSQLEventIds.RestoreUnsupportedArchive);
             toolMajor = Math.Max(toolMajor, archiveMajor.Value);
 
             // A dump uses what its own server version has, which an older server may not know
             var sourceMajor = ArchiveClientMajor(m_archive.ServerVersion) ?? archiveMajor.Value;
             if (!Options.TablesOnly && sourceMajor > server.Major)
-                throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TargetOlderThanSource(sourceMajor, server.Major), "PostgreSQLRestoreTargetTooOld");
+                throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TargetOlderThanSource(sourceMajor, server.Major), PostgreSQLEventIds.RestoreTargetTooOld);
 
             m_pgRestore = PostgreSQLClientTools.LocateTool(PostgreSQLClientTools.PgRestore, toolMajor, Connection);
             await PostgreSQLClientTools.VerifyToolVersionAsync(PostgreSQLClientTools.PgRestore, m_pgRestore, toolMajor, Connection, cancel).ConfigureAwait(false);
         }
 
+        // The run ids are in the metadata, which is restored with the table of contents and before
+        // any other entry. Without them it cannot be told whether the entries belong together, so
+        // the restore stops here, before anything is dropped or loaded, and not after the rows.
+        if (tableOfContents != null && m_tableOfContentsRunId == null && !Options.AllowMixedVersions)
+            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.EntryRunIdsUnknown(PostgreSQLRestoreOptions.AllowMixedVersionsOption), PostgreSQLEventIds.RestoreMixedVersions);
+
         if (Options.TablesOnly)
             return;
 
         if (m_archive == null)
-            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TableOfContentsMissing, "PostgreSQLRestoreNoTableOfContents");
+            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TableOfContentsMissing, PostgreSQLEventIds.RestoreNoTableOfContents);
+
+        // Every object of the backup is created, and with --overwrite dropped first, so a selection
+        // that leaves tables out is refused before anything in the database changes
+        if (m_selectedEntries is { } selected && !Options.AllowMissingTables)
+        {
+            var unselected = RequiredEntryNames(m_archive).Where(x => !selected.Contains(x)).Select(PostgreSQLSourceProvider.UnescapeName).ToList();
+            if (unselected.Count > 0)
+                throw new UserInformationException(Strings.PostgreSQLRestoreProvider.SelectionIncomplete(ListNames(unselected), PostgreSQLRestoreOptions.AllowMissingTablesOption), PostgreSQLEventIds.RestoreSelectionIncomplete);
+        }
 
         // pg_restore writes the statements for the objects, and they are run together with the drops in one
         // transaction, so a target that cannot take the objects keeps what it had
@@ -553,17 +584,17 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
         {
             var (exitCode, errorOutput, output) = await PostgreSQLClientTools.RunFilterAsync(
                 PostgreSQLClientTools.PgRestore,
-                PostgreSQLClientTools.BuildStartInfo(m_pgRestore!, ["--use-list=" + (string)list, "--no-owner", "--no-acl", "--file=-"], Connection),
+                PostgreSQLClientTools.BuildStartInfo(m_pgRestore!, [PostgreSQLArguments.UseListPrefix + (string)list, PostgreSQLArguments.NoOwner, PostgreSQLArguments.NoAcl, PostgreSQLArguments.FileStandardOutput], Connection),
                 tableOfContents!,
                 cancel).ConfigureAwait(false);
             if (exitCode != 0)
-                throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolFailed(PostgreSQLClientTools.PgRestore, exitCode, errorOutput), "PostgreSQLToolFailed");
+                throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolFailed(PostgreSQLClientTools.PgRestore, exitCode, errorOutput), PostgreSQLEventIds.ToolFailed);
             createStatements = output;
         }
 
         // The statements hold text from the backup, and are only run by psql when pg_restore switched off the commands of psql for them
         if (!IsRestricted(createStatements))
-            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.ClientTooOld(PostgreSQLClientTools.PgRestore), "PostgreSQLRestoreClientTooOld");
+            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.ClientTooOld(PostgreSQLClientTools.PgRestore), PostgreSQLEventIds.RestoreClientTooOld);
 
         var script = BuildSchemaScript(m_archive, createStatements, Options.Overwrite, NewRestrictKey());
         var (scriptExitCode, scriptErrors) = await PostgreSQLClientTools.RunWithInputAsync(
@@ -572,7 +603,7 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
             script,
             cancel).ConfigureAwait(false);
         if (scriptExitCode != 0)
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolFailed(PostgreSQLClientTools.Psql, scriptExitCode, scriptErrors), "PostgreSQLToolFailed");
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolFailed(PostgreSQLClientTools.Psql, scriptExitCode, scriptErrors), PostgreSQLEventIds.ToolFailed);
         if (!string.IsNullOrWhiteSpace(scriptErrors))
             Logging.Log.WriteVerboseMessage(LOGTAG, "DropExistingObjects", "Dropping the objects of the backup from the database reported: {0}", scriptErrors);
     }
@@ -589,7 +620,7 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
             tableOfContents,
             cancel).ConfigureAwait(false);
         if (exitCode != 0)
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolFailed(PostgreSQLClientTools.PgRestore, exitCode, errorOutput), "PostgreSQLToolFailed");
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolFailed(PostgreSQLClientTools.PgRestore, exitCode, errorOutput), PostgreSQLEventIds.ToolFailed);
     }
 
     /// <summary>
@@ -608,10 +639,10 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
     private async Task CreateTableIfMissingAsync(string schema, string table, CancellationToken cancel)
     {
         if (m_archive == null)
-            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TableOfContentsNeeded(schema + "." + table), "PostgreSQLRestoreNoTableOfContents");
+            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TableOfContentsNeeded(schema + "." + table), PostgreSQLEventIds.RestoreNoTableOfContents);
 
         var definition = m_archive.Entries.FirstOrDefault(x => x.Description == PostgreSQLArchiveReader.TableDescription && x.Namespace == schema && x.Tag == table)
-            ?? throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TableNotInArchive(schema + "." + table), "PostgreSQLRestoreTableNotInArchive");
+            ?? throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TableNotInArchive(schema + "." + table), PostgreSQLEventIds.RestoreTableNotInArchive);
 
         // One at a time, as two tables may need the same schema
         await m_createTableLock.WaitAsync(cancel).ConfigureAwait(false);
@@ -624,7 +655,7 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
             await PostgreSQLClientTools.QueryAsync(m_psql!, $"create schema if not exists {QuoteIdentifier(schema)}", Connection, cancel).ConfigureAwait(false);
 
             using var list = WriteEntryList([definition.DumpId]);
-            await RunRestoreAsync(["--use-list=" + (string)list], m_tableOfContents!, cancel).ConfigureAwait(false);
+            await RunRestoreAsync([PostgreSQLArguments.UseListPrefix + (string)list], m_tableOfContents!, cancel).ConfigureAwait(false);
         }
         finally
         {
@@ -640,24 +671,11 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
             await CreateTableIfMissingAsync(schema, table, cancel).ConfigureAwait(false);
 
         var script = BuildLoadScript(m_archive, schema, table, Options.TablesOnly, Options.Overwrite, NewRestrictKey());
-        var psql = PostgreSQLClientTools.StartForInput(PostgreSQLClientTools.Psql, PostgreSQLClientTools.BuildStartInfo(m_psql!, BuildScriptArguments(true), Connection));
-        try
-        {
-            await psql.Input.WriteAsync(Encoding.UTF8.GetBytes(script), cancel).ConfigureAwait(false);
-        }
-        catch (IOException)
-        {
-            using (psql)
-            {
-                var (exitCode, errorOutput) = await psql.WaitForExitAsync(cancel).ConfigureAwait(false);
-                throw new IOException(Strings.PostgreSQLSourceProvider.ToolFailed(PostgreSQLClientTools.Psql, exitCode, errorOutput));
-            }
-        }
-        catch
-        {
-            psql.Dispose();
-            throw;
-        }
+        var psql = await PostgreSQLClientTools.StartWithInputAsync(
+            PostgreSQLClientTools.Psql,
+            PostgreSQLClientTools.BuildStartInfo(m_psql!, BuildScriptArguments(true), Connection),
+            Encoding.UTF8.GetBytes(script),
+            cancel).ConfigureAwait(false);
 
         return new PostgreSQLTableStream(psql, schema + "." + table, () => m_loadedTables[name] = true, failure =>
         {
@@ -670,20 +688,22 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
     {
         await PrepareAsync(cancel).ConfigureAwait(false);
         if (m_archive == null)
-            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TableOfContentsNeeded(PostgreSQLSourceProvider.LargeObjectsName), "PostgreSQLRestoreNoTableOfContents");
+            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TableOfContentsNeeded(PostgreSQLSourceProvider.LargeObjectsName), PostgreSQLEventIds.RestoreNoTableOfContents);
 
-        // The list is read when pg_restore starts, before it reads the archive
+        // pg_restore reads the list after the table of contents, so the file is kept until pg_restore has ended
         var list = WriteEntryList(LargeObjectEntryIds(m_archive, !Options.TablesOnly));
         // Loaded on their own, the objects are created, so the ones that exist are removed first when they may be replaced
-        var arguments = new List<string> { "--use-list=" + (string)list, "--single-transaction" };
+        var arguments = new List<string> { PostgreSQLArguments.UseListPrefix + (string)list, PostgreSQLArguments.SingleTransaction };
         if (Options.TablesOnly && Options.Overwrite)
             arguments.AddRange(LargeObjectReplaceArguments);
         PostgreSQLClientTools.RunningTool restore;
         try
         {
-            restore = PostgreSQLClientTools.StartForInput(
+            restore = await PostgreSQLClientTools.StartWithInputAsync(
                 PostgreSQLClientTools.PgRestore,
-                PostgreSQLClientTools.BuildStartInfo(m_pgRestore!, BuildRestoreArguments(Connection.Database, arguments), Connection));
+                PostgreSQLClientTools.BuildStartInfo(m_pgRestore!, BuildRestoreArguments(Connection.Database, arguments), Connection),
+                m_tableOfContents!,
+                cancel).ConfigureAwait(false);
         }
         catch
         {
@@ -691,27 +711,7 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
             throw;
         }
 
-        try
-        {
-            await restore.Input.WriteAsync(m_tableOfContents!, cancel).ConfigureAwait(false);
-        }
-        catch (IOException)
-        {
-            using (restore)
-            using (list)
-            {
-                var (exitCode, errorOutput) = await restore.WaitForExitAsync(cancel).ConfigureAwait(false);
-                throw new IOException(Strings.PostgreSQLSourceProvider.ToolFailed(PostgreSQLClientTools.PgRestore, exitCode, errorOutput));
-            }
-        }
-        catch
-        {
-            restore.Dispose();
-            list.Dispose();
-            throw;
-        }
-
-        return new PostgreSQLLargeObjectStream(restore, failure =>
+        return new PostgreSQLLargeObjectStream(restore, cancel, failure =>
         {
             list.Dispose();
             if (failure == null)
@@ -753,6 +753,48 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
     /// <inheritdoc />
     public Task<Stream> OpenRead(string path, CancellationToken cancel)
         => throw new NotSupportedException(Strings.PostgreSQLRestoreProvider.ReadNotSupported(path));
+
+    /// <summary>
+    /// Records which entries the restore writes. A restore of the whole database needs the table
+    /// of contents, which is refused here; whether every table is selected is only known from the
+    /// table of contents, and is checked when it has been restored, before anything is dropped.
+    /// </summary>
+    public Task SetRestoreSelection(IReadOnlyCollection<string> targetPaths, CancellationToken cancel)
+    {
+        var names = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var path in targetPaths)
+        {
+            var (kind, name, _, _) = Classify(path);
+            if (kind != EntryKind.Partial)
+                names.Add(name);
+        }
+
+        if (!Options.DryRun && !Options.TablesOnly && !names.Contains(PostgreSQLSourceProvider.TableOfContentsName))
+            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TableOfContentsMissing, PostgreSQLEventIds.RestoreNoTableOfContents);
+
+        m_selectedEntries = names;
+        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// The entries a restore of the whole database needs: the rows of every table, and the large
+    /// objects when the backup has them
+    /// </summary>
+    /// <param name="archive">The table of contents</param>
+    /// <returns>The entry names</returns>
+    public static IReadOnlyList<string> RequiredEntryNames(PostgreSQLArchiveReader archive)
+    {
+        var names = archive.Entries
+            .Where(x => x.HasData && x.Description == PostgreSQLArchiveReader.TableDataDescription)
+            .Select(x => PostgreSQLSourceProvider.TableEntryName(x.Namespace ?? string.Empty, x.Tag ?? string.Empty))
+            .ToList();
+
+        // Without their content the large objects would be created empty, and that is not reported otherwise
+        if (archive.Entries.Any(x => x.HasData && x.Description == PostgreSQLArchiveReader.LargeObjectsDescription))
+            names.Add(PostgreSQLSourceProvider.LargeObjectsName);
+
+        return names;
+    }
 
     /// <summary>
     /// Nothing is reported as existing, so the restore engine writes every entry from its start to its end
@@ -808,6 +850,25 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
             ? string.Join(", ", names)
             : string.Join(", ", names.Take(MaxNamesListed)) + $" (+{names.Count - MaxNamesListed})";
 
+    /// <summary>
+    /// The restored tables, and the large objects, that do not come from the dump of the table of
+    /// contents, or whose dump is not known
+    /// </summary>
+    /// <param name="tableOfContentsRunId">The run id of the table of contents</param>
+    /// <returns>The names of the entries, sorted</returns>
+    private List<string> EntriesFromOtherDumps(string tableOfContentsRunId)
+    {
+        var loaded = m_loadedTables.Keys.ToList();
+        if (m_largeObjectsLoaded)
+            loaded.Add(PostgreSQLSourceProvider.LargeObjectsName);
+
+        return loaded
+            .Where(x => !m_entryRunIds.TryGetValue(x, out var runId) || runId != tableOfContentsRunId)
+            .Select(PostgreSQLSourceProvider.UnescapeName)
+            .Order(StringComparer.Ordinal)
+            .ToList();
+    }
+
     /// <inheritdoc />
     public async Task Finalize(Action<double>? progressCallback, bool isComplete, CancellationToken cancel)
     {
@@ -823,26 +884,18 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
         }
 
         if (!m_failures.IsEmpty)
-            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.StepsFailed(string.Join("; ", m_failures)), "PostgreSQLRestoreFailed");
+            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.StepsFailed(string.Join("; ", m_failures)), PostgreSQLEventIds.RestoreFailed);
 
         if (Options.TablesOnly)
         {
-            // With the table of contents the rows are loaded with the columns of its COPY statements,
-            // which only fit rows from the same dump
-            var tocRunId = m_tableOfContentsRunId;
-            if (m_tableOfContents != null && !m_loadedTables.IsEmpty && !Options.AllowMixedVersions)
+            // With the table of contents the rows are loaded with the columns of its COPY statements, and the
+            // large objects with its entry ids, which only fit the same dump. An unknown run id of the table
+            // of contents already stopped the restore before anything was loaded.
+            if (m_tableOfContents != null && m_tableOfContentsRunId is { } tocRunId && !Options.AllowMixedVersions)
             {
-                // Without the metadata it cannot be told whether the rows fit, so the check fails closed
-                if (tocRunId == null)
-                    throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TablesRunIdsUnknown(PostgreSQLRestoreOptions.AllowMixedVersionsOption), "PostgreSQLRestoreMixedVersions");
-
-                var otherDump = m_loadedTables.Keys
-                    .Where(x => !m_entryRunIds.TryGetValue(x, out var runId) || runId != tocRunId)
-                    .Select(PostgreSQLSourceProvider.UnescapeName)
-                    .Order(StringComparer.Ordinal)
-                    .ToList();
+                var otherDump = EntriesFromOtherDumps(tocRunId);
                 if (otherDump.Count > 0)
-                    throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TablesFromOtherDump(ListNames(otherDump), PostgreSQLRestoreOptions.AllowMixedVersionsOption), "PostgreSQLRestoreMixedVersions");
+                    throw new UserInformationException(Strings.PostgreSQLRestoreProvider.TablesFromOtherDump(ListNames(otherDump), PostgreSQLRestoreOptions.AllowMixedVersionsOption), PostgreSQLEventIds.RestoreMixedVersions);
             }
             return;
         }
@@ -851,58 +904,39 @@ public sealed class PostgreSQLRestoreProvider : IRestoreDestinationProviderModul
         await PrepareAsync(cancel).ConfigureAwait(false);
         var archive = m_archive!;
 
-        var tables = archive.Entries
-            .Where(x => x.HasData && x.Description == PostgreSQLArchiveReader.TableDataDescription)
-            .Select(x => PostgreSQLSourceProvider.TableEntryName(x.Namespace ?? string.Empty, x.Tag ?? string.Empty))
+        var requiredEntries = RequiredEntryNames(archive);
+        var required = requiredEntries.Count;
+        var missing = requiredEntries
+            .Where(x => x == PostgreSQLSourceProvider.LargeObjectsName ? !m_largeObjectsLoaded : !m_loadedTables.ContainsKey(x))
+            .Select(PostgreSQLSourceProvider.UnescapeName)
             .ToList();
-        var missing = tables.Where(x => !m_loadedTables.ContainsKey(x)).Select(PostgreSQLSourceProvider.UnescapeName).ToList();
-        var required = tables.Count;
-
-        // Without their content the large objects would be created empty, and that is not reported otherwise
-        if (archive.Entries.Any(x => x.HasData && x.Description == PostgreSQLArchiveReader.LargeObjectsDescription))
-        {
-            required++;
-            if (!m_largeObjectsLoaded)
-                missing.Add(PostgreSQLSourceProvider.LargeObjectsName);
-        }
 
         if (missing.Count > 0)
         {
             if (!Options.AllowMissingTables)
-                throw new UserInformationException(Strings.PostgreSQLRestoreProvider.PartialDatabase(required - missing.Count, required, ListNames(missing), PostgreSQLRestoreOptions.AllowMissingTablesOption), "PostgreSQLRestorePartialDatabase");
+                throw new UserInformationException(Strings.PostgreSQLRestoreProvider.PartialDatabase(required - missing.Count, required, ListNames(missing), PostgreSQLRestoreOptions.AllowMissingTablesOption), PostgreSQLEventIds.RestorePartialDatabase);
             Logging.Log.WriteWarningMessage(LOGTAG, "PartialDatabase", null, "{0}", Strings.PostgreSQLRestoreProvider.PartialDatabaseWarning(required - missing.Count, required, ListNames(missing)));
         }
 
-        if (!Options.AllowMixedVersions)
+        // An unknown run id of the table of contents already stopped the restore in PrepareAsync
+        if (!Options.AllowMixedVersions && m_tableOfContentsRunId is { } tableOfContentsRunId)
         {
-            // Without the metadata it cannot be told whether the entries belong together, so the restore fails closed
-            var tableOfContentsRunId = m_tableOfContentsRunId;
-            if (tableOfContentsRunId == null)
-                throw new UserInformationException(Strings.PostgreSQLRestoreProvider.EntryRunIdsUnknown(PostgreSQLRestoreOptions.AllowMixedVersionsOption), "PostgreSQLRestoreMixedVersions");
-
-            var loaded = m_loadedTables.Keys.ToList();
-            if (m_largeObjectsLoaded)
-                loaded.Add(PostgreSQLSourceProvider.LargeObjectsName);
-            var stale = loaded
-                .Where(x => !m_entryRunIds.TryGetValue(x, out var runId) || runId != tableOfContentsRunId)
-                .Select(PostgreSQLSourceProvider.UnescapeName)
-                .Order(StringComparer.Ordinal)
-                .ToList();
+            var stale = EntriesFromOtherDumps(tableOfContentsRunId);
             if (stale.Count > 0)
-                throw new UserInformationException(Strings.PostgreSQLRestoreProvider.MixedVersions(ListNames(stale), PostgreSQLRestoreOptions.AllowMixedVersionsOption), "PostgreSQLRestoreMixedVersions");
+                throw new UserInformationException(Strings.PostgreSQLRestoreProvider.MixedVersions(ListNames(stale), PostgreSQLRestoreOptions.AllowMixedVersionsOption), PostgreSQLEventIds.RestoreMixedVersions);
         }
 
         var sequences = archive.Entries.Where(x => x.Description == PostgreSQLArchiveReader.SequenceSetDescription).Select(x => x.DumpId).ToList();
         if (sequences.Count > 0)
         {
             using var list = WriteEntryList(sequences);
-            await RunRestoreAsync(["--use-list=" + (string)list, "--single-transaction"], m_tableOfContents!, cancel).ConfigureAwait(false);
+            await RunRestoreAsync([PostgreSQLArguments.UseListPrefix + (string)list, PostgreSQLArguments.SingleTransaction], m_tableOfContents!, cancel).ConfigureAwait(false);
         }
 
         progressCallback?.Invoke(ProgressBeforePostData);
 
         // The indexes and constraints are created last, when all the rows are in place
-        await RunRestoreAsync(["--section=post-data"], m_tableOfContents!, cancel).ConfigureAwait(false);
+        await RunRestoreAsync([PostgreSQLArguments.SectionPostData], m_tableOfContents!, cancel).ConfigureAwait(false);
         progressCallback?.Invoke(1);
     }
 

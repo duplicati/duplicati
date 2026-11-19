@@ -244,15 +244,16 @@ internal sealed class PostgreSQLTableStream : PostgreSQLRestoreStream
         try
         {
             int length;
-        try
-        {
-            length = m_filter.Filter(buffer.Span, output);
-        }
-        catch (IOException)
-        {
-            m_failed = true;
-            throw;
-        }
+            try
+            {
+                length = m_filter.Filter(buffer.Span, output);
+            }
+            catch (IOException)
+            {
+                m_failed = true;
+                throw;
+            }
+
             if (length > 0)
                 await SendAsync(output.AsMemory(0, length), cancellationToken).ConfigureAwait(false);
         }
@@ -338,6 +339,8 @@ internal sealed class PostgreSQLLargeObjectStream : PostgreSQLRestoreStream
 {
     private readonly PostgreSQLClientTools.RunningTool m_restore;
     private readonly Action<string?> m_completed;
+    /// <summary>Ends the wait for pg_restore when the restore is stopped</summary>
+    private readonly CancellationToken m_cancellationToken;
     private bool m_disposed;
     private bool m_failed;
 
@@ -345,10 +348,12 @@ internal sealed class PostgreSQLLargeObjectStream : PostgreSQLRestoreStream
     /// Creates the stream
     /// </summary>
     /// <param name="restore">A pg_restore that reads the archive from its standard input, and was given the table of contents</param>
+    /// <param name="cancellationToken">The token that stops the restore, which also ends the wait for pg_restore when the stream is closed</param>
     /// <param name="completed">Called when pg_restore has ended, with what went wrong or null</param>
-    public PostgreSQLLargeObjectStream(PostgreSQLClientTools.RunningTool restore, Action<string?> completed)
+    public PostgreSQLLargeObjectStream(PostgreSQLClientTools.RunningTool restore, CancellationToken cancellationToken, Action<string?> completed)
     {
         m_restore = restore;
+        m_cancellationToken = cancellationToken;
         m_completed = completed;
     }
 
@@ -405,7 +410,19 @@ internal sealed class PostgreSQLLargeObjectStream : PostgreSQLRestoreStream
             }
 
             // pg_restore runs in one transaction, so an archive that was cut short restores nothing
-            var (exitCode, errorOutput) = await m_restore.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
+            // A pg_restore that waits, as for a lock, is stopped with the restore; disposing it ends the program
+            int exitCode;
+            string errorOutput;
+            try
+            {
+                (exitCode, errorOutput) = await m_restore.WaitForExitAsync(m_cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                m_completed(Strings.PostgreSQLRestoreProvider.LargeObjectsStopped);
+                return;
+            }
+
             m_completed(exitCode == 0 ? null : Strings.PostgreSQLSourceProvider.ToolFailed(PostgreSQLClientTools.PgRestore, exitCode, errorOutput));
         }
     }

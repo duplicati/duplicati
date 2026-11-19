@@ -86,32 +86,30 @@ public sealed class PostgreSQLRestoreOptions
     ];
 
     /// <summary>
-    /// Reads the options. A value in the URL wins over the same option given to the restore.
+    /// Reads the options. The loader of the provider has already added the options in the URL,
+    /// where a value in the URL wins over the same option given to the restore.
     /// </summary>
-    /// <param name="url">The target URL</param>
-    /// <param name="options">The restore options</param>
+    /// <param name="options">The restore options, with those of the URL</param>
     /// <returns>The parsed options</returns>
-    public static PostgreSQLRestoreOptions Parse(string url, IReadOnlyDictionary<string, string?> options)
+    public static PostgreSQLRestoreOptions Parse(IReadOnlyDictionary<string, string?> options)
     {
-        var merged = PostgreSQLOptions.MergeUrlOptions(url, options);
-
-        var mode = merged.TryGetValue(ModeOption, out var modeValue) && !string.IsNullOrWhiteSpace(modeValue) ? modeValue : ModeDatabase;
+        var mode = options.TryGetValue(ModeOption, out var modeValue) && !string.IsNullOrWhiteSpace(modeValue) ? modeValue : ModeDatabase;
         if (!Modes.Contains(mode, StringComparer.Ordinal))
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.InvalidOption(ModeOption, mode), "PostgreSQLInvalidOption");
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.InvalidOption(ModeOption, mode), PostgreSQLEventIds.InvalidOption);
 
         // The legacy engine opens an entry once for each volume and writes it at the offsets of the blocks
-        if (Library.Utility.Utility.ParseBoolOption(merged, RestoreLegacyOption))
-            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.LegacyRestoreNotSupported(RestoreLegacyOption), "PostgreSQLRestoreLegacyNotSupported");
+        if (Library.Utility.Utility.ParseBoolOption(options, RestoreLegacyOption))
+            throw new UserInformationException(Strings.PostgreSQLRestoreProvider.LegacyRestoreNotSupported(RestoreLegacyOption), PostgreSQLEventIds.RestoreLegacyNotSupported);
 
         return new PostgreSQLRestoreOptions
         {
-            Connection = PostgreSQLOptions.Parse(url, options),
+            Connection = PostgreSQLOptions.Parse(options),
             TablesOnly = mode == ModeTables,
-            CreateTables = Library.Utility.Utility.ParseBoolOption(merged, CreateTablesOption),
-            AllowMixedVersions = Library.Utility.Utility.ParseBoolOption(merged, AllowMixedVersionsOption),
-            AllowMissingTables = Library.Utility.Utility.ParseBoolOption(merged, AllowMissingTablesOption),
-            Overwrite = Library.Utility.Utility.ParseBoolOption(merged, OverwriteOption),
-            DryRun = Library.Utility.Utility.ParseBoolOption(merged, DryRunOption) || Library.Utility.Utility.ParseBoolOption(merged, DryRunAliasOption),
+            CreateTables = Library.Utility.Utility.ParseBoolOption(options, CreateTablesOption),
+            AllowMixedVersions = Library.Utility.Utility.ParseBoolOption(options, AllowMixedVersionsOption),
+            AllowMissingTables = Library.Utility.Utility.ParseBoolOption(options, AllowMissingTablesOption),
+            Overwrite = Library.Utility.Utility.ParseBoolOption(options, OverwriteOption),
+            DryRun = Library.Utility.Utility.ParseBoolOption(options, DryRunOption) || Library.Utility.Utility.ParseBoolOption(options, DryRunAliasOption),
         };
     }
 }

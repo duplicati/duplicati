@@ -44,18 +44,6 @@ public static class PostgreSQLClientTools
 
     /// <summary>The first major version where pg_dump names large objects in its options; before it they are blobs</summary>
     private const int FirstMajorWithLargeObjectsOption = 16;
-    /// <summary>The pg_dump option that leaves out large objects</summary>
-    public const string NoLargeObjectsArgument = "--no-large-objects";
-    /// <summary>The pg_dump option that leaves out large objects, before version 16</summary>
-    public const string NoBlobsArgument = "--no-blobs";
-    /// <summary>
-    /// The pg_dump option that writes the archive in UTF-8, whatever the encoding of the database.
-    /// The names in the table of contents are read as UTF-8, and two names that differ only in
-    /// characters another encoding has would otherwise be read as the same name.
-    /// </summary>
-    public const string Utf8EncodingArgument = "--encoding=" + ClientEncoding;
-    /// <summary>The client encoding of every session the programs open</summary>
-    public const string ClientEncoding = "UTF8";
 
     /// <summary>
     /// The folder the Debian packages install the client of a major version in; {0} is the major version
@@ -262,7 +250,7 @@ public static class PostgreSQLClientTools
         psi.Environment["PGCONNECT_TIMEOUT"] = ConnectTimeoutSeconds;
         psi.Environment["PGAPPNAME"] = ApplicationName;
         // The statements and names the programs are given are UTF-8, as is the archive pg_dump writes
-        psi.Environment["PGCLIENTENCODING"] = ClientEncoding;
+        psi.Environment["PGCLIENTENCODING"] = PostgreSQLArguments.ClientEncoding;
         if (options.Password != null)
             psi.Environment["PGPASSWORD"] = options.Password;
         if (options.SslRootCert != null)
@@ -279,9 +267,9 @@ public static class PostgreSQLClientTools
     /// <returns>The arguments</returns>
     public static IReadOnlyList<string> BuildDumpArguments(PostgreSQLOptions options, int major)
     {
-        var arguments = new List<string> { "--format=custom", "--compress=0", "--no-password", Utf8EncodingArgument };
+        var arguments = new List<string> { PostgreSQLArguments.CustomFormat, PostgreSQLArguments.NoCompression, PostgreSQLArguments.NoPassword, PostgreSQLArguments.Utf8Encoding };
         if (!options.IncludeLargeObjects)
-            arguments.Add(major >= FirstMajorWithLargeObjectsOption ? NoLargeObjectsArgument : NoBlobsArgument);
+            arguments.Add(major >= FirstMajorWithLargeObjectsOption ? PostgreSQLArguments.NoLargeObjects : PostgreSQLArguments.NoBlobs);
         return arguments;
     }
 
@@ -291,7 +279,85 @@ public static class PostgreSQLClientTools
     /// <param name="sql">The statement</param>
     /// <returns>The arguments</returns>
     public static IReadOnlyList<string> BuildQueryArguments(string sql)
-        => ["--no-psqlrc", "--no-password", "--tuples-only", "--no-align", "--set=ON_ERROR_STOP=1", "--command=" + sql];
+        => [PostgreSQLArguments.NoPsqlrc, PostgreSQLArguments.NoPassword, PostgreSQLArguments.TuplesOnly, PostgreSQLArguments.NoAlign, PostgreSQLArguments.StopOnError, PostgreSQLArguments.CommandPrefix + sql];
+
+    /// <summary>
+    /// Starts a program, and reports a program that cannot be started as such
+    /// </summary>
+    /// <param name="tool">The program name, for messages</param>
+    /// <param name="startInfo">The start information</param>
+    /// <returns>The process</returns>
+    private static Process StartProcess(string tool, ProcessStartInfo startInfo)
+    {
+        try
+        {
+            return Process.Start(startInfo) ?? throw new InvalidOperationException("No process was started");
+        }
+        catch (Exception ex)
+        {
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolNotStarted(tool, ex.Message), PostgreSQLEventIds.ToolNotStarted, ex);
+        }
+    }
+
+    /// <summary>
+    /// Writes all of the input of a program and closes it. A program that ends before it has
+    /// read everything is not an error here: its exit code and errors say why it ended.
+    /// </summary>
+    /// <param name="running">The running program</param>
+    /// <param name="input">What the program reads</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    private static async Task WriteAllInputAsync(RunningTool running, ReadOnlyMemory<byte> input, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await running.Input.WriteAsync(input, cancellationToken).ConfigureAwait(false);
+            await running.Input.FlushAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (IOException)
+        {
+        }
+
+        try
+        {
+            running.Input.Close();
+        }
+        catch (IOException)
+        {
+        }
+    }
+
+    /// <summary>
+    /// Starts a program that reads what is written to its standard input, and writes the first
+    /// part of its input. The input is left open for the rest.
+    /// </summary>
+    /// <param name="tool">The program name, for messages</param>
+    /// <param name="startInfo">The start information</param>
+    /// <param name="input">The first part of the input</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The running program</returns>
+    /// <exception cref="IOException">The program ended before it read the input; the message has its errors</exception>
+    public static async Task<RunningTool> StartWithInputAsync(string tool, ProcessStartInfo startInfo, ReadOnlyMemory<byte> input, CancellationToken cancellationToken)
+    {
+        var running = StartForInput(tool, startInfo);
+        try
+        {
+            await running.Input.WriteAsync(input, cancellationToken).ConfigureAwait(false);
+            return running;
+        }
+        catch (IOException)
+        {
+            using (running)
+            {
+                var (exitCode, errorOutput) = await running.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+                throw new IOException(Strings.PostgreSQLSourceProvider.ToolFailed(tool, exitCode, errorOutput));
+            }
+        }
+        catch
+        {
+            running.Dispose();
+            throw;
+        }
+    }
 
     /// <summary>
     /// Starts a program and hands back its output as a stream
@@ -301,15 +367,7 @@ public static class PostgreSQLClientTools
     /// <returns>The running program</returns>
     public static RunningTool Start(string tool, ProcessStartInfo startInfo)
     {
-        Process process;
-        try
-        {
-            process = Process.Start(startInfo) ?? throw new InvalidOperationException("No process was started");
-        }
-        catch (Exception ex)
-        {
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolNotStarted(tool, ex.Message), "PostgreSQLToolNotStarted", ex);
-        }
+        var process = StartProcess(tool, startInfo);
 
         process.StandardInput.Close();
         return new RunningTool(tool, process);
@@ -324,15 +382,7 @@ public static class PostgreSQLClientTools
     /// <returns>The running program</returns>
     public static RunningTool StartForInput(string tool, ProcessStartInfo startInfo)
     {
-        Process process;
-        try
-        {
-            process = Process.Start(startInfo) ?? throw new InvalidOperationException("No process was started");
-        }
-        catch (Exception ex)
-        {
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolNotStarted(tool, ex.Message), "PostgreSQLToolNotStarted", ex);
-        }
+        var process = StartProcess(tool, startInfo);
 
         // The output is read so the program never waits for room to write it
         _ = process.StandardOutput.BaseStream.CopyToAsync(Stream.Null);
@@ -349,38 +399,14 @@ public static class PostgreSQLClientTools
     /// <returns>The exit code, what the program wrote as errors, and its standard output as it was written</returns>
     public static async Task<(int ExitCode, string ErrorOutput, byte[] Output)> RunFilterAsync(string tool, ProcessStartInfo startInfo, ReadOnlyMemory<byte> input, CancellationToken cancellationToken)
     {
-        Process process;
-        try
-        {
-            process = Process.Start(startInfo) ?? throw new InvalidOperationException("No process was started");
-        }
-        catch (Exception ex)
-        {
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolNotStarted(tool, ex.Message), "PostgreSQLToolNotStarted", ex);
-        }
+        var process = StartProcess(tool, startInfo);
 
         using var running = new RunningTool(tool, process);
         // The output is read while the input is written, so neither side waits for the other. It is kept
         // as bytes, as text from the backup need not be valid in any encoding and must pass unchanged.
         var outputBuffer = new MemoryStream();
         var output = process.StandardOutput.BaseStream.CopyToAsync(outputBuffer, cancellationToken);
-        try
-        {
-            await running.Input.WriteAsync(input, cancellationToken).ConfigureAwait(false);
-            await running.Input.FlushAsync(cancellationToken).ConfigureAwait(false);
-        }
-        catch (IOException)
-        {
-            // The program ended before it read everything; its exit code and errors say why
-        }
-
-        try
-        {
-            running.Input.Close();
-        }
-        catch (IOException)
-        {
-        }
+        await WriteAllInputAsync(running, input, cancellationToken).ConfigureAwait(false);
 
         await output.ConfigureAwait(false);
         var (exitCode, errorOutput) = await running.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
@@ -398,23 +424,7 @@ public static class PostgreSQLClientTools
     public static async Task<(int ExitCode, string ErrorOutput)> RunWithInputAsync(string tool, ProcessStartInfo startInfo, ReadOnlyMemory<byte> input, CancellationToken cancellationToken)
     {
         using var running = StartForInput(tool, startInfo);
-        try
-        {
-            await running.Input.WriteAsync(input, cancellationToken).ConfigureAwait(false);
-            await running.Input.FlushAsync(cancellationToken).ConfigureAwait(false);
-        }
-        catch (IOException)
-        {
-            // The program ended before it read everything; its exit code and errors say why
-        }
-
-        try
-        {
-            running.Input.Close();
-        }
-        catch (IOException)
-        {
-        }
+        await WriteAllInputAsync(running, input, cancellationToken).ConfigureAwait(false);
 
         return await running.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -433,7 +443,7 @@ public static class PostgreSQLClientTools
         var output = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
         var (exitCode, errorOutput) = await running.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
         if (exitCode != 0)
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolFailed(tool, exitCode, errorOutput), "PostgreSQLToolFailed");
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolFailed(tool, exitCode, errorOutput), PostgreSQLEventIds.ToolFailed);
 
         return output;
     }
@@ -497,8 +507,8 @@ public static class PostgreSQLClientTools
     /// <param name="cancellationToken">The cancellation token</param>
     public static async Task VerifyToolVersionAsync(string tool, string path, int major, PostgreSQLOptions options, CancellationToken cancellationToken)
     {
-        var output = (await RunAsync(tool, BuildStartInfo(path, ["--version"], options), cancellationToken).ConfigureAwait(false)).Trim();
+        var output = (await RunAsync(tool, BuildStartInfo(path, [PostgreSQLArguments.Version], options), cancellationToken).ConfigureAwait(false)).Trim();
         if (ParseToolMajorVersion(output) != major)
-            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ClientVersionMismatch(tool, output, major), "PostgreSQLClientVersionMismatch");
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ClientVersionMismatch(tool, output, major), PostgreSQLEventIds.ClientVersionMismatch);
     }
 }

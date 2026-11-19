@@ -82,7 +82,7 @@ public class PostgreSQLSourceProviderTests
     }
 
     private static PostgreSQLOptions Options(int blockSize)
-        => PostgreSQLOptions.Parse(Url, new Dictionary<string, string?> { [PostgreSQLOptions.BlockSizeOption] = blockSize + "b" });
+        => PostgreSQLTestOptions.Parse(Url, new Dictionary<string, string?> { [PostgreSQLOptions.BlockSizeOption] = blockSize + "b" });
 
     private static async Task<PostgreSQLSourceEntry> OpenTreeAsync(byte[] dump, int exitCode, string errorOutput)
     {
@@ -118,7 +118,7 @@ public class PostgreSQLSourceProviderTests
     [Test]
     public void OptionsAreReadFromTheUrlBeforeTheBackupOptions()
     {
-        var options = PostgreSQLOptions.Parse(Url + "&postgresql-port=6543", new Dictionary<string, string?>
+        var options = PostgreSQLTestOptions.Parse(Url + "&postgresql-port=6543", new Dictionary<string, string?>
         {
             [PostgreSQLOptions.HostOption] = "other.example.com",
             [PostgreSQLOptions.SslModeOption] = "verify-full",
@@ -138,23 +138,23 @@ public class PostgreSQLSourceProviderTests
     [Test]
     public void OptionsHaveDefaultsAndRejectBadValues()
     {
-        var options = PostgreSQLOptions.Parse(Url, new Dictionary<string, string?>());
+        var options = PostgreSQLTestOptions.Parse(Url, new Dictionary<string, string?>());
         Assert.That(options.Port, Is.EqualTo(PostgreSQLOptions.DefaultPort));
         Assert.That(options.SslMode, Is.EqualTo(PostgreSQLOptions.DefaultSslMode));
         Assert.That(options.BlockSize, Is.EqualTo(1024 * 1024));
 
-        Assert.That(() => PostgreSQLOptions.Parse("postgresql://?postgresql-database=app&postgresql-username=u", new Dictionary<string, string?>()),
+        Assert.That(() => PostgreSQLTestOptions.Parse("postgresql://?postgresql-database=app&postgresql-username=u", new Dictionary<string, string?>()),
             Throws.InstanceOf<UserInformationException>(), "A missing host must be refused");
-        Assert.That(() => PostgreSQLOptions.Parse(Url + "&postgresql-sslmode=sometimes", new Dictionary<string, string?>()),
+        Assert.That(() => PostgreSQLTestOptions.Parse(Url + "&postgresql-sslmode=sometimes", new Dictionary<string, string?>()),
             Throws.InstanceOf<UserInformationException>(), "An unknown TLS mode must be refused");
-        Assert.That(() => PostgreSQLOptions.Parse(Url + "&postgresql-port=0", new Dictionary<string, string?>()),
+        Assert.That(() => PostgreSQLTestOptions.Parse(Url + "&postgresql-port=0", new Dictionary<string, string?>()),
             Throws.InstanceOf<UserInformationException>(), "An invalid port must be refused");
     }
 
     [Test]
     public void ThePasswordIsOnlyInTheEnvironment()
     {
-        var options = PostgreSQLOptions.Parse(Url, new Dictionary<string, string?>());
+        var options = PostgreSQLTestOptions.Parse(Url, new Dictionary<string, string?>());
         var psi = PostgreSQLClientTools.BuildStartInfo("pg_dump", PostgreSQLClientTools.BuildDumpArguments(options, 17), options);
 
         Assert.That(psi.ArgumentList, Has.None.Contains("s3cret"));
@@ -165,7 +165,7 @@ public class PostgreSQLSourceProviderTests
         Assert.That(psi.Environment["PGCLIENTENCODING"], Is.EqualTo("UTF8"));
         Assert.That(psi.ArgumentList, Is.EquivalentTo(new[] { "--format=custom", "--compress=0", "--no-password", "--encoding=UTF8", "--no-large-objects" }));
 
-        var withLargeObjects = PostgreSQLOptions.Parse(Url + "&postgresql-include-large-objects=true", new Dictionary<string, string?>());
+        var withLargeObjects = PostgreSQLTestOptions.Parse(Url + "&postgresql-include-large-objects=true", new Dictionary<string, string?>());
         Assert.That(PostgreSQLClientTools.BuildDumpArguments(withLargeObjects, 17), Has.None.EqualTo("--no-large-objects"));
 
         // pg_dump 14 and 15 know large objects as blobs
@@ -186,7 +186,7 @@ public class PostgreSQLSourceProviderTests
         Assert.That(PostgreSQLClientTools.MajorFromServerVersionNum(170011), Is.EqualTo(17));
         Assert.That(PostgreSQLClientTools.MajorFromServerVersionNum(180006), Is.EqualTo(18));
 
-        var options = PostgreSQLOptions.Parse(Url + "&postgresql-client-path=/opt/pg/bin", new Dictionary<string, string?>());
+        var options = PostgreSQLTestOptions.Parse(Url + "&postgresql-client-path=/opt/pg/bin", new Dictionary<string, string?>());
         Assert.That(PostgreSQLClientTools.LocateTool(PostgreSQLClientTools.PgDump, 17, options), Is.EqualTo(Path.Combine("/opt/pg/bin", "pg_dump")));
     }
 
@@ -226,7 +226,7 @@ public class PostgreSQLSourceProviderTests
     [Test]
     public void TheMetadataIsKeptInTheDatabase()
     {
-        using var provider = new PostgreSQLSourceProvider(Url, "/backup", new Dictionary<string, string?>());
+        using var provider = new PostgreSQLSourceProvider(Url, "/backup", PostgreSQLTestOptions.FromUrl(Url, new Dictionary<string, string?>()));
         Assert.That(provider.NeedsStoredMetadata, Is.True, "A client reads the kind of source from the stored metadata");
     }
 
