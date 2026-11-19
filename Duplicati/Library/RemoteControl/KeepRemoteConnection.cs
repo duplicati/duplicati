@@ -717,6 +717,20 @@ public class KeepRemoteConnection : IDisposable
         => DateTimeOffset.UtcNow < _refreshSettingsBy;
 
     /// <summary>
+    /// The time until which the server has asked this client to stay disconnected,
+    /// or null if automatic reconnect is active.
+    /// </summary>
+    public DateTimeOffset? AutoReconnectDisabledUntil
+    {
+        get
+        {
+            // Read once, the value is replaced from the message handler
+            var until = _refreshSettingsBy;
+            return DateTimeOffset.UtcNow < until ? until : null;
+        }
+    }
+
+    /// <summary>
     /// Creates a new connection to the remote server
     /// </summary>
     /// <param name="serverUrl">The url to use</param>

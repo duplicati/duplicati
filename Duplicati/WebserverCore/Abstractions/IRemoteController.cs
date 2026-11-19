@@ -37,6 +37,11 @@ public interface IRemoteController
     /// If the remote controller is connected
     /// </summary>
     public bool Connected { get; }
+    /// <summary>
+    /// The time until which the console has asked this client to stay disconnected,
+    /// or null if the connection is not paused
+    /// </summary>
+    public DateTimeOffset? PausedUntil { get; }
 
     /// <summary>
     /// Enable the remote controller
