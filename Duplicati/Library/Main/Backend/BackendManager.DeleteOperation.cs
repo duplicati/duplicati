@@ -105,7 +105,7 @@ partial class BackendManager
             {
                 try
                 {
-                    if (backend is IRenameEnabledBackend renameBackend && !Context.Options.PreventBackendRename)
+                    if (backend.TryGetCapability<IRenameEnabledBackend>(out var renameBackend) && !Context.Options.PreventBackendRename)
                     {
                         await renameBackend.RenameAsync(effectiveName, newNameWithSuffix, cancelToken).ConfigureAwait(false);
                     }

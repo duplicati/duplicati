@@ -518,6 +518,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("thread-priority", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.ThreadpriorityShort, Strings.Options.ThreadpriorityLong, "normal", null, new string[] {"highest", "high", "abovenormal", "normal", "belownormal", "low", "lowest", "idle" }, Strings.Options.ThreadpriorityDeprecated),
 
             new CommandLineArgument("prefix", CommandLineArgument.ArgumentType.String, Strings.Options.PrefixShort, Strings.Options.PrefixLong, "duplicati"),
+            new CommandLineArgument(DynamicLoader.RemoteFilenameSuffixBackend.OptionName, CommandLineArgument.ArgumentType.String, Strings.Options.RemotefilenamesuffixShort, Strings.Options.RemotefilenamesuffixLong),
 
             new CommandLineArgument("passphrase", CommandLineArgument.ArgumentType.Password, Strings.Options.PassphraseShort, Strings.Options.PassphraseLong),
             new CommandLineArgument("new-passphrase", CommandLineArgument.ArgumentType.Password, Strings.Options.PassphraseShort, Strings.Options.PassphraseLong),

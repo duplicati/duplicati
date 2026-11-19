@@ -51,7 +51,7 @@ partial class BackendManager
         /// <inheritdoc />
         public override async Task<bool> ExecuteAsync(IBackend backend, CancellationToken cancelToken)
         {
-            if (backend is not ILockingBackend lockingBackend)
+            if (!backend.TryGetCapability<ILockingBackend>(out var lockingBackend))
                 throw new ObjectLockNotSupportedException();
 
             Context.Statwriter.SendEvent(BackendActionType.SetObjectLock, BackendEventType.Started, RemoteFilename, 0);

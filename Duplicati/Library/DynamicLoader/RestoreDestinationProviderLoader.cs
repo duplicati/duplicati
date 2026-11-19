@@ -161,7 +161,7 @@ namespace Duplicati.Library.DynamicLoader
                 return commands;
 
             var backend = BackendLoader.GetBackend(url, []);
-            if (backend is IFolderEnabledBackend folderBackend)
+            if (backend.TryGetCapability<IFolderEnabledBackend>(out var folderBackend))
                 commands = folderBackend.SupportedCommands.AsReadOnly();
             backend?.Dispose();
 

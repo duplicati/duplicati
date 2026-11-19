@@ -45,7 +45,7 @@ partial class BackendManager
         /// <returns>An awaitable task returning true when the link was created</returns>
         public override async Task<bool> ExecuteAsync(IBackend backend, CancellationToken cancelToken)
         {
-            if (backend is not ILinkEnabledBackend linkBackend)
+            if (!backend.TryGetCapability<ILinkEnabledBackend>(out var linkBackend))
                 throw new HardLinkNotSupportedException();
 
             Context.Statwriter.SendEvent(BackendActionType.CreateHardLink, BackendEventType.Started, RemoteFilename, 0);
