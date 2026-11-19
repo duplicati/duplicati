@@ -6,6 +6,13 @@ permissions:
 
 on: [pull_request, workflow_dispatch]
 
+concurrency:
+  # A newer push to the same pull request replaces the older run, so superseded commits do not hold
+  # scarce runners (macOS in particular). Manual runs get their own group and are never cancelled.
+  # The prefix is literal because tests.yml shares the workflow name "Tests".
+  group: build-packages-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build_packages:
     name: Build packages
