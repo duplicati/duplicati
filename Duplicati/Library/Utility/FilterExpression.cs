@@ -789,7 +789,7 @@ namespace Duplicati.Library.Utility
         /// <param name="filter">The filter to evaluate</param>
         /// <param name="path">The path to evaluate</param>
         /// <param name="match">The filter that matched</param>
-        public static bool Matches(IFilter filter, string path, out IFilter? match)
+        public static bool Matches(IFilter? filter, string path, out IFilter? match)
         {
             if (filter == null || filter.Empty)
             {

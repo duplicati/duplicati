@@ -137,11 +137,14 @@ namespace Duplicati.Library.Main.Operation
             // The journal only lists the changed files. The time limits are compared as points in time,
             // so a limit given as an interval moves with every run and the files have to be scanned again,
             // as a file can cross it without being changed
-            var timeLimits = new[] { ("skip-files-modified-before", m_options.SkipFilesModifiedBefore), ("skip-files-modified-after", m_options.SkipFilesModifiedAfter) }
+            var journalConfiguration = new[] { ("skip-files-modified-before", m_options.SkipFilesModifiedBefore), ("skip-files-modified-after", m_options.SkipFilesModifiedAfter) }
                 .Where(x => x.Item2.HasValue)
                 .Select(x => $"{x.Item1}={x.Item2!.Value.Ticks}");
+            // Only added when set, so the configuration of an existing backup is unchanged
+            if (m_options.SkipFilesSmallerThan > 0)
+                journalConfiguration = journalConfiguration.Append($"skip-files-smaller-than={m_options.SkipFilesSmallerThan}");
             var service = new UsnJournalService(fileProvider.SnapshotService, filter, m_options.FileAttributeFilter, m_options.SkipFilesLargerThan,
-                journalData, cancellationTokenSource.Token, timeLimits);
+                journalData, cancellationTokenSource.Token, journalConfiguration);
 
             foreach (var volumeData in service.VolumeDataList)
             {
@@ -687,9 +690,73 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
+        /// Stops the backup after the current file once it has run for --max-backup-runtime, the same
+        /// way as a stop from the user, so the backups queued after it can run and the files it did not
+        /// reach are backed up by the next run
+        /// </summary>
+        /// <param name="runtime">Measures how long the backup has run</param>
+        /// <returns>The timer, to dispose once the files are processed, or null if there is no limit</returns>
+        private IDisposable StopWhenRuntimeLimitIsReached(System.Diagnostics.Stopwatch runtime)
+        {
+            var limit = m_options.MaxBackupRuntime;
+            if (limit <= TimeSpan.Zero)
+                return null;
+
+            // A timer waits at most about 24 days, so a longer limit is checked again when it fires
+            static TimeSpan DueTime(TimeSpan left)
+                => TimeSpan.FromMilliseconds(Math.Clamp(left.TotalMilliseconds, 0, int.MaxValue - 1));
+
+            var timer = new RuntimeLimitTimer();
+            timer.Timer = new System.Threading.Timer(_ =>
+            {
+                // A callback that was already running when the timer was disposed must not stop
+                // the steps after the files, so the check and the stop are under the same lock
+                lock (timer)
+                {
+                    if (timer.Disposed)
+                        return;
+
+                    var left = limit - runtime.Elapsed;
+                    if (left > TimeSpan.Zero)
+                    {
+                        timer.Timer.Change(DueTime(left), System.Threading.Timeout.InfiniteTimeSpan);
+                        return;
+                    }
+
+                    Log.WriteWarningMessage(LOGTAG, "MaxBackupRuntimeReached", null,
+                        Strings.Options.MaxBackupRuntimeReached(limit.ToString()));
+                    m_result.TaskControl.Stop();
+                }
+            }, null, System.Threading.Timeout.InfiniteTimeSpan, System.Threading.Timeout.InfiniteTimeSpan);
+
+            timer.Timer.Change(DueTime(limit - runtime.Elapsed), System.Threading.Timeout.InfiniteTimeSpan);
+            return timer;
+        }
+
+        /// <summary>
+        /// The timer of --max-backup-runtime, which does nothing once it is disposed
+        /// </summary>
+        private sealed class RuntimeLimitTimer : IDisposable
+        {
+            public System.Threading.Timer Timer;
+            public bool Disposed;
+
+            public void Dispose()
+            {
+                lock (this)
+                {
+                    if (Disposed)
+                        return;
+                    Disposed = true;
+                    Timer?.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
         /// Performs the bulk of work by starting all relevant processes
         /// </summary>
-        private static async Task RunMainOperationAsync(Backup.Channels channels, ISourceProvider source, UsnJournalService journalService, Backup.ChangeTrackingCoordinator changeTracking, Backup.ChangeList changeList, string changeListToken, Backup.FailedPathRecorder failedPaths, Backup.BackupDatabase database, IBackendManager backendManager, Backup.BackupStatsCollector stats, Options options, IFilter filter, HashSet<string> blacklistPaths, BackupResults result, ITaskReader taskreader, long filesetid, long lastfilesetid)
+        private static async Task RunMainOperationAsync(Backup.Channels channels, ISourceProvider source, UsnJournalService journalService, Backup.ChangeTrackingCoordinator changeTracking, Backup.ChangeList changeList, string changeListToken, Backup.FailedPathRecorder failedPaths, Backup.BackupDatabase database, IBackendManager backendManager, Backup.BackupStatsCollector stats, Options options, IFilter filter, HashSet<string> blacklistPaths, BackupResults result, ITaskReader taskreader, long filesetid, long lastfilesetid, IReadOnlyList<string> missingSources)
         {
             using (new Logging.Timer(LOGTAG, "BackupMainOperation", "BackupMainOperation"))
             {
@@ -853,6 +920,12 @@ namespace Duplicati.Library.Main.Operation
                     await changeTracking.StoreStateAsync(database, result.PartialBackup, taskreader.ProgressToken).ConfigureAwait(false);
                 }
 
+                // A missing source, such as a folder on a drive that is not connected, was not walked,
+                // so its files are copied from the previous version instead of being recorded as deleted.
+                // Entries already in the new fileset are not copied again
+                if (missingSources != null && missingSources.Count > 0)
+                    await AppendMissingSourcesFromPreviousSetAsync(database, stats, missingSources, taskreader.ProgressToken).ConfigureAwait(false);
+
                 if (changeListToken != null)
                     await StoreChangeListTokenAsync(database, changeListToken, failedPaths, result.PartialBackup, taskreader.ProgressToken).ConfigureAwait(false);
 
@@ -871,6 +944,54 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
+        /// <summary>
+        /// Copies the entries of the missing sources from the previous fileset into the new one
+        /// </summary>
+        /// <param name="database">The database</param>
+        /// <param name="stats">The statistics collector, which counts the copied files as examined</param>
+        /// <param name="missingSources">The full paths of the missing sources</param>
+        /// <param name="token">The cancellation token</param>
+        private static async Task AppendMissingSourcesFromPreviousSetAsync(Backup.BackupDatabase database, Backup.BackupStatsCollector stats, IReadOnlyList<string> missingSources, CancellationToken token)
+        {
+            long count = 0;
+            long size = 0;
+            await database.AppendFilesFromPreviousSetWithPredicateAsync((path, fileSize) =>
+            {
+                if (!IsInMissingSource(path, missingSources))
+                    return true;
+
+                if (fileSize >= 0)
+                {
+                    count++;
+                    size += fileSize;
+                }
+
+                return false;
+            }, token).ConfigureAwait(false);
+
+            await stats.AddExaminedFilesAsync(count, size).ConfigureAwait(false);
+            Log.WriteInformationMessage(LOGTAG, "MissingSourceCarryForward", "Copied {0} files of missing sources from the previous backup", count);
+        }
+
+        /// <summary>
+        /// Gets a value indicating if a stored path is one of the missing sources or lies below one
+        /// </summary>
+        /// <param name="path">The stored path; folders end with a separator</param>
+        /// <param name="missingSources">The full paths of the missing sources, with or without a trailing separator</param>
+        /// <returns><c>true</c> if the path belongs to a missing source</returns>
+        internal static bool IsInMissingSource(string path, IEnumerable<string> missingSources)
+        {
+            foreach (var missing in missingSources)
+            {
+                var folder = Util.AppendDirSeparator(missing);
+                if (path.StartsWith(folder, Library.Utility.Utility.ClientFilenameStringComparison)
+                    || path.Equals(missing.TrimEnd(System.IO.Path.DirectorySeparatorChar), Library.Utility.Utility.ClientFilenameStringComparison))
+                    return true;
+            }
+
+            return false;
+        }
+
         private async Task CompactIfRequiredAsync(IBackendManager backendManager, long lastVolumeSize)
         {
             var currentIsSmall = lastVolumeSize != -1 && lastVolumeSize <= m_options.SmallFileSize;
@@ -880,7 +1001,7 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Delete);
                 m_result.DeleteResults = new DeleteResults(m_result);
                 await using var db = await LocalDeleteDatabase.CreateAsync(m_database, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-                await new DeleteHandler(m_options, (DeleteResults)m_result.DeleteResults)
+                await new DeleteHandler(m_options, (DeleteResults)m_result.DeleteResults, OverallProgressEstimator.CompactRange)
                     .DoRunAsync(db, true, currentIsSmall, backendManager)
                     .ConfigureAwait(false);
 
@@ -890,7 +1011,7 @@ namespace Duplicati.Library.Main.Operation
                 m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Compact);
                 m_result.CompactResults = new CompactResults(m_result);
                 await using var db = await LocalDeleteDatabase.CreateAsync(m_database, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-                await new CompactHandler(m_options, (CompactResults)m_result.CompactResults)
+                await new CompactHandler(m_options, (CompactResults)m_result.CompactResults, OverallProgressEstimator.CompactRange)
                     .DoCompactAsync(db, true, backendManager)
                     .ConfigureAwait(false);
             }
@@ -1063,8 +1184,18 @@ namespace Duplicati.Library.Main.Operation
             }
         }
 
-        public async Task RunAsync(string[] sources, IBackendManager backendManager, IFilter filter)
+        /// <summary>
+        /// Runs the backup
+        /// </summary>
+        /// <param name="sources">The expanded sources</param>
+        /// <param name="backendManager">The backend manager</param>
+        /// <param name="filter">The filter</param>
+        /// <param name="missingSources">The full paths of missing sources whose files are copied unchanged from the previous version, or null</param>
+        public async Task RunAsync(string[] sources, IBackendManager backendManager, IFilter filter, IReadOnlyList<string> missingSources = null)
         {
+            // The runtime limit counts the checks before the backup as well
+            var runtime = System.Diagnostics.Stopwatch.StartNew();
+
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_Begin);
 
             // Only reads the options, so it refuses a bad combination before the database is opened
@@ -1086,6 +1217,7 @@ namespace Duplicati.Library.Main.Operation
             var blacklistPaths = GetBlacklistedPaths(m_options, sources);
 
             StopWhenUploadLimitIsReached();
+            using var runtimeLimit = StopWhenRuntimeLimitIsReached(runtime);
 
             // If there is no filter, we set an empty filter to simplify the code
             m_filter = filter ?? new Library.Utility.FilterExpression();
@@ -1208,7 +1340,7 @@ namespace Duplicati.Library.Main.Operation
                             if (await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                             {
                                 var stats = new Backup.BackupStatsCollector(m_result);
-                                await RunMainOperationAsync(channels, source, journalService, changeTracking, changeList, changeListHandoff?.Token, failedPaths, db, backendManager, stats, m_options, m_filter, blacklistPaths, m_result, m_result.TaskControl, filesetid, lastfilesetid).ConfigureAwait(false);
+                                await RunMainOperationAsync(channels, source, journalService, changeTracking, changeList, changeListHandoff?.Token, failedPaths, db, backendManager, stats, m_options, m_filter, blacklistPaths, m_result, m_result.TaskControl, filesetid, lastfilesetid, missingSources).ConfigureAwait(false);
                             }
                             else
                             {
@@ -1217,6 +1349,11 @@ namespace Duplicati.Library.Main.Operation
                         }
                         finally
                         {
+                            // The runtime limit only stops the processing of files: the steps after
+                            // it finish the version, so a limit reached during them would leave it
+                            // unlocked, uncompacted and unverified although every file was backed up
+                            runtimeLimit?.Dispose();
+
                             //If the scanner is still running for some reason, make sure we kill it now
                             await counterToken.CancelAsync();
 

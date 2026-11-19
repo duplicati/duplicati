@@ -228,14 +228,17 @@ public class RemoteControllerHandler(Connection connection, IHttpClientFactory h
                     importData.Backup.ID = null;
                     importData.Backup.SetDBPath(null);
                     importData.Backup.Metadata = null;
+                    importData.Backup.RunAfterBackupID = null;
 
-                    // Keep ID, DBPath and the enabled state if the backup already exists.
+                    // Keep ID, DBPath, the enabled state and the backup it runs after if the backup already exists.
                     // Enabling and disabling is a local choice, so a settings push from the
                     // console must not re-enable a backup the user disabled here.
                     if (existingBackups.TryGetValue(externalId, out var existing))
                     {
                         importData.Backup.ID = existing.ID;
                         importData.Backup.Enabled = existing.Enabled;
+                        importData.Backup.RunAfterBackupID = existing.RunAfterBackupID;
+                        importData.Backup.RunAfterCondition = existing.RunAfterCondition;
                     }
 
                     connection.AddOrUpdateBackupAndSchedule(importData.Backup, importData.Schedule);

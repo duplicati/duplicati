@@ -44,7 +44,7 @@ fi
 if [ -z "$LVM_ORIGIN" ]
 then
 	echo "Error: The origin of $LVMID is empty, indicating it is NOT a shapshot, aborting!"
-	exit -1
+	exit 255
 fi
 
 umount -f "$TMPDIR"

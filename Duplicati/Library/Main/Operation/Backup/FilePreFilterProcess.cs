@@ -63,6 +63,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                 // Zero and max both indicate no size limit
                 if (SKIPFILESLARGERTHAN == long.MaxValue)
                     SKIPFILESLARGERTHAN = 0;
+                var SKIPFILESSMALLERTHAN = options.SkipFilesSmallerThan;
 
                 var SKIPFILESMODIFIEDBEFORE = options.SkipFilesModifiedBefore;
                 var SKIPFILESMODIFIEDAFTER = options.SkipFilesModifiedAfter;
@@ -101,6 +102,15 @@ namespace Duplicati.Library.Main.Operation.Backup
                     if (tooLargeFile)
                     {
                         Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckTooLarge", "Skipped checking file, because the size exceeds limit {0}", e.Entry.Path);
+                        await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Entry.Path, Length = filestatsize, Type = EventType.FileSkipped });
+                        continue;
+                    }
+
+                    // A file whose size cannot be read is kept
+                    var tooSmallFile = SKIPFILESSMALLERTHAN > 0 && filestatsize >= 0 && filestatsize < SKIPFILESSMALLERTHAN;
+                    if (tooSmallFile)
+                    {
+                        Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckTooSmall", "Skipped checking file, because the size is below limit {0}", e.Entry.Path);
                         await self.ProgressChannel.WriteAsync(new ProgressEvent() { Filepath = e.Entry.Path, Length = filestatsize, Type = EventType.FileSkipped });
                         continue;
                     }

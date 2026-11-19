@@ -240,6 +240,8 @@ namespace Duplicati.Server.Database
             var scheduleId = GetScheduleIDsFromTags(new string[] { "ID=" + backup.ID });
             var exportBackup = ((Database.Backup)backup).Clone();
             exportBackup.SetDBPath(GetRelativeDbPath(backup.DBPath));
+            // Backup IDs only have a meaning on this server, so the reference is not exported
+            exportBackup.RunAfterBackupID = null;
             return new Serializable.ImportExportStructure()
             {
                 CreatedByVersion = UpdaterManager.SelfVersion.Version ?? "Unknown",
@@ -287,6 +289,18 @@ namespace Duplicati.Server.Database
                     return null;
 
                 return (b.Backup.Clone(), b.Schedule?.Clone());
+            }
+        }
+
+        /// <summary>
+        /// Gets a copy of each registered temporary backup
+        /// </summary>
+        public IBackup[] TemporaryBackups
+        {
+            get
+            {
+                lock (m_lock)
+                    return m_temporaryBackups.Values.Select(x => (IBackup)x.Backup.Clone()).ToArray();
             }
         }
 
@@ -592,8 +606,10 @@ namespace Duplicati.Server.Database
                         DBPath = ResolveDbPath(ConvertToString(rd, 5)),
                         OperationType = Library.Utility.Utility.ParseEnum(ConvertToString(rd, 6), Serialization.OperationType.Backup),
                         Enabled = ConvertToBoolean(rd, 7),
+                        RunAfterBackupID = ConvertToString(rd, 8),
+                        RunAfterCondition = Library.Utility.Utility.ParseEnum(ConvertToString(rd, 9), Serialization.RunAfterCondition.Success),
                     },
-                    cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"", ""Enabled"" FROM ""Backup"" WHERE ID = @Id")
+                    cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"", ""Enabled"", ""RunAfterBackupID"", ""RunAfterCondition"" FROM ""Backup"" WHERE ID = @Id")
                         .SetParameterValue("@Id", id))
                     .FirstOrDefault();
 
@@ -802,7 +818,77 @@ namespace Duplicati.Server.Database
 
             }
 
+            return ValidateRunAfter(item);
+        }
+
+        /// <summary>
+        /// Checks that the backup a backup runs after exists, and that following
+        /// the references from it does not lead back to the backup itself
+        /// </summary>
+        /// <param name="item">The backup to validate</param>
+        /// <returns>The error message, or <c>null</c> if the reference is valid or not set</returns>
+        private string? ValidateRunAfter(IBackup item)
+        {
+            if (string.IsNullOrWhiteSpace(item.RunAfterBackupID))
+                return null;
+
+            if (!Enum.IsDefined(item.RunAfterCondition))
+                return "The run-after condition is not valid";
+
+            if (item.RunAfterBackupID == item.ID)
+                return "A backup cannot run after itself";
+
+            var references = GetRunAfterReferences();
+            if (!long.TryParse(item.RunAfterBackupID, NumberStyles.Integer, CultureInfo.InvariantCulture, out var current) || !references.ContainsKey(current))
+                return "The backup to run after does not exist";
+
+            // A backup that is not stored yet cannot be referenced, so it cannot be part of a loop
+            if (!long.TryParse(item.ID, NumberStyles.Integer, CultureInfo.InvariantCulture, out var self))
+                return null;
+
+            // The stored references can only contain a loop if it was made outside this method,
+            // so the walk is limited to the number of backups
+            for (var i = 0; i < references.Count; i++)
+            {
+                if (!references.TryGetValue(current, out var next) || next == null)
+                    return null;
+                if (next.Value == self)
+                    return "The backup to run after is itself set to run after this backup";
+                current = next.Value;
+            }
+
             return null;
+        }
+
+        /// <summary>
+        /// Gets the backup that each stored backup runs after
+        /// </summary>
+        /// <returns>A map from backup ID to the ID of the backup it runs after, or <c>null</c> if it has none</returns>
+        private Dictionary<long, long?> GetRunAfterReferences()
+        {
+            lock (m_lock)
+                return ReadFromDb(
+                    (rd) => new KeyValuePair<long, long?>(ConvertToInt64(rd, 0), rd.IsDBNull(1) ? null : ConvertToInt64(rd, 1)),
+                    cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""RunAfterBackupID"" FROM ""Backup"""))
+                    .ToDictionary(x => x.Key, x => x.Value);
+        }
+
+        /// <summary>
+        /// Gets the IDs of the stored backups that are set to run after a backup
+        /// </summary>
+        /// <param name="backupId">The ID of the backup the others run after</param>
+        /// <returns>The IDs of the backups that run after it, in ID order</returns>
+        public string[] GetBackupIDsRunningAfter(string backupId)
+        {
+            if (!long.TryParse(backupId, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id))
+                return [];
+
+            lock (m_lock)
+                return ReadFromDb(
+                    (rd) => ConvertToInt64(rd, 0).ToString(CultureInfo.InvariantCulture),
+                    cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"" FROM ""Backup"" WHERE ""RunAfterBackupID"" = @Id ORDER BY ""ID""")
+                        .SetParameterValue("@Id", id))
+                    .ToArray();
         }
 
         /// <summary>
@@ -939,9 +1025,9 @@ namespace Duplicati.Server.Database
                         cmd =>
                         {
                             if (update)
-                                cmd.SetCommandAndParameters(@"UPDATE ""Backup"" SET ""Name""=@Name, ""Description""=@Description, ""Tags""=@Tags, ""TargetURL""=@TargetUrl, ""OperationType""=@OperationType, ""Enabled""=@Enabled WHERE ""ID""=@Id");
+                                cmd.SetCommandAndParameters(@"UPDATE ""Backup"" SET ""Name""=@Name, ""Description""=@Description, ""Tags""=@Tags, ""TargetURL""=@TargetUrl, ""OperationType""=@OperationType, ""Enabled""=@Enabled, ""RunAfterBackupID""=@RunAfterBackupID, ""RunAfterCondition""=@RunAfterCondition WHERE ""ID""=@Id");
                             else
-                                cmd.SetCommandAndParameters(@"INSERT INTO ""Backup"" (""Name"", ""ExternalID"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"", ""Enabled"") VALUES (@Name,@ExternalID,@Description,@Tags,@TargetUrl,@DbPath,@OperationType,@Enabled)");
+                                cmd.SetCommandAndParameters(@"INSERT INTO ""Backup"" (""Name"", ""ExternalID"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"", ""Enabled"", ""RunAfterBackupID"", ""RunAfterCondition"") VALUES (@Name,@ExternalID,@Description,@Tags,@TargetUrl,@DbPath,@OperationType,@Enabled,@RunAfterBackupID,@RunAfterCondition)");
                         },
                         (cmd, n) =>
                         {
@@ -955,7 +1041,9 @@ namespace Duplicati.Server.Database
                                 .SetParameterValue("@Tags", string.Join(",", n.Tags ?? new string[0]))
                                 .SetParameterValue("@TargetUrl", m_encryptSensitiveFields ? EncryptedFieldHelper.Encrypt(n.TargetURL, m_key) : n.TargetURL)
                                 .SetParameterValue("@OperationType", n.OperationType.ToString())
-                                .SetParameterValue("@Enabled", n.Enabled ? 1 : 0);
+                                .SetParameterValue("@Enabled", n.Enabled ? 1 : 0)
+                                .SetParameterValue("@RunAfterBackupID", string.IsNullOrWhiteSpace(n.RunAfterBackupID) ? null : long.Parse(n.RunAfterBackupID, CultureInfo.InvariantCulture))
+                                .SetParameterValue("@RunAfterCondition", n.RunAfterCondition.ToString());
 
                             if (update)
                                 cmd.SetParameterValue("@Id", item.ID);
@@ -1084,8 +1172,10 @@ namespace Duplicati.Server.Database
             if (ID < 0)
                 return;
 
+            string[] followers;
             lock (m_lock)
             {
+                followers = GetBackupIDsRunningAfter(ID.ToString(CultureInfo.InvariantCulture));
                 using (var tr = m_connection.BeginTransaction())
                 {
                     var existing = GetScheduleIDsFromTags(new string[] { "ID=" + ID.ToString() });
@@ -1099,11 +1189,18 @@ namespace Duplicati.Server.Database
                     DeleteFromDb("Option", ID, "BackupID", tr);
                     DeleteFromDb("Source", ID, "BackupID", tr);
 
+                    // The backups that ran after this one are kept, but lose their trigger
+                    using (var cmd = m_connection.CreateCommand(tr, @"UPDATE ""Backup"" SET ""RunAfterBackupID"" = NULL WHERE ""RunAfterBackupID"" = @Id"))
+                        cmd.SetParameterValue("@Id", ID).ExecuteNonQuery();
+
                     DeleteFromDb("Backup", ID, tr);
 
                     tr.Commit();
                 }
             }
+
+            foreach (var follower in followers)
+                Library.Logging.Log.WriteInformationMessage(LOGTAG, "RunAfterRemoved", "Backup {0} no longer runs after another backup, because backup {1} was deleted", follower, ID);
 
             m_notificationUpdateService?.IncrementLastDataUpdateId();
             m_eventPollNotifyer?.SignalNewEvent();
@@ -1154,8 +1251,10 @@ namespace Duplicati.Server.Database
                             DBPath = ResolveDbPath(ConvertToString(rd, 6)),
                             OperationType = Library.Utility.Utility.ParseEnum(ConvertToString(rd, 7), Serialization.OperationType.Backup),
                             Enabled = ConvertToBoolean(rd, 8),
+                            RunAfterBackupID = ConvertToString(rd, 9),
+                            RunAfterCondition = Library.Utility.Utility.ParseEnum(ConvertToString(rd, 10), Serialization.RunAfterCondition.Success),
                         },
-                        cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""ExternalID"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"", ""Enabled"" FROM ""Backup"" "))
+                        cmd => cmd.SetCommandAndParameters(@"SELECT ""ID"", ""Name"", ""ExternalID"", ""Description"", ""Tags"", ""TargetURL"", ""DBPath"", ""OperationType"", ""Enabled"", ""RunAfterBackupID"", ""RunAfterCondition"" FROM ""Backup"" "))
                         .ToArray();
 
                     foreach (var n in lst)

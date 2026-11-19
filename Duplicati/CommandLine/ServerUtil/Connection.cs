@@ -21,6 +21,7 @@
 
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Duplicati.Library.AutoUpdater;
 using Duplicati.WebserverCore.Middlewares;
 using Duplicati.WebserverCore.Services;
@@ -41,13 +42,17 @@ public class Connection
     /// <param name="Metadata">The metadata of the backup</param>
     /// <param name="Schedule">The schedule of the backup</param>
     /// <param name="OperationType">The operation the backup performs when it runs</param>
+    /// <param name="RunAfterBackupID">The ID of the backup this backup runs after, or <c>null</c> if it has none</param>
+    /// <param name="RunAfterCondition">The outcome the other backup must have for this backup to run after it</param>
     public sealed record BackupEntry(
         string ID,
         string Name,
         string Description,
         Dictionary<string, string>? Metadata,
         BackupSchedule? Schedule,
-        Server.Serialization.OperationType OperationType
+        Server.Serialization.OperationType OperationType,
+        string? RunAfterBackupID,
+        Server.Serialization.RunAfterCondition RunAfterCondition
     );
 
     /// <summary>
@@ -82,13 +87,17 @@ public class Connection
         /// <param name="DBPath">The path to the local database</param>
         /// <param name="Metadata">The metadata of the backup</param>
         /// <param name="OperationType">The name of the operation type; missing from older servers</param>
+        /// <param name="RunAfterBackupID">The ID of the backup this backup runs after; missing from older servers</param>
+        /// <param name="RunAfterCondition">The name of the run-after condition; missing from older servers</param>
         public sealed record ResponseBackupDetailsEntry(
             string ID,
             string Name,
             string? Description,
             string? DBPath,
             Dictionary<string, string>? Metadata,
-            string? OperationType
+            string? OperationType,
+            string? RunAfterBackupID,
+            string? RunAfterCondition
         );
 
         /// <summary>
@@ -99,7 +108,11 @@ public class Connection
             => new BackupEntry(Backup.ID, Backup.Name, Backup.Description ?? "", Backup.Metadata, Schedule,
                 Enum.TryParse<Server.Serialization.OperationType>(Backup.OperationType, true, out var operationType)
                     ? operationType
-                    : Server.Serialization.OperationType.Backup);
+                    : Server.Serialization.OperationType.Backup,
+                string.IsNullOrWhiteSpace(Backup.RunAfterBackupID) ? null : Backup.RunAfterBackupID,
+                Enum.TryParse<Server.Serialization.RunAfterCondition>(Backup.RunAfterCondition, true, out var runAfterCondition)
+                    ? runAfterCondition
+                    : Server.Serialization.RunAfterCondition.Success);
     }
 
     /// <summary>
@@ -153,7 +166,8 @@ public class Connection
     /// <summary>
     /// Initializes a new instance of the <see cref="Connection"/> class
     /// </summary>
-    private Connection(HttpClient client)
+    /// <param name="client">The HTTP client, with the base address and authorization set</param>
+    internal Connection(HttpClient client)
     {
         this.client = client;
     }
@@ -485,6 +499,29 @@ public class Connection
         return (JsonSerializer.Deserialize<ResponseBackupEntry>(await response.Content.ReadAsStringAsync())
             ?? throw new UserReportedException("Failed to parse response"))
             .ToBackupEntry();
+    }
+
+    /// <summary>
+    /// Updates a backup configuration with a partial configuration, keeping everything the patch does not mention
+    /// </summary>
+    /// <param name="backupId">The ID of the backup</param>
+    /// <param name="patch">The partial configuration, as described in <see cref="BackupPatch"/></param>
+    /// <returns>The updated backup</returns>
+    public async Task<BackupEntry> UpdateBackupAsync(string backupId, JsonObject patch)
+    {
+        var response = await client.GetAsync($"backup/{Uri.EscapeDataString(backupId)}");
+        await EnsureSuccessStatusCodeWithParsingAsync(response);
+
+        var current = JsonNode.Parse(await response.Content.ReadAsStringAsync()) as JsonObject
+            ?? throw new UserReportedException("Failed to parse response");
+
+        // The server reports secrets masked, and restores the stored values for masked values it receives back
+        var updated = BackupPatch.Apply(current, patch);
+        var putResponse = await client.PutAsync($"backup/{Uri.EscapeDataString(backupId)}",
+            new StringContent(updated.ToJsonString(), System.Text.Encoding.UTF8, "application/json"));
+        await EnsureSuccessStatusCodeWithParsingAsync(putResponse);
+
+        return await GetBackupAsync(backupId);
     }
 
     /// <summary>

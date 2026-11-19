@@ -86,6 +86,11 @@ namespace Duplicati.Library.Main.Database.Local
         protected string? m_filesnewlydonetable;
 
         /// <summary>
+        /// The name of the temporary table that holds the order the files are restored in
+        /// </summary>
+        protected string? m_restoreordertable;
+
+        /// <summary>
         /// A semaphore used to ensure that only one thread can access the database at a time.
         /// </summary>
         private SemaphoreSlim m_dbLock = new(1, 1);
@@ -111,8 +116,9 @@ namespace Duplicati.Library.Main.Database.Local
         /// <param name="path">The path to the database file.</param>
         /// <param name="dbnew">An optional existing instance of <see cref="LocalRestoreDatabase"/> to use, or null to create a new one. Used to mimic constructor chaining.</param>
         /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <param name="tempTablesOnDisk">If the temporary tables of the restore are kept in a file instead of in memory.</param>
         /// <returns>A task that when awaited on, returns a new instance of <see cref="LocalRestoreDatabase"/>.</returns>
-        public static async Task<LocalRestoreDatabase> CreateAsync(string path, LocalRestoreDatabase? dbnew, CancellationToken token)
+        public static async Task<LocalRestoreDatabase> CreateAsync(string path, LocalRestoreDatabase? dbnew, CancellationToken token, bool tempTablesOnDisk = false)
         {
             dbnew ??= new LocalRestoreDatabase();
 
@@ -120,6 +126,18 @@ namespace Duplicati.Library.Main.Database.Local
                 await CreateLocalDatabaseAsync(path, "Restore", false, dbnew, token)
                     .ConfigureAwait(false);
             dbnew.ShouldCloseConnection = true;
+
+            // The temporary tables of a restore hold a row for every file and block to restore. In memory,
+            // as for the other operations, they grow with the size of the restore and can use gigabytes for
+            // millions of files (#7538). The connection is opened for the restore alone, and changing the
+            // setting drops the temporary tables, so it is changed here, before any of them is created.
+            if (tempTablesOnDisk)
+            {
+                await using (var cmd = dbnew.m_connection.CreateCommand(dbnew.m_rtr))
+                    await cmd.ExecuteNonQueryAsync("PRAGMA temp_store = FILE", token)
+                        .ConfigureAwait(false);
+                Logging.Log.WriteVerboseMessage(LOGTAG, "TempTablesOnDisk", null, "Keeping the temporary tables of the restore in a file");
+            }
 
             return dbnew;
         }
@@ -693,18 +711,9 @@ namespace Duplicati.Library.Main.Database.Local
                         await EnsureAlternateDataStreamParentsAsync(filesetId, cmd, token).ConfigureAwait(false);
 
                     //creating indexes after insertion is much faster
-                    await cmd.ExecuteNonQueryAsync($@"
-                        CREATE INDEX ""{m_tempfiletable}_ID""
-                        ON ""{m_tempfiletable}"" (""ID"")
-                    ", token)
-                        .ConfigureAwait(false);
-
-                    await cmd.ExecuteNonQueryAsync($@"
-                        CREATE INDEX ""{m_tempfiletable}_TargetPath""
-                        ON ""{m_tempfiletable}"" (""TargetPath"")
-                    ", token)
-                        .ConfigureAwait(false);
-
+                    // There is no index on "ID", which is the rowid, or on "TargetPath", which no query
+                    // looks up or sorts by. The temporary tables are kept in memory, and the
+                    // "TargetPath" index alone held more than a quarter of them (#7538).
                     await cmd.ExecuteNonQueryAsync($@"
                         CREATE INDEX ""{m_tempfiletable}_Path""
                         ON ""{m_tempfiletable}"" (""Path"")
@@ -2616,48 +2625,44 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
-        /// Returns a list of files and symlinks to restore.
+        /// Records the order in which the files and symlinks are restored, larger files first, so the
+        /// <see cref="Duplicati.Library.Main.Operation.Restore.FileLister"/> can read them in batches.
         /// </summary>
-        /// <remarks>At its current state, this method is designed to be called by Duplicati.Library.Main.Operation.Restore.FileLister. It locks the database to ensure that calls from Duplicati.Library.Main.Operation.Restore.BlockManager do not interfere with each other.</remarks>
+        /// <remarks>Reading every file at once kept the whole list in memory for the length of the restore,
+        /// about a kilobyte per file (#7538). Sorting again for every batch would make the reads grow with the
+        /// square of the number of files, so the order is sorted once into a table keyed by rank.</remarks>
         /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
-        /// <returns>An asynchronous enumerable of FileRequest objects representing the files and symlinks to restore.</returns>
-        public async IAsyncEnumerable<FileRequest> GetFilesAndSymlinksToRestoreAsync([EnumeratorCancellation] CancellationToken token)
+        /// <returns>A task that completes when the order is recorded.</returns>
+        public async Task PrepareRestoreOrderAsync(CancellationToken token)
         {
+            if (m_tempfiletable == null)
+                throw new InvalidOperationException("No temporary file table set up for this restore.");
+
             await m_dbLock.WaitAsync(token).ConfigureAwait(false);
             try
             {
-                // Order by length descending, so that larger files are restored first.
-                await using var cmd = m_connection.CreateCommand($@"
-                    SELECT
-                        ""F"".""ID"",
-                        ""F"".""Path"",
-                        ""F"".""TargetPath"",
-                        IFNULL(""B"".""FullHash"", ''),
-                        IFNULL(""B"".""Length"", 0) AS ""Length"",
-                        ""F"".""BlocksetID""
+                m_restoreordertable = $"RestoreOrder-{m_temptabsetguid}";
+                await using var cmd = m_connection.CreateCommand()
+                    .SetTransaction(m_rtr);
+                await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_restoreordertable}""", token)
+                    .ConfigureAwait(false);
+                await cmd.ExecuteNonQueryAsync($@"
+                    CREATE TEMPORARY TABLE ""{m_restoreordertable}"" (
+                        ""Rank"" INTEGER PRIMARY KEY,
+                        ""FileID"" INTEGER NOT NULL
+                    )
+                ", token)
+                    .ConfigureAwait(false);
+                await cmd.ExecuteNonQueryAsync($@"
+                    INSERT INTO ""{m_restoreordertable}"" (""FileID"")
+                    SELECT ""F"".""ID""
                     FROM ""{m_tempfiletable}"" ""F""
                     LEFT JOIN ""Blockset"" ""B""
                         ON ""F"".""BlocksetID"" = ""B"".""ID""
                     WHERE ""F"".""BlocksetID"" != {Library.Utility.Utility.FormatInvariantValue(FOLDER_BLOCKSET_ID)}
-                    ORDER BY ""Length"" DESC
-                ")
-                    .SetTransaction(m_rtr);
-
-                await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
-                while (await rd.ReadAsync(token).ConfigureAwait(false))
-                    yield return new FileRequest(
-                        ID: rd.ConvertValueToInt64(0),
-                        OriginalPath: rd.ConvertValueToString(1) ?? throw new InvalidOperationException("OriginalPath cannot be null"),
-                        TargetPath: rd.ConvertValueToString(2) ?? throw new InvalidOperationException("TargetPath cannot be null"),
-                        Hash: rd.ConvertValueToString(3) ?? throw new InvalidOperationException("Hash cannot be null"),
-                        Length: rd.ConvertValueToInt64(4),
-                        BlocksetID: rd.ConvertValueToInt64(5),
-                        HasRestoredEntriesBelow: false,
-                        IsPriorityFile: false,
-                        IsAlternateDataStream: false,
-                        Version: 0,
-                        BackupTimestamp: default
-                    );
+                    ORDER BY IFNULL(""B"".""Length"", 0) DESC, ""F"".""ID""
+                ", token)
+                    .ConfigureAwait(false);
             }
             finally
             {
@@ -2666,21 +2671,83 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
-        /// Returns a list of folders to restore. Used to restore folder metadata.
+        /// Returns a batch of the files and symlinks to restore, in the order recorded by <see cref="PrepareRestoreOrderAsync"/>.
         /// </summary>
-        /// <remarks>At its current state, this method is designed to be called by Duplicati.Library.Main.Operation.Restore.FileLister. It locks the database to ensure that calls from Duplicati.Library.Main.Operation.Restore.BlockManager do not interfere with each other.</remarks>
+        /// <remarks>At its current state, this method is designed to be called by Duplicati.Library.Main.Operation.Restore.FileLister. It locks the database to ensure that calls from Duplicati.Library.Main.Operation.Restore.BlockManager do not interfere with each other, and the lock is only held while a batch is read.</remarks>
+        /// <param name="afterRank">The rank of the last file of the previous batch, or 0 for the first batch.</param>
+        /// <param name="count">The maximum number of files to return.</param>
         /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
-        /// <returns>An asynchronous enumerable of FileRequest objects representing the folders to restore.</returns>
-        public async IAsyncEnumerable<FileRequest> GetFolderMetadataToRestoreAsync([EnumeratorCancellation] CancellationToken token)
+        /// <returns>The files of the batch with their ranks; an empty list after the last file.</returns>
+        public async Task<List<(long Rank, FileRequest File)>> GetFilesAndSymlinksToRestoreAsync(long afterRank, int count, CancellationToken token)
+        {
+            if (m_restoreordertable == null)
+                throw new InvalidOperationException("The restore order has not been prepared.");
+
+            await m_dbLock.WaitAsync(token).ConfigureAwait(false);
+            try
+            {
+                await using var cmd = m_connection.CreateCommand($@"
+                    SELECT
+                        ""O"".""Rank"",
+                        ""F"".""ID"",
+                        ""F"".""Path"",
+                        ""F"".""TargetPath"",
+                        IFNULL(""B"".""FullHash"", ''),
+                        IFNULL(""B"".""Length"", 0),
+                        ""F"".""BlocksetID""
+                    FROM ""{m_restoreordertable}"" ""O""
+                    INNER JOIN ""{m_tempfiletable}"" ""F""
+                        ON ""F"".""ID"" = ""O"".""FileID""
+                    LEFT JOIN ""Blockset"" ""B""
+                        ON ""F"".""BlocksetID"" = ""B"".""ID""
+                    WHERE ""O"".""Rank"" > @AfterRank
+                    ORDER BY ""O"".""Rank""
+                    LIMIT @Count
+                ")
+                    .SetTransaction(m_rtr)
+                    .SetParameterValue("@AfterRank", afterRank)
+                    .SetParameterValue("@Count", count);
+
+                var batch = new List<(long, FileRequest)>();
+                await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
+                while (await rd.ReadAsync(token).ConfigureAwait(false))
+                    batch.Add((rd.ConvertValueToInt64(0), new FileRequest(
+                        ID: rd.ConvertValueToInt64(1),
+                        OriginalPath: rd.ConvertValueToString(2) ?? throw new InvalidOperationException("OriginalPath cannot be null"),
+                        TargetPath: rd.ConvertValueToString(3) ?? throw new InvalidOperationException("TargetPath cannot be null"),
+                        Hash: rd.ConvertValueToString(4) ?? throw new InvalidOperationException("Hash cannot be null"),
+                        Length: rd.ConvertValueToInt64(5),
+                        BlocksetID: rd.ConvertValueToInt64(6),
+                        HasRestoredEntriesBelow: false,
+                        IsPriorityFile: false,
+                        IsAlternateDataStream: false,
+                        Version: 0,
+                        BackupTimestamp: default
+                    )));
+                return batch;
+            }
+            finally
+            {
+                m_dbLock.Release();
+            }
+        }
+
+        /// <summary>
+        /// Returns a batch of the folders to restore, in the order of their IDs. Used to restore folder metadata.
+        /// </summary>
+        /// <remarks>At its current state, this method is designed to be called by Duplicati.Library.Main.Operation.Restore.FileLister. It locks the database to ensure that calls from Duplicati.Library.Main.Operation.Restore.BlockManager do not interfere with each other, and the lock is only held while a batch is read.</remarks>
+        /// <param name="afterId">The ID of the last folder of the previous batch, or 0 for the first batch.</param>
+        /// <param name="count">The maximum number of folders to return.</param>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>The folders of the batch; an empty list after the last folder.</returns>
+        public async Task<List<FileRequest>> GetFolderMetadataToRestoreAsync(long afterId, int count, CancellationToken token)
         {
             await m_dbLock.WaitAsync(token).ConfigureAwait(false);
 
             try
             {
-                await using var cmd = m_connection.CreateCommand();
-                cmd.SetTransaction(m_rtr);
                 var str_folderblocksetid = Library.Utility.Utility.FormatInvariantValue(FOLDER_BLOCKSET_ID);
-                await using var rd = await cmd.ExecuteReaderAsync($@"
+                await using var cmd = m_connection.CreateCommand($@"
                     SELECT
                         ""F"".""ID"",
                         '',
@@ -2690,14 +2757,21 @@ namespace Duplicati.Library.Main.Database.Local
                         {str_folderblocksetid}
                     FROM ""{m_tempfiletable}"" ""F""
                     WHERE
-                        ""F"".""BlocksetID"" = {str_folderblocksetid}
+                        ""F"".""ID"" > @AfterId
+                        AND ""F"".""BlocksetID"" = {str_folderblocksetid}
                         AND ""F"".""MetadataID"" IS NOT NULL
                         AND ""F"".""MetadataID"" >= 0
-                ", token)
-                        .ConfigureAwait(false);
+                    ORDER BY ""F"".""ID""
+                    LIMIT @Count
+                ")
+                    .SetTransaction(m_rtr)
+                    .SetParameterValue("@AfterId", afterId)
+                    .SetParameterValue("@Count", count);
 
+                var batch = new List<FileRequest>();
+                await using var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
                 while (await rd.ReadAsync(token).ConfigureAwait(false))
-                    yield return new FileRequest(
+                    batch.Add(new FileRequest(
                         ID: rd.ConvertValueToInt64(0),
                         OriginalPath: rd.ConvertValueToString(1) ?? throw new InvalidOperationException("OriginalPath cannot be null"),
                         TargetPath: rd.ConvertValueToString(2) ?? throw new InvalidOperationException("TargetPath cannot be null"),
@@ -2709,7 +2783,8 @@ namespace Duplicati.Library.Main.Database.Local
                         IsAlternateDataStream: false,
                         Version: 0,
                         BackupTimestamp: default
-                    );
+                    ));
+                return batch;
             }
             finally
             {
@@ -2950,6 +3025,15 @@ namespace Duplicati.Library.Main.Database.Local
                 }
                 catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
                 finally { m_tempfiletable = null; }
+
+            if (m_restoreordertable != null)
+                try
+                {
+                    await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_restoreordertable}""", token)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex) { Logging.Log.WriteWarningMessage(LOGTAG, "CleanupError", ex, "Cleanup error: {0}", ex.Message); }
+                finally { m_restoreordertable = null; }
 
             if (m_tempblocktable != null)
                 try

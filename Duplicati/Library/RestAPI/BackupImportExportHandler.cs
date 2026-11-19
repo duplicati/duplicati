@@ -110,6 +110,7 @@ public static class BackupImportExportHandler
         ipx.Backup.ID = null;
         ipx.Backup.DBPath = null;
         ipx.Backup.ConnectionStringID = -1;
+        ipx.Backup.RunAfterBackupID = null;
 
         if (ipx.Schedule != null)
             ipx.Schedule.ID = -1;

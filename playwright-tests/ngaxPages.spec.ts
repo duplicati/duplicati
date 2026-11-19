@@ -152,3 +152,56 @@ test("ngax applies the default and dark theme stylesheets", async ({ page }) => 
 
   expect(errors).toEqual([]);
 });
+
+const THEME_STORAGE_KEY = 'duplicati:ngax:theme';
+
+async function saveTheme(page: Page, theme: string) {
+  await page.selectOption('#themedisplay', theme);
+  const saved = page.waitForResponse(
+    (response) => response.url().endsWith('/api/v1/serversettings') && response.request().method() === 'PATCH'
+  );
+  await page.locator('#save').click();
+  expect((await saved).ok()).toBe(true);
+}
+
+test('ngax keeps a saved theme when the legacy cookie disappears or changes', async ({ page, context }) => {
+  await openNgax(page, 'settings');
+  await saveTheme(page, 'dark');
+  await context.clearCookies({ name: 'current-theme' });
+  await page.reload();
+  await expect(page.locator('link[ng-href]')).toHaveAttribute('href', 'styles/dark.css');
+  // Cookies are shared between ports on the same host; localStorage is not.
+  await context.addCookies([{ name: 'current-theme', value: 'default', url: `${SERVER_URL}/ngax/` }]);
+  await page.reload();
+  await expect(page.locator('link[ng-href]')).toHaveAttribute('href', 'styles/dark.css');
+  expect(await page.evaluate((key) => localStorage.getItem(key), THEME_STORAGE_KEY)).toBe('dark');
+});
+
+test('ngax migrates an existing theme cookie into browser storage', async ({ page, context }) => {
+  await context.addCookies([{ name: 'current-theme', value: 'dark', url: `${SERVER_URL}/ngax/` }]);
+  await openNgax(page, 'settings');
+  await expect(page.locator('link[ng-href]')).toHaveAttribute('href', 'styles/dark.css');
+  expect(await page.evaluate((key) => localStorage.getItem(key), THEME_STORAGE_KEY)).toBe('dark');
+  await context.clearCookies({ name: 'current-theme' });
+  await page.reload();
+  await expect(page.locator('link[ng-href]')).toHaveAttribute('href', 'styles/dark.css');
+});
+
+test('ngax can save its theme when browser storage rejects the write', async ({ page }) => {
+  await page.addInitScript((key) => {
+    const getItem = Storage.prototype.getItem;
+    const setItem = Storage.prototype.setItem;
+    Storage.prototype.getItem = function (name) {
+      if (name === key) throw new DOMException('Storage unavailable', 'SecurityError');
+      return getItem.call(this, name);
+    };
+    Storage.prototype.setItem = function (name, value) {
+      if (name === key) throw new DOMException('Storage unavailable', 'SecurityError');
+      return setItem.call(this, name, value);
+    };
+  }, THEME_STORAGE_KEY);
+  await openNgax(page, 'settings');
+  await saveTheme(page, 'dark');
+  await page.reload();
+  await expect(page.locator('link[ng-href]')).toHaveAttribute('href', 'styles/dark.css');
+});

@@ -43,6 +43,16 @@ public class ServerState : IEndpointV1
         group.MapPost("/serverstate/resume",
             ([FromServices] IStatusService statusService, [FromServices] LiveControls liveControls) =>
                 ExecuteResume(liveControls)).RequireAuthorization();
+
+        group.MapGet("/serverstate/queue-completion-action",
+            async ([FromServices] IQueueCompletionActionService queueCompletionActionService, CancellationToken cancellationToken) =>
+                new QueueCompletionActionDto(
+                    queueCompletionActionService.PendingAction,
+                    await queueCompletionActionService.GetSupportedActionsAsync(cancellationToken).ConfigureAwait(false))).RequireAuthorization();
+
+        group.MapPost("/serverstate/queue-completion-action",
+            ([FromServices] IQueueCompletionActionService queueCompletionActionService, [FromBody] QueueCompletionActionInputDto input, CancellationToken cancellationToken) =>
+                queueCompletionActionService.SetPendingActionAsync(input.Action, cancellationToken)).RequireAuthorization();
     }
 
     private static ServerStatusDto Execute(long? lastEventId, bool longpoll, string? duration,

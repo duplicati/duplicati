@@ -231,6 +231,40 @@ namespace Duplicati.UnitTest
             CollectionAssert.AreEquivalent(expectedFilesetsToRemove, filesetsToRemove);
         }
 
+        /// <summary>
+        /// With --retention-policy-minimum-versions the retention policy keeps the most recent of the
+        /// versions it would delete until enough full versions remain (issue #3076)
+        /// </summary>
+        [Test]
+        [Category("DeleteHandler")]
+        [TestCase(0, new[] { 1, 2, 4, 5 })]
+        [TestCase(3, new[] { 4, 5 })]
+        [TestCase(10, new int[0])]
+        public void RetentionPolicyKeepsMinimumVersions(int minimumVersions, int[] expectedVersionsToRemove)
+        {
+            Options options = new Options(new Dictionary<string, string>
+            {
+                { "retention-policy", "1W:U" },
+                { "retention-policy-minimum-versions", minimumVersions.ToString() }
+            });
+
+            DateTime now = DateTime.Now;
+            IListResultFileset[] filesets =
+            {
+                new Fileset(0, BackupType.FULL_BACKUP, now),
+                new Fileset(1, BackupType.FULL_BACKUP, now.AddDays(-10)),
+                new Fileset(2, BackupType.FULL_BACKUP, now.AddDays(-20)),
+                new Fileset(3, BackupType.PARTIAL_BACKUP, now.AddDays(-25)), // Only full versions count towards the minimum
+                new Fileset(4, BackupType.FULL_BACKUP, now.AddDays(-30)),
+                new Fileset(5, BackupType.FULL_BACKUP, now.AddDays(-40)),
+            };
+
+            RetentionPolicyRemover remover = new RetentionPolicyRemover(options);
+            long[] versionsToRemove = remover.GetFilesetsToDelete(filesets).Where(x => x.IsFullBackup == BackupType.FULL_BACKUP).Select(x => x.Version).ToArray();
+
+            CollectionAssert.AreEquivalent(expectedVersionsToRemove.Select(x => (long)x), versionsToRemove);
+        }
+
         [Test]
         [Category("DeleteHandler")]
         public void SpecificVersionsRemover()

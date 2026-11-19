@@ -864,6 +864,11 @@ namespace Duplicati.Server
                 foreach (var k in data.ExtraOptions)
                     options[k.Key] = k.Value;
 
+            // The server-only options are not accepted by the command line
+            options.Remove(FILE_WATCHER_OPTION);
+            options.Remove(STORE_TASK_CONFIG_OPTION);
+            Scheduler.RemoveSchedulerOptions(options);
+
             var cf = databaseConnection.Filters;
             var bf = backup.Filters;
 
@@ -916,6 +921,11 @@ namespace Duplicati.Server
                 foreach (var k in data.ExtraOptions)
                     options[k.Key] = k.Value;
 
+            // The server-only options are not accepted by the command line
+            options.Remove(FILE_WATCHER_OPTION);
+            options.Remove(STORE_TASK_CONFIG_OPTION);
+            Scheduler.RemoveSchedulerOptions(options);
+
             var cf = databaseConnection.Filters;
             var bf = backup.Filters;
 
@@ -966,7 +976,7 @@ namespace Duplicati.Server
                     eventPollNotify.SignalProgressUpdate(sink.Copy);
 
                     // Attach a log scope that tags all messages to relay the TaskID and BackupID
-                    using var _ = Library.Logging.Log.StartScope(log =>
+                    using var _ = Library.Logging.Log.StartDecoratingScope(log =>
                     {
                         log[ILogWriteHandler.LiveLogEntry.LOG_EXTRA_TASKID] = data.TaskID.ToString();
                     });
@@ -1055,12 +1065,15 @@ namespace Duplicati.Server
                     tempfolder = StoreTaskConfigAndGetTempFolder(databaseConnection, data, options);
 
                 // Always remove this option as it is a server-only option
-                options.Remove("store-task-config");
+                options.Remove(STORE_TASK_CONFIG_OPTION);
+
+                // The scheduler options are a server concern; the engine must not see them
+                Scheduler.RemoveSchedulerOptions(options);
 
                 var useOutOfProcess = databaseConnection.ApplicationSettings.UseOutOfProcessController;
 
                 // Attach a log scope that tags all messages to relay the TaskID and BackupID
-                using (Library.Logging.Log.StartScope(log =>
+                using (Library.Logging.Log.StartDecoratingScope(log =>
                 {
                     log[ILogWriteHandler.LiveLogEntry.LOG_EXTRA_TASKID] = data.TaskID.ToString();
                     log[ILogWriteHandler.LiveLogEntry.LOG_EXTRA_BACKUPID] = data.BackupID;
@@ -1347,6 +1360,11 @@ namespace Duplicati.Server
         }
 
         /// <summary>
+        /// The server-only option that controls if the task configuration is stored in the backup
+        /// </summary>
+        public const string STORE_TASK_CONFIG_OPTION = "store-task-config";
+
+        /// <summary>
         /// The server-only option that enables the file system watcher for a backup
         /// </summary>
         public const string FILE_WATCHER_OPTION = "use-file-watcher";
@@ -1517,7 +1535,7 @@ namespace Duplicati.Server
             if (data.Backup == null)
                 throw new ArgumentNullException(nameof(data.Backup));
 
-            var mode = ParseStoreTaskConfigMode(options.GetValueOrDefault("store-task-config"));
+            var mode = ParseStoreTaskConfigMode(options.GetValueOrDefault(STORE_TASK_CONFIG_OPTION));
             var encryptionEnabled = IsBackupEncryptionEnabled(options);
             var effectiveMode = mode.ResolvedTaskConfigMode(encryptionEnabled);
 

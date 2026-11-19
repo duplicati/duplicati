@@ -69,6 +69,44 @@ namespace Duplicati.Server.Serialization
     }
 
     /// <summary>
+    /// The outcome a backup run must have before the backups that run after it are started.
+    /// </summary>
+    public enum RunAfterCondition
+    {
+        /// <summary>
+        /// The run completed with a success or warning result, and was not interrupted (the default).
+        /// </summary>
+        Success,
+        /// <summary>
+        /// The run finished in any way, including with errors or by being stopped.
+        /// </summary>
+        Always
+    }
+
+    /// <summary>
+    /// What the server does to the computer once the task queue has run empty.
+    /// </summary>
+    public enum QueueCompletionAction
+    {
+        /// <summary>
+        /// Nothing is done (the default).
+        /// </summary>
+        None,
+        /// <summary>
+        /// The computer is shut down.
+        /// </summary>
+        Shutdown,
+        /// <summary>
+        /// The computer is restarted.
+        /// </summary>
+        Reboot,
+        /// <summary>
+        /// The script from the "post-queue-processing-script" server setting is run.
+        /// </summary>
+        RunScript
+    }
+
+    /// <summary>
     /// The kind of operation a backup configuration performs when it runs.
     /// </summary>
     public enum OperationType

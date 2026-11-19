@@ -132,9 +132,9 @@ namespace Duplicati.Library.Main.Operation.Restore
             private readonly Stopwatch? sw_set_wake_set;
 
             /// <summary>
-            /// Dictionary for keeping track of how many times each block is requested. Used to determine when a block is no longer needed.
+            /// Keeps track of how many times each block is requested. Used to determine when a block is no longer needed.
             /// </summary>
-            private readonly Dictionary<long, long> m_blockcount = new();
+            private readonly BlockUseCounter m_blockcount = new();
             /// <summary>
             /// Lock for the block count dictionary.
             /// </summary>
@@ -214,13 +214,15 @@ namespace Duplicati.Library.Main.Operation.Restore
             {
                 var sd = new SleepableDictionary(volume_request, options, readers, taskreader);
 
+                // The block of every use is collected and counted at once, as the counts are kept sorted
+                var uses = new List<long>();
                 await foreach (var (block_id, volume_id) in db.GetBlocksAndVolumeIDsAsync(options.SkipMetadata, taskreader.ProgressToken).ConfigureAwait(false))
                 {
-                    var bc = sd.m_blockcount.TryGetValue(block_id, out var c);
-                    sd.m_blockcount[block_id] = bc ? c + 1 : 1;
+                    uses.Add(block_id);
                     var vc = sd.m_volumecount.TryGetValue(volume_id, out var v);
                     sd.m_volumecount[volume_id] = vc ? v + 1 : 1;
                 }
+                sd.m_blockcount.Load(uses);
 
                 return sd;
             }

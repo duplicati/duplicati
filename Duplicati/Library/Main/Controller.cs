@@ -213,9 +213,10 @@ namespace Duplicati.Library.Main
 
             return await RunActionAsync(new BackupResults(), inputsources, inputFilter, new { lastRestoreTest = m_lastRestoreTest, changeListProvider = ChangeListProvider }, static async config =>
             {
-                var (expandedSources, filter) = ExpandInputSources(config.Paths, config.Filter, config.Options);
+                var missingSources = new List<string>();
+                var (expandedSources, filter) = ExpandInputSources(config.Paths, config.Filter, config.Options, missingSources);
                 using (var h = new Operation.BackupHandler(config.Options, config.Result, config.Context.changeListProvider))
-                    await h.RunAsync(expandedSources, config.BackendManager, filter)
+                    await h.RunAsync(expandedSources, config.BackendManager, filter, missingSources)
                         .ConfigureAwait(false);
 
                 UsageReporter.Reporter.Report("BACKUP_FILECOUNT", config.Result.ExaminedFiles);
@@ -1794,8 +1795,9 @@ namespace Duplicati.Library.Main
         /// <param name="inputsources">The input sources.</param>
         /// <param name="filter">The filter.</param>
         /// <param name="options">The options.</param>
+        /// <param name="missingSources">When not null, and <c>--keep-missing-sources</c> is set, receives the full paths of the local sources that do not exist.</param>
         /// <returns>The expanded and filtered sources.</returns>
-        internal static (string[] Sources, IFilter Filter) ExpandInputSources(string[] inputsources, IFilter filter, Options options)
+        internal static (string[] Sources, IFilter Filter) ExpandInputSources(string[] inputsources, IFilter filter, Options options, List<string> missingSources = null)
         {
             if (inputsources == null || inputsources.Length == 0)
                 throw new UserInformationException(Strings.Controller.NoSourceFoldersError, "NoSourceFolders");
@@ -1814,6 +1816,10 @@ namespace Duplicati.Library.Main
             foreach (var inputsource in inputsources)
             {
                 List<string> expandedSources = new List<string>();
+                // Only a source that names one path is kept when missing; a wildcard or volume
+                // source that matches nothing does not say which path it stands for
+                var namesOnePath = false;
+                string missingPath = null;
 
                 if (OperatingSystem.IsWindows() && (inputsource.StartsWith("*:", StringComparison.Ordinal) || inputsource.StartsWith("?:", StringComparison.Ordinal)))
                 {
@@ -1870,6 +1876,7 @@ namespace Duplicati.Library.Main
                 else
                 {
                     expandedSources.Add(inputsource);
+                    namesOnePath = true;
                 }
 
                 var foundAnyPaths = false;
@@ -1957,6 +1964,8 @@ namespace Duplicati.Library.Main
                             // Try to get attributes. Returns -1 if source doesn't exist, otherwise throws an exception.
                             // In this case, it is irrelevant to use fileinfo or directoryinfo to retrieve attributes.
                             var unused = fi.Attributes;
+                            if (namesOnePath)
+                                missingPath = source;
                         }
                         catch (UnauthorizedAccessException ex)
                         {
@@ -1984,6 +1993,9 @@ namespace Duplicati.Library.Main
 
                         Logging.Log.WriteWarningMessage(LOGTAG, "SourceIsMissing", null, Strings.Controller.SourceIsMissingWarning(inputsource));
                     }
+
+                    if (missingPath != null && missingSources != null && options.KeepMissingSources)
+                        missingSources.Add(missingPath);
                 }
             }
 
@@ -2067,6 +2079,18 @@ namespace Duplicati.Library.Main
             // If there is nothing to do, don't run the backup
             if (sources.Count == 0)
                 throw new UserInformationException(Strings.Controller.NoSourcesError, "NoSources");
+
+            if (missingSources != null)
+            {
+                // A missing source inside another source is gone from that source as well,
+                // and the walk of that source has already recorded it as deleted
+                missingSources.RemoveAll(missing => sources.Any(s =>
+                    s.EndsWith(Util.DirectorySeparatorString, Library.Utility.Utility.ClientFilenameStringComparison)
+                    && missing.StartsWith(s, Library.Utility.Utility.ClientFilenameStringComparison)));
+
+                foreach (var missing in missingSources)
+                    Logging.Log.WriteInformationMessage(LOGTAG, "KeepingMissingSource", "Keeping the files of the missing source \"{0}\" from the previous version", missing);
+            }
 
             return (sources.ToArray(), filter);
         }

@@ -42,12 +42,23 @@ public class SchedulerService : ISchedulerService
                 Reschedule();
             }
         };
+
+        // The backups that run after another backup are queued when that backup finishes
+        eventPollNotify.TaskCompleted += (sender, taskId) =>
+        {
+            var result = queueRunnerService.GetCachedTaskResults(taskId);
+            if (result != null)
+                scheduler.OnTaskCompleted(result);
+        };
     }
 
     public List<KeyValuePair<DateTime, ISchedule>> Schedule => scheduler.Schedule;
 
     public IList<Tuple<string, DateTime>> GetProposedSchedule()
         => scheduler.GetProposedSchedule();
+
+    public DateTime? SkipNextRun(string backupId)
+        => scheduler.SkipNextRun(backupId);
 
     public void Reschedule()
         => scheduler.Reschedule();

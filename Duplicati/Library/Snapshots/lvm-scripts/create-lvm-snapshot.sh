@@ -39,7 +39,7 @@ fi
 if [ -z "$FREEBLOCKS" ]
 then
         echo "Error: Unable to read free space for snapshot device \"$DEVICE\""
-        exit -1
+        exit 255
 fi
 
 #
@@ -50,7 +50,7 @@ fi
 if [ "$FREEBLOCKS" -lt "$MIN_FREE_BLOCKS" ]
 then
 	echo "Error: Not enough free space for snapshot device \"$DEVICE\""
-	exit -1
+	exit 255
 fi
 
 #

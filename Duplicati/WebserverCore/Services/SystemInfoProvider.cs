@@ -43,6 +43,12 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
     public const string BackupEnableDisableExtension = "v1:backup:enable-disable";
 
     /// <summary>
+    /// The API extension that signals the next scheduled run of a backup can be skipped,
+    /// with the "/backup/{id}/skip-next-run" endpoint
+    /// </summary>
+    public const string SkipNextRunExtension = "v1:backup:skip-next-run";
+
+    /// <summary>
     /// The API extension that signals Sync jobs can keep each run in a dated snapshot folder,
     /// with the "sync-snapshot-folders" and "sync-keep-snapshots" options
     /// </summary>
@@ -60,6 +66,25 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
     /// so a client can offer the switch.
     /// </summary>
     public const string McpServerExtension = "v2:mcp:server";
+
+    /// <summary>
+    /// The API extension that signals a backup can be set to run after another backup:
+    /// the backup "RunAfterBackupID" and "RunAfterCondition" fields
+    /// </summary>
+    public const string BackupRunAfterExtension = "v1:backup:run-after";
+
+    /// <summary>
+    /// The API extension that signals the server can shut down or restart the computer, or run the script from
+    /// the "post-queue-processing-script" server setting, when the task queue has run empty: the "serverstate/queue-completion-action" endpoints and the "QueueCompletionAction" status field.
+    /// The extension is reported on every server; the GET endpoint tells which actions the computer allows.
+    /// </summary>
+    public const string QueueCompletionActionExtension = "v1:serverstate:queue-completion-action";
+
+    /// <summary>
+    /// The API extension that signals the temporary backups, such as those made for a direct restore,
+    /// can be listed with "GET /backups/temporary"
+    /// </summary>
+    public const string TemporaryBackupListExtension = "v1:backups:temporary";
 
     /// <summary>
     /// The API extensions that are available
@@ -97,10 +122,14 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v2:systemstatus",
         "v2:backup:restore-test",
         BackupEnableDisableExtension,
+        BackupRunAfterExtension,
+        QueueCompletionActionExtension,
+        SkipNextRunExtension,
         SyncSnapshotsExtension,
         SyncRestoreExtension,
         McpServerExtension,
         "v2:backup:purge-files:suppress-compact",
+        TemporaryBackupListExtension,
 
         // "v1:subscribe:scheduler",
     ];
@@ -468,7 +497,11 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             DefaultOAuthURLv2 = AuthIdOptionsHelper.DUPLICATI_OAUTH_SERVICE_NEW,
             PowerModeProviders = systeminfo.PowerModeProviders,
             LocalLicenseStatus = SystemInfoDto.LicenseStatusDto.Map(Proprietary.LicenseChecker.LicenseHelper.GetLocalLicenseData()),
-            RemoteLicenseStatus = SystemInfoDto.LicenseStatusDto.Map(Proprietary.LicenseChecker.LicenseHelper.GetRemoteLicenseData())
+            RemoteLicenseStatus = SystemInfoDto.LicenseStatusDto.Map(Proprietary.LicenseChecker.LicenseHelper.GetRemoteLicenseData()),
+            DatabaseFieldsEncrypted = connection.ApplicationSettings.EncryptedFields,
+            PreloadSettingsPaths = PreloadSettingsLoader.GetPreloadSettingsPaths()
+                .Select(x => new SystemInfoDto.PreloadSettingsPathDto { Path = x.Path, Exists = x.Exists })
+                .ToArray()
         };
     }
 

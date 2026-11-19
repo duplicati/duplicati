@@ -334,6 +334,11 @@ namespace Duplicati.GUI.TrayIcon
             UpdateUIStateAsync(() => this.application?.SetIcon(icon)).FireAndForget();
         }
 
+        protected override void SetTooltip(string text)
+        {
+            UpdateUIStateAsync(() => this.application?.SetTooltip(text)).FireAndForget();
+        }
+
         protected override void SetMenu(IEnumerable<IMenuItem> items)
         {
             if (_disposed != 0 || _exitCalled != 0)
@@ -495,8 +500,21 @@ namespace Duplicati.GUI.TrayIcon
 
         private List<AvaloniaMenuItem>? menuItems;
 
+        /// <summary>
+        /// The tooltip for the server state, or <c>null</c> before the first state
+        /// </summary>
+        private string? tooltip;
+
         public override void Initialize()
         {
+        }
+
+        public void SetTooltip(string text)
+        {
+            // Never null: the macOS backend throws on a null tooltip
+            this.tooltip = text;
+            if (this.trayIcon != null)
+                this.trayIcon.ToolTipText = text;
         }
 
         public void SetIcon(TrayIcons icon)
@@ -536,7 +554,7 @@ namespace Duplicati.GUI.TrayIcon
         {
             this.Name = Duplicati.Library.AutoUpdater.AutoUpdateSettings.AppName;
             if (this.trayIcon != null)
-                this.trayIcon.ToolTipText = this.Name;
+                this.trayIcon.ToolTipText = this.tooltip ?? this.Name;
         }
 
         public void SetMenu(IEnumerable<AvaloniaMenuItem> menuItems)
@@ -598,7 +616,7 @@ namespace Duplicati.GUI.TrayIcon
             this.trayIcon = new Avalonia.Controls.TrayIcon()
             {
                 Icon = icon,
-                ToolTipText = this.Name ?? AutoUpdateSettings.AppName,
+                ToolTipText = this.tooltip ?? this.Name ?? AutoUpdateSettings.AppName,
                 Menu = new NativeMenu()
             };
 

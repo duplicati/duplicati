@@ -92,7 +92,9 @@
                         translate-params-duration="formatDuration(item.Backup.Metadata.LastSyncDuration)">{{time}} (took {{duration}})
                     </dd>
                     <dd>
-                        <span ng-show="item.Backup.Metadata == null || (item.Backup.OperationType == 'Sync' ? item.Backup.Metadata.LastSyncFinished : item.Backup.Metadata.LastBackupFinished) == null">{{'Never' | translate}} - </span><a href class="action-link" ng-click="doRun(item.Backup.ID)" translate>Run now</a>
+                        <span ng-show="item.Backup.Metadata == null || (item.Backup.OperationType == 'Sync' ? item.Backup.Metadata.LastSyncFinished : item.Backup.Metadata.LastBackupFinished) == null">{{'Never' | translate}} - </span><a href class="action-link" ng-hide="isActiveTask(item.Backup.ID) || isQueuedTask(item.Backup.ID)" ng-click="doRun(item.Backup.ID)" translate>Run now</a>
+                        <span ng-show="isActiveTask(item.Backup.ID)" translate>Running</span>
+                        <span ng-show="!isActiveTask(item.Backup.ID) && isQueuedTask(item.Backup.ID)" translate>Queued to run</span>
                     </dd>
 
                     <div ng-hide="item.Backup.Metadata == null || item.Backup.Metadata.NextScheduledRun == null">

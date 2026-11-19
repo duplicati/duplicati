@@ -16,6 +16,21 @@ backupApp.controller('HomeController', function ($scope, $location, ServerStatus
         });
     };
 
+    // A run of a backup that is already running or queued is not queued again,
+    // so the home page shows the state instead of the run link
+    $scope.isActiveTask = function(id) {
+        var task = ServerStatus.state.activeTask;
+        return task != null && task.Item2 == id;
+    };
+
+    $scope.isQueuedTask = function(id) {
+        var queue = ServerStatus.state.schedulerQueueIds || [];
+        for (var i = 0; i < queue.length; i++)
+            if (queue[i].Item2 == id)
+                return true;
+        return false;
+    };
+
     $scope.doRun = function(id) {
         AppService.post('/backup/' + id + '/run').then(function() {
             if (ServerStatus.state.programState == 'Paused') {

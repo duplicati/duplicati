@@ -67,6 +67,16 @@ namespace Duplicati.Server.Serialization.Interface
         /// </summary>
         bool Enabled { get; set; }
         /// <summary>
+        /// The ID of the backup this backup runs after, or <c>null</c> if it does not follow another backup.
+        /// When set, this backup is queued each time the other backup finishes a run
+        /// with an outcome that matches <see cref="RunAfterCondition"/>.
+        /// </summary>
+        string RunAfterBackupID { get; set; }
+        /// <summary>
+        /// The outcome the run of <see cref="RunAfterBackupID"/> must have for this backup to be queued.
+        /// </summary>
+        RunAfterCondition RunAfterCondition { get; set; }
+        /// <summary>
         /// The path to the local database
         /// </summary>
         string DBPath { get; }

@@ -63,6 +63,8 @@ namespace Duplicati.UnitTest
             ["logout"],
             ["import", "somefile.json"],
             ["import", "somefile.json", "passphrase", "--import-metadata", "--backup-passphrase", "pw", "--backup-url", "file:///tmp"],
+            ["update-backup", "1", "changes.json"],
+            ["update-backup", "my-backup", "changes.json"],
             ["export", "all"],
             ["export", "1", "2", "--encryption-passphrase", "pw", "--export-passwords", "--overwrite", "--unencrypted", "--destination", "/tmp"],
             ["health"],
@@ -119,7 +121,7 @@ namespace Duplicati.UnitTest
             var expected = new[]
             {
                 "pause", "resume", "delete", "list-backups", "run", "restore-test", "login",
-                "change-password", "logout", "import", "export", "health",
+                "change-password", "logout", "import", "export", "update-backup", "health",
                 "issue-forever-token", "status"
             };
 
@@ -141,6 +143,8 @@ namespace Duplicati.UnitTest
                 ["restore-test"],
                 ["import"],
                 ["export"],
+                ["update-backup"],
+                ["update-backup", "1"],
             };
 
             foreach (var args in invalidCommandLines)

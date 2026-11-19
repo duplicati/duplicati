@@ -102,6 +102,16 @@ namespace Duplicati.Server.Database
         public bool Enabled { get; set; } = true;
 
         /// <summary>
+        /// The ID of the backup this backup runs after, or <c>null</c> if it does not follow another backup.
+        /// </summary>
+        public string RunAfterBackupID { get; set; }
+
+        /// <summary>
+        /// The outcome the run of <see cref="RunAfterBackupID"/> must have for this backup to be queued.
+        /// </summary>
+        public RunAfterCondition RunAfterCondition { get; set; } = RunAfterCondition.Success;
+
+        /// <summary>
         /// The backup source folders and files
         /// </summary>
         public string[] Sources { get; set; }
@@ -289,6 +299,8 @@ namespace Duplicati.Server.Database
                 ConnectionStringID = this.ConnectionStringID,
                 OperationType = this.OperationType,
                 Enabled = this.Enabled,
+                RunAfterBackupID = this.RunAfterBackupID,
+                RunAfterCondition = this.RunAfterCondition,
                 DBPath = this.DBPath,
                 Sources = (string[])this.Sources?.Clone() ?? [],
                 Settings = this.Settings?.Select(s => new Setting { Name = s.Name, Value = s.Value, Filter = s.Filter }).ToArray() ?? [],

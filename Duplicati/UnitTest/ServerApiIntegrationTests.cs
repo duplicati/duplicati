@@ -256,6 +256,50 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
         }).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// A temporary backup, as made for a direct restore, is listed with its passwords masked
+    /// until it is deleted, so a client can offer to return to it
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task TemporaryBackupsAreListedUntilDeleted_Async()
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            Assert.That(await GetApiExtensionsAsync(httpClient).ConfigureAwait(false), Does.Contain(SystemInfoProvider.TemporaryBackupListExtension));
+
+            var permanentId = await CreateBackupAsync(httpClient, "integration-passphrase").ConfigureAwait(false);
+
+            var secret = $"secret{Guid.NewGuid():N}";
+            var request = new BackupAndScheduleInputDto
+            {
+                Backup = new BackupAndScheduleInputDto.BackupInputDto
+                {
+                    Name = "Direct restore draft",
+                    TargetURL = BuildFileBackendUrl(this.TARGETFOLDER) + "?auth-password=" + secret,
+                }
+            };
+            var created = await httpClient.PostAsJsonAsync("/api/v1/backups?temporary=true", request, JsonOptions).ConfigureAwait(false);
+            created.EnsureSuccessStatusCode();
+            var temporaryId = (await created.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false))?.ID
+                ?? throw new InvalidOperationException("Temporary backup creation did not return an ID");
+
+            var listed = await httpClient.GetFromJsonAsync<TemporaryBackupDto[]>("/api/v1/backups/temporary", JsonOptions).ConfigureAwait(false);
+            Assert.That(listed!.Select(x => x.ID), Does.Contain(temporaryId).And.Not.Contain(permanentId));
+            var entry = listed!.Single(x => x.ID == temporaryId);
+            Assert.That(entry.Name, Is.EqualTo("Direct restore draft"));
+            Assert.That(entry.TargetURL, Does.StartWith("file://").And.Contain("auth-password=").And.Not.Contain(secret));
+
+            var deleted = await httpClient.DeleteAsync($"/api/v1/backup/{temporaryId}").ConfigureAwait(false);
+            deleted.EnsureSuccessStatusCode();
+            var deleteTask = await deleted.Content.ReadFromJsonAsync<DeleteBackupOutputDto>(JsonOptions).ConfigureAwait(false);
+            await WaitForTaskCompletionAsync(httpClient, deleteTask?.ID ?? throw new InvalidOperationException("Delete did not start a task")).ConfigureAwait(false);
+
+            listed = await httpClient.GetFromJsonAsync<TemporaryBackupDto[]>("/api/v1/backups/temporary", JsonOptions).ConfigureAwait(false);
+            Assert.That(listed!.Select(x => x.ID), Does.Not.Contain(temporaryId));
+        }).ConfigureAwait(false);
+    }
+
     [Test]
     [Category("Integration")]
     [TestCase(true)]
@@ -664,6 +708,162 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
+    public async Task BackupRunsAfterAnotherBackupThroughTheApi_Async()
+    {
+        const string passphrase = "integration-passphrase";
+        var secondTarget = Path.Combine(this.TARGETFOLDER, "run-after-second");
+
+        // Built as dictionaries, so that a missing field is left out of the JSON,
+        // as with a client that does not know about the run-after fields
+        object BackupBody(string jobName, Dictionary<string, object?> extra)
+        {
+            var backup = new Dictionary<string, object?>
+            {
+                ["Name"] = jobName,
+                ["Description"] = "",
+                ["Tags"] = Array.Empty<string>(),
+                ["TargetURL"] = BuildFileBackendUrl(secondTarget),
+                ["Sources"] = new[] { this.DATAFOLDER },
+                ["Settings"] = new[] { new { Name = "passphrase", Value = passphrase, Filter = "" } },
+                ["Filters"] = Array.Empty<object>(),
+                ["Metadata"] = new Dictionary<string, string>()
+            };
+            foreach (var kvp in extra)
+                backup[kvp.Key] = kvp.Value;
+            return new { Backup = backup };
+        }
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            async Task<BackupDto> GetAsync(string id)
+            {
+                var listed = await AssertBackupListedAsync(httpClient, id).ConfigureAwait(false);
+                var single = await httpClient.GetFromJsonAsync<BackupGet.GetBackupResultDto>($"/api/v1/backup/{id}", JsonOptions).ConfigureAwait(false)
+                             ?? throw new InvalidOperationException("Backup get response was empty");
+                Assert.That(single.Backup.RunAfterBackupID, Is.EqualTo(listed.RunAfterBackupID), "List and single-backup GET should agree on the backup to run after");
+                Assert.That(single.Backup.RunAfterCondition, Is.EqualTo(listed.RunAfterCondition), "List and single-backup GET should agree on the run-after condition");
+                return listed;
+            }
+
+            Assert.That(await GetApiExtensionsAsync(httpClient).ConfigureAwait(false), Does.Contain(SystemInfoProvider.BackupRunAfterExtension),
+                "System info should advertise that a backup can run after another backup");
+
+            var firstId = await CreateBackupAsync(httpClient, passphrase, $"Run-after first {Guid.NewGuid():N}").ConfigureAwait(false);
+            Assert.That((await GetAsync(firstId).ConfigureAwait(false)).RunAfterBackupID, Is.Null, "A new backup should not run after another backup");
+
+            Directory.CreateDirectory(secondTarget);
+            var secondName = $"Run-after second {Guid.NewGuid():N}";
+            var createResponse = await httpClient.PostAsJsonAsync("/api/v1/backups", BackupBody(secondName, new() { ["RunAfterBackupID"] = firstId }), JsonOptions).ConfigureAwait(false);
+            createResponse.EnsureSuccessStatusCode();
+            var secondId = (await createResponse.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false))?.ID
+                           ?? throw new InvalidOperationException("No backup ID in the response");
+
+            var second = await GetAsync(secondId).ConfigureAwait(false);
+            Assert.That(second.RunAfterBackupID, Is.EqualTo(firstId));
+            Assert.That(second.RunAfterCondition, Is.EqualTo(Duplicati.Server.Serialization.RunAfterCondition.Success), "The condition should default to a successful run");
+
+            // A client that does not know about the fields must not remove the reference when it saves the backup
+            (await httpClient.PutAsJsonAsync($"/api/v1/backup/{secondId}", BackupBody(secondName, new()), JsonOptions).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            Assert.That((await GetAsync(secondId).ConfigureAwait(false)).RunAfterBackupID, Is.EqualTo(firstId), "Saving without the field should keep the reference");
+
+            (await httpClient.PutAsJsonAsync($"/api/v1/backup/{secondId}", BackupBody(secondName, new() { ["RunAfterCondition"] = "Always" }), JsonOptions).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            second = await GetAsync(secondId).ConfigureAwait(false);
+            Assert.That(second.RunAfterBackupID, Is.EqualTo(firstId), "Changing only the condition should keep the reference");
+            Assert.That(second.RunAfterCondition, Is.EqualTo(Duplicati.Server.Serialization.RunAfterCondition.Always));
+
+            // References that cannot work are rejected
+            var loop = await httpClient.PutAsJsonAsync($"/api/v1/backup/{firstId}", new { Backup = new Dictionary<string, object?> { ["RunAfterBackupID"] = secondId } }, JsonOptions).ConfigureAwait(false);
+            Assert.That(loop.IsSuccessStatusCode, Is.False, "Two backups that run after each other should be rejected");
+            var missing = await httpClient.PutAsJsonAsync($"/api/v1/backup/{secondId}", BackupBody(secondName, new() { ["RunAfterBackupID"] = "999999" }), JsonOptions).ConfigureAwait(false);
+            Assert.That(missing.IsSuccessStatusCode, Is.False, "Running after an unknown backup should be rejected");
+            Assert.That((await GetAsync(secondId).ConfigureAwait(false)).RunAfterBackupID, Is.EqualTo(firstId), "A rejected save should not change the reference");
+
+            // A backup ID has no meaning in an exported configuration
+            var importedId = await ImportConfigurationAsync(httpClient, await ExportConfigurationAsync(httpClient, secondId).ConfigureAwait(false)).ConfigureAwait(false);
+            Assert.That((await GetAsync(importedId).ConfigureAwait(false)).RunAfterBackupID, Is.Null, "Import should not bring a reference along");
+
+            // Running the first backup runs the second one after it
+            Assert.That((await GetAsync(secondId).ConfigureAwait(false)).Metadata?.ContainsKey("LastBackupFinished") ?? false, Is.False);
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{firstId}/run").ConfigureAwait(false);
+
+            var stopwatch = Stopwatch.StartNew();
+            while (!((await GetAsync(secondId).ConfigureAwait(false)).Metadata?.ContainsKey("LastBackupFinished") ?? false))
+            {
+                Assert.That(stopwatch.Elapsed, Is.LessThan(TimeSpan.FromMinutes(2)), "The second backup should run after the first one");
+                await Task.Delay(250).ConfigureAwait(false);
+            }
+            Assert.That((await GetAsync(importedId).ConfigureAwait(false)).Metadata?.ContainsKey("LastBackupFinished") ?? false, Is.False,
+                "A backup without a reference should not run");
+
+            // An explicit null removes the reference
+            (await httpClient.PutAsJsonAsync($"/api/v1/backup/{secondId}", BackupBody(secondName, new() { ["RunAfterBackupID"] = null }), JsonOptions).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            Assert.That((await GetAsync(secondId).ConfigureAwait(false)).RunAfterBackupID, Is.Null, "Saving a null reference should remove it");
+
+            // Deleting a backup keeps the backups that ran after it
+            (await httpClient.PutAsJsonAsync($"/api/v1/backup/{secondId}", BackupBody(secondName, new() { ["RunAfterBackupID"] = firstId }), JsonOptions).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            (await httpClient.DeleteAsync($"/api/v1/backup/{firstId}").ConfigureAwait(false)).EnsureSuccessStatusCode();
+            stopwatch.Restart();
+            while ((await GetBackupsAsync(httpClient).ConfigureAwait(false)).Any(x => x.Backup.ID == firstId))
+            {
+                Assert.That(stopwatch.Elapsed, Is.LessThan(TimeSpan.FromMinutes(2)), "The first backup should be deleted");
+                await Task.Delay(250).ConfigureAwait(false);
+            }
+            Assert.That((await GetAsync(secondId).ConfigureAwait(false)).RunAfterBackupID, Is.Null, "Deleting a backup should remove the references to it");
+        }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
+    public async Task QueueCompletionActionIsRefusedOnAnIdleServer_Async()
+    {
+        // Only the idle server is tested here: an accepted action would shut down the computer running the tests
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            async Task<string?> GetActionAsync()
+            {
+                var state = await httpClient.GetFromJsonAsync<JsonElement>("/api/v1/serverstate", JsonOptions).ConfigureAwait(false);
+                return state.TryGetProperty("QueueCompletionAction", out var action) ? action.GetString() : null;
+            }
+
+            Assert.That(await GetApiExtensionsAsync(httpClient).ConfigureAwait(false), Does.Contain(SystemInfoProvider.QueueCompletionActionExtension),
+                "System info should advertise the queue completion action");
+            Assert.That(await GetActionAsync().ConfigureAwait(false), Is.EqualTo("None"), "No action should be pending on a new server");
+
+            // Which actions are supported depends on the computer and the account running the tests
+            var capabilities = await httpClient.GetFromJsonAsync<JsonElement>("/api/v1/serverstate/queue-completion-action", JsonOptions).ConfigureAwait(false);
+            Assert.That(capabilities.GetProperty("PendingAction").GetString(), Is.EqualTo("None"));
+            Assert.That(capabilities.GetProperty("SupportedActions").EnumerateArray().Select(x => x.GetString()), Is.SubsetOf(new[] { "Shutdown", "Reboot" }),
+                "The script should not be offered when none is set");
+
+            // The script is set through the server settings, and is offered when the file exists.
+            // It is never chosen here, so it never runs.
+            var script = Path.Combine(this.DATAFOLDER, "post-queue-script");
+            Directory.CreateDirectory(this.DATAFOLDER);
+            File.WriteAllText(script, "");
+            (await httpClient.PatchAsJsonAsync("/api/v1/serversettings", new Dictionary<string, string> { [Duplicati.Server.Database.ServerSettings.CONST.POST_QUEUE_PROCESSING_SCRIPT] = script }, JsonOptions).ConfigureAwait(false)).EnsureSuccessStatusCode();
+
+            var settings = await httpClient.GetFromJsonAsync<Dictionary<string, string>>("/api/v1/serversettings", JsonOptions).ConfigureAwait(false);
+            Assert.That(settings?[Duplicati.Server.Database.ServerSettings.CONST.POST_QUEUE_PROCESSING_SCRIPT], Is.EqualTo(script));
+
+            capabilities = await httpClient.GetFromJsonAsync<JsonElement>("/api/v1/serverstate/queue-completion-action", JsonOptions).ConfigureAwait(false);
+            Assert.That(capabilities.GetProperty("SupportedActions").EnumerateArray().Select(x => x.GetString()), Does.Contain("RunScript"));
+
+            foreach (var action in new[] { "Shutdown", "Reboot", "RunScript" })
+            {
+                var refused = await httpClient.PostAsJsonAsync("/api/v1/serverstate/queue-completion-action", new { Action = action }, JsonOptions).ConfigureAwait(false);
+                Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.Conflict), $"{action} should be refused when nothing is running or queued");
+                Assert.That(await GetActionAsync().ConfigureAwait(false), Is.EqualTo("None"), "A refused action should not be pending");
+            }
+
+            (await httpClient.PostAsJsonAsync("/api/v1/serverstate/queue-completion-action", new { Action = "None" }, JsonOptions).ConfigureAwait(false)).EnsureSuccessStatusCode();
+
+            var invalid = await httpClient.PostAsJsonAsync("/api/v1/serverstate/queue-completion-action", new { Action = "Explode" }, JsonOptions).ConfigureAwait(false);
+            Assert.That(invalid.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), "An unknown action should be rejected");
+        }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
     public async Task SavingASyncJobWithoutTheOperationTypeKeepsItASyncJob_Async()
     {
         var name = $"Sync job {Guid.NewGuid():N}";
@@ -729,6 +929,98 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
                 "A disabled API extension should not be reported by system info");
             Assert.That(extensions, Is.Not.Empty, "Hiding one extension should keep the others");
         }, null, "127.0.0.1", [$"--webservice-disable-api-extensions={SystemInfoProvider.BackupEnableDisableExtension}"]).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
+    public async Task NextScheduledRunCanBeSkippedThroughTheApi_Async()
+    {
+        var firstRun = DateTime.UtcNow.AddHours(1);
+        firstRun = new DateTime(firstRun.Ticks - firstRun.Ticks % TimeSpan.TicksPerSecond, DateTimeKind.Utc);
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            Assert.That(await GetApiExtensionsAsync(httpClient).ConfigureAwait(false), Does.Contain(SystemInfoProvider.SkipNextRunExtension),
+                "System info should advertise that the next scheduled run can be skipped");
+
+            BackupAndScheduleInputDto CreateRequest(string name, BackupAndScheduleInputDto.ScheduleInputDto? schedule) => new()
+            {
+                Backup = new BackupAndScheduleInputDto.BackupInputDto
+                {
+                    Name = name,
+                    Description = "Skip next run",
+                    TargetURL = BuildFileBackendUrl(this.TARGETFOLDER),
+                    Sources = new[] { this.DATAFOLDER },
+                    Settings = new[] { new BackupAndScheduleInputDto.SettingInputDto { Name = "passphrase", Value = "integration-passphrase" } },
+                    Filters = Array.Empty<BackupAndScheduleInputDto.FilterInputDto>(),
+                    Metadata = new Dictionary<string, string>()
+                },
+                Schedule = schedule
+            };
+
+            async Task<string> CreateAsync(BackupAndScheduleInputDto request)
+            {
+                var response = await httpClient.PostAsJsonAsync("/api/v1/backups", request, JsonOptions).ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
+                var result = await response.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false)
+                             ?? throw new InvalidOperationException("Backup creation response was empty");
+                return result.ID ?? throw new InvalidOperationException("Backup creation did not return an ID");
+            }
+
+            var scheduledId = await CreateAsync(CreateRequest($"Skip next run {Guid.NewGuid():N}",
+                new BackupAndScheduleInputDto.ScheduleInputDto { Time = firstRun, Repeat = "1D", Rule = "" })).ConfigureAwait(false);
+
+            var skip = await httpClient.PostAsync($"/api/v1/backup/{scheduledId}/skip-next-run", null).ConfigureAwait(false);
+            skip.EnsureSuccessStatusCode();
+            var skipped = await skip.Content.ReadFromJsonAsync<SkipNextRunOutputDto>(JsonOptions).ConfigureAwait(false)
+                          ?? throw new InvalidOperationException("Skip response was empty");
+            Assert.That(skipped.NextScheduledRun.ToUniversalTime(), Is.EqualTo(firstRun.AddDays(1)),
+                "Skipping should report the slot after the skipped run");
+
+            var getResponse = await httpClient.GetAsync($"/api/v1/backup/{scheduledId}").ConfigureAwait(false);
+            getResponse.EnsureSuccessStatusCode();
+            var stored = await getResponse.Content.ReadFromJsonAsync<BackupGet.GetBackupResultDto>(JsonOptions).ConfigureAwait(false)
+                         ?? throw new InvalidOperationException("Backup get response was empty");
+            Assert.That(stored.Schedule?.Time.ToUniversalTime(), Is.EqualTo(firstRun.AddDays(1)),
+                "The stored schedule should start from the slot after the skipped run");
+
+            var unscheduledId = await CreateAsync(CreateRequest($"Unscheduled {Guid.NewGuid():N}", null)).ConfigureAwait(false);
+            var unscheduled = await httpClient.PostAsync($"/api/v1/backup/{unscheduledId}/skip-next-run", null).ConfigureAwait(false);
+            Assert.That(unscheduled.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), "A backup without a schedule has no run to skip");
+
+            var missing = await httpClient.PostAsync("/api/v1/backup/999999/skip-next-run", null).ConfigureAwait(false);
+            Assert.That(missing.StatusCode, Is.EqualTo(HttpStatusCode.NotFound), "Skipping a run of an unknown backup should return 404");
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The system information tells whether the server database is encrypted and where
+    /// preload settings are read from, so a user can check both in the UI (issue #6611)
+    /// </summary>
+    [TestCase(true)]
+    [TestCase(false)]
+    [Category("Integration")]
+    public async Task SystemInfoReportsDatabaseEncryptionAndPreloadPaths_Async(bool encryptDatabase)
+    {
+        string[] serverArgs = encryptDatabase
+            ? [$"--settings-encryption-key=key{Guid.NewGuid():N}", "--disable-db-encryption=false"]
+            : ["--disable-db-encryption=true"];
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var systemInfo = await httpClient.GetFromJsonAsync<JsonElement>("/api/v1/systeminfo", JsonOptions).ConfigureAwait(false);
+
+            Assert.That(systemInfo.TryGetProperty("DatabaseFieldsEncrypted", out var encrypted), Is.True, "System information should tell whether the database is encrypted");
+            Assert.That(encrypted.GetBoolean(), Is.EqualTo(encryptDatabase));
+
+            Assert.That(systemInfo.TryGetProperty("PreloadSettingsPaths", out var paths), Is.True, "System information should list the preload settings paths");
+            var reported = paths.EnumerateArray()
+                .Select(x => (Path: x.GetProperty("Path").GetString(), Exists: x.GetProperty("Exists").GetBoolean()))
+                .ToArray();
+            var expected = PreloadSettingsLoader.GetPreloadSettingsPaths().Select(x => (Path: (string?)x.Path, x.Exists)).ToArray();
+            Assert.That(reported, Is.EqualTo(expected));
+            Assert.That(reported.Select(x => x.Path), Does.Contain(Path.Combine(Path.GetDirectoryName(typeof(PreloadSettingsLoader).Assembly.Location) ?? "", "preload.json")));
+        }, null, "127.0.0.1", serverArgs).ConfigureAwait(false);
     }
 
     private static async Task<string[]> GetApiExtensionsAsync(HttpClient httpClient)
@@ -2008,6 +2300,48 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
             // The websocket authenticator is long-lived, so it must also validate with the new key
             using var newSocket = await ConnectAuthenticatedWebsocketAsync(httpClient.BaseAddress!, httpClient.DefaultRequestHeaders.Authorization!.Parameter!).ConfigureAwait(false);
             await newSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, null, CancellationToken.None).ConfigureAwait(false);
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The tray icon follows the server state over the websocket the server offers, rather
+    /// than with a long poll, and takes the state as the server sends it there (issue #5273)
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task TheTrayIconFollowsTheServerStateOverTheWebsocket_Async()
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var messages = new ConcurrentQueue<Library.Logging.LogEntry>();
+            using var scope = Library.Logging.Log.StartScope(messages.Enqueue);
+
+            var passwords = await Duplicati.GUI.TrayIcon.PasswordStorageHelper.CreateAsync($"{httpClient.BaseAddress}", true, "integration-test-password",
+                Duplicati.GUI.TrayIcon.Program.PasswordSource.SuppliedPassword, new Dictionary<string, string?>()).ConfigureAwait(false);
+            using var tray = new Duplicati.GUI.TrayIcon.HttpServerConnection(null, Duplicati.GUI.TrayIcon.Program.PasswordSource.SuppliedPassword,
+                false, "", false, new Dictionary<string, string>(), passwords);
+
+            var paused = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            tray.OnStatusUpdated = status =>
+            {
+                if (status.ProgramState == Duplicati.Server.Serialization.LiveControlState.Paused)
+                    paused.TrySetResult();
+                return Task.CompletedTask;
+            };
+
+            // Wait for the tray to set up the websocket, then change the state
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+            while (!messages.Any(x => x.Id == "TrayIconWebsocketConnected" || x.Id == "TrayIconWebsocketUnavailable") && DateTime.UtcNow < deadline)
+                await Task.Delay(100).ConfigureAwait(false);
+
+            Assert.That(messages.Where(x => x.Id == "TrayIconWebsocketUnavailable").Select(x => x.FormattedMessage), Is.Empty, "the tray should not fall back to the long poll");
+            Assert.That(messages.Any(x => x.Id == "TrayIconWebsocketConnected"), Is.True, "the tray should set up the websocket");
+
+            (await httpClient.PostAsync("/api/v1/serverstate/pause", null).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            await paused.Task.WaitAsync(TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+            Assert.That(tray.Status.ProgramState, Is.EqualTo(Duplicati.Server.Serialization.LiveControlState.Paused));
+
+            (await httpClient.PostAsync("/api/v1/serverstate/resume", null).ConfigureAwait(false)).EnsureSuccessStatusCode();
         }).ConfigureAwait(false);
     }
 

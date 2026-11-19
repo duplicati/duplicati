@@ -61,6 +61,8 @@ namespace Duplicati.Library.Encryption.Strings
         public static string GpgencryptionencryptioncommandShort { get { return LC.L(@"The GPG encryption command"); } }
         public static string GpgencryptioncipheralgoLong(string gpgoption, string switchesoption) { return LC.L(@"Use this option to choose the cipher GPG encrypts with, by passing {0} to GPG. If not set, GPG uses its own default. Decryption does not need it, as GPG reads the cipher from the file. A {0} given in --{1} takes precedence.", gpgoption, switchesoption); }
         public static string GpgencryptioncipheralgoShort { get { return LC.L(@"The GPG cipher algorithm"); } }
+        public static string GpgencryptionrecipientLong(string recipientoption, string encryptcommand, string commandoption) { return LC.L(@"Use this option to encrypt to the public key of this user ID, key ID or fingerprint, by passing {0} and {1} to GPG instead of encrypting with the passphrase. The key must be in the GPG keyring and trusted. Only the private key can decrypt the files, and the passphrase is then used to unlock it. A command given in --{2} takes precedence over {1}.", recipientoption, encryptcommand, commandoption); }
+        public static string GpgencryptionrecipientShort { get { return LC.L(@"The GPG recipient to encrypt to"); } }
     }
     internal static class GPGStreamWrapper
     {

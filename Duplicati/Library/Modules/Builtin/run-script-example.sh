@@ -169,7 +169,7 @@ then
 	
 	if [ "$OPERATIONNAME" == "Backup" ]
 	then
-		if [ "$DUPLICATI__dblock_size" == "" ] || ["$DUPLICATI__dblock_size" == "50mb"]
+		if [ "$DUPLICATI__dblock_size" == "" ] || [ "$DUPLICATI__dblock_size" == "50mb" ]
 		then
 			# Write the option to stdout to change it
 			echo "--dblock-size=25mb"

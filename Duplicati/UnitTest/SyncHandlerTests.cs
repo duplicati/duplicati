@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
@@ -1699,6 +1700,62 @@ public class NonFolderSyncHandlerTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// A destination that cannot delete folders keeps the emptied folders of a folder that
+    /// was removed from the source. Every later run finds them again with nothing in them,
+    /// which is not a delete: the files are counted once, when they are deleted, and the
+    /// folder is never counted as deleted.
+    /// </summary>
+    [Test]
+    public async Task TestNonFolderEmptiedFoldersAreNotDeletedAgainAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "nofolder_data_folder_delete_again");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(Path.Combine(dataFolder, "gone", "inner"));
+        File.WriteAllText(Path.Combine(dataFolder, "keep.txt"), "keep");
+        File.WriteAllText(Path.Combine(dataFolder, "gone", "a.txt"), "a");
+        File.WriteAllText(Path.Combine(dataFolder, "gone", "inner", "b.txt"), "bb");
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["dbpath"] = Path.Combine(BASEFOLDER, $"nofolder-delete-again-{Guid.NewGuid():N}.sqlite"),
+            [Options.SYNC_THEN_DELETE_OPTION] = "true",
+        };
+
+        async Task<Library.Interface.ISyncResults> RunAsync(Dictionary<string, string> o)
+        {
+            using var c = new Controller(backendUrl, o, null);
+            var res = await c.SyncAsync(new[] { dataFolder }, null);
+            Assert.IsEmpty(res.Errors, string.Join(Environment.NewLine, res.Errors));
+            Assert.IsEmpty(res.Warnings, string.Join(Environment.NewLine, res.Warnings));
+            return res;
+        }
+
+        await RunAsync(opts);
+        Directory.Delete(Path.Combine(dataFolder, "gone"), true);
+
+        // A dry run lists the folder to say what a real run would delete
+        var res = await RunAsync(new Dictionary<string, string>(opts) { ["dry-run"] = "true" });
+        Assert.AreEqual(2, res.FilesDeleted);
+        Assert.AreEqual(3, res.SizeOfDeletedFiles);
+        Assert.AreEqual(0, res.FoldersDeleted);
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "gone", "inner", "b.txt")), "A dry run deleted a file");
+
+        res = await RunAsync(opts);
+        Assert.AreEqual(2, res.FilesDeleted, "The files of the removed folder count as deleted files");
+        Assert.AreEqual(3, res.SizeOfDeletedFiles);
+        Assert.AreEqual(0, res.FoldersDeleted, "The folder is still there, so it is not a deleted folder");
+        Assert.IsEmpty(Directory.GetFiles(Path.Combine(targetDir, "gone"), "*", SearchOption.AllDirectories));
+
+        // The emptied folders are still on the destination, and nothing is left to delete in them
+        Assert.IsTrue(Directory.Exists(Path.Combine(targetDir, "gone", "inner")));
+        res = await RunAsync(opts);
+        Assert.AreEqual(0, res.FilesDeleted);
+        Assert.AreEqual(0, res.FoldersDeleted);
+    }
+
+    /// <summary>
     /// A destination without hard-link support still gets complete snapshot folders: an
     /// unchanged file is copied into the new snapshot again instead of linked.
     /// </summary>
@@ -2697,6 +2754,92 @@ public class SnapshotSyncHandlerTests : BasicSetupHelper
         Assert.Less(string.CompareOrdinal(aborted, snapshots[1]), 0, "The new snapshot sorts after every existing folder");
         Assert.IsTrue(Directory.Exists(Path.Combine(targetDir, "not-a-snapshot")), "Folders that are not snapshots are left alone");
     }
+
+    private Dictionary<string, string> MirrorOptions(string stateMode, bool delete)
+        => new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["dbpath"] = dbPath,
+            ["sync-remote-state"] = stateMode,
+            [Options.SYNC_THEN_DELETE_OPTION] = delete ? "true" : "false",
+        };
+
+    /// <summary>
+    /// To a mirror run the snapshot folders of a destination are folders the source does
+    /// not have, and --sync-then-delete would delete every snapshot. The destination is
+    /// refused instead, before anything is written to it or deleted from it. Under
+    /// UseLocalState the snapshot folder is known from the cache the snapshot runs left.
+    /// </summary>
+    [TestCase(nameof(SyncRemoteState.UseRemoteState), false)]
+    [TestCase(nameof(SyncRemoteState.UseLocalState), false)]
+    [TestCase(nameof(SyncRemoteState.UseRemoteState), true)]
+    public async Task TestMirrorWithDeleteRefusesASnapshotDestinationAsync(string stateMode, bool dryRun)
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "file.txt"), "content");
+        await SyncAsync(SnapshotOptions(0, stateMode));
+        File.WriteAllText(Path.Combine(dataFolder, "file.txt"), "changed content");
+        await SyncAsync(SnapshotOptions(0, stateMode));
+
+        var snapshots = SnapshotFolders();
+        var marker = Marker();
+        Assert.AreEqual(2, snapshots.Length);
+
+        var opts = MirrorOptions(stateMode, true);
+        if (dryRun)
+            opts["dry-run"] = "true";
+
+        using (var c = new Controller(backendUrl, opts, null))
+        {
+            var res = await c.SyncAsync(new[] { dataFolder }, null);
+            Assert.IsTrue(res.Errors.Any(x => x.Contains(Options.SYNC_SNAPSHOT_FOLDERS_OPTION)), "The snapshot destination was not refused: " + string.Join(Environment.NewLine, res.Errors));
+            Assert.AreEqual(0, res.FoldersDeleted);
+            Assert.AreEqual(0, res.FilesDeleted);
+            Assert.AreEqual(0, res.FilesUploaded);
+        }
+
+        CollectionAssert.AreEqual(snapshots, SnapshotFolders(), "A snapshot folder was deleted");
+        Assert.AreEqual(marker, Marker());
+        Assert.AreEqual("content", File.ReadAllText(Path.Combine(targetDir, snapshots[0], "file.txt")));
+        Assert.AreEqual("changed content", File.ReadAllText(Path.Combine(targetDir, snapshots[1], "file.txt")));
+        Assert.IsFalse(File.Exists(Path.Combine(targetDir, "file.txt")), "The mirror was written next to the snapshots");
+    }
+
+    /// <summary>
+    /// Without --sync-then-delete a mirror run deletes nothing, so there is nothing to
+    /// protect the snapshot folders from and the run is not refused.
+    /// </summary>
+    [Test]
+    public async Task TestMirrorWithoutDeleteIsNotRefusedOnASnapshotDestinationAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "file.txt"), "content");
+        await SyncAsync(SnapshotOptions(0, nameof(SyncRemoteState.UseRemoteState)));
+        var snapshots = SnapshotFolders();
+
+        await SyncAsync(MirrorOptions(nameof(SyncRemoteState.UseRemoteState), false));
+
+        CollectionAssert.AreEqual(snapshots, SnapshotFolders());
+        Assert.AreEqual("content", File.ReadAllText(Path.Combine(targetDir, "file.txt")));
+    }
+
+    /// <summary>
+    /// A folder in the source that happens to be named like a snapshot folder is mirrored
+    /// like any other folder: it is not an orphan, so it is nothing the check looks at.
+    /// </summary>
+    [Test]
+    public async Task TestMirrorWithDeleteKeepsASourceFolderNamedLikeASnapshotAsync()
+    {
+        var name = Library.Main.Operation.Sync.SyncSnapshotLayout.FormatFolderName(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        Directory.CreateDirectory(Path.Combine(dataFolder, name));
+        File.WriteAllText(Path.Combine(dataFolder, name, "file.txt"), "content");
+
+        var opts = MirrorOptions(nameof(SyncRemoteState.UseRemoteState), true);
+        await SyncAsync(opts);
+        var res = await SyncAsync(opts);
+
+        Assert.AreEqual("content", File.ReadAllText(Path.Combine(targetDir, name, "file.txt")));
+        Assert.AreEqual(0, res.FoldersDeleted);
+    }
 }
 
 /// <summary>
@@ -2905,6 +3048,323 @@ public class SyncHandlerTargetTests : BasicSetupHelper
         Assert.IsFalse(File.Exists(Path.Combine(targetDir, "one.txt")), "A destination that cannot be told apart by name was written to.");
         Assert.IsTrue(File.Exists(Path.Combine(targetDir, "existing.txt")), "A destination that cannot be told apart by name was deleted from.");
         Assert.AreEqual("one", File.ReadAllText(Path.Combine(targetDir2, "one.txt")), "The other destination was not synchronized.");
+    }
+
+    /// <summary>
+    /// The filter scopes the folder delete as it scopes the file delete: a remote folder
+    /// the filter keeps out of the source is not this run's to remove.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestFilterScopesFolderDeletesAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "keep.txt"), "keep");
+        Directory.CreateDirectory(Path.Combine(dataFolder, "cache"));
+        File.WriteAllText(Path.Combine(dataFolder, "cache", "local.bin"), "excluded on the source side");
+        Directory.CreateDirectory(Path.Combine(targetDir, "cache", "inner"));
+        File.WriteAllText(Path.Combine(targetDir, "cache", "inner", "remote.bin"), "excluded on the destination side");
+        Directory.CreateDirectory(Path.Combine(targetDir, "gone"));
+        File.WriteAllText(Path.Combine(targetDir, "gone", "old.txt"), "no longer in the source");
+
+        var sep = Path.DirectorySeparatorChar;
+        var res = await SyncAsync(Url("file", targetDir), Options(), new Library.Utility.FilterExpression($"*{sep}cache{sep}", false));
+
+        Assert.AreEqual(0, res.Errors.Count(), string.Join(Environment.NewLine, res.Errors));
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "keep.txt")));
+        Assert.IsFalse(File.Exists(Path.Combine(targetDir, "cache", "local.bin")), "An excluded folder was uploaded.");
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "cache", "inner", "remote.bin")), "A remote folder the filter excludes was deleted.");
+        Assert.IsFalse(Directory.Exists(Path.Combine(targetDir, "gone")), "A folder the filter includes and the source does not have was left behind.");
+        Assert.AreEqual(1, res.FoldersDeleted);
+    }
+
+    /// <summary>
+    /// A remote folder the source does not have is deleted only as far as the filter
+    /// reaches: a file below it that the filter excludes is kept, and so is the folder.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestFilterKeepsExcludedFilesInAnOrphanedFolderAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "keep.txt"), "keep");
+        Directory.CreateDirectory(Path.Combine(targetDir, "gone", "inner"));
+        File.WriteAllText(Path.Combine(targetDir, "gone", "old.txt"), "no longer in the source");
+        File.WriteAllText(Path.Combine(targetDir, "gone", "inner", "scratch.tmp"), "excluded by the filter");
+
+        var res = await SyncAsync(Url("file", targetDir), Options(), new Library.Utility.FilterExpression("*.tmp", false));
+
+        Assert.AreEqual(0, res.Errors.Count(), string.Join(Environment.NewLine, res.Errors));
+        Assert.IsFalse(File.Exists(Path.Combine(targetDir, "gone", "old.txt")), "A file the filter includes was left behind.");
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "gone", "inner", "scratch.tmp")), "A file the filter excludes was deleted with its folder.");
+        Assert.AreEqual(0, res.FoldersDeleted);
+        Assert.AreEqual(1, res.FilesDeleted);
+    }
+
+    /// <summary>
+    /// With only includes in the filter every folder is let through, but a file below a
+    /// remote-only folder that the includes do not match is kept.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestIncludeOnlyFilterKeepsUnmatchedFilesInAnOrphanedFolderAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "keep.txt"), "keep");
+        Directory.CreateDirectory(Path.Combine(targetDir, "gone"));
+        File.WriteAllText(Path.Combine(targetDir, "gone", "old.txt"), "matched by the include");
+        File.WriteAllText(Path.Combine(targetDir, "gone", "data.bin"), "not matched by the include");
+
+        var res = await SyncAsync(Url("file", targetDir), Options(), new Library.Utility.FilterExpression("*.txt", true));
+
+        Assert.AreEqual(0, res.Errors.Count(), string.Join(Environment.NewLine, res.Errors));
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "keep.txt")));
+        Assert.IsFalse(File.Exists(Path.Combine(targetDir, "gone", "old.txt")), "A file the filter includes was left behind.");
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "gone", "data.bin")), "A file the filter does not include was deleted with its folder.");
+    }
+
+    /// <summary>
+    /// Under UseLocalState the cache names the orphaned folders. One that was already
+    /// removed from the destination by hand is nothing to delete, also with a filter,
+    /// which lists the folder before deleting it.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestFilteredDeleteOfAFolderAlreadyGoneIsNotAFailureAsync()
+    {
+        var dataFolder = Path.Combine(BASEFOLDER, "filtered_folder_already_gone");
+        if (Directory.Exists(dataFolder)) Directory.Delete(dataFolder, true);
+        Directory.CreateDirectory(Path.Combine(dataFolder, "gone"));
+        File.WriteAllText(Path.Combine(dataFolder, "keep.txt"), "keep");
+        File.WriteAllText(Path.Combine(dataFolder, "gone", "a.txt"), "a");
+
+        var opts = new Dictionary<string, string>
+        {
+            ["no-encryption"] = "true",
+            ["snapshot-policy"] = "off",
+            ["dbpath"] = Path.Combine(BASEFOLDER, $"filtered-already-gone-{Guid.NewGuid():N}.sqlite"),
+            ["sync-remote-state"] = "UseLocalState",
+            ["sync-then-delete"] = "true",
+        };
+
+        async Task<Library.Interface.ISyncResults> RunAsync()
+        {
+            using var c = new Controller(Url("file", targetDir), opts, null);
+            var res = await c.SyncAsync(new[] { dataFolder }, new Library.Utility.FilterExpression("*.tmp", false));
+            Assert.IsEmpty(res.Errors, string.Join(Environment.NewLine, res.Errors));
+            Assert.IsEmpty(res.Warnings, string.Join(Environment.NewLine, res.Warnings));
+            return res;
+        }
+
+        await RunAsync();
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "gone", "a.txt")));
+
+        Directory.Delete(Path.Combine(dataFolder, "gone"), true);
+        Directory.Delete(Path.Combine(targetDir, "gone"), true);
+        await RunAsync();
+
+        // The cache no longer names the folder, so a third run has nothing to do
+        var res = await RunAsync();
+        Assert.AreEqual(0, res.FoldersDeleted);
+        Assert.AreEqual(0, res.FilesDeleted);
+    }
+
+    [Test]
+    [Category("Sync")]
+    public async Task TestDryRunReportsAnOrphanedFolderAndKeepsItAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "keep.txt"), "keep");
+        Directory.CreateDirectory(Path.Combine(targetDir, "gone"));
+        File.WriteAllText(Path.Combine(targetDir, "gone", "old.txt"), "no longer in the source");
+
+        var res = await SyncAsync(Url("file", targetDir), Options(o => o["dry-run"] = "true"));
+
+        Assert.AreEqual(0, res.Errors.Count(), string.Join(Environment.NewLine, res.Errors));
+        Assert.AreEqual(1, res.FoldersDeleted);
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, "gone", "old.txt")), "A dry run deleted a folder.");
+        Assert.IsFalse(File.Exists(Path.Combine(targetDir, "keep.txt")), "A dry run uploaded a file.");
+    }
+
+    /// <summary>
+    /// A destination that holds snapshot folders is refused by a mirror run that deletes,
+    /// and the other destination of the run is still synchronized.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestASnapshotDestinationFailsOnlyThatDestinationAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "one.txt"), "one");
+        var snapshot = Library.Main.Operation.Sync.SyncSnapshotLayout.FormatFolderName(new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        Directory.CreateDirectory(Path.Combine(targetDir, snapshot));
+        File.WriteAllText(Path.Combine(targetDir, snapshot, "kept.txt"), "a file of the snapshot");
+        Directory.CreateDirectory(Path.Combine(targetDir2, "gone"));
+        File.WriteAllText(Path.Combine(targetDir2, "gone", "old.txt"), "no longer in the source");
+
+        var res = await SyncAsync(Url("file", targetDir), Options(o => o["remote-sync-json-config"] = SecondTarget(Url("file", targetDir2))));
+
+        Assert.IsTrue(res.Errors.Any(x => x.Contains(Library.Main.Options.SYNC_SNAPSHOT_FOLDERS_OPTION)), string.Join(Environment.NewLine, res.Errors));
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, snapshot, "kept.txt")), "A snapshot folder was deleted.");
+        Assert.IsFalse(File.Exists(Path.Combine(targetDir, "one.txt")), "A destination that holds snapshots was written to.");
+        Assert.AreEqual("one", File.ReadAllText(Path.Combine(targetDir2, "one.txt")), "The other destination was not synchronized.");
+        Assert.IsFalse(Directory.Exists(Path.Combine(targetDir2, "gone")), "The other destination kept a folder the source does not have.");
+        Assert.AreEqual(1, res.FoldersDeleted);
+    }
+
+    /// <summary>
+    /// A test backend over the file backend that can delete folders, except the ones
+    /// named <see cref="StuckName"/>, which also refuse to have their files deleted, and
+    /// the ones named <see cref="BigName"/>, which can only be deleted once they hold no file
+    /// </summary>
+    public class StuckFolderBackend : IBackend, IStreamingBackend, IFolderEnabledBackend, IFolderDeleteEnabledBackend
+    {
+        /// <summary>
+        /// The protocol key this backend is registered under
+        /// </summary>
+        public const string Key = "stuckfoldertest";
+
+        /// <summary>
+        /// The name of the folders that cannot be deleted
+        /// </summary>
+        public const string StuckName = "stuck";
+
+        /// <summary>
+        /// The name of the folders that are too big to delete in one call until their files are gone
+        /// </summary>
+        public const string BigName = "big";
+
+        private readonly IBackend m_backend;
+
+        public StuckFolderBackend() { }
+
+        public StuckFolderBackend(string url, Dictionary<string, string> options)
+        {
+            m_backend = Library.DynamicLoader.BackendLoader.GetBackend(url.Replace($"{Key}://", "file://"), options);
+        }
+
+        public string DisplayName => "Stuck folder test backend";
+        public string ProtocolKey => Key;
+        public string Description => "A testing backend that fails to delete some folders";
+        public bool SupportsStreaming => (m_backend as IStreamingBackend)?.SupportsStreaming ?? false;
+        public bool HasCaseSensitivePaths => ((IFolderEnabledBackend)m_backend).HasCaseSensitivePaths;
+        public IList<ICommandLineArgument> SupportedCommands
+            => m_backend?.SupportedCommands ?? Library.DynamicLoader.BackendLoader.GetSupportedCommands("file://").ToList();
+
+        public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancelToken) => m_backend.ListAsync(cancelToken);
+        public IAsyncEnumerable<IFileEntry> ListAsync(string path, CancellationToken cancelToken) => ((IFolderEnabledBackend)m_backend).ListAsync(path, cancelToken);
+        public Task<IFileEntry> GetEntryAsync(string path, CancellationToken cancelToken) => ((IFolderEnabledBackend)m_backend).GetEntryAsync(path, cancelToken);
+        public Task PutAsync(string remotename, string filename, CancellationToken cancelToken) => m_backend.PutAsync(remotename, filename, cancelToken);
+        public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken) => ((IStreamingBackend)m_backend).PutAsync(remotename, stream, cancelToken);
+        public Task GetAsync(string remotename, string filename, CancellationToken cancelToken) => m_backend.GetAsync(remotename, filename, cancelToken);
+        public Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken) => ((IStreamingBackend)m_backend).GetAsync(remotename, stream, cancelToken);
+        public Task DeleteAsync(string remotename, CancellationToken cancelToken)
+            => remotename.Split('/').SkipLast(1).Contains(StuckName)
+                ? throw new IOException($"The file {remotename} cannot be deleted")
+                : m_backend.DeleteAsync(remotename, cancelToken);
+        public Task TestAsync(bool alsoWrite, CancellationToken cancelToken) => m_backend.TestAsync(alsoWrite, cancelToken);
+        public Task CreateFolderAsync(CancellationToken cancelToken) => m_backend.CreateFolderAsync(cancelToken);
+        public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => m_backend.GetDNSNamesAsync(cancelToken);
+        public void Dispose() => m_backend?.Dispose();
+
+        public async Task DeleteFolderRecursiveAsync(string path, CancellationToken cancelToken)
+        {
+            var name = path.Split('/').Last();
+            if (name == StuckName)
+                throw new IOException($"The folder {path} cannot be deleted");
+
+            if (name == BigName && await HoldsAFileAsync(path, cancelToken).ConfigureAwait(false))
+                throw new IOException($"The folder {path} holds too many files to delete in one call");
+
+            await ((IFolderDeleteEnabledBackend)m_backend).DeleteFolderRecursiveAsync(path, cancelToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Checks if a folder holds a file at any depth, by listing it through the wrapped
+        /// backend, so the answer does not depend on how the url maps to a local path
+        /// </summary>
+        /// <param name="path">The relative path of the folder</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>True if the folder holds a file</returns>
+        private async Task<bool> HoldsAFileAsync(string path, CancellationToken cancelToken)
+        {
+            var folders = new Stack<string>([path]);
+            while (folders.Count > 0)
+            {
+                var current = folders.Pop();
+                List<IFileEntry> entries;
+                try
+                {
+                    entries = await ((IFolderEnabledBackend)m_backend).ListAsync(current, cancelToken).ToListAsync(cancelToken).ConfigureAwait(false);
+                }
+                catch (FolderMissingException)
+                {
+                    continue;
+                }
+
+                if (entries.Any(x => !x.IsFolder))
+                    return true;
+                foreach (var entry in entries)
+                    folders.Push(current + "/" + entry.Name.TrimEnd('/', '\\'));
+            }
+
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// A folder that cannot be deleted is reported and left, as a file that cannot be
+    /// deleted is. The other folders are still deleted, and the rest of the source is
+    /// still synchronized to the destination.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestAFailingFolderDeleteDoesNotStopTheDestinationAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "new.txt"), "new");
+        Directory.CreateDirectory(Path.Combine(dataFolder, "sub"));
+        File.WriteAllText(Path.Combine(dataFolder, "sub", "inner.txt"), "inner");
+        foreach (var folder in new[] { "a-gone", StuckFolderBackend.StuckName, "z-gone" })
+        {
+            Directory.CreateDirectory(Path.Combine(targetDir, folder));
+            File.WriteAllText(Path.Combine(targetDir, folder, "old.txt"), "no longer in the source");
+        }
+
+        Library.DynamicLoader.BackendLoader.AddBackend(new StuckFolderBackend());
+
+        var res = await SyncAsync(Url(StuckFolderBackend.Key, targetDir), Options());
+
+        Assert.AreEqual(0, res.Errors.Count(), string.Join(Environment.NewLine, res.Errors));
+        Assert.AreEqual(1, res.Warnings.Count(x => x.Contains("DeleteFailed") && x.Contains(StuckFolderBackend.StuckName)), string.Join(Environment.NewLine, res.Warnings));
+        Assert.IsTrue(res.Warnings.Any(x => x.Contains("SyncIncomplete")), "The destination with a failure was not reported.");
+        Assert.IsTrue(File.Exists(Path.Combine(targetDir, StuckFolderBackend.StuckName, "old.txt")), "A folder went missing although its delete failed.");
+        Assert.IsFalse(Directory.Exists(Path.Combine(targetDir, "a-gone")));
+        Assert.IsFalse(Directory.Exists(Path.Combine(targetDir, "z-gone")));
+        Assert.AreEqual(2, res.FoldersDeleted, "Only the deletes that succeeded count.");
+
+        // The folders after the failing delete are still synchronized
+        Assert.AreEqual("new", File.ReadAllText(Path.Combine(targetDir, "new.txt")));
+        Assert.AreEqual("inner", File.ReadAllText(Path.Combine(targetDir, "sub", "inner.txt")));
+    }
+
+    /// <summary>
+    /// A folder the destination refuses to delete in one call, because it holds too many
+    /// files, say, has its files deleted one by one, and the emptied folder is then deleted.
+    /// </summary>
+    [Test]
+    [Category("Sync")]
+    public async Task TestAFolderTooBigToDeleteInOneCallIsDeletedFileByFileAsync()
+    {
+        File.WriteAllText(Path.Combine(dataFolder, "keep.txt"), "keep");
+        Directory.CreateDirectory(Path.Combine(targetDir, StuckFolderBackend.BigName, "inner"));
+        File.WriteAllText(Path.Combine(targetDir, StuckFolderBackend.BigName, "a.txt"), "a");
+        File.WriteAllText(Path.Combine(targetDir, StuckFolderBackend.BigName, "inner", "b.txt"), "bb");
+
+        Library.DynamicLoader.BackendLoader.AddBackend(new StuckFolderBackend());
+
+        var res = await SyncAsync(Url(StuckFolderBackend.Key, targetDir), Options());
+
+        Assert.AreEqual(0, res.Errors.Count(), string.Join(Environment.NewLine, res.Errors));
+        Assert.AreEqual(0, res.Warnings.Count(), string.Join(Environment.NewLine, res.Warnings));
+        Assert.IsFalse(Directory.Exists(Path.Combine(targetDir, StuckFolderBackend.BigName)), "The emptied folder was left behind.");
+        Assert.AreEqual(1, res.FoldersDeleted);
+        Assert.AreEqual(2, res.FilesDeleted);
+        Assert.AreEqual(3, res.SizeOfDeletedFiles);
     }
 
     /// <summary>

@@ -63,7 +63,7 @@ namespace Duplicati.Library.Main
         public const string SYNC_SNAPSHOT_DISABLE_HARDLINKS_OPTION = "sync-snapshot-disable-hardlinks";
 
         /// <summary>
-        /// The name of the option that makes a sync delete remote files that no longer exist locally
+        /// The name of the option that makes a sync delete remote files and folders that no longer exist locally
         /// </summary>
         public const string SYNC_THEN_DELETE_OPTION = "sync-then-delete";
 
@@ -506,6 +506,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("disable-autocreate-folder", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableautocreatefolderShort, Strings.Options.DisableautocreatefolderLong, "false"),
             new CommandLineArgument("allow-missing-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowmissingsourceShort, Strings.Options.AllowmissingsourceLong, "false"),
             new CommandLineArgument("abort-if-source-missing", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AbortifsourcemissingShort, Strings.Options.AbortifsourcemissingLong, "false"),
+            new CommandLineArgument("keep-missing-sources", CommandLineArgument.ArgumentType.Boolean, Strings.Options.KeepmissingsourcesShort, Strings.Options.KeepmissingsourcesLong, "false"),
             new CommandLineArgument("prevent-empty-source", CommandLineArgument.ArgumentType.Boolean, Strings.Options.PreventemptysourceShort, Strings.Options.PreventemptysourceLong, "false"),
 
             new CommandLineArgument("disable-filetime-check", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefiletimecheckShort, Strings.Options.DisablefiletimecheckLong, "false"),
@@ -535,9 +536,11 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("throttle-upload", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottleuploadShort, Strings.Options.ThrottleuploadLong, "0kb"),
             new CommandLineArgument("throttle-download", CommandLineArgument.ArgumentType.Size, Strings.Options.ThrottledownloadShort, Strings.Options.ThrottledownloadLong, "0kb"),
             new CommandLineArgument("max-upload-per-run", CommandLineArgument.ArgumentType.Size, Strings.Options.MaxUploadPerRunShort, Strings.Options.MaxUploadPerRunLong),
+            new CommandLineArgument("max-backup-runtime", CommandLineArgument.ArgumentType.Timespan, Strings.Options.MaxBackupRuntimeShort, Strings.Options.MaxBackupRuntimeLong),
             new CommandLineArgument("throttle-disabled", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablethrottleShort, Strings.Options.DisablethrottleLong, "false"),
             new CommandLineArgument("throttle-disabled-backends", CommandLineArgument.ArgumentType.String, Strings.Options.DisablethrottlebackendsShort, Strings.Options.DisablethrottlebackendsLong("throttle-disabled"), DEFAULT_THROTTLE_DISABLED_BACKENDS),
             new CommandLineArgument("skip-files-larger-than", CommandLineArgument.ArgumentType.Size, Strings.Options.SkipfileslargerthanShort, Strings.Options.SkipfileslargerthanLong),
+            new CommandLineArgument("skip-files-smaller-than", CommandLineArgument.ArgumentType.Size, Strings.Options.SkipfilessmallerthanShort, Strings.Options.SkipfilessmallerthanLong),
             new CommandLineArgument("skip-files-modified-before", CommandLineArgument.ArgumentType.DateTime, Strings.Options.SkipfilesmodifiedbeforeShort, Strings.Options.SkipfilesmodifiedbeforeLong),
             new CommandLineArgument("skip-files-modified-after", CommandLineArgument.ArgumentType.DateTime, Strings.Options.SkipfilesmodifiedafterShort, Strings.Options.SkipfilesmodifiedafterLong),
 
@@ -638,6 +641,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("keep-time", CommandLineArgument.ArgumentType.Timespan, Strings.Options.KeeptimeShort, Strings.Options.KeeptimeLong),
             new CommandLineArgument("remote-file-lock-duration", CommandLineArgument.ArgumentType.Timespan, Strings.Options.RemotefilelockdurationShort, Strings.Options.RemotefilelockdurationLong),
             new CommandLineArgument("retention-policy", CommandLineArgument.ArgumentType.String, Strings.Options.RetentionPolicyShort, Strings.Options.RetentionPolicyLong),
+            new CommandLineArgument("retention-policy-minimum-versions", CommandLineArgument.ArgumentType.Integer, Strings.Options.RetentionPolicyMinimumVersionsShort, Strings.Options.RetentionPolicyMinimumVersionsLong, "0"),
             new CommandLineArgument("upload-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadverificationfileShort, Strings.Options.UploadverificationfileLong, "false"),
             new CommandLineArgument("allow-passphrase-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowpassphrasechangeShort, Strings.Options.AllowpassphrasechangeLong, "false"),
             new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocalblocksShort, Strings.Options.NolocalblocksLong, "false", null, null, Strings.Options.NolocalblocksDeprecated("restore-with-local-blocks")),
@@ -661,7 +665,6 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("auto-vacuum", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AutoVacuumShort, Strings.Options.AutoVacuumLong, "false"),
             new CommandLineArgument("disable-file-scanner", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilescannerShort, Strings.Options.DisablefilescannerLong, "false"),
             new CommandLineArgument("disable-filelist-consistency-checks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisablefilelistconsistencychecksShort, Strings.Options.DisablefilelistconsistencychecksLong, "false"),
-            new CommandLineArgument("disable-on-battery", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableOnBatteryShort, Strings.Options.DisableOnBatteryLong, "false"),
 
             new CommandLineArgument("exclude-empty-folders", CommandLineArgument.ArgumentType.Boolean, Strings.Options.ExcludeemptyfoldersShort, Strings.Options.ExcludeemptyfoldersLong, "false"),
             new CommandLineArgument("one-file-system", CommandLineArgument.ArgumentType.Boolean, Strings.Options.OnefilesystemShort, Strings.Options.OnefilesystemLong, "false"),
@@ -693,6 +696,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("restore-legacy", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreLegacyShort, Strings.Options.RestoreLegacyLong, "false"),
             new CommandLineArgument("restore-files-modified-after", CommandLineArgument.ArgumentType.DateTime, Strings.Options.RestoreFilesModifiedAfterShort, Strings.Options.RestoreFilesModifiedAfterLong),
             new CommandLineArgument("restore-preallocate-size", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorePreallocateSizeShort, Strings.Options.RestorePreallocateSizeLong, "false"),
+            new CommandLineArgument("restore-temp-tables-on-disk", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreTempTablesOnDiskShort, Strings.Options.RestoreTempTablesOnDiskLong, "false"),
             new CommandLineArgument("restore-volume-cache-hint", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreVolumeCacheHintShort, Strings.Options.RestoreVolumeCacheHintLong, DEFAULT_RESTORE_VOLUME_CACHE_HINT),
             new CommandLineArgument("restore-volume-cache-min-free", CommandLineArgument.ArgumentType.Size, Strings.Options.RestoreVolumeCacheMinFreeShort, Strings.Options.RestoreVolumeCacheMinFreeLong, DEFAULT_RESTORE_VOLUME_CACHE_MIN_FREE),
             new CommandLineArgument("restore-volume-decompressors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreVolumeDecompressorsShort, Strings.Options.RestoreVolumeDecompressorsLong, DEFAULT_RESTORE_VOLUME_DECOMPRESSORS.ToString()),
@@ -775,6 +779,20 @@ namespace Duplicati.Library.Main
                 var value = m_options.GetValueOrDefault("skip-files-larger-than");
                 return string.IsNullOrWhiteSpace(value)
                     ? long.MaxValue
+                    : Library.Utility.Sizeparser.ParseSize(value, "mb");
+            }
+        }
+
+        /// <summary>
+        /// Gets the size a file must reach to be backed up, or 0 to not skip small files
+        /// </summary>
+        public long SkipFilesSmallerThan
+        {
+            get
+            {
+                var value = m_options.GetValueOrDefault("skip-files-smaller-than");
+                return string.IsNullOrWhiteSpace(value)
+                    ? 0
                     : Library.Utility.Sizeparser.ParseSize(value, "mb");
             }
         }
@@ -1042,6 +1060,11 @@ namespace Duplicati.Library.Main
         }
 
         /// <summary>
+        /// Gets the minimum number of full versions the retention policy must leave; 0 disables the minimum
+        /// </summary>
+        public int RetentionPolicyMinimumVersions => Math.Max(0, GetInt("retention-policy-minimum-versions", 0));
+
+        /// <summary>
         /// Gets the time frames and intervals for the retention policy
         /// </summary>
         public List<RetentionPolicyValue> RetentionPolicy
@@ -1242,6 +1265,18 @@ namespace Duplicati.Library.Main
             {
                 var value = m_options.GetValueOrDefault("max-upload-per-run");
                 return string.IsNullOrWhiteSpace(value) ? 0 : Math.Max(0, Library.Utility.Sizeparser.ParseSize(value, "mb"));
+            }
+        }
+
+        /// <summary>
+        /// Gets how long a backup may run before it stops after the current file, or <see cref="TimeSpan.Zero"/> for no limit
+        /// </summary>
+        public TimeSpan MaxBackupRuntime
+        {
+            get
+            {
+                var value = Library.Utility.Utility.ParseTimespanOption(m_options, "max-backup-runtime", "0");
+                return value < TimeSpan.Zero ? TimeSpan.Zero : value;
             }
         }
 
@@ -1859,6 +1894,11 @@ namespace Duplicati.Library.Main
         public bool PreventEmptySource => GetBool("prevent-empty-source");
 
         /// <summary>
+        /// Gets a flag indicating if the files of a missing source are kept as they were in the previous version
+        /// </summary>
+        public bool KeepMissingSources => GetBool("keep-missing-sources");
+
+        /// <summary>
         /// Gets a value indicating if a verification file should be uploaded after changing the remote store
         /// </summary>
         public bool UploadVerificationFile => GetBool("upload-verification-file");
@@ -1982,12 +2022,6 @@ namespace Duplicati.Library.Main
         /// </summary>
         /// <value><c>true</c> if the filelist consistency checks should be disabled; otherwise, <c>false</c>.</value>
         public bool DisableFilelistConsistencyChecks => GetBool("disable-filelist-consistency-checks");
-
-        /// <summary>
-        /// Gets a flag indicating whether the backup should be disabled when on battery power.
-        /// </summary>
-        /// <value><c>true</c> if the backup should be disabled when on battery power; otherwise, <c>false</c>.</value>
-        public bool DisableOnBattery => GetBool("disable-on-battery");
 
         /// <summary>
         /// Gets a value indicating if missing dblock files are attempted created
@@ -2236,6 +2270,11 @@ namespace Duplicati.Library.Main
         public bool RestoreLegacy => GetBool("restore-legacy");
 
         /// <summary>
+        /// Gets whether a restore keeps its temporary tables in a file instead of in memory
+        /// </summary>
+        public bool RestoreTempTablesOnDisk => GetBool("restore-temp-tables-on-disk");
+
+        /// <summary>
         /// Gets the sampling mode used by the restore test operation
         /// </summary>
         public RestoreTestMode RestoreTestMode => GetEnum("restore-test-mode", RestoreTestMode.RandomFiles);
@@ -2462,7 +2501,7 @@ namespace Duplicati.Library.Main
         public bool SyncRecheck => GetBool("sync-recheck");
 
         /// <summary>
-        /// Deletes files on the remote that no longer exist locally.
+        /// Deletes files and folders on the remote that no longer exist locally.
         /// </summary>
         public bool SyncThenDelete => GetBool(SYNC_THEN_DELETE_OPTION);
 

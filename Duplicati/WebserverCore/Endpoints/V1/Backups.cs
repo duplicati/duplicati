@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 
@@ -30,6 +31,14 @@ public class Backups : IEndpointV1
         group.MapGet("/backups", ([FromServices] IBackupListService backupListService, [FromQuery] string? orderBy = null)
             => backupListService.List(orderBy))
                .RequireAuthorization();
+
+        group.MapGet("/backups/temporary", ([FromServices] Connection connection)
+            => connection.TemporaryBackups.Select(x =>
+            {
+                x.MaskSensitiveInformation();
+                return new Dto.TemporaryBackupDto(x.ID, x.Name, x.TargetURL);
+            }).ToArray())
+            .RequireAuthorization();
 
         group.MapPost("/backups", ([FromServices] IBackupListService backupListService, [FromBody] Dto.BackupAndScheduleInputDto input, [FromQuery] bool? temporary, [FromQuery] bool? existingdb)
             => backupListService.Add(input, temporary ?? false, existingdb ?? false))

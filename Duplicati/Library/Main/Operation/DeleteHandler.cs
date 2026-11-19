@@ -38,10 +38,23 @@ namespace Duplicati.Library.Main.Operation
         private readonly DeleteResults m_result;
         protected readonly Options m_options;
 
-        public DeleteHandler(Options options, DeleteResults result)
+        /// <summary>
+        /// The part of the overall operation progress a compact run after the delete reports into
+        /// </summary>
+        private (float Start, float Span)? m_compactProgressRange;
+
+        /// <summary>
+        /// Creates a new delete handler
+        /// </summary>
+        /// <param name="options">The options to use</param>
+        /// <param name="result">The results to report to</param>
+        /// <param name="compactProgressRange">The part of the overall operation progress a compact run after the delete reports into.
+        /// If <c>null</c>, the compact leaves the overall progress untouched, except when the delete is run on its own.</param>
+        public DeleteHandler(Options options, DeleteResults result, (float Start, float Span)? compactProgressRange = null)
         {
             m_options = options;
             m_result = result;
+            m_compactProgressRange = compactProgressRange;
         }
 
         public async Task RunAsync(IBackendManager backendManager)
@@ -56,6 +69,8 @@ namespace Duplicati.Library.Main.Operation
             await Utility.VerifyOptionsAndUpdateDatabaseAsync(db, m_options, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
 
+            // When run on its own, nothing else reports progress, so the compact may use the whole range
+            m_compactProgressRange ??= (0f, 1f);
             await DoRunAsync(db, false, false, backendManager).ConfigureAwait(false);
 
             if (!m_options.Dryrun)
@@ -204,7 +219,7 @@ namespace Duplicati.Library.Main.Operation
             if (!m_options.NoAutoCompact && (forceCompact || versionsToDelete.Count > 0))
             {
                 m_result.CompactResults = new CompactResults(m_result);
-                await new CompactHandler(m_options, (CompactResults)m_result.CompactResults)
+                await new CompactHandler(m_options, (CompactResults)m_result.CompactResults, m_compactProgressRange)
                     .DoCompactAsync(db, true, backendManager).ConfigureAwait(false);
             }
 
@@ -431,6 +446,22 @@ namespace Duplicati.Library.Main.Operation
             {
                 versionsToDelete.Add(mostRecentBackup);
                 Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "DeleteMostRecent", "Deleting most recent backup: {0}", mostRecentBackup.Time);
+            }
+
+            // Keep the most recent of the backups marked for deletion until the minimum number of full versions remains
+            int minimumVersions = this.Options.RetentionPolicyMinimumVersions;
+            if (minimumVersions > 0)
+            {
+                int fullVersionsRemaining = sortedFilesets.Count(x => x.IsFullBackup == BackupType.FULL_BACKUP) - versionsToDelete.Count(x => x.IsFullBackup == BackupType.FULL_BACKUP);
+                foreach (IListResultFileset fileset in versionsToDelete.Where(x => x.IsFullBackup == BackupType.FULL_BACKUP).OrderByDescending(x => x.Time).ToList())
+                {
+                    if (fullVersionsRemaining >= minimumVersions)
+                        break;
+
+                    versionsToDelete.Remove(fileset);
+                    fullVersionsRemaining++;
+                    Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "KeepForMinimumVersions", "Keeping backup {0} to keep at least {1} versions", fileset.Time, minimumVersions);
+                }
             }
 
             Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "AllBackupsToDelete", "All backups to delete: {0}", string.Join(", ", versionsToDelete.Select(x => x.Time).OrderByDescending(x => x)));

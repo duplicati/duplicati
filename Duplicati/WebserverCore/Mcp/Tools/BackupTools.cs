@@ -67,6 +67,8 @@ public class BackupTools(Connection connection, IBackupTaskService backupTaskSer
                     x.Name,
                     string.IsNullOrWhiteSpace(x.Description) ? null : x.Description,
                     x.OperationType.ToString(),
+                    string.IsNullOrWhiteSpace(x.RunAfterBackupID) ? null : x.RunAfterBackupID,
+                    string.IsNullOrWhiteSpace(x.RunAfterBackupID) ? null : x.RunAfterCondition.ToString(),
                     (x.Sources ?? []).Select(DescribeSource).ToList(),
                     GetScheme(x.TargetURL),
                     McpHelpers.FormatStoredTime(GetMetadata(x, "LastBackupStarted")),

@@ -32,7 +32,7 @@ using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Backend
 {
-    public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend, ILockingBackend
+    public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend, IFolderDeleteEnabledBackend, ILockingBackend, IFileInfoEnabledBackend
     {
         private const string AUTH_USERNAME_OPTION = "aws-access-key-id";
         private const string AUTH_PASSWORD_OPTION = "aws-secret-access-key";
@@ -529,6 +529,15 @@ namespace Duplicati.Library.Backend
 
         /// <inheritdoc/>
         /// <remarks>
+        /// Reads the object metadata with a HEAD request instead of listing the prefix.
+        /// The lookup verifies uploads, so it reads the current version of the object,
+        /// also when a point in time is set.
+        /// </remarks>
+        public Task<IFileEntry?> GetFileInfoAsync(string remotename, CancellationToken cancelToken)
+            => Connection.GetFileEntryAsync(m_bucket, GetFullKey(remotename), cancelToken);
+
+        /// <inheritdoc/>
+        /// <remarks>
         /// Reports the lock on the current version of the object, also when a point in time is set,
         /// as the lock state is what protects the older versions.
         /// </remarks>
@@ -609,6 +618,18 @@ namespace Duplicati.Library.Backend
         {
             EnsureWritable();
             return Connection.RenameFileAsync(m_bucket, GetFullKey(source), GetFullKey(target), cancelToken);
+        }
+
+        #endregion
+
+        #region IFolderDeleteEnabledBackend Members
+
+        /// <inheritdoc/>
+        public Task DeleteFolderRecursiveAsync(string path, CancellationToken cancellationToken)
+        {
+            BackendExtensions.ValidateFolderDeletePath(path);
+            EnsureWritable();
+            return Connection.DeleteFolderAsync(m_bucket, GetFullKey(path), cancellationToken);
         }
 
         #endregion
