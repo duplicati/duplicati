@@ -148,11 +148,6 @@ namespace Duplicati.Server
         public static SingleInstance ApplicationInstance = null;
 
         /// <summary>
-        /// The thread running the ping-pong handler
-        /// </summary>
-        private static Thread PingPongThread;
-
-        /// <summary>
         /// The controller interface for pause/resume and throttle options
         /// </summary>
         public static LiveControls LiveControl { get => DuplicatiWebserver.Provider.GetRequiredService<LiveControls>(); }
@@ -348,8 +343,8 @@ namespace Duplicati.Server
 
                 if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, PING_PONG_KEEPALIVE_OPTION))
                 {
-                    PingPongThread = new Thread(() => PingPongMethod(applicationSettings)) { IsBackground = true };
-                    PingPongThread.Start();
+                    // A background thread, as it blocks reading stdin and does not stop when the server does
+                    new Thread(() => PingPongMethod(applicationSettings)) { IsBackground = true }.Start();
                 }
 
                 connection.SetPreloadSettingsIfChanged(preloadDbSettings);
@@ -453,7 +448,6 @@ namespace Duplicati.Server
                     () => PurgeTempFilesTimer?.Dispose(),
                     () => CertificateRenewalTimer?.Dispose(),
                     () => Library.UsageReporter.Reporter.ShutDown(),
-                    () => PingPongThread?.Interrupt(),
                     () =>
                     {
                         Log.WriteInformationMessage(LOGTAG, "ServerStopped", Strings.Program.ServerStopped);

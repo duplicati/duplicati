@@ -74,7 +74,7 @@ public static class ExceptionExtensions
     /// <param name="ex">The operation to check</param>
     /// <returns><c>true</c> if the exception is a stop or cancel exception, <c>false</c> otherwise</returns>
     public static bool IsAbortOrCancelException(this Exception ex)
-        => ex is OperationCanceledException || ex is ThreadAbortException || ex is TaskCanceledException || ex is TimeoutException;
+        => ex is OperationCanceledException || ex is TaskCanceledException || ex is TimeoutException;
 
     /// <summary>
     /// Checks if an exception is a stop exception
@@ -82,7 +82,7 @@ public static class ExceptionExtensions
     /// <param name="ex">The operation to check</param>
     /// <returns><c>true</c> if the exception is a stop exception, <c>false</c> otherwise</returns>
     public static bool IsAbortException(this Exception ex)
-        => ex is OperationCanceledException || ex is ThreadAbortException;
+        => ex is OperationCanceledException;
 
     /// <summary>
     /// List of Windows error codes that indicate a permission denied error
