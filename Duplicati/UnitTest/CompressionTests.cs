@@ -152,6 +152,66 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
+        /// An archive written with '\' as the separator, as some older tools did on Windows, is read with '/'.
+        /// A file that is reported as present must also be readable by the same name.
+        /// </summary>
+        /// <param name="module">The compression module</param>
+        [TestCase("zip-sc")]
+        [TestCase("zip-io")]
+        public void AFileWrittenWithABackslashIsReadByItsForwardSlashName(string module)
+        {
+            var content = new byte[] { 1, 2, 3, 4, 5 };
+            using var stream = new MemoryStream();
+            using (var archive = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
+            using (var entry = archive.CreateEntry("vol\\block").Open())
+                entry.Write(content);
+
+            var opts = new Dictionary<string, string>
+            {
+                ["zip-compression-library"] = module == "zip-sc" ? "SharpCompress" : "BuiltIn"
+            };
+
+            stream.Position = 0;
+            using var zip = Library.DynamicLoader.CompressionLoader.GetModule("zip", stream, Library.Interface.ArchiveMode.Read, opts);
+            Assert.That(zip.FileExists("vol/block"), Is.True, "The file should be found by its forward slash name");
+
+            using var read = zip.OpenRead("vol/block");
+            Assert.That(read, Is.Not.Null, "A file that is found should also be readable by the same name");
+            using var copy = new MemoryStream();
+            read!.CopyTo(copy);
+            Assert.That(copy.ToArray(), Is.EqualTo(content));
+        }
+
+        /// <summary>
+        /// When a name is in an archive twice, the file that is read is the one the listing and
+        /// the time stamp come from: the last one, for both libraries.
+        /// </summary>
+        /// <param name="module">The compression module</param>
+        [TestCase("zip-sc")]
+        [TestCase("zip-io")]
+        public void ADuplicateNameReadsTheLastEntry(string module)
+        {
+            using var stream = new MemoryStream();
+            using (var archive = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
+            {
+                using (var entry = archive.CreateEntry("sample").Open())
+                    entry.WriteByte(1);
+                using (var entry = archive.CreateEntry("sample").Open())
+                    entry.WriteByte(2);
+            }
+
+            var opts = new Dictionary<string, string>
+            {
+                ["zip-compression-library"] = module == "zip-sc" ? "SharpCompress" : "BuiltIn"
+            };
+
+            stream.Position = 0;
+            using var zip = Library.DynamicLoader.CompressionLoader.GetModule("zip", stream, Library.Interface.ArchiveMode.Read, opts);
+            using var read = zip.OpenRead("sample");
+            Assert.That(read!.ReadByte(), Is.EqualTo(2), "The last entry for the name should be read");
+        }
+
+        /// <summary>
         /// Despite archives being able to store multiple files with the same name, this should not leak into the application
         /// </summary>
         /// <param name="module">The compression module</param>
