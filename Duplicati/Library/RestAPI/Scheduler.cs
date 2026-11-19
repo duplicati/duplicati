@@ -170,6 +170,62 @@ namespace Duplicati.Server
         }
 
         /// <summary>
+        /// Skips the next scheduled run of a backup, so it next runs at the slot after that one.
+        /// The new start time is stored with the schedule, so the skip survives a restart.
+        /// A run that is already queued is not removed.
+        /// </summary>
+        /// <param name="backupId">The ID of the backup</param>
+        /// <returns>The new next run time, or <c>null</c> if the backup has no repeating schedule</returns>
+        public DateTime? SkipNextRun(string backupId)
+        {
+            var scheduleId = m_dataConnection.GetScheduleIDsFromTags(["ID=" + backupId]);
+            var sc = scheduleId.Length == 0 ? null : m_dataConnection.GetSchedule(scheduleId.First());
+            if (sc == null || string.IsNullOrEmpty(sc.Repeat))
+                return null;
+
+            var timeZoneInfo = m_dataConnection.ApplicationSettings.Timezone;
+            var now = DateTime.UtcNow;
+            var fingerprint = GetScheduleFingerprint(sc);
+
+            lock (m_lock)
+            {
+                // The scheduler moves past the stored time once a run is queued, so prefer the time it holds
+                DateTime upcoming;
+                var cached = (m_schedule ?? []).Where(x => x.Value.ID == sc.ID && GetScheduleFingerprint(x.Value) == fingerprint).ToArray();
+                if (cached.Length > 0)
+                    upcoming = cached[0].Key;
+                else
+                {
+                    var last = sc.LastRun > now ? now : sc.LastRun;
+                    upcoming = GetNextValidTime(new DateTime(sc.Time.Ticks, DateTimeKind.Utc), last, sc.Repeat, sc.AllowedDays, timeZoneInfo);
+                }
+
+                // An overdue run that has not been queued yet is skipped as well
+                var next = GetNextValidTime(upcoming,
+                    new DateTime(Math.Max(now.AddSeconds(1).Ticks, upcoming.AddSeconds(1).Ticks), DateTimeKind.Utc),
+                    sc.Repeat, sc.AllowedDays, timeZoneInfo);
+
+                sc.Time = next;
+
+                // A queued run stores its next time when it finishes, which must not undo the skip
+                foreach (var t in m_updateTasks.Where(x => x.Value.Item1.ID == sc.ID).ToArray())
+                    m_updateTasks[t.Key] = Tuple.Create(t.Value.Item1, next > t.Value.Item2 ? next : t.Value.Item2, t.Value.Item3);
+
+                // Saving the schedule pushes the status to clients before the scheduler makes its next pass,
+                // so the proposed schedule must already show the new time
+                m_schedule = (m_schedule ?? [])
+                    .Where(x => x.Value.ID != sc.ID)
+                    .Append(new KeyValuePair<DateTime, ISchedule>(next, sc))
+                    .OrderBy(x => x.Key)
+                    .ToArray();
+            }
+
+            m_dataConnection.AddOrUpdateSchedule(sc);
+            Reschedule();
+            return sc.Time;
+        }
+
+        /// <summary>
         /// Forces the scheduler to re-evaluate the order. 
         /// Call this method if something changes
         /// </summary>

@@ -32,6 +32,13 @@ public interface ISchedulerService
     IList<Tuple<string, DateTime>> GetProposedSchedule();
 
     /// <summary>
+    /// Skips the next scheduled run of a backup, so it next runs at the slot after that one
+    /// </summary>
+    /// <param name="backupId">The ID of the backup</param>
+    /// <returns>The new next run time, or <c>null</c> if the backup has no repeating schedule</returns>
+    DateTime? SkipNextRun(string backupId);
+
+    /// <summary>
     /// Terminates the thread. Any items still in queue will be removed
     /// </summary>
     /// <param name="wait">True if the call should block until the thread has exited, false otherwise</param>
