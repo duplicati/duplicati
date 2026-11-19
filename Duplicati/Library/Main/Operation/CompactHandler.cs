@@ -41,10 +41,34 @@ namespace Duplicati.Library.Main.Operation
         protected readonly Options m_options;
         protected readonly CompactResults m_result;
 
-        public CompactHandler(Options options, CompactResults result)
+        /// <summary>
+        /// The part of the overall operation progress the compact reports into,
+        /// or <c>null</c> if the compact does not report progress
+        /// </summary>
+        private (float Start, float Span)? m_progressRange;
+
+        /// <summary>
+        /// Creates a new compact handler
+        /// </summary>
+        /// <param name="options">The options to use</param>
+        /// <param name="result">The results to report to</param>
+        /// <param name="progressRange">The part of the overall operation progress to report the compact progress into.
+        /// If <c>null</c>, the compact leaves the overall progress untouched, except when run on its own.</param>
+        public CompactHandler(Options options, CompactResults result, (float Start, float Span)? progressRange = null)
         {
             m_options = options;
             m_result = result;
+            m_progressRange = progressRange;
+        }
+
+        /// <summary>
+        /// Reports how far the compact has come, mapped into the configured progress range
+        /// </summary>
+        /// <param name="fraction">The completed fraction of the compact, from 0 to 1</param>
+        private void ReportProgress(float fraction)
+        {
+            if (m_progressRange is { } range)
+                m_result.OperationProgressUpdater.UpdateProgress(range.Start + range.Span * Math.Clamp(fraction, 0f, 1f));
         }
 
         private static bool HasActiveLock(DateTime? lockExpirationTime)
@@ -67,6 +91,8 @@ namespace Duplicati.Library.Main.Operation
                 if (await db.TerminatedWithActiveUploadsAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     await FilelistProcessor.VerifyRemoteListAsync(backendManager, m_options, db, m_result.BackendWriter, true, FilelistProcessor.VerifyMode.VerifyAndClean, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
+                // When run on its own, the compact is the whole operation
+                m_progressRange ??= (0f, 1f);
                 var changed = await DoCompactAsync(db, false, backendManager).ConfigureAwait(false);
 
                 if (changed && m_options.UploadVerificationFile)
@@ -102,6 +128,8 @@ namespace Duplicati.Library.Main.Operation
 
             if (report.ShouldReclaim || report.ShouldCompact)
             {
+                ReportProgress(0f);
+
                 // Workaround where we allow a running backendmanager to be used
                 if (!hasVerifiedBackend)
                     await FilelistProcessor.VerifyRemoteListAsync(backendManager, m_options, db, m_result.BackendWriter, true, FilelistProcessor.VerifyMode.VerifyStrict, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
@@ -289,6 +317,9 @@ namespace Duplicati.Library.Main.Operation
 
                                 deleteableVolumes.Add(entry);
                             }
+
+                            // Downloading and repacking the volumes is where the compact spends its time
+                            ReportProgress((float)downloadedVolumes.Count / volumesToDownload.Count);
                         }
 
                         if (blocksInVolume > 0)
@@ -378,6 +409,7 @@ namespace Duplicati.Library.Main.Operation
 
                 await backendManager.WaitForEmptyAsync(db, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
+                ReportProgress(1f);
                 m_result.EndTime = DateTime.UtcNow;
                 return (m_result.DeletedFileCount + m_result.UploadedFileCount) > 0;
             }
