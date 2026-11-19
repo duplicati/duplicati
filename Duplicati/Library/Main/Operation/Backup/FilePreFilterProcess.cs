@@ -93,7 +93,8 @@ namespace Duplicati.Library.Main.Operation.Backup
                         LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "FailedToReadSize", e.Entry.Path, "Failed to read size on \"{0}\"");
                     }
 
-                    await stats.AddExaminedFileAsync(filestatsize);
+                    // A size that is not known counts as nothing
+                    await stats.AddExaminedFileAsync(Math.Max(0, filestatsize));
 
                     // Stop now if the file is too large
                     var tooLargeFile = SKIPFILESLARGERTHAN != 0 && filestatsize >= 0 && filestatsize > SKIPFILESLARGERTHAN;

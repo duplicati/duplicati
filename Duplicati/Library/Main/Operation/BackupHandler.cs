@@ -696,6 +696,12 @@ namespace Duplicati.Library.Main.Operation
                 // Make sure the CompressionHints table is initialized, otherwise all workers will initialize it
                 var unused = options.CompressionHints.Count;
 
+                // A sequential source hands out one entry at a time, in a fixed order,
+                // so only one file is read at a time when the backup has such a source
+                var fileProcessors = Backup.FileEnumerationProcess.GetProviders(source).Any(x => x is ISequentialSourceProvider)
+                    ? 1
+                    : options.ConcurrencyFileprocessors;
+
                 Task all = Task.WhenAll(
                     new[]
                         {
@@ -726,7 +732,7 @@ namespace Duplicati.Library.Main.Operation
                         )
                         // Spawn additional file processors
                         .Concat(
-                            Enumerable.Range(0, options.ConcurrencyFileprocessors - 1).Select(x =>
+                            Enumerable.Range(0, fileProcessors - 1).Select(x =>
                                 Backup.FileBlockProcessor.RunAsync(channels, options, database, stats, taskreader)
                         )
                     )

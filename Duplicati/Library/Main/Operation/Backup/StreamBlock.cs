@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using CoCoL;
 using System.IO;
 using System.Threading.Tasks;
@@ -31,6 +33,12 @@ namespace Duplicati.Library.Main.Operation.Backup
         public string Streamhash { get; internal set; }
         public long Streamlength { get; internal set; }
         public long Blocksetid { get; internal set; }
+        /// <summary>
+        /// The error that ended a streamed source before its end, or null.
+        /// When set, <see cref="Blocksetid"/> covers the data read before the error,
+        /// and is negative if nothing was read.
+        /// </summary>
+        public System.Exception? StreamFailure { get; internal set; }
     }
 
     internal struct StreamBlock
@@ -38,6 +46,10 @@ namespace Duplicati.Library.Main.Operation.Backup
         public string Path;
         public Stream Stream;
         public bool IsMetadata;
+        /// <summary>
+        /// True when the stream is a source of unknown length, read until it ends
+        /// </summary>
+        public bool IsStreamed;
         public CompressionHint Hint;
         public TaskCompletionSource<StreamProcessResult> Result;
 
@@ -45,14 +57,17 @@ namespace Duplicati.Library.Main.Operation.Backup
         {
             var tcs = new TaskCompletionSource<StreamProcessResult>();
 
-            // limit the stream length to that found now, a fixed point in time
-            var limitedStream = new Library.Utility.ReadLimitLengthStream(stream, stream.Length);
+            // limit the stream length to that found now, a fixed point in time;
+            // a streamed source has no length to limit to, and is read until it ends
+            var isStreamed = stream is IStreamedSourceStream;
+            var limitedStream = isStreamed ? stream : new Library.Utility.ReadLimitLengthStream(stream, stream.Length);
 
             var streamBlock = new StreamBlock
             {
                 Path = path,
                 Stream = limitedStream,
                 IsMetadata = isMetadata,
+                IsStreamed = isStreamed,
                 Hint = hint,
                 Result = tcs
             };

@@ -65,6 +65,7 @@ public static class SourceProviderModules
     /// Calculate list once and cache it
     /// </summary>
     private static readonly IReadOnlyList<ISourceProviderModule> SupportedSourceProviders = new ISourceProviderModule[] {
+        new SourceProvider.Builtin.PostgreSQL.PostgreSQLSourceProvider(),
     }
     .Concat(ProprietarySourceProviderModules.Value)
     .WhereNotNull()

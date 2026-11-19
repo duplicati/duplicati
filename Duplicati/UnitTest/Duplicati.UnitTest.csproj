@@ -69,4 +69,8 @@
   </PropertyGroup>
   <Import Project="..\Library\WindowsModules\WindowsModules.Runtime.targets" />
 
+  <ItemGroup>
+    <EmbeddedResource Include="PostgreSQLResources\*.dump" />
+  </ItemGroup>
+
 </Project>

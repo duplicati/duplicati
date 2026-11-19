@@ -103,6 +103,31 @@ namespace Duplicati.Library.Main.Operation.Backup
                         await stats.AddOpenedFileAsync(filestreamdata.Streamlength).ConfigureAwait(false);
 
                         var metadataid = await metatask.ConfigureAwait(false);
+
+                        // A streamed source that failed part-way must not replace the entry of the previous
+                        // backup with a damaged copy. The previous entry is carried forward under its name,
+                        // so it stays referenced by the new version, and the data that did arrive is kept
+                        // under another name, as it is already on its way to the destination.
+                        if (filestreamdata.StreamFailure != null)
+                        {
+                            var hasPartialData = filestreamdata.Blocksetid >= 0;
+                            var hasPrevious = e.OldId >= 0;
+
+                            if (hasPartialData)
+                                await database.AddFileAsync(e.PathPrefixID, e.Filename + StreamedSource.PartialEntrySuffix, e.LastWrite, filestreamdata.Blocksetid, metadataid, taskreader.ProgressToken).ConfigureAwait(false);
+                            if (hasPrevious)
+                                await database.AddUnmodifiedAsync(e.OldId, e.OldModified, taskreader.ProgressToken).ConfigureAwait(false);
+
+                            FailedPathRecorder.Record(e.Entry.Path);
+                            Logging.Log.WriteWarningMessage(FILELOGTAG, "StreamedSourceFailed", filestreamdata.StreamFailure,
+                                "The source {0} failed after {1} was read: {2}. {3} {4}",
+                                e.Entry.Path,
+                                Library.Utility.Utility.FormatSizeString(filestreamdata.Streamlength),
+                                filestreamdata.StreamFailure.Message,
+                                hasPrevious ? "The copy from the previous backup is kept in this version." : "There is no previous copy, so this version does not have it.",
+                                hasPartialData ? $"The data that was read is stored as {e.Entry.Path}{StreamedSource.PartialEntrySuffix}." : "No data was read.");
+                            continue;
+                        }
                         var filekey = filestreamdata.Streamhash;
                         var filesize = filestreamdata.Streamlength;
 
