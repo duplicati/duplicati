@@ -138,7 +138,7 @@ namespace Duplicati.Library.Main.Database.Local
         private string m_tempsmalllist = null!;
         /// <summary>
         /// Temporary table name for the blocklist hashes in the temporary blocklist table that
-        /// <see cref="FindMissingBlocklistHashesAsync"/> has not yet turned into blocks and blockset entries.
+        /// <see cref="FindMissingBlocklistHashesAsync"/> or <see cref="AddBlockAndBlockSetEntryFromTempAsync"/> has not yet turned into blocks and blockset entries.
         /// </summary>
         private string m_temppendingblocklist = null!;
 
@@ -742,7 +742,12 @@ namespace Duplicati.Library.Main.Database.Local
                             ""TBL"".""Index"" FROM ""{m_tempblocklist}"" ""TBL""
                         LEFT OUTER JOIN ""Block"" ""B""
                             ON (""B"".""Hash"" = ""TBL"".""BlockHash"")
-                        WHERE ""B"".""Hash"" IS NULL
+                        WHERE
+                            ""B"".""Hash"" IS NULL
+                            AND ""TBL"".""BlockListHash"" IN (
+                                SELECT ""BlockListHash""
+                                FROM ""{m_temppendingblocklist}""
+                            )
                     ) ""NB""
                     JOIN ""BlocklistHash"" ""BH""
                         ON (""BH"".""Hash"" = ""NB"".""BlocklistHash"")
@@ -797,7 +802,12 @@ namespace Duplicati.Library.Main.Database.Local
                             BE.""BlockSetID"" = ""BH"".""BlocksetID""
                             AND BE.""Index"" = (""BH"".""Index"" * {str_blocksize_per_hashsize})+""TBL"".""Index""
                         )
-                WHERE ""BE"".""BlockSetID"" IS NULL
+                WHERE
+                    ""BE"".""BlockSetID"" IS NULL
+                    AND ""TBL"".""BlockListHash"" IN (
+                        SELECT ""BlockListHash""
+                        FROM ""{m_temppendingblocklist}""
+                    )
                 {extra}
             ";
 
@@ -809,6 +819,11 @@ namespace Duplicati.Library.Main.Database.Local
 
                 // Insert corresponding entries into blockset
                 await cmd.ExecuteNonQueryAsync(insertBlocksetEntriesCommand, token)
+                    .ConfigureAwait(false);
+
+                // Every block of the pending blocklists is now in the Block table, and every blockset that uses them
+                // has its entries, so processing them again adds nothing
+                await cmd.ExecuteNonQueryAsync($@"DELETE FROM ""{m_temppendingblocklist}""", token)
                     .ConfigureAwait(false);
             }
             catch (Exception ex)
