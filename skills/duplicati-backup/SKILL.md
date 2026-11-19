@@ -1,8 +1,10 @@
 ---
 name: duplicati-backup
 description: Undo for agents. Take an encrypted offsite checkpoint with Duplicati before risky changes, and restore files from any earlier point in time. Use before bulk edits, deletes, migrations, upgrades, or when the user asks to back up, undo, roll back, or recover files.
-version: 1.0.0
+version: 1.1.0
 metadata:
+  hermes:
+    tags: [Backup, Restore, Undo, Checkpoint, MCP]
   openclaw:
     emoji: "💾"
     homepage: https://docs.duplicati.com/automation-and-integration/using-duplicati-with-ai-agents-mcp
@@ -77,22 +79,28 @@ Skip the checkpoint for read-only work and for small edits the user can triviall
 
 Tell the user the Duplicati MCP server is not connected and give them these steps. Do not try to perform them yourself.
 
-1. Install Duplicati 2.4.1 or newer (canary channel at the time of writing) on the machine that holds the files, and create a backup that covers the folders the agent works in, for example `~/.openclaw`. Use a destination on another machine or in the cloud.
+1. Install Duplicati 2.4.1 or newer (canary channel at the time of writing) on the machine that holds the files, and create a backup that covers the folders the agent works in, such as its workspace and memory folders. Use a destination on another machine or in the cloud.
 2. Turn on the MCP endpoint: Settings → Experimental options → MCP server, or start the server with `--webservice-enable-mcp-server=true`.
-3. Issue a token for the agent, limited to the backups it needs:
+3. Issue a token for the agent, limited to the backups it needs. In the Duplicati UI, open Settings → MCP access tokens → Create access token; after creating it, pick the agent under "Set up the token in" to get a ready-made command or configuration. Or use the command line:
 
     ```bash
-    duplicati-server-util issue-mcp-token --name="OpenClaw" --level=Restore --backup="OpenClaw-Backup" --expires-in=90D
+    duplicati-server-util issue-mcp-token --name="<agent name>" --level=Restore --backup="<backup name>" --expires-in=90D
     ```
 
     The token is shown once. Use `--level=Backup` for checkpoints without restore rights. Add `--restore-root=<folder>` (repeatable) to also allow restores into a separate folder; without it the token can only restore files to their original location.
 
-4. Add the server to OpenClaw and verify it:
-    ```bash
-    openclaw mcp set duplicati '{"url":"http://localhost:8200/mcp","transport":"streamable-http","headers":{"Authorization":"Bearer <token>"}}'
-    openclaw mcp doctor duplicati --probe
-    ```
+4. Add the server to the agent's MCP configuration:
+    - Name: `duplicati`
+    - URL: `http://localhost:8200/mcp` (the Duplicati server address followed by `/mcp`)
+    - Transport: Streamable HTTP
+    - Header: `Authorization: Bearer <token>`
 
-A `404` from the endpoint means the MCP server is switched off. A `403` means a host, origin, or pre-shared key check failed.
+    For an agent that can only start MCP servers as local commands, use the bridge instead: run `duplicati-server-util mcp` with the token in the `DUPLICATI_MCP_TOKEN` environment variable, or pass `--token-file=<file>`.
+
+    The documentation below has the exact setup for Claude Code, Claude Desktop, VS Code, Cursor, Codex CLI, Gemini CLI, GitHub Copilot CLI and opencode. For OpenClaw, see [references/openclaw.md](references/openclaw.md).
+
+5. Restart or reload the agent so it picks up the new server, and check that the Duplicati tools are listed.
+
+A `404` from the endpoint means the MCP server is switched off. A `403` means a host, origin, or pre-shared key check failed. A `401` means the token is missing, expired, or revoked.
 
 Documentation: https://docs.duplicati.com/automation-and-integration/using-duplicati-with-ai-agents-mcp
