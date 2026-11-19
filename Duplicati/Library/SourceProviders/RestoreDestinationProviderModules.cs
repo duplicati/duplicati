@@ -65,6 +65,8 @@ public static class RestoreDestinationProviderModules
     /// Calculate list once and cache it
     /// </summary>
     private static readonly IReadOnlyList<IRestoreDestinationProviderModule> SupportedRestoreDestinationProviders = new IRestoreDestinationProviderModule[] {
+        new SourceProvider.DiskImage.RestoreProvider(),
+        new SourceProvider.DiskImage.ImageFileRestoreProvider()
     }
     .Concat(ProprietaryRestoreDestinationProviderModules.Value)
     .WhereNotNull()

@@ -81,7 +81,6 @@
     <Project Path="Duplicati/PackageRef/Duplicati.PackageRef.csproj" />
   </Folder>
   <Folder Name="/Proprietary/">
-    <Project Path="proprietary/DiskImage/Duplicati.Proprietary.DiskImage.csproj" />
     <Project Path="proprietary/LicenseChecker/Duplicati.Proprietary.LicenseChecker.csproj" />
     <Project Path="proprietary/LoaderHelper/Duplicati.Proprietary.LoaderHelper.csproj" />
     <Project Path="proprietary/GoogleWorkspace/Duplicati.Proprietary.GoogleWorkspace.csproj" />
@@ -89,6 +88,7 @@
   </Folder>
   <Folder Name="/SourceProviders/">
     <Project Path="Duplicati/Library/SourceProvider/Builtin/Duplicati.Library.SourceProvider.Builtin.csproj" />
+    <Project Path="Duplicati/Library/SourceProvider/DiskImage/Duplicati.Library.SourceProvider.DiskImage.csproj" />
   </Folder>
   <Folder Name="/Tools/">
     <Project Path="Tools/RemoteSynchronization/RemoteSynchronization.csproj" />
