@@ -134,6 +134,59 @@ public static class PreloadSettingsLoader
     }
 
     /// <summary>
+    /// A path that is searched for preload settings
+    /// </summary>
+    /// <param name="Path">The full path to the preload settings file</param>
+    /// <param name="Exists"><c>true</c> if the file exists and is read when an executable starts</param>
+    public sealed record PreloadSettingsPath(string Path, bool Exists);
+
+    /// <summary>
+    /// Gets the paths that are searched for preload settings, in the order they are applied,
+    /// so later paths take precedence over earlier ones
+    /// </summary>
+    /// <returns>The searched paths</returns>
+    public static IReadOnlyList<PreloadSettingsPath> GetPreloadSettingsPaths()
+        => DescribeSearchPaths(GetSearchPaths(DataFolderManager.PORTABLE_MODE, PreloadSettingsFile, PreloadPaths, PortablePreloadPaths).paths);
+
+    /// <summary>
+    /// Describes the given search paths, telling which of them are read
+    /// </summary>
+    /// <param name="paths">The paths to describe</param>
+    /// <returns>The described paths</returns>
+    internal static IReadOnlyList<PreloadSettingsPath> DescribeSearchPaths(IEnumerable<string> paths)
+        => paths
+            .Select(path => new PreloadSettingsPath(path, Path.IsPathRooted(path) && File.Exists(path)))
+            .ToArray();
+
+    /// <summary>
+    /// Selects the paths to search for preload settings
+    /// </summary>
+    /// <param name="portableMode">The portable mode flag</param>
+    /// <param name="preloadSettingsFile">The value of the preload settings environment variable</param>
+    /// <param name="preloadPaths">The paths searched outside portable mode</param>
+    /// <param name="portablePreloadPaths">The paths searched in portable mode</param>
+    /// <returns>The paths to search, and <c>true</c> if the environment variable replaces all other paths</returns>
+    internal static (string[] paths, bool isExplicitOverride) GetSearchPaths(bool portableMode, string preloadSettingsFile, string[] preloadPaths, string[] portablePreloadPaths)
+    {
+        var paths = preloadPaths;
+        if (portableMode)
+        {
+            if (PreloadDebug)
+                Console.WriteLine("Portable mode detected, using portable preload paths only");
+            paths = portablePreloadPaths;
+        }
+
+        if (!string.IsNullOrWhiteSpace(preloadSettingsFile) && preloadSettingsFile.StartsWith("!"))
+        {
+            if (PreloadDebug)
+                Console.WriteLine($"Preload settings file specified with environment variable and exclamation mark, ignoring others");
+            return (new[] { preloadSettingsFile.Substring(1) }, true);
+        }
+
+        return (paths, false);
+    }
+
+    /// <summary>
     /// Gets the argument name from the given argument
     /// </summary>
     /// <param name="arg">The argument to get the name from</param>
@@ -171,26 +224,11 @@ public static class PreloadSettingsLoader
                     target[kvp.Key] = kvp.Value;
         }
 
-        var paths = PreloadPaths;
-        if (portableMode)
-        {
-            if (PreloadDebug)
-                Console.WriteLine("Portable mode detected, using portable preload paths only");
-            paths = PortablePreloadPaths;
-        }
+        var (paths, isExplicitOverride) = GetSearchPaths(portableMode, PreloadSettingsFile, PreloadPaths, PortablePreloadPaths);
 
         // Portable preload paths are user-controlled (install directory or env var),
         // so the security check is skipped for files in those locations.
         var portablePathSet = new HashSet<string>(PortablePreloadPaths, StringComparer.OrdinalIgnoreCase);
-
-        var isExplicitOverride = false;
-        if (!string.IsNullOrWhiteSpace(PreloadSettingsFile) && PreloadSettingsFile.StartsWith("!"))
-        {
-            if (PreloadDebug)
-                Console.WriteLine($"Preload settings file specified with environment variable and exclamation mark, ignoring others");
-            paths = new[] { PreloadSettingsFile.Substring(1) };
-            isExplicitOverride = true;
-        }
 
         foreach (var path in paths)
         {
