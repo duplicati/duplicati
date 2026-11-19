@@ -147,8 +147,12 @@ public class BackupListService(Connection connection) : IBackupListService
     }
 
     /// <inheritdoc/>
-    public ImportBackupOutputDto Import(bool cmdline, bool import_metadata, bool direct, bool temporary, string passphrase, string tempfile, Dictionary<string, string>? replace_settings, bool expand_env_vars = false)
+    public ImportBackupOutputDto Import(bool cmdline, bool import_metadata, bool direct, bool temporary, string passphrase, string tempfile, Dictionary<string, string>? replace_settings, bool expand_env_vars = false, string? global_options = null)
     {
+        var globalOptions = ParseGlobalOptionsImport(global_options);
+        if (globalOptions == GlobalOptionsImport.Apply && !direct)
+            throw new BadRequestException("Global options can only be applied when the backup is imported directly");
+
         try
         {
             if (cmdline)
@@ -158,7 +162,14 @@ public class BackupListService(Connection connection) : IBackupListService
 
             // The variables are in the configuration file; values given to replace are used as they are
             if (expand_env_vars)
+            {
                 ExpandEnvironmentVariables(ipx.Backup);
+                foreach (var setting in ipx.GlobalSettings ?? [])
+                    setting.Value = ExpandValue(setting.Value);
+            }
+
+            if (globalOptions == GlobalOptionsImport.Merge)
+                MergeGlobalOptions(ipx.Backup, ipx.GlobalSettings);
 
             if (replace_settings != null)
             {
@@ -210,6 +221,9 @@ public class BackupListService(Connection connection) : IBackupListService
                         connection.AddOrUpdateBackupAndSchedule(ipx.Backup, ipx.Schedule);
                         assignedId = ipx.Backup.ID;
                     }
+
+                    if (globalOptions == GlobalOptionsImport.Apply)
+                        ApplyGlobalOptions(ipx.GlobalSettings);
                 }
 
                 return new ImportBackupOutputDto(assignedId, null);
@@ -227,6 +241,86 @@ public class BackupListService(Connection connection) : IBackupListService
     }
 
     /// <summary>
+    /// What an import does with the global advanced options in the configuration
+    /// </summary>
+    private enum GlobalOptionsImport
+    {
+        /// <summary>The options are not used</summary>
+        Ignore,
+        /// <summary>The options the backup does not set itself are added to the backup</summary>
+        Merge,
+        /// <summary>The options are set as global options of this server</summary>
+        Apply
+    }
+
+    /// <summary>
+    /// Parses the global_options value of an import
+    /// </summary>
+    /// <param name="value">The value, or null for the default</param>
+    /// <returns>What to do with the global options</returns>
+    private static GlobalOptionsImport ParseGlobalOptionsImport(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return GlobalOptionsImport.Ignore;
+        if (Enum.TryParse<GlobalOptionsImport>(value, true, out var result) && Enum.IsDefined(result) && !int.TryParse(value, out _))
+            return result;
+        throw new BadRequestException($"Invalid value for global_options: {value}");
+    }
+
+    /// <summary>
+    /// Adds the global options to the backup's settings. An option the backup sets itself keeps the
+    /// backup's value, as it does when the backup runs with the global options of a server.
+    /// </summary>
+    /// <param name="backup">The imported backup</param>
+    /// <param name="globalSettings">The global options from the configuration</param>
+    private static void MergeGlobalOptions(Backup backup, IEnumerable<Duplicati.Server.Serialization.Interface.ISetting>? globalSettings)
+    {
+        static string OptionName(string name) => name.StartsWith("--", StringComparison.Ordinal) ? name.Substring(2) : name;
+
+        var settings = (backup.Settings ?? []).ToList();
+        var names = settings.Select(x => OptionName(x.Name)).ToHashSet();
+        foreach (var setting in globalSettings ?? [])
+            if (!string.IsNullOrWhiteSpace(setting.Name) && names.Add(OptionName(setting.Name)))
+                settings.Add(new Setting { Name = setting.Name, Value = setting.Value, Filter = setting.Filter ?? string.Empty });
+
+        backup.Settings = settings.ToArray();
+    }
+
+    /// <summary>
+    /// Sets the global options as global options of this server. An option the server already has
+    /// gets the imported value; the other global options of the server are kept.
+    /// </summary>
+    /// <param name="globalSettings">The global options from the configuration</param>
+    private void ApplyGlobalOptions(IEnumerable<Duplicati.Server.Serialization.Interface.ISetting>? globalSettings)
+    {
+        var imported = (globalSettings ?? [])
+            .Where(x => !string.IsNullOrWhiteSpace(x.Name) && x.Name.StartsWith("--", StringComparison.Ordinal))
+            .ToList();
+        if (imported.Count == 0)
+            return;
+
+        var settings = connection.Settings.ToList();
+        foreach (var setting in imported)
+        {
+            var existing = settings.FirstOrDefault(x => string.Equals(x.Name, setting.Name, StringComparison.OrdinalIgnoreCase));
+            if (existing == null)
+                settings.Add(new Setting { Name = setting.Name, Value = setting.Value, Filter = setting.Filter ?? string.Empty });
+            else
+                existing.Value = setting.Value;
+        }
+
+        connection.Settings = settings.ToArray();
+    }
+
+    /// <summary>
+    /// Expands the %VAR% environment variables in a value with the environment of the server
+    /// </summary>
+    /// <param name="value">The value</param>
+    /// <returns>The expanded value</returns>
+    private static string ExpandValue(string value)
+        => string.IsNullOrEmpty(value) ? value : Environment.ExpandEnvironmentVariables(value);
+
+    /// <summary>
     /// Expands the %VAR% environment variables in an imported configuration with the environment of
     /// the server, so an exported configuration can be used as a template. Only the %VAR% syntax is
     /// expanded, so a $ in a password or a URL is never changed, and a variable that is not defined
@@ -235,8 +329,7 @@ public class BackupListService(Connection connection) : IBackupListService
     /// <param name="backup">The imported backup</param>
     private static void ExpandEnvironmentVariables(Backup backup)
     {
-        static string Expand(string value)
-            => string.IsNullOrEmpty(value) ? value : Environment.ExpandEnvironmentVariables(value);
+        static string Expand(string value) => ExpandValue(value);
 
         backup.Name = Expand(backup.Name);
         backup.Description = Expand(backup.Description);
