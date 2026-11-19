@@ -332,6 +332,32 @@ public sealed record SystemInfoDto
     public required LicenseStatusDto? RemoteLicenseStatus { get; init; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether the sensitive fields in the server database are encrypted.
+    /// </summary>
+    public required bool DatabaseFieldsEncrypted { get; init; }
+
+    /// <summary>
+    /// Gets or sets the paths searched for preload settings, in the order they are applied.
+    /// </summary>
+    public required IEnumerable<PreloadSettingsPathDto> PreloadSettingsPaths { get; init; }
+
+    /// <summary>
+    /// A path searched for preload settings
+    /// </summary>
+    public sealed class PreloadSettingsPathDto
+    {
+        /// <summary>
+        /// The full path to the preload settings file
+        /// </summary>
+        public required string Path { get; init; }
+
+        /// <summary>
+        /// A value indicating whether the file exists, so its settings are applied
+        /// </summary>
+        public required bool Exists { get; init; }
+    }
+
+    /// <summary>
     /// Represents the license status information.
     /// </summary>
     public class LicenseStatusDto
