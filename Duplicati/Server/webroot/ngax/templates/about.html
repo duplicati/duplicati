@@ -33,6 +33,8 @@
 
             <a ng-show="state.updaterState == 'Waiting'" href ng-click="doCheckForUpdates()" translate>Check for updates now</a>
             <div ng-show="state.updaterState == 'Checking'"  translate>Checking for updates …</div>
+            <div class="error-color" ng-show="updateCheckResult() == 'error'" translate translate-params-error="state.updateCheckError">Could not check for updates: {{error}}</div>
+            <div ng-show="updateCheckResult() == 'latest'" translate>You are running the latest version</div>
 
             <progress-bar ng-show="state.updaterState == 'Downloading'" ng-text="'Downloading update …'", ng-progress="state.updateDownloadProgress">
             </progress-bar>

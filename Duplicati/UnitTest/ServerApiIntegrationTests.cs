@@ -525,6 +525,53 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
+    public async Task AFailedUpdateCheckIsReportedInTheStatus_Async()
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            Assert.That(await GetApiExtensionsAsync(httpClient).ConfigureAwait(false), Does.Contain(SystemInfoProvider.UpdateCheckErrorExtension),
+                "System info should advertise the update check error");
+
+            async Task<(string? Finished, string? Error)> GetResultAsync()
+            {
+                var state = await httpClient.GetFromJsonAsync<JsonElement>("/api/v1/serverstate", JsonOptions).ConfigureAwait(false);
+                string? Read(string name) => state.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+                return (state.GetProperty("UpdaterState").GetString() == "Waiting" ? Read("UpdateCheckFinished") : null, Read("UpdateCheckError"));
+            }
+
+            // A client tells that the check it started has finished by the finish time changing,
+            // as it can miss the checking state when the check is quick
+            async Task<string?> CheckAndWaitAsync()
+            {
+                var before = (await GetResultAsync().ConfigureAwait(false)).Finished;
+                (await httpClient.PostAsync("/api/v1/updates/check", null).ConfigureAwait(false)).EnsureSuccessStatusCode();
+                var stopwatch = Stopwatch.StartNew();
+                while (true)
+                {
+                    var (finished, error) = await GetResultAsync().ConfigureAwait(false);
+                    if (finished != null && finished != before)
+                        return error;
+                    Assert.That(stopwatch.Elapsed, Is.LessThan(TimeSpan.FromMinutes(1)), "The update check should finish");
+                    await Task.Delay(100).ConfigureAwait(false);
+                }
+            }
+
+            // The real check, pointed at a closed port so it fails without reaching the update server
+            var poller = (UpdatePollThread)ServerProgram.DuplicatiWebserver.Provider.GetService(typeof(UpdatePollThread))!;
+            var url = $"http://127.0.0.1:{GetFreeTcpPort()}/latest.manifest";
+            poller.CheckForUpdate = channel => (UpdaterManager.CheckForUpdate(channel, [url], out var error), error);
+
+            Assert.That((await CheckAndWaitAsync().ConfigureAwait(false)), Is.Not.Empty, "A check that reached no server should say why in the status");
+            Assert.That((await CheckAndWaitAsync().ConfigureAwait(false)), Is.Not.Empty, "A second failed check should be told apart from the first by its finish time");
+
+            // A check that is done clears the error, whether or not it found an update
+            poller.CheckForUpdate = _ => (null, null);
+            Assert.That((await CheckAndWaitAsync().ConfigureAwait(false)), Is.Null);
+        }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
     public async Task SavingASyncJobWithoutTheOperationTypeKeepsItASyncJob_Async()
     {
         var name = $"Sync job {Guid.NewGuid():N}";

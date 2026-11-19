@@ -200,14 +200,41 @@ namespace Duplicati.Library.AutoUpdater
         /// <param name="channel">The release channel to check for updates</param>
         /// <returns>The update information if available, or null if no updates are available or update checks are disabled</returns>
         public static UpdateInfo? CheckForUpdate(ReleaseType channel = ReleaseType.Unknown)
+            => CheckForUpdate(channel, out _);
+
+        /// <summary>
+        /// Checks for updates and reports when the check could not be done
+        /// </summary>
+        /// <param name="channel">The release channel to check for updates</param>
+        /// <param name="error">Why the check could not be done: update checks are disabled, or no update server returned a valid manifest. Null when the check was done, whether or not it found an update</param>
+        /// <returns>The update information if available, or null if no updates are available or the check could not be done</returns>
+        public static UpdateInfo? CheckForUpdate(ReleaseType channel, out Exception? error)
         {
             if (DISABLE_UPDATE_CHECK)
+            {
+                error = new InvalidOperationException("Update checks are disabled");
                 return null;
+            }
+
+            return CheckForUpdate(channel, MANIFEST_URLS, out error);
+        }
+
+        /// <summary>
+        /// Checks the given manifest URLs for updates
+        /// </summary>
+        /// <param name="channel">The release channel to check for updates</param>
+        /// <param name="manifestUrls">The manifest URLs, tried in order until one returns a valid manifest</param>
+        /// <param name="error">The error from the last URL when none returned a valid manifest, otherwise null</param>
+        /// <returns>The update information if available, or null if no updates are available or the check could not be done</returns>
+        internal static UpdateInfo? CheckForUpdate(ReleaseType channel, IEnumerable<string> manifestUrls, out Exception? error)
+        {
+            error = null;
+            Exception? lastError = null;
 
             if (channel == ReleaseType.Unknown)
                 channel = AutoUpdateSettings.DefaultUpdateChannel;
 
-            foreach (var rawurl in MANIFEST_URLS)
+            foreach (var rawurl in manifestUrls)
             {
                 var url = rawurl;
 
@@ -295,11 +322,14 @@ namespace Duplicati.Library.AutoUpdater
                 }
                 catch (Exception ex)
                 {
+                    lastError = ex;
                     if (OnError != null)
                         OnError(ex);
                 }
             }
 
+            // Every URL that was tried failed, as a valid manifest returns above
+            error = lastError ?? new InvalidOperationException("No update server is configured");
             return null;
         }
 

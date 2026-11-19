@@ -45,6 +45,8 @@ public class StatusService(
         {
             UpdatedVersion = GetUpdatedVersion(),
             UpdaterState = updatePollThread.ThreadState,
+            UpdateCheckError = updatePollThread.LastCheckError,
+            UpdateCheckFinished = updatePollThread.LastCheckFinished,
             UpdateDownloadProgress = updatePollThread.DownloadProgess,
             ActiveTask = task == null ? null : new Tuple<long, string?>(task.TaskID, task.BackupID),
             SchedulerQueueIds = queueRunnerService.GetQueueWithIds(),

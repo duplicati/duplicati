@@ -37,6 +37,13 @@ namespace Duplicati.WebserverCore.Services;
 public class SystemInfoProvider(IApplicationSettings applicationSettings, Connection connection) : ISystemInfoProvider
 {
     /// <summary>
+    /// The API extension that signals the status reports the result of the last update check:
+    /// the "UpdateCheckFinished" status field, when the check finished, and the "UpdateCheckError" status field,
+    /// why the check could not be done, or null when it was done
+    /// </summary>
+    public const string UpdateCheckErrorExtension = "v1:serverstate:update-check-error";
+
+    /// <summary>
     /// The API extensions that are available
     /// </summary>
     public static readonly string[] SupportedAPIExtensions = [
@@ -69,6 +76,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v2:backup:set-version-label",
         "v1:backup:restore-options",
         "v2:backup:restore-test",
+        UpdateCheckErrorExtension,
 
         // "v1:subscribe:scheduler",
     ];

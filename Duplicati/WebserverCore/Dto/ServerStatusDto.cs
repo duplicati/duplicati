@@ -93,6 +93,18 @@ public sealed record ServerStatusDto
     public required UpdatePollerStates UpdaterState { get; init; }
 
     /// <summary>
+    /// Gets why the last update check could not be done, or null if it was done.
+    /// Not required, as a server without the feature does not report it.
+    /// </summary>
+    public string? UpdateCheckError { get; init; }
+
+    /// <summary>
+    /// Gets when the last update check finished, in UTC, or null if none has finished since the server started.
+    /// Not required, as a server without the feature does not report it.
+    /// </summary>
+    public DateTime? UpdateCheckFinished { get; init; }
+
+    /// <summary>
     /// Gets or sets the download link for the update.
     /// </summary>
     public required string? UpdateDownloadLink { get; set; }
