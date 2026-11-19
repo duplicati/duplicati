@@ -116,7 +116,7 @@ public class DuplicatiWebserver
     public static ICommandLineArgument[] ServerOnlyOptions =>
     [
         new CommandLineArgument(
-            "store-task-config",
+            Server.Runner.STORE_TASK_CONFIG_OPTION,
             CommandLineArgument.ArgumentType.Enumeration,
             Server.Strings.Program.StoretaskconfigShort,
             Server.Strings.Program.StoretaskconfigLong,
@@ -128,6 +128,29 @@ public class DuplicatiWebserver
             CommandLineArgument.ArgumentType.Boolean,
             Server.Strings.Program.UsefilewatcherShort,
             Server.Strings.Program.UsefilewatcherLong,
+            "false"),
+        new CommandLineArgument(
+            Server.Scheduler.DISABLE_ON_BATTERY_OPTION,
+            CommandLineArgument.ArgumentType.Boolean,
+            Server.Strings.Program.DisableOnBatteryShort,
+            Server.Strings.Program.DisableOnBatteryLong,
+            "false"),
+        new CommandLineArgument(
+            Server.Scheduler.MIN_TIME_BETWEEN_SCHEDULED_RUNS_OPTION,
+            CommandLineArgument.ArgumentType.Timespan,
+            Server.Strings.Program.MinTimeBetweenScheduledRunsShort,
+            Server.Strings.Program.MinTimeBetweenScheduledRunsLong),
+        new CommandLineArgument(
+            Server.Scheduler.RUN_SKIPPED_ON_AC_POWER_OPTION,
+            CommandLineArgument.ArgumentType.Boolean,
+            Server.Strings.Program.RunSkippedOnAcPowerShort,
+            Server.Strings.Program.RunSkippedOnAcPowerLong,
+            "false"),
+        new CommandLineArgument(
+            Server.Scheduler.SKIP_MISSED_SCHEDULED_BACKUPS_OPTION,
+            CommandLineArgument.ArgumentType.Boolean,
+            Server.Strings.Program.SkipMissedScheduledBackupsShort,
+            Server.Strings.Program.SkipMissedScheduledBackupsLong,
             "false")
     ];
 

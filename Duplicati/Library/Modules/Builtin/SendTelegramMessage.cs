@@ -102,6 +102,11 @@ public class SendTelegramMessage : ReportHelper
     /// </summary>
     private const int TELEGRAM_MAX_LENGTH = 4096;
 
+    /// <summary>
+    /// Length of a chunk of a split message, leaving room for the "Part n/total:" line.
+    /// </summary>
+    private const int TELEGRAM_CHUNK_LENGTH = TELEGRAM_MAX_LENGTH - 20;
+
     #endregion
 
     #region Option defaults
@@ -233,10 +238,10 @@ public class SendTelegramMessage : ReportHelper
             // Split message into chunks if needed
             var messages = body.Length <= TELEGRAM_MAX_LENGTH
                 ? [body]
-                : Enumerable.Range(0, (body.Length + TELEGRAM_MAX_LENGTH - 1) / TELEGRAM_MAX_LENGTH)
+                : Enumerable.Range(0, (body.Length + TELEGRAM_CHUNK_LENGTH - 1) / TELEGRAM_CHUNK_LENGTH)
                     .Select(i => body.Substring(
-                        i * TELEGRAM_MAX_LENGTH,
-                        Math.Min(TELEGRAM_MAX_LENGTH, body.Length - i * TELEGRAM_MAX_LENGTH)))
+                        i * TELEGRAM_CHUNK_LENGTH,
+                        Math.Min(TELEGRAM_CHUNK_LENGTH, body.Length - i * TELEGRAM_CHUNK_LENGTH)))
                     .ToArray();
 
             // Send all chunks sequentially

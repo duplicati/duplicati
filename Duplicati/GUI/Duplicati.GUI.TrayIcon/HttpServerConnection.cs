@@ -23,10 +23,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -48,6 +50,30 @@ namespace Duplicati.GUI.TrayIcon
         private static readonly string LOGTAG = Library.Logging.Log.LogTagFromType<HttpServerConnection>();
         private const string LONGPOLL_TIMEOUT = "5m";
         private readonly HttpClient HTTPCLIENT;
+
+        /// <summary>
+        /// Sets up the websocket on the same handler as the requests, so it checks the server
+        /// certificate the same way
+        /// </summary>
+        private readonly HttpMessageInvoker m_websocketInvoker;
+
+        /// <summary>
+        /// The longest time setting up the websocket may take, the same as for a request
+        /// </summary>
+        private static readonly TimeSpan WEBSOCKET_SETUP_TIMEOUT = TimeSpan.FromSeconds(100);
+
+        /// <summary>
+        /// The close status the server uses when it does not accept the access token
+        /// </summary>
+        private const WebSocketCloseStatus WEBSOCKET_NOT_AUTHENTICATED = (WebSocketCloseStatus)4401;
+
+        /// <summary>
+        /// Set when the server does not send the status over a websocket, such as an older
+        /// server, or a proxy that does not pass websockets on; the long poll is used then
+        /// </summary>
+        private volatile bool m_websocketUnavailable;
+
+        private readonly string m_userAgent;
 
         private record ServerStatusImpl(
             LiveControlState ProgramState,
@@ -119,6 +145,21 @@ namespace Duplicati.GUI.TrayIcon
         private bool m_isTryingWithPassword;
         private string ApiUri => BaseUri + "api/v1";
         private string BaseUri => Util.AppendDirSeparator(_passwordStorageHelper.HostUrl ?? "", "/");
+
+        /// <summary>
+        /// The address of the websocket the server sends its status on
+        /// </summary>
+        private Uri WebsocketUri
+        {
+            get
+            {
+                var builder = new UriBuilder(BaseUri + "notifications");
+                builder.Scheme = string.Equals(builder.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)
+                    ? Uri.UriSchemeWss
+                    : Uri.UriSchemeWs;
+                return builder.Uri;
+            }
+        }
 
         public Func<IServerStatus, Task>? OnStatusUpdated;
         public Action? ConnectionClosed;
@@ -208,19 +249,20 @@ namespace Duplicati.GUI.TrayIcon
                     acceptAll ? null : [.. acceptedCertificates],
                     ignoreRevocationFailure);
 
+            var userAgent = new ProductInfoHeaderValue("Duplicati-TrayIcon-Monitor",
+                System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0");
+            m_userAgent = userAgent.ToString();
+
             HTTPCLIENT = new HttpClient(httpHandler)
             {
                 // Max time a request can be pending, actual requests can set a lower limit
                 Timeout = Library.Utility.Timeparser.ParseTimeSpan(LONGPOLL_TIMEOUT) + TimeSpan.FromSeconds(10),
                 DefaultRequestHeaders =
                 {
-                    UserAgent =
-                    {
-                        new ProductInfoHeaderValue("Duplicati-TrayIcon-Monitor",
-                            System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0")
-                    }
+                    UserAgent = { userAgent }
                 }
             };
+            m_websocketInvoker = new HttpMessageInvoker(httpHandler, disposeHandler: false);
 
             m_requestHandlerTask = ThreadRunnerAsync();
             m_pollThread = LongPollRunnerAsync();
@@ -258,18 +300,31 @@ namespace Duplicati.GUI.TrayIcon
             var status = await PerformRequestAsync<ServerStatusImpl>("GET", $"/serverstate{query}", null,
                 longpoll ? Library.Utility.Timeparser.ParseTimeSpan(LONGPOLL_TIMEOUT) : null);
 
+            await TakeStatusAsync(status, !longpoll, updatesBefore).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Takes a status from the server, and fetches what it says has changed
+        /// </summary>
+        /// <param name="status">The status</param>
+        /// <param name="plainRequest">If the status is the answer to a plain request, not one the server sent on a change</param>
+        /// <param name="updatesBefore">For a plain request, the number of statuses taken when it was sent</param>
+        private async Task TakeStatusAsync(ServerStatusImpl status, bool plainRequest, long updatesBefore)
+        {
+            // The name of the running backup is shown in the tooltip, for a status from a request and from the websocket alike
             var activeBackupId = status.ActiveTask?.Item2;
             if (!string.IsNullOrWhiteSpace(activeBackupId))
                 status = status with { ActiveBackupName = await GetBackupNameAsync(activeBackupId, status.LastDataUpdateID).ConfigureAwait(false) };
 
             lock (m_statusLock)
             {
-                // A plain request runs next to the long poll. If the long poll has taken a state
-                // since this request was sent, that state may be newer than this answer, and
-                // taking this one would put an old state back until the next event, which can
-                // be minutes away. If this answer was the newer one, the next long poll brings
-                // the change at once, as it waits from the event it has seen.
-                if (!longpoll && m_statusUpdates != updatesBefore)
+                // A plain request runs next to the long poll or the websocket. If one of those
+                // has taken a state since this request was sent, that state may be newer than
+                // this answer, and taking this one would put an old state back until the next
+                // event, which can be minutes away. If this answer was the newer one, the next
+                // long poll brings the change at once, as it waits from the event it has seen,
+                // and the websocket gets every change as it happens.
+                if (plainRequest && m_statusUpdates != updatesBefore)
                 {
                     Library.Logging.Log.WriteVerboseMessage(LOGTAG, "TrayIconStaleStatus", null,
                         "Ignoring the status from event {0}, as a newer status came in meanwhile", status.LastEventID);
@@ -384,9 +439,22 @@ namespace Duplicati.GUI.TrayIcon
                     await PasswordAvailableIfNeededAsync().ConfigureAwait(false);
 
                     started = DateTime.Now;
-                    await UpdateStatusAsync(true).ConfigureAwait(false);
-                    errorCount = 0;
-                    hasConnected = true;
+                    if (!m_websocketUnavailable)
+                    {
+                        // Runs until the connection closes, or returns at once if the server
+                        // does not send the status over a websocket
+                        await FollowStatusOverWebsocketAsync(() =>
+                        {
+                            errorCount = 0;
+                            hasConnected = true;
+                        }).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await UpdateStatusAsync(true).ConfigureAwait(false);
+                        errorCount = 0;
+                        hasConnected = true;
+                    }
                 }
                 catch (Exception ex) when (ex.IsRetiredException() || m_stopToken.IsCancellationRequested || _applicationExitEvent.IsCancellationRequested)
                 {
@@ -415,6 +483,173 @@ namespace Duplicati.GUI.TrayIcon
                 }
             }
         }
+
+        /// <summary>
+        /// Gets the status from the server over a websocket, which the server sends on every
+        /// change, until the connection closes. A long poll instead holds a request open,
+        /// and starts a new one after every change and every five minutes.
+        /// </summary>
+        /// <param name="onStatus">Called when a status comes in</param>
+        /// <returns>A task that completes without error if the server does not send the status this way, and the long poll is to be used</returns>
+        private async Task FollowStatusOverWebsocketAsync(Action onStatus)
+        {
+            if (string.IsNullOrWhiteSpace(m_accesstoken))
+                await ObtainAccessTokenOnceAsync(null).ConfigureAwait(false);
+            var usedToken = m_accesstoken;
+
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(m_stopToken.Token, _applicationExitEvent);
+            using var socket = new ClientWebSocket();
+            socket.Options.CollectHttpResponseDetails = true;
+            socket.Options.SetRequestHeader("User-Agent", m_userAgent);
+
+            cts.CancelAfter(WEBSOCKET_SETUP_TIMEOUT);
+            try
+            {
+                await socket.ConnectAsync(WebsocketUri, m_websocketInvoker, cts.Token).ConfigureAwait(false);
+            }
+            catch (WebSocketException ex) when (socket.HttpStatusCode != 0)
+            {
+                // The server answered, but did not take the request as a websocket
+                UseLongPoll(ex, $"the server answered with status code {(int)socket.HttpStatusCode}");
+                return;
+            }
+
+            // The token goes in a message, as the server takes a websocket with a token it
+            // does not accept as one that is yet to authenticate, and waits for the message
+            await SendWebsocketMessageAsync(socket, new { Version = 1, Token = usedToken ?? "" }, cts.Token).ConfigureAwait(false);
+            using (var reply = await ReceiveWebsocketMessageAsync(socket, cts.Token).ConfigureAwait(false))
+            {
+                if (reply == null)
+                    await ThrowWebsocketClosedAsync(socket, usedToken).ConfigureAwait(false);
+                else if (GetWebsocketMessageType(reply) != "auth" || !IsWebsocketReplySuccess(reply))
+                {
+                    UseLongPoll(null, "the server did not accept the websocket authentication");
+                    return;
+                }
+            }
+
+            await SendWebsocketMessageAsync(socket, new { Version = 1, Id = "trayicon-status", Action = "sub", Service = "legacystatus" }, cts.Token).ConfigureAwait(false);
+
+            // The connection is set up, and stays open until it closes or the tray stops
+            cts.CancelAfter(System.Threading.Timeout.InfiniteTimeSpan);
+            Library.Logging.Log.WriteVerboseMessage(LOGTAG, "TrayIconWebsocketConnected", null,
+                "Getting the server status over a websocket");
+
+            while (true)
+            {
+                using var message = await ReceiveWebsocketMessageAsync(socket, cts.Token).ConfigureAwait(false);
+                if (message == null)
+                {
+                    await ThrowWebsocketClosedAsync(socket, usedToken).ConfigureAwait(false);
+                    return;
+                }
+
+                switch (GetWebsocketMessageType(message))
+                {
+                    case "legacystatus":
+                        var status = message.Deserialize<ServerStatusImpl>(serializerOptions)
+                            ?? throw new JsonException("Failed to deserialize the status.");
+                        onStatus();
+                        await TakeStatusAsync(status, false, 0).ConfigureAwait(false);
+                        break;
+
+                    case "reply" when !IsWebsocketReplySuccess(message):
+                        // The server does not offer the status as a subscription
+                        UseLongPoll(null, "the server did not accept the status subscription");
+                        await CloseWebsocketAsync(socket).ConfigureAwait(false);
+                        return;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Switches to the long poll, for as long as this connection lasts
+        /// </summary>
+        private void UseLongPoll(Exception? ex, string reason)
+        {
+            m_websocketUnavailable = true;
+            Library.Logging.Log.WriteInformationMessage(LOGTAG, "TrayIconWebsocketUnavailable",
+                "Getting the server status with a long poll, as {0}", reason);
+            if (ex != null)
+                Library.Logging.Log.WriteVerboseMessage(LOGTAG, "TrayIconWebsocketUnavailable", ex,
+                    "The websocket could not be set up");
+        }
+
+        /// <summary>
+        /// Throws for a websocket the server closed, after getting a new access token if the
+        /// server closed it because it did not accept the token
+        /// </summary>
+        private async Task ThrowWebsocketClosedAsync(ClientWebSocket socket, string? usedToken)
+        {
+            var closeStatus = socket.CloseStatus;
+            await CloseWebsocketAsync(socket).ConfigureAwait(false);
+
+            if (closeStatus == WEBSOCKET_NOT_AUTHENTICATED)
+            {
+                await ObtainAccessTokenOnceAsync(usedToken).ConfigureAwait(false);
+                throw new WebSocketException("The server did not accept the access token for the websocket");
+            }
+
+            throw new WebSocketException($"The server closed the websocket: {closeStatus}");
+        }
+
+        /// <summary>
+        /// Answers the close the server sent, so it does not wait for it
+        /// </summary>
+        private static async Task CloseWebsocketAsync(ClientWebSocket socket)
+        {
+            try
+            {
+                if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived)
+                {
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, null, cts.Token).ConfigureAwait(false);
+                }
+            }
+            catch (Exception ex)
+            {
+                Library.Logging.Log.WriteVerboseMessage(LOGTAG, "TrayIconWebsocketCloseFailed", ex,
+                    "Failed to close the websocket");
+            }
+        }
+
+        private static Task SendWebsocketMessageAsync<T>(ClientWebSocket socket, T message, CancellationToken token)
+            => socket.SendAsync(new ReadOnlyMemory<byte>(JsonSerializer.SerializeToUtf8Bytes(message)), WebSocketMessageType.Text, true, token).AsTask();
+
+        /// <summary>
+        /// Reads a message from the websocket
+        /// </summary>
+        /// <returns>The message, or <c>null</c> if the server closed the websocket</returns>
+        private static async Task<JsonDocument?> ReceiveWebsocketMessageAsync(ClientWebSocket socket, CancellationToken token)
+        {
+            var buffer = new byte[16 * 1024];
+            using var data = new MemoryStream();
+            while (true)
+            {
+                var result = await socket.ReceiveAsync(buffer.AsMemory(), token).ConfigureAwait(false);
+                if (result.MessageType == WebSocketMessageType.Close)
+                    return null;
+
+                data.Write(buffer, 0, result.Count);
+                if (result.EndOfMessage)
+                    break;
+            }
+
+            data.Position = 0;
+            return JsonDocument.Parse(data);
+        }
+
+        private static string? GetWebsocketMessageType(JsonDocument message)
+            => message.RootElement.ValueKind == JsonValueKind.Object
+                && message.RootElement.TryGetProperty("Type", out var type)
+                && type.ValueKind == JsonValueKind.String
+                ? type.GetString()
+                : null;
+
+        private static bool IsWebsocketReplySuccess(JsonDocument message)
+            => message.RootElement.ValueKind == JsonValueKind.Object
+                && message.RootElement.TryGetProperty("Success", out var success)
+                && success.ValueKind == JsonValueKind.True;
 
         private async Task ThreadRunnerAsync()
         {

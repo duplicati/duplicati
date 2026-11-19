@@ -41,5 +41,10 @@ Error message: {3}", foldername, filename, extension, errormessage); }
         public static string DescriptionUseExtendedPropfindLong { get { return LC.L(@"Use an extended PROPFIND body to request listings of files and folders. This is required for some servers"); } }
         public static string DescriptionUseLegacyPropfindParsingShort { get { return LC.L(@"Use legacy PROPFIND parsing"); } }
         public static string DescriptionUseLegacyPropfindParsingLong { get { return LC.L(@"Use the legacy PROPFIND response parsing logic."); } }
+        public static string DescriptionClientCertificateShort { get { return LC.L(@"Client certificate file"); } }
+        public static string DescriptionClientCertificateLong { get { return LC.L(@"Path to a PKCS#12 (.pfx/.p12) file holding a client certificate and its private key. The certificate is presented to the server when it asks for one, which allows connecting to servers that require TLS client authentication."); } }
+        public static string DescriptionClientCertificatePasswordShort { get { return LC.L(@"Client certificate password"); } }
+        public static string DescriptionClientCertificatePasswordLong { get { return LC.L(@"The password that protects the client certificate file, if any."); } }
+        public static string ClientCertificateLoadError(string path, string message) { return LC.L(@"Failed to load the client certificate from {0}: {1}", path, message); }
     }
 }

@@ -345,7 +345,10 @@ partial class BackendManager
                 // The backend is bound to the file's folder (for non-folder backends) or
                 // the root (for folder-enabled backends using a flat verify), so the
                 // listing returns names comparable to the effective remote name.
-                var f = await backend.ListAsync(cancelToken).FirstOrDefaultAsync(n => n.Name.Equals(effectiveName, StringComparison.OrdinalIgnoreCase)).ConfigureAwait(false);
+                // A backend that can look up a single file does so instead of listing the folder.
+                var f = backend is IFileInfoEnabledBackend fileInfoBackend
+                    ? await fileInfoBackend.GetFileInfoAsync(effectiveName, cancelToken).ConfigureAwait(false)
+                    : await backend.ListAsync(cancelToken).FirstOrDefaultAsync(n => n.Name.Equals(effectiveName, StringComparison.OrdinalIgnoreCase)).ConfigureAwait(false);
                 if (f == null)
                     throw new Exception(string.Format($"List verify failed, file was not found after upload: {RemoteFilename}"));
                 else if (f.Size != size && f.Size >= 0)

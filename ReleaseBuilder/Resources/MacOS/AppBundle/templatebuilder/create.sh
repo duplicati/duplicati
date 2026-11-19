@@ -1,3 +1,4 @@
+# shellcheck shell=sh
 # Create file to prevent file RO image
 rm rw.*.template.dmg
 touch template.dmg

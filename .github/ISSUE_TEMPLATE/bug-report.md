@@ -58,3 +58,12 @@ Replace me
 
 <!-- Posting a debug log helps the developers find and fix your particular issue more easily. -->
 <!-- Please wrap your code in code blocks with triple back-ticks to increase readability. -->
+<!-- How to create a debug log: -->
+<!-- - In the web UI: edit the backup, go to "Options" and under "Advanced options" add -->
+<!--   "log-file" (a path, e.g. C:\temp\duplicati-log.txt or /tmp/duplicati-log.txt) and -->
+<!--   "log-file-log-level" set to "Verbose" (or "Profiling" for even more detail). -->
+<!--   Run the operation again and attach the file. -->
+<!-- - From the command line: add the same options, e.g. -->
+<!--   --log-file=/tmp/duplicati-log.txt --log-file-log-level=Verbose -->
+<!-- - For problems in the web UI itself, "About" > "Logs" > "Live" shows the server log at the selected level. -->
+<!-- Remove passwords, usernames, server names and paths you do not want to share before posting. -->
