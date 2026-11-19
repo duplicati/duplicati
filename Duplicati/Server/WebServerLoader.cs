@@ -95,6 +95,10 @@ public static class WebServerLoader
     /// </summary>
     public const string OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS = "webservice-disable-signin-tokens";
     /// <summary>
+    /// Option for disabling restores that the browser downloads
+    /// </summary>
+    public const string OPTION_WEBSERVICE_DISABLE_RESTORE_DOWNLOAD = "webservice-disable-restore-download";
+    /// <summary>
     /// Option for switching reduced reporting on for this machine, stored as the operator setting
     /// </summary>
     public const string OPTION_REDUCED_REPORTING = "reduced-reporting";

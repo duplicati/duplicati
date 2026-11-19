@@ -82,6 +82,11 @@
                 <input id="restoretonewpath" type="radio" name="restorelocation" ng-model="RestoreLocation" value="custom" />
                 <label for="restoretonewpath" translate>Pick location</label>
             </div>
+            <div class="input checkbox multiple leftflush" ng-show="canRestoreToDownload()">
+                <input id="restoretodownload" type="radio" name="restorelocation" ng-model="RestoreLocation" value="download" />
+                <label for="restoretodownload" translate>Download in the browser</label>
+            </div>
+            <div ng-show="RestoreLocation == 'download'" translate>The files are restored to a temporary folder on the server, packed into one file, and offered in a notification. Use it for a few files, as a large restore needs the space twice.</div>
 
             <div ng-show="HideFolderBrowser" class="input text overlayButton multiple" style="max-width: none">
                 <label for="restore_path" translate>Folder path</label>
@@ -140,6 +145,7 @@
         <div ng-show="restore_step == 3 &amp;&amp; connecting == false">
             <h3>
                 <div class="hint-text" translate>Your files and folders have been restored successfully.</div>
+                <div class="hint-text" ng-show="RestoreLocation == 'download'" translate>Use the Download button in the notification to get them.</div>
             </h3>
             <div class="buttons">
                 <a href class="submit" ng-click="onClickComplete()" translate>OK</a>

@@ -26,6 +26,7 @@ using Duplicati.Server.Serialization.Interface;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Dto;
 using Duplicati.WebserverCore.Endpoints.Shared;
+using Duplicati.WebserverCore.Exceptions;
 
 namespace Duplicati.WebserverCore.Services;
 
@@ -58,6 +59,15 @@ public class BackupTaskService(Connection connection, IApplicationSettings appli
     /// <inheritdoc/>
     public async Task<StartedTask> StartRestoreAsync(IBackup backup, RestoreInputDto input, CancellationToken cancellationToken)
     {
+        var download = input.download ?? false;
+        if (download)
+        {
+            if (connection.ApplicationSettings.DisableRestoreDownload)
+                throw new ForbiddenException("Restore to the browser is disabled on this server");
+            if (!string.IsNullOrWhiteSpace(input.restore_path))
+                throw new BadRequestException("A restore to the browser does not take a restore path");
+        }
+
         var restorepath = input.restore_path;
         if (restorepath != null && restorepath.StartsWith("@"))
         {
@@ -76,7 +86,8 @@ public class BackupTaskService(Connection connection, IApplicationSettings appli
                 input.permissions,
                 input.skip_metadata,
                 string.IsNullOrWhiteSpace(input.passphrase) ? null : input.passphrase,
-                input.options)),
+                input.options,
+                download)),
             false,
             DuplicatiOperation.Restore);
     }

@@ -257,6 +257,20 @@ backupApp.service('AppService', function ($http, $cookies, $q, DialogService, ap
         return deferred.promise;
     }
 
+    this.get_restore_download_url = function (id) {
+        var deferred = $q.defer();
+        this.post("/auth/issuetoken/restore-download").then(
+            resp => {
+                var rurl = this.apiurl + '/restore-download/' + id;
+                rurl += '?token=' + encodeURIComponent(resp.data.Token);
+                deferred.resolve(rurl);
+            },
+            resp => deferred.reject(resp)
+        );
+
+        return deferred.promise;
+    }
+
     this.responseErrorMessage = function (resp) {
         if (resp == null) {
             return '';

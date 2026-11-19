@@ -94,6 +94,8 @@ Error message: {0}", error); }
         public static string WebserverApiOnlyDescription { get { return LC.L(@"Disable the web interface and only allow API access"); } }
         public static string WebserverDontAutocreateDatabaseDescription { get { return LC.L(@"Do not automatically create the server database if it does not exist. If the database is missing, the server will not start."); } }
         public static string WebserverDisableSigninTokensDescription { get { return LC.L(@"Disable the use of signin tokens"); } }
+        public static string WebserverDisableRestoreDownloadShort { get { return LC.L(@"Disable restore to the browser"); } }
+        public static string WebserverDisableRestoreDownloadLong { get { return LC.L(@"Disable restoring files as a download in the browser. Such a restore writes the files to a temporary folder on the server, packs them, and keeps the file for a day. The setting is stored, so set it to false to allow it again."); } }
         public static string ReducedReportingShort { get { return LC.L(@"Switch reduced reporting on or off"); } }
         public static string ReducedReportingLong { get { return LC.L(@"Stores the operator's reduced reporting setting for this machine. When active, every report leaving the machine carries log message ids only. A value enforced by the console cannot be switched off with this option."); } }
         public static string WebserverSpaPathsDescription { get { return LC.L(@"The relative paths that should be served as single page applications, separated with semicolons."); } }
