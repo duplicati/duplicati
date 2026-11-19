@@ -100,8 +100,8 @@ public class BackupPost : IEndpointV1
             => ExecuteReportRemoteSize(GetBackup(connection, id), queueRunnerService))
             .RequireAuthorization();
 
-        group.MapPost("/backup/{id}/copytotemp", ([FromServices] Connection connection, [FromRoute] string id)
-            => ExecuteCopyToTemp(GetBackup(connection, id), connection))
+        group.MapPost("/backup/{id}/copytotemp", ([FromServices] Connection connection, [FromRoute] string id, [FromQuery(Name = CopyToTempDestination.QueryParameter)] string? destination)
+            => ExecuteCopyToTemp(GetBackup(connection, id), connection, destination))
             .RequireAuthorization();
 
         group.MapPost("/backup/{id}/restore-task-config", ([FromServices] Connection connection, [FromServices] IQueueRunnerService queueRunnerService, [FromRoute] string id)
@@ -246,9 +246,13 @@ public class BackupPost : IEndpointV1
     private static Dto.TaskStartedDto ExecuteRunBackup(IBackup backup, bool skipQueue, IBackupTaskService backupTaskService)
         => new Dto.TaskStartedDto("OK", backupTaskService.StartBackup(backup, skipQueue).TaskID);
 
-    private static Dto.CreateBackupDto ExecuteCopyToTemp(IBackup backup, Connection connection)
+    private static Dto.CreateBackupDto ExecuteCopyToTemp(IBackup backup, Connection connection, string? destination)
     {
+        // The destination is checked before the copy is made
+        var target = CopyToTempDestination.Resolve(backup, destination);
         var ipx = Serializer.Deserialize<Server.Database.Backup>(new StringReader(Newtonsoft.Json.JsonConvert.SerializeObject(backup)));
+        if (target != null)
+            CopyToTempDestination.Apply(ipx, target);
 
         using (var tf = new Library.Utility.TempFile())
             ipx.SetDBPath(tf);
