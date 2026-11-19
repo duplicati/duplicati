@@ -212,6 +212,7 @@ public class WebsocketAccessor : IWebsocketAccessor
             CanEnable: _remoteController.CanEnable,
             IsEnabled: _remoteController.IsEnabled,
             IsConnected: _remoteController.Connected,
+            PausedUntil: _remoteController.PausedUntil,
             IsRegistering: _remoteControllerRegistration.IsRegistering,
             IsRegisteringFaulted: registrationTask?.IsFaulted ?? false,
             IsRegisteringCompleted: registrationTask?.IsCompleted ?? false,

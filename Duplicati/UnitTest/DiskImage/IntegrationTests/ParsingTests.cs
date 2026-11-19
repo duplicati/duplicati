@@ -5,8 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main;
-using Duplicati.Proprietary.DiskImage;
-using Duplicati.Proprietary.DiskImage.General;
+using Duplicati.Library.SourceProvider.DiskImage;
+using Duplicati.Library.SourceProvider.DiskImage.General;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest.DiskImage.IntegrationTests;

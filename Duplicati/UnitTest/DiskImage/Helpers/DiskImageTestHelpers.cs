@@ -23,9 +23,9 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Duplicati.Proprietary.DiskImage;
-using Duplicati.Proprietary.DiskImage.Disk;
-using Duplicati.Proprietary.DiskImage.General;
+using Duplicati.Library.SourceProvider.DiskImage;
+using Duplicati.Library.SourceProvider.DiskImage.Disk;
+using Duplicati.Library.SourceProvider.DiskImage.General;
 
 #nullable enable
 
@@ -56,7 +56,7 @@ internal static class DiskImageTestHelpers
     internal static IRawDisk CreateRawDiskForIdentifier(string diskIdentifier)
     {
         if (OperatingSystem.IsWindows())
-            return new Proprietary.DiskImage.Disk.Windows(diskIdentifier);
+            return new Library.SourceProvider.DiskImage.Disk.Windows(diskIdentifier);
         else if (OperatingSystem.IsLinux())
             return new Linux(diskIdentifier);
         else if (OperatingSystem.IsMacOS())

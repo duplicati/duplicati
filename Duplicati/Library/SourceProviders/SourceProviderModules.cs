@@ -66,6 +66,7 @@ public static class SourceProviderModules
     /// </summary>
     private static readonly IReadOnlyList<ISourceProviderModule> SupportedSourceProviders = new ISourceProviderModule[] {
         new SourceProvider.Builtin.PostgreSQL.PostgreSQLSourceProvider(),
+        new SourceProvider.DiskImage.SourceProvider(),
     }
     .Concat(ProprietarySourceProviderModules.Value)
     .WhereNotNull()

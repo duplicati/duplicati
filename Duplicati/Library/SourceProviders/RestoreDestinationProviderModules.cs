@@ -66,6 +66,8 @@ public static class RestoreDestinationProviderModules
     /// </summary>
     private static readonly IReadOnlyList<IRestoreDestinationProviderModule> SupportedRestoreDestinationProviders = new IRestoreDestinationProviderModule[] {
         new SourceProvider.Builtin.PostgreSQL.PostgreSQLRestoreProvider(),
+        new SourceProvider.DiskImage.RestoreProvider(),
+        new SourceProvider.DiskImage.ImageFileRestoreProvider()
     }
     .Concat(ProprietaryRestoreDestinationProviderModules.Value)
     .WhereNotNull()
