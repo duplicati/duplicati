@@ -2,8 +2,8 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Duplicati.Proprietary.DiskImage.Disk;
-using Duplicati.Proprietary.DiskImage.General;
+using Duplicati.Library.SourceProvider.DiskImage.Disk;
+using Duplicati.Library.SourceProvider.DiskImage.General;
 using Duplicati.UnitTest.DiskImage.Helpers;
 using NUnit.Framework;
 

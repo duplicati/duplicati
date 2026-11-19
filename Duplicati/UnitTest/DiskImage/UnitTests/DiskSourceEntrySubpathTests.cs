@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
-using Duplicati.Proprietary.DiskImage;
-using Duplicati.Proprietary.DiskImage.SourceItems;
+using Duplicati.Library.SourceProvider.DiskImage;
+using Duplicati.Library.SourceProvider.DiskImage.SourceItems;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 

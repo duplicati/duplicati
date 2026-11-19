@@ -31,6 +31,7 @@ namespace Duplicati.WebserverCore.Dto;
 /// <param name="temporary">Whether the backup should be created as temporary</param>
 /// <param name="replace_settings">Settings to replace in the imported backup configuration</param>
 /// <param name="expand_env_vars">Whether %VAR% environment variables in the configuration are expanded with the values of the server</param>
+/// <param name="global_options">What to do with the global advanced options in the configuration: "ignore" (the default), "merge" into the backup, or "apply" as global options of this server (only with direct)</param>
 public sealed record ImportBackupInputDto
 (
     string config,
@@ -40,5 +41,6 @@ public sealed record ImportBackupInputDto
     string? passphrase,
     bool? temporary,
     Dictionary<string, string>? replace_settings,
-    bool? expand_env_vars = null
+    bool? expand_env_vars = null,
+    string? global_options = null
 );

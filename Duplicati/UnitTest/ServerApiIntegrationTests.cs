@@ -368,6 +368,100 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
+    public async Task ExportKeepsGlobalOptionsApartAndImportDecides_Async()
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            Assert.That(await GetApiExtensionsAsync(httpClient).ConfigureAwait(false), Does.Contain(SystemInfoProvider.ExportGlobalSettingsExtension));
+
+            var globals = new Dictionary<string, string>
+            {
+                ["--send-mail-to"] = "global@example.com",
+                ["--send-mail-password"] = "global-mail-secret",
+                ["--blocksize"] = "1mb"
+            };
+            (await httpClient.PatchAsJsonAsync("/api/v1/serversettings", globals).ConfigureAwait(false)).EnsureSuccessStatusCode();
+
+            var backupId = await CreateBackupAsync(httpClient, "integration-passphrase").ConfigureAwait(false);
+
+            // The export writes PascalCase names; the import response may use camelCase
+            static JsonElement Property(JsonElement element, string name)
+                => element.EnumerateObject().First(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)).Value;
+
+            static Dictionary<string, string?> ToDictionary(JsonElement settings)
+                => settings.EnumerateArray().ToDictionary(x => Property(x, "Name").GetString()!, x => Property(x, "Value").GetString());
+
+            // Export: the global options are in their own field, never in the backup's settings
+            var withoutPasswords = await ExportConfigurationAsync(httpClient, backupId, exportPasswords: false).ConfigureAwait(false);
+            using (var document = JsonDocument.Parse(withoutPasswords))
+            {
+                var exportedGlobals = ToDictionary(document.RootElement.GetProperty("GlobalSettings"));
+                Assert.That(exportedGlobals.GetValueOrDefault("--send-mail-to"), Is.EqualTo("global@example.com"), "A global option should always be exported");
+                Assert.That(exportedGlobals.GetValueOrDefault("--blocksize"), Is.EqualTo("1mb"), "A global option the backup also sets should be exported as it is");
+                Assert.That(exportedGlobals.ContainsKey("--send-mail-password"), Is.False, "A global password must be removed when passwords are not exported");
+
+                var backupSettings = ToDictionary(document.RootElement.GetProperty("Backup").GetProperty("Settings"));
+                Assert.That(backupSettings.Keys.Where(x => x.StartsWith("--send-mail-", StringComparison.Ordinal)), Is.Empty, "The global options should not be mixed into the backup's settings");
+            }
+
+            var withPasswords = await ExportConfigurationAsync(httpClient, backupId, exportPasswords: true).ConfigureAwait(false);
+            using (var document = JsonDocument.Parse(withPasswords))
+                Assert.That(ToDictionary(document.RootElement.GetProperty("GlobalSettings")).GetValueOrDefault("--send-mail-password"), Is.EqualTo("global-mail-secret"), "A global password should be exported when passwords are exported");
+
+            async Task<Dictionary<string, string?>> ImportedSettingsAsync(string? globalOptions)
+            {
+                var importedId = await ImportConfigurationAsync(httpClient, withPasswords, globalOptions).ConfigureAwait(false);
+                var stored = await httpClient.GetFromJsonAsync<BackupGet.GetBackupResultDto>($"/api/v1/backup/{importedId}", JsonOptions).ConfigureAwait(false)
+                             ?? throw new InvalidOperationException("Backup get response was empty");
+                return stored.Backup.Settings!.ToDictionary(x => x.Name, x => (string?)x.Value);
+            }
+
+            async Task<Dictionary<string, string>> ServerGlobalsAsync()
+                => await httpClient.GetFromJsonAsync<Dictionary<string, string>>("/api/v1/serversettings", JsonOptions).ConfigureAwait(false)
+                   ?? throw new InvalidOperationException("Server settings response was empty");
+
+            // Import, the default: the global options are ignored
+            var ignored = await ImportedSettingsAsync(null).ConfigureAwait(false);
+            Assert.That(ignored.Keys.Where(x => x.StartsWith("--send-mail-", StringComparison.Ordinal)), Is.Empty, "By default the global options should not be imported into the backup");
+
+            // Import with merge: the options the backup does not set are added to it
+            var merged = await ImportedSettingsAsync("merge").ConfigureAwait(false);
+            Assert.That(merged.GetValueOrDefault("--send-mail-to"), Is.EqualTo("global@example.com"), "A merged global option should be in the backup");
+            Assert.That(merged.ContainsKey("--send-mail-password"), Is.True, "A merged global password should be in the backup (the API shows it masked)");
+            Assert.That(merged.ContainsKey("--blocksize"), Is.False, "A global option the backup sets itself should not be added");
+            Assert.That(merged.GetValueOrDefault("blocksize"), Is.EqualTo("50kb"), "The backup's own value should win, as it does when the backup runs");
+
+            // Import with apply: the options become global options of this server
+            (await httpClient.PatchAsJsonAsync("/api/v1/serversettings", new Dictionary<string, string?> { ["--send-mail-to"] = "changed@example.com", ["--send-mail-password"] = null, ["--keep-time"] = "1M" }).ConfigureAwait(false)).EnsureSuccessStatusCode();
+            var applied = await ImportedSettingsAsync("apply").ConfigureAwait(false);
+            Assert.That(applied.Keys.Where(x => x.StartsWith("--send-mail-", StringComparison.Ordinal)), Is.Empty, "Applied global options should not be put into the backup");
+            var serverGlobals = await ServerGlobalsAsync().ConfigureAwait(false);
+            Assert.That(serverGlobals.GetValueOrDefault("--send-mail-to"), Is.EqualTo("global@example.com"), "An applied option should replace the server's value");
+            Assert.That(serverGlobals.ContainsKey("--send-mail-password"), Is.True, "An applied option the server did not have should be added");
+            Assert.That(serverGlobals.GetValueOrDefault("--keep-time"), Is.EqualTo("1M"), "A global option that is not in the file should be kept");
+
+            // Apply needs a direct import, and an unknown value is rejected
+            foreach (var (direct, value) in new[] { (false, "apply"), (true, "everything") })
+            {
+                var response = await httpClient.PostAsJsonAsync("/api/v1/backups/import", new ImportBackupInputDto(
+                    Convert.ToBase64String(withPasswords), cmdline: false, import_metadata: true, direct: direct, passphrase: null, temporary: false,
+                    replace_settings: null, global_options: value), JsonOptions).ConfigureAwait(false);
+                Assert.That(response.StatusCode, Is.EqualTo(System.Net.HttpStatusCode.BadRequest), $"global_options={value} with direct={direct} should be rejected");
+            }
+
+            // Not a direct import: the client gets the global options and decides itself
+            var preview = await httpClient.PostAsJsonAsync("/api/v1/backups/import", new ImportBackupInputDto(
+                Convert.ToBase64String(withPasswords), cmdline: false, import_metadata: true, direct: false, passphrase: null, temporary: false,
+                replace_settings: null), JsonOptions).ConfigureAwait(false);
+            preview.EnsureSuccessStatusCode();
+            var previewData = await preview.Content.ReadFromJsonAsync<JsonElement>(JsonOptions).ConfigureAwait(false);
+            var previewGlobals = Property(Property(previewData, "data"), "GlobalSettings");
+            Assert.That(ToDictionary(previewGlobals).GetValueOrDefault("--send-mail-to"), Is.EqualTo("global@example.com"), "The global options should be returned to the client");
+        }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
     public async Task HttpClientHelperStillCreatesClientsAfterTheServerStops_Async()
     {
         await WithAuthenticatedServerAsync(_ => Task.CompletedTask).ConfigureAwait(false);
@@ -2868,7 +2962,7 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
         return await exportResponse.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
     }
 
-    private static async Task<string> ImportConfigurationAsync(HttpClient httpClient, byte[] configBytes)
+    private static async Task<string> ImportConfigurationAsync(HttpClient httpClient, byte[] configBytes, string? globalOptions = null)
     {
         var importRequest = new ImportBackupInputDto(
             Convert.ToBase64String(configBytes),
@@ -2877,7 +2971,8 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
             direct: true,
             temporary: false,
             passphrase: null,
-            replace_settings: null);
+            replace_settings: null,
+            global_options: globalOptions);
 
         var response = await httpClient.PostAsJsonAsync("/api/v1/backups/import", importRequest, JsonOptions).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();

@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Duplicati.Proprietary.DiskImage.General;
+using Duplicati.Library.SourceProvider.DiskImage.General;
 using NUnit.Framework;
 
 namespace Duplicati.UnitTest.DiskImage.IntegrationTests;
