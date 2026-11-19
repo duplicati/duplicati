@@ -88,7 +88,6 @@
   </Folder>
   <Folder Name="/SourceProviders/">
     <Project Path="Duplicati/Library/SourceProvider/Builtin/Duplicati.Library.SourceProvider.Builtin.csproj" />
-    <Project Path="Duplicati/Library/SourceProvider/DiskImage/Duplicati.Library.SourceProvider.DiskImage.csproj" />
   </Folder>
   <Folder Name="/Tools/">
     <Project Path="Tools/RemoteSynchronization/RemoteSynchronization.csproj" />
