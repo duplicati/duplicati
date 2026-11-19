@@ -3230,13 +3230,11 @@ public class SyncHandlerTargetTests : BasicSetupHelper
         public const string BigName = "big";
 
         private readonly IBackend m_backend;
-        private readonly string m_root;
 
         public StuckFolderBackend() { }
 
         public StuckFolderBackend(string url, Dictionary<string, string> options)
         {
-            m_root = url[$"{Key}://".Length..];
             m_backend = Library.DynamicLoader.BackendLoader.GetBackend(url.Replace($"{Key}://", "file://"), options);
         }
 
@@ -3264,17 +3262,48 @@ public class SyncHandlerTargetTests : BasicSetupHelper
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => m_backend.GetDNSNamesAsync(cancelToken);
         public void Dispose() => m_backend?.Dispose();
 
-        public Task DeleteFolderRecursiveAsync(string path, CancellationToken cancelToken)
+        public async Task DeleteFolderRecursiveAsync(string path, CancellationToken cancelToken)
         {
             var name = path.Split('/').Last();
             if (name == StuckName)
                 throw new IOException($"The folder {path} cannot be deleted");
 
-            var local = Path.Combine(m_root, path.Replace('/', Path.DirectorySeparatorChar));
-            if (name == BigName && Directory.Exists(local) && Directory.EnumerateFiles(local, "*", SearchOption.AllDirectories).Any())
+            if (name == BigName && await HoldsAFileAsync(path, cancelToken).ConfigureAwait(false))
                 throw new IOException($"The folder {path} holds too many files to delete in one call");
 
-            return ((IFolderDeleteEnabledBackend)m_backend).DeleteFolderRecursiveAsync(path, cancelToken);
+            await ((IFolderDeleteEnabledBackend)m_backend).DeleteFolderRecursiveAsync(path, cancelToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Checks if a folder holds a file at any depth, by listing it through the wrapped
+        /// backend, so the answer does not depend on how the url maps to a local path
+        /// </summary>
+        /// <param name="path">The relative path of the folder</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>True if the folder holds a file</returns>
+        private async Task<bool> HoldsAFileAsync(string path, CancellationToken cancelToken)
+        {
+            var folders = new Stack<string>([path]);
+            while (folders.Count > 0)
+            {
+                var current = folders.Pop();
+                List<IFileEntry> entries;
+                try
+                {
+                    entries = await ((IFolderEnabledBackend)m_backend).ListAsync(current, cancelToken).ToListAsync(cancelToken).ConfigureAwait(false);
+                }
+                catch (FolderMissingException)
+                {
+                    continue;
+                }
+
+                if (entries.Any(x => !x.IsFolder))
+                    return true;
+                foreach (var entry in entries)
+                    folders.Push(current + "/" + entry.Name.TrimEnd('/', '\\'));
+            }
+
+            return false;
         }
     }
 
