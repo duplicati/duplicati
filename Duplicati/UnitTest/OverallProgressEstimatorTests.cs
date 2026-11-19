@@ -174,6 +174,27 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(expected, pg, Tolerance);
         }
 
+        [TestCase(OperationPhase.Backup_Compact, 0.965f, 0.965f)]
+        [TestCase(OperationPhase.Backup_Delete, 0.97f, 0.97f)]
+        [TestCase(OperationPhase.Backup_Compact, 0.5f, 0.95f)]
+        [TestCase(OperationPhase.Backup_Delete, 1f, 0.98f)]
+        [TestCase(OperationPhase.Backup_Compact, float.NaN, 0.95f)]
+        public void DeleteAndCompactPhasesKeepReportedProgressInTheirRange(OperationPhase phase, float reported, float expected)
+        {
+            // The compact reports its progress into 0.95-0.98 during a backup
+            var pg = OverallProgressEstimator.Estimate(
+                phase,
+                reportedProgress: reported,
+                filesProcessed: 0,
+                fileSizeProcessed: 0,
+                fileSize: 0,
+                countingFiles: false,
+                currentFileOffset: 0,
+                currentFileComplete: false);
+
+            Assert.AreEqual(expected, pg, Tolerance);
+        }
+
         [TestCase(OperationPhase.Recreate_Running, 0.42f, 0.42f)]
         [TestCase(OperationPhase.Verify_Running, 0.75f, 0.75f)]
         [TestCase(OperationPhase.Backup_RemoteSynchronization, 0.3f, 0.3f)]

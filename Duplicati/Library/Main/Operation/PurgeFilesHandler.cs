@@ -287,7 +287,7 @@ namespace Duplicati.Library.Main.Operation
                     m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.PurgeFiles_Compact);
                     m_result.CompactResults = new CompactResults(m_result);
                     await using var cdb = await Database.Local.LocalDeleteDatabase.CreateAsync(db, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-                    await new CompactHandler(m_options, (CompactResults)m_result.CompactResults)
+                    await new CompactHandler(m_options, (CompactResults)m_result.CompactResults, (pgoffset + (0.75f * pgspan), 0.25f * pgspan))
                         .DoCompactAsync(cdb, true, backendManager)
                         .ConfigureAwait(false);
 
