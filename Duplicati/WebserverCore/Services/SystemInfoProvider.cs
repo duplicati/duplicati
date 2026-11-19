@@ -79,6 +79,12 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
     /// The extension is reported on every server; the GET endpoint tells which actions the computer allows.
     /// </summary>
     public const string QueueCompletionActionExtension = "v1:serverstate:queue-completion-action";
+    /// <summary>
+    /// The API extension that signals a restore can be downloaded by the browser: the restore "download" field,
+    /// the "restore:download:{id}" notification action and the "/restore-download/{id}" endpoint.
+    /// It is not reported when the "webservice-disable-restore-download" option turns the feature off.
+    /// </summary>
+    public const string RestoreDownloadExtension = "v1:backup:restore-download";
 
     /// <summary>
     /// The API extension that signals the temporary backups, such as those made for a direct restore,
@@ -125,6 +131,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         BackupRunAfterExtension,
         QueueCompletionActionExtension,
         SkipNextRunExtension,
+        RestoreDownloadExtension,
         SyncSnapshotsExtension,
         SyncRestoreExtension,
         McpServerExtension,
@@ -482,7 +489,8 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             SpecialFolders = systeminfo.SpecialFolders,
             APIExtensions = SupportedAPIExtensions
                 .Concat(Proprietary.LoaderHelper.Configuration.LicensedAPIExtensions)
-                .Where(ext => !disabledAPIExtensions.Contains(ext)).ToArray(),
+                .Where(ext => !disabledAPIExtensions.Contains(ext))
+                .Where(ext => ext != RestoreDownloadExtension || !connection.ApplicationSettings.DisableRestoreDownload).ToArray(),
             APIScopes = APIScopes,
             BrowserLocale = new SystemInfoDto.LocaleDto()
             {

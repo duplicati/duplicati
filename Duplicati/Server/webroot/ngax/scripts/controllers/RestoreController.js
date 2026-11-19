@@ -298,6 +298,11 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         );
     };
 
+    // The server can restore to a file that the browser downloads
+    $scope.canRestoreToDownload = function() {
+        return ($scope.SystemInfo.APIExtensions || []).indexOf('v1:backup:restore-download') >= 0;
+    };
+
     $scope.onStartRestore = function() {
         if ($scope.RestoreLocation == 'custom' && ($scope.RestorePath || '').trim().length == 0)
         {
@@ -305,7 +310,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
             return;
         }
 
-        if ($scope.RestoreLocation != 'custom' && dirsep != $scope.SystemInfo.DirectorySeparator)
+        if ($scope.RestoreLocation == 'direct' && dirsep != $scope.SystemInfo.DirectorySeparator)
         {
             DialogService.confirm(gettextCatalog.getString('This backup was created on another operating system. Restoring files without specifying a destination folder can cause files to be restored in unexpected places. Are you sure you want to continue without choosing a destination folder?'), function(ix) {
                 if (ix == 1)
@@ -337,6 +342,7 @@ backupApp.controller('RestoreController', function ($rootScope, $scope, $routePa
         var p = {
             'time': stamp,
             'restore_path': $scope.RestoreLocation == 'custom' ? $scope.RestorePath : null,
+            'download': $scope.RestoreLocation == 'download',
             'overwrite': $scope.RestoreMode == 'overwrite',
             'permissions': $scope.RestorePermissions == null ? false : $scope.RestorePermissions,
             'passphrase' : $scope.passphrase
