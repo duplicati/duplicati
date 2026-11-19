@@ -4,10 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Duplicati.Proprietary.DiskImage.Disk;
-using Duplicati.Proprietary.DiskImage.Filesystem;
-using Duplicati.Proprietary.DiskImage.General;
-using Duplicati.Proprietary.DiskImage.Partition;
+using Duplicati.Library.SourceProvider.DiskImage.Disk;
+using Duplicati.Library.SourceProvider.DiskImage.Filesystem;
+using Duplicati.Library.SourceProvider.DiskImage.General;
+using Duplicati.Library.SourceProvider.DiskImage.Partition;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 

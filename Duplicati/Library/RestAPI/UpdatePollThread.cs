@@ -50,6 +50,25 @@ namespace Duplicati.Server
         public bool InstallInProgress => m_installInProgress;
 
         public UpdatePollerStates ThreadState { get; private set; }
+
+        /// <summary>
+        /// Why the last update check could not be done, or null if it was done or none has run yet.
+        /// Set before the state returns to waiting, and cleared when a new check starts.
+        /// </summary>
+        public string LastCheckError { get; private set; }
+
+        /// <summary>
+        /// When the last update check finished, in UTC, or null if none has finished yet.
+        /// Set together with <see cref="LastCheckError"/>, so a client can tell that a check finished
+        /// even when it did not see the checking state.
+        /// </summary>
+        public DateTime? LastCheckFinished { get; private set; }
+
+        /// <summary>
+        /// Checks the update server; replaced by tests
+        /// </summary>
+        internal Func<ReleaseType, (UpdateInfo Update, Exception Error)> CheckForUpdate { get; set; }
+            = channel => (UpdaterManager.CheckForUpdate(channel, out var error), error);
         public double DownloadProgess
         {
             get { return m_downloadProgress; }
@@ -181,6 +200,7 @@ namespace Duplicati.Server
                     lock (m_lock)
                         m_forceCheck = false;
 
+                    LastCheckError = null;
                     ThreadState = UpdatePollerStates.Checking;
                     eventPollNotify.SignalNewEvent();
 
@@ -192,12 +212,15 @@ namespace Duplicati.Server
 
                     try
                     {
-                        var update = UpdaterManager.CheckForUpdate(rt);
+                        var (update, error) = CheckForUpdate(rt);
                         if (update != null)
                             connection.ApplicationSettings.UpdatedVersion = update;
+                        else if (error != null)
+                            LastCheckError = error.Message;
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        LastCheckError = ex.Message;
                     }
 
                     // It could be that we have registered an update from a more unstable channel, 
@@ -250,6 +273,8 @@ namespace Duplicati.Server
                                     }
                                 );
                     }
+
+                    LastCheckFinished = DateTime.UtcNow;
                 }
 
                 if (!m_installInProgress)

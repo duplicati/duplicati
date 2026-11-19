@@ -93,6 +93,19 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
     public const string TemporaryBackupListExtension = "v1:backups:temporary";
 
     /// <summary>
+    /// The API extension that signals the status reports the result of the last update check:
+    /// the "UpdateCheckFinished" status field, when the check finished, and the "UpdateCheckError" status field,
+    /// why the check could not be done, or null when it was done
+    /// </summary>
+    public const string UpdateCheckErrorExtension = "v1:serverstate:update-check-error";
+    
+    /// <summary>
+    /// The API extension that signals exported configuration files carry the global advanced options
+    /// in the "GlobalSettings" field, and that the import takes "global_options" to ignore, merge or apply them
+    /// </summary>
+    public const string ExportGlobalSettingsExtension = "v1:backup:export-global-settings";
+
+    /// <summary>
     /// The API extensions that are available
     /// </summary>
     public static readonly string[] SupportedAPIExtensions = [
@@ -128,10 +141,12 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v2:systemstatus",
         "v2:backup:restore-test",
         BackupEnableDisableExtension,
+        ExportGlobalSettingsExtension,
         BackupRunAfterExtension,
         QueueCompletionActionExtension,
         SkipNextRunExtension,
         RestoreDownloadExtension,
+        UpdateCheckErrorExtension,
         SyncSnapshotsExtension,
         SyncRestoreExtension,
         McpServerExtension,

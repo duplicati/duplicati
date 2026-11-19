@@ -107,6 +107,7 @@ namespace Duplicati.Library.Utility
             private static RegexOptions GetRegexOptions(bool caseSensitive)
                 => RegexOptions.Compiled |
                     RegexOptions.ExplicitCapture |
+                    RegexOptions.CultureInvariant |
                     (caseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase) |
                     RegexOptions.Singleline;
 
