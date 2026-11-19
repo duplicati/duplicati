@@ -20,6 +20,8 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
         failedAuthAttempts: 0,
         lastPgEvent: null,
         updaterState: 'waiting',
+        updateCheckError: null,
+        updateCheckFinished: null,
         updateDownloadLink: null,
         updatedVersion: null,
         updateDownloadProgress: 0,
@@ -269,6 +271,8 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
             notifyIfChanged(response.data, 'ProgramState', 'programState') |
             notifyIfChanged(response.data, 'EstimatedPauseEnd', 'estimatedPauseEnd') |
             notifyIfChanged(response.data, 'UpdaterState', 'updaterState') |
+            notifyIfChanged(response.data, 'UpdateCheckError', 'updateCheckError') |
+            notifyIfChanged(response.data, 'UpdateCheckFinished', 'updateCheckFinished') |
             notifyIfChanged(response.data, 'UpdateDownloadLink', 'updateDownloadLink') |
             notifyIfChanged(response.data, 'UpdatedVersion', 'updatedVersion') |
             notifyIfChanged(response.data, 'UpdateDownloadProgress', 'updateDownloadProgress');
