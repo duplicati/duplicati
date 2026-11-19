@@ -20,8 +20,8 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
-using Duplicati.Proprietary.DiskImage;
-using Duplicati.Proprietary.DiskImage.General;
+using Duplicati.Library.SourceProvider.DiskImage;
+using Duplicati.Library.SourceProvider.DiskImage.General;
 
 #nullable enable
 

@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Duplicati.Proprietary.DiskImage.General;
+using Duplicati.Library.SourceProvider.DiskImage.General;
 using Duplicati.UnitTest.DiskImage.Helpers;
 using NUnit.Framework;
 

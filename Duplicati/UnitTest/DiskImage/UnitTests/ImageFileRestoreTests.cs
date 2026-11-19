@@ -7,10 +7,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
-using Duplicati.Proprietary.DiskImage;
-using Duplicati.Proprietary.DiskImage.Disk;
-using Duplicati.Proprietary.DiskImage.General;
-using Duplicati.Proprietary.DiskImage.Partition;
+using Duplicati.Library.SourceProvider.DiskImage;
+using Duplicati.Library.SourceProvider.DiskImage.Disk;
+using Duplicati.Library.SourceProvider.DiskImage.General;
+using Duplicati.Library.SourceProvider.DiskImage.Partition;
 using Docker.DotNet;
 using Microsoft.Win32.SafeHandles;
 using DotNet.Testcontainers.Builders;
@@ -695,8 +695,8 @@ public class ImageFileRestoreTests
     [Test]
     public void Test_Crc32C_KnownValue()
     {
-        Assert.AreEqual(0xE3069283u, Crc32C.Compute("123456789"u8), "CRC-32C check value");
-        Assert.AreEqual(0x8A9136AAu, Crc32C.Compute(new byte[32]), "CRC-32C of 32 zero bytes");
+        Assert.AreEqual(0xE3069283u, Library.Utility.Crc32C.Compute("123456789"u8), "CRC-32C check value");
+        Assert.AreEqual(0x8A9136AAu, Library.Utility.Crc32C.Compute(new byte[32]), "CRC-32C of 32 zero bytes");
     }
 
     [Test]

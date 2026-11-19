@@ -75,6 +75,7 @@ public static class WebModules
         new Storj.StorjConfig(),
         new Duplicati.ListBackupsModule(),
         new Filen.GetApiKeyModule(),
+        new SourceProvider.DiskImage.WebModule(),
     }
     .Concat(ProprietaryWebModules.Value)
     .WhereNotNull()

@@ -13,6 +13,7 @@
     <ProjectReference Include="../../../proprietary/LoaderHelper/Duplicati.Proprietary.LoaderHelper.csproj" />
     <ProjectReference Include="../Interface/Duplicati.Library.Interface.csproj" />
     <ProjectReference Include="../SourceProvider/Builtin/Duplicati.Library.SourceProvider.Builtin.csproj" />
+    <ProjectReference Include="../SourceProvider/DiskImage/Duplicati.Library.SourceProvider.DiskImage.csproj" />
   </ItemGroup>
 
 </Project>
