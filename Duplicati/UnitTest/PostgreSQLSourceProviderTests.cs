@@ -162,7 +162,8 @@ public class PostgreSQLSourceProviderTests
         Assert.That(psi.Environment["PGPASSWORD"], Is.EqualTo("s3cret"));
         Assert.That(psi.Environment["PGHOST"], Is.EqualTo("db.example.com"));
         Assert.That(psi.Environment["PGSSLMODE"], Is.EqualTo("require"));
-        Assert.That(psi.ArgumentList, Is.EquivalentTo(new[] { "--format=custom", "--compress=0", "--no-password", "--no-large-objects" }));
+        Assert.That(psi.Environment["PGCLIENTENCODING"], Is.EqualTo("UTF8"));
+        Assert.That(psi.ArgumentList, Is.EquivalentTo(new[] { "--format=custom", "--compress=0", "--no-password", "--encoding=UTF8", "--no-large-objects" }));
 
         var withLargeObjects = PostgreSQLOptions.Parse(Url + "&postgresql-include-large-objects=true", new Dictionary<string, string?>());
         Assert.That(PostgreSQLClientTools.BuildDumpArguments(withLargeObjects, 17), Has.None.EqualTo("--no-large-objects"));

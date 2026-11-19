@@ -108,6 +108,23 @@ public sealed class PostgreSQLOptions
     ];
 
     /// <summary>
+    /// Combines the options given to the operation with the ones in the URL, where the URL wins
+    /// </summary>
+    /// <param name="url">The source or target URL</param>
+    /// <param name="options">The options of the operation</param>
+    /// <returns>The combined options</returns>
+    public static Dictionary<string, string?> MergeUrlOptions(string url, IReadOnlyDictionary<string, string?> options)
+    {
+        var merged = new Dictionary<string, string?>(options, StringComparer.OrdinalIgnoreCase);
+        var query = new RelaxedUri(url).QueryParameters;
+        foreach (var key in query.AllKeys)
+            if (key != null)
+                merged[key] = query[key];
+
+        return merged;
+    }
+
+    /// <summary>
     /// Reads the options. A value in the URL wins over the same option given to the backup.
     /// </summary>
     /// <param name="url">The source URL</param>
@@ -115,11 +132,7 @@ public sealed class PostgreSQLOptions
     /// <returns>The parsed options</returns>
     public static PostgreSQLOptions Parse(string url, IReadOnlyDictionary<string, string?> options)
     {
-        var merged = new Dictionary<string, string?>(options, StringComparer.OrdinalIgnoreCase);
-        var query = new RelaxedUri(url).QueryParameters;
-        foreach (var key in query.AllKeys)
-            if (key != null)
-                merged[key] = query[key];
+        var merged = MergeUrlOptions(url, options);
 
         string? Get(string name)
             => merged.TryGetValue(name, out var value) && !string.IsNullOrWhiteSpace(value) ? value : null;

@@ -34,7 +34,10 @@ namespace Duplicati.Library.SourceProvider.Builtin.PostgreSQL;
 /// <param name="Description">The kind of entry, such as TABLE DATA</param>
 /// <param name="Namespace">The schema of the object, or null</param>
 /// <param name="CopyStatement">The COPY statement that loads the data, or null</param>
-public sealed record PostgreSQLArchiveEntry(int DumpId, bool HasData, string? Oid, string? Tag, string? Description, string? Namespace, string? CopyStatement);
+/// <param name="Section">The part of a restore the entry belongs to, as one of the section constants of the reader</param>
+/// <param name="Definition">The statements that create the object, or null</param>
+/// <param name="DropStatement">The statements that drop the object, or null</param>
+public sealed record PostgreSQLArchiveEntry(int DumpId, bool HasData, string? Oid, string? Tag, string? Description, string? Namespace, string? CopyStatement, int Section, string? Definition, string? DropStatement);
 
 /// <summary>
 /// Reads the custom format that pg_dump writes, from a stream that can only be read forward.
@@ -48,6 +51,40 @@ public sealed class PostgreSQLArchiveReader
     public const string TableDataDescription = "TABLE DATA";
     /// <summary>The description of a table of contents entry that holds large objects</summary>
     public const string LargeObjectsDescription = "BLOBS";
+
+    /// <summary>The description of the entry that sets the client encoding the data is written in</summary>
+    public const string EncodingDescription = "ENCODING";
+    /// <summary>The description of the entry that sets how backslashes in strings are read</summary>
+    public const string StandardStringsDescription = "STDSTRINGS";
+    /// <summary>The description of the entry that sets the search path</summary>
+    public const string SearchPathDescription = "SEARCHPATH";
+    /// <summary>The description of an entry that sets the value of a sequence</summary>
+    public const string SequenceSetDescription = "SEQUENCE SET";
+    /// <summary>
+    /// What the description of an entry about the database itself starts with: the entry that
+    /// creates the database, and the one with its properties
+    /// </summary>
+    public const string DatabaseDescriptionPrefix = "DATABASE";
+    /// <summary>The description of an entry that creates a schema</summary>
+    public const string SchemaDescription = "SCHEMA";
+    /// <summary>The description of an entry that creates a table</summary>
+    public const string TableDescription = "TABLE";
+    /// <summary>The description of an entry that creates one large object, before PostgreSQL 17</summary>
+    public const string LargeObjectDescription = "BLOB";
+    /// <summary>The description of an entry that creates a group of large objects, from PostgreSQL 17</summary>
+    public const string LargeObjectMetadataDescription = "BLOB METADATA";
+
+    /// <summary>
+    /// The section of entries such as comments and security labels, which belong to the
+    /// section of the entry before them
+    /// </summary>
+    public const int SectionNone = 1;
+    /// <summary>The section of the entries that create the objects, before the data is loaded</summary>
+    public const int SectionPreData = 2;
+    /// <summary>The section of the entries that load data</summary>
+    public const int SectionData = 3;
+    /// <summary>The section of the entries that are applied after the data, such as indexes and constraints</summary>
+    public const int SectionPostData = 4;
 
     /// <summary>The block type of table data</summary>
     public const byte BlockTypeData = 1;
@@ -179,10 +216,9 @@ public sealed class PostgreSQLArchiveReader
             var tag = await ReadStringAsync(cancellationToken).ConfigureAwait(false);
             var description = await ReadStringAsync(cancellationToken).ConfigureAwait(false);
             // The section: pre-data, data or post-data
-            await ReadIntAsync(cancellationToken).ConfigureAwait(false);
-            // The definition and the drop statement
-            await ReadStringAsync(cancellationToken).ConfigureAwait(false);
-            await ReadStringAsync(cancellationToken).ConfigureAwait(false);
+            var section = await ReadIntAsync(cancellationToken).ConfigureAwait(false);
+            var definition = await ReadStringAsync(cancellationToken).ConfigureAwait(false);
+            var dropStatement = await ReadStringAsync(cancellationToken).ConfigureAwait(false);
             var copyStatement = await ReadStringAsync(cancellationToken).ConfigureAwait(false);
             var schema = await ReadStringAsync(cancellationToken).ConfigureAwait(false);
             // The tablespace and the table access method
@@ -201,7 +237,7 @@ public sealed class PostgreSQLArchiveReader
             // The position of the data block, which is not known in a piped archive
             await ReadBytesAsync(1 + OffsetSize, cancellationToken).ConfigureAwait(false);
 
-            entries.Add(new PostgreSQLArchiveEntry(dumpId, hasData, oid, tag, description, schema, copyStatement));
+            entries.Add(new PostgreSQLArchiveEntry(dumpId, hasData, oid, tag, description, schema, copyStatement, section, definition, dropStatement));
         }
 
         Entries = entries;

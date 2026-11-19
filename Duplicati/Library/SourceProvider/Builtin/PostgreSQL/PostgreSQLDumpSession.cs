@@ -152,7 +152,7 @@ public sealed class PostgreSQLDumpSession : IDisposable
 
             return read;
         }
-        catch (Exception ex) when (ex is EndOfStreamException or IOException)
+        catch (Exception ex) when (ex is EndOfStreamException or IOException or UserInformationException)
         {
             throw await FailAsync(ex, cancellationToken).ConfigureAwait(false);
         }
@@ -209,7 +209,7 @@ public sealed class PostgreSQLDumpSession : IDisposable
                 await VerifyEndAsync(cancellationToken).ConfigureAwait(false);
             return read;
         }
-        catch (Exception ex) when (ex is EndOfStreamException or IOException)
+        catch (Exception ex) when (ex is EndOfStreamException or IOException or UserInformationException)
         {
             throw await FailAsync(ex, cancellationToken).ConfigureAwait(false);
         }

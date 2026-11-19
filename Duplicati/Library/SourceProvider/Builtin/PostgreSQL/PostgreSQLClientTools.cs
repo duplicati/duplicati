@@ -34,6 +34,8 @@ public static class PostgreSQLClientTools
     public const string PgDump = "pg_dump";
     /// <summary>The SQL client program</summary>
     public const string Psql = "psql";
+    /// <summary>The restore program</summary>
+    public const string PgRestore = "pg_restore";
 
     /// <summary>
     /// The server major versions the provider is tested against, newest first
@@ -46,6 +48,14 @@ public static class PostgreSQLClientTools
     public const string NoLargeObjectsArgument = "--no-large-objects";
     /// <summary>The pg_dump option that leaves out large objects, before version 16</summary>
     public const string NoBlobsArgument = "--no-blobs";
+    /// <summary>
+    /// The pg_dump option that writes the archive in UTF-8, whatever the encoding of the database.
+    /// The names in the table of contents are read as UTF-8, and two names that differ only in
+    /// characters another encoding has would otherwise be read as the same name.
+    /// </summary>
+    public const string Utf8EncodingArgument = "--encoding=" + ClientEncoding;
+    /// <summary>The client encoding of every session the programs open</summary>
+    public const string ClientEncoding = "UTF8";
 
     /// <summary>
     /// The folder the Debian packages install the client of a major version in; {0} is the major version
@@ -139,6 +149,8 @@ public static class PostgreSQLClientTools
         public string Tool { get; }
         /// <summary>The standard output of the program</summary>
         public Stream Output => m_process.StandardOutput.BaseStream;
+        /// <summary>The standard input of the program; closed already unless the program was started to be written to</summary>
+        public Stream Input => m_process.StandardInput.BaseStream;
 
         internal RunningTool(string tool, Process process)
         {
@@ -249,6 +261,8 @@ public static class PostgreSQLClientTools
         psi.Environment["PGSSLMODE"] = options.SslMode;
         psi.Environment["PGCONNECT_TIMEOUT"] = ConnectTimeoutSeconds;
         psi.Environment["PGAPPNAME"] = ApplicationName;
+        // The statements and names the programs are given are UTF-8, as is the archive pg_dump writes
+        psi.Environment["PGCLIENTENCODING"] = ClientEncoding;
         if (options.Password != null)
             psi.Environment["PGPASSWORD"] = options.Password;
         if (options.SslRootCert != null)
@@ -265,7 +279,7 @@ public static class PostgreSQLClientTools
     /// <returns>The arguments</returns>
     public static IReadOnlyList<string> BuildDumpArguments(PostgreSQLOptions options, int major)
     {
-        var arguments = new List<string> { "--format=custom", "--compress=0", "--no-password" };
+        var arguments = new List<string> { "--format=custom", "--compress=0", "--no-password", Utf8EncodingArgument };
         if (!options.IncludeLargeObjects)
             arguments.Add(major >= FirstMajorWithLargeObjectsOption ? NoLargeObjectsArgument : NoBlobsArgument);
         return arguments;
@@ -299,6 +313,110 @@ public static class PostgreSQLClientTools
 
         process.StandardInput.Close();
         return new RunningTool(tool, process);
+    }
+
+    /// <summary>
+    /// Starts a program that reads what is written to its standard input. What it writes
+    /// to its standard output is discarded.
+    /// </summary>
+    /// <param name="tool">The program name, for messages</param>
+    /// <param name="startInfo">The start information</param>
+    /// <returns>The running program</returns>
+    public static RunningTool StartForInput(string tool, ProcessStartInfo startInfo)
+    {
+        Process process;
+        try
+        {
+            process = Process.Start(startInfo) ?? throw new InvalidOperationException("No process was started");
+        }
+        catch (Exception ex)
+        {
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolNotStarted(tool, ex.Message), "PostgreSQLToolNotStarted", ex);
+        }
+
+        // The output is read so the program never waits for room to write it
+        _ = process.StandardOutput.BaseStream.CopyToAsync(Stream.Null);
+        return new RunningTool(tool, process);
+    }
+
+    /// <summary>
+    /// Runs a program to its end, with the given bytes as its standard input, and returns what it wrote
+    /// </summary>
+    /// <param name="tool">The program name, for messages</param>
+    /// <param name="startInfo">The start information</param>
+    /// <param name="input">What the program reads</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The exit code, what the program wrote as errors, and its standard output as it was written</returns>
+    public static async Task<(int ExitCode, string ErrorOutput, byte[] Output)> RunFilterAsync(string tool, ProcessStartInfo startInfo, ReadOnlyMemory<byte> input, CancellationToken cancellationToken)
+    {
+        Process process;
+        try
+        {
+            process = Process.Start(startInfo) ?? throw new InvalidOperationException("No process was started");
+        }
+        catch (Exception ex)
+        {
+            throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolNotStarted(tool, ex.Message), "PostgreSQLToolNotStarted", ex);
+        }
+
+        using var running = new RunningTool(tool, process);
+        // The output is read while the input is written, so neither side waits for the other. It is kept
+        // as bytes, as text from the backup need not be valid in any encoding and must pass unchanged.
+        var outputBuffer = new MemoryStream();
+        var output = process.StandardOutput.BaseStream.CopyToAsync(outputBuffer, cancellationToken);
+        try
+        {
+            await running.Input.WriteAsync(input, cancellationToken).ConfigureAwait(false);
+            await running.Input.FlushAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (IOException)
+        {
+            // The program ended before it read everything; its exit code and errors say why
+        }
+
+        try
+        {
+            running.Input.Close();
+        }
+        catch (IOException)
+        {
+        }
+
+        await output.ConfigureAwait(false);
+        var (exitCode, errorOutput) = await running.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+        return (exitCode, errorOutput, outputBuffer.ToArray());
+    }
+
+    /// <summary>
+    /// Runs a program to its end, with the given bytes as its standard input
+    /// </summary>
+    /// <param name="tool">The program name, for messages</param>
+    /// <param name="startInfo">The start information</param>
+    /// <param name="input">What the program reads</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The exit code and what the program wrote as errors</returns>
+    public static async Task<(int ExitCode, string ErrorOutput)> RunWithInputAsync(string tool, ProcessStartInfo startInfo, ReadOnlyMemory<byte> input, CancellationToken cancellationToken)
+    {
+        using var running = StartForInput(tool, startInfo);
+        try
+        {
+            await running.Input.WriteAsync(input, cancellationToken).ConfigureAwait(false);
+            await running.Input.FlushAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (IOException)
+        {
+            // The program ended before it read everything; its exit code and errors say why
+        }
+
+        try
+        {
+            running.Input.Close();
+        }
+        catch (IOException)
+        {
+        }
+
+        return await running.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
