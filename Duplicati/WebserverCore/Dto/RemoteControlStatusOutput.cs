@@ -28,10 +28,12 @@ namespace Duplicati.WebserverCore.Dto;
 /// <param name="IsConnected">A flag indicating if the remote control is connected</param>
 /// <param name="IsRegistering">A flag indicating if the remote control is registering</param>
 /// <param name="RegistrationUrl">The URL to register the machine with</param>
+/// <param name="PausedUntil">The time until which the console has asked this client to stay disconnected, or null if the connection is not paused</param>
 public sealed record RemoteControlStatusOutput(
     bool CanEnable,
     bool IsEnabled,
     bool IsConnected,
+    DateTimeOffset? PausedUntil,
     bool IsRegistering,
     bool IsRegisteringFaulted,
     bool IsRegisteringCompleted,

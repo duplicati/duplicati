@@ -310,12 +310,26 @@ public class BackupGet : IEndpointV1
         );
     }
 
+    /// <summary>
+    /// Gets the global advanced options of the server for an exported file. They are exported apart
+    /// from the backup's own settings, so the import can decide what to do with them.
+    /// </summary>
+    /// <param name="connection">The database connection holding the global options</param>
+    /// <param name="exportPasswords">Whether options that hold a password are exported</param>
+    /// <returns>The global advanced options</returns>
+    private static Setting[] GetGlobalSettingsForExport(Connection connection, bool exportPasswords)
+        => connection.Settings
+            .Where(x => !string.IsNullOrWhiteSpace(x.Name) && x.Name.StartsWith("--", StringComparison.Ordinal))
+            .Where(x => exportPasswords || !Connection.PasswordFieldNames.Contains(x.Name))
+            .Select(x => new Setting { Name = x.Name, Value = x.Value, Filter = x.Filter })
+            .ToArray();
+
     private static (byte[] Data, string Filename) ExecuteGetExport(Connection connection, IBackup backup, bool exportPasswords, string? passphrase)
     {
         if (!exportPasswords)
             RemovePasswords(backup);
 
-        byte[] data = EncodeDataForExport(connection, backup, passphrase);
+        byte[] data = EncodeDataForExport(connection, backup, passphrase, GetGlobalSettingsForExport(connection, exportPasswords));
 
         string filename = Uri.EscapeDataString(backup.Name + "-duplicati-config.json");
         if (!string.IsNullOrWhiteSpace(passphrase))
@@ -324,9 +338,10 @@ public class BackupGet : IEndpointV1
         return (data, filename);
     }
 
-    private static byte[] EncodeDataForExport(Connection connection, IBackup bk, string? passphrase)
+    private static byte[] EncodeDataForExport(Connection connection, IBackup bk, string? passphrase, Setting[] globalSettings)
     {
         var ipx = connection.PrepareBackupForExport(bk);
+        ipx.GlobalSettings = globalSettings;
 
         using var ms = new MemoryStream();
         JsonSerializer.Serialize(ms, ipx, new JsonSerializerOptions()

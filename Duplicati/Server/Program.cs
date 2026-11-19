@@ -148,11 +148,6 @@ namespace Duplicati.Server
         public static SingleInstance ApplicationInstance = null;
 
         /// <summary>
-        /// The thread running the ping-pong handler
-        /// </summary>
-        private static Thread PingPongThread;
-
-        /// <summary>
         /// The controller interface for pause/resume and throttle options
         /// </summary>
         public static LiveControls LiveControl { get => DuplicatiWebserver.Provider.GetRequiredService<LiveControls>(); }
@@ -272,6 +267,7 @@ namespace Duplicati.Server
             EventPollNotify eventPollNotify = null;
             ISchedulerService scheduler = null;
             IChangeTrackingService changeTracking = null;
+            Action<Exception> updaterErrorHandler = null;
             try
             {
                 // Opening the database can create or upgrade it, which a second server must not do
@@ -308,10 +304,12 @@ namespace Duplicati.Server
                 if (adjustres.HasValue)
                     return adjustres.Value;
 
-                UpdaterManager.OnError += obj =>
+                // Removed when the server stops, as the event is static and outlives the connection
+                updaterErrorHandler = obj =>
                 {
                     connection.LogError(null, "Error in updater", obj);
                 };
+                UpdaterManager.OnError += updaterErrorHandler;
 
                 // Rewrite the sensitive fields before anything else can use the connection.
                 // Once the webserver is up, the scheduler re-reads every backup on each save,
@@ -345,8 +343,8 @@ namespace Duplicati.Server
 
                 if (Library.Utility.Utility.ParseBoolOption(commandlineOptions, PING_PONG_KEEPALIVE_OPTION))
                 {
-                    PingPongThread = new Thread(() => PingPongMethod(applicationSettings)) { IsBackground = true };
-                    PingPongThread.Start();
+                    // A background thread, as it blocks reading stdin and does not stop when the server does
+                    new Thread(() => PingPongMethod(applicationSettings)) { IsBackground = true }.Start();
                 }
 
                 connection.SetPreloadSettingsIfChanged(preloadDbSettings);
@@ -438,6 +436,11 @@ namespace Duplicati.Server
                     () => eventPollNotify?.SignalNewEvent(),
                     () => ShutdownModernWebserver(),
                     () => updatePollThread?.Terminate(),
+                    () =>
+                    {
+                        if (updaterErrorHandler != null)
+                            UpdaterManager.OnError -= updaterErrorHandler;
+                    },
                     () => scheduler?.Terminate(true),
                     () => queueRunner?.Terminate(true),
                     () => changeTracking?.DisposeAsync().AsTask().Await(),
@@ -445,7 +448,6 @@ namespace Duplicati.Server
                     () => PurgeTempFilesTimer?.Dispose(),
                     () => CertificateRenewalTimer?.Dispose(),
                     () => Library.UsageReporter.Reporter.ShutDown(),
-                    () => PingPongThread?.Interrupt(),
                     () =>
                     {
                         Log.WriteInformationMessage(LOGTAG, "ServerStopped", Strings.Program.ServerStopped);
@@ -743,6 +745,9 @@ namespace Duplicati.Server
 
             if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS))
                 connection.ApplicationSettings.DisableSigninTokens = Library.Utility.Utility.ParseBoolOption(commandlineOptions, WebServerLoader.OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS);
+
+            if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_WEBSERVICE_DISABLE_RESTORE_DOWNLOAD))
+                connection.ApplicationSettings.DisableRestoreDownload = Library.Utility.Utility.ParseBoolOption(commandlineOptions, WebServerLoader.OPTION_WEBSERVICE_DISABLE_RESTORE_DOWNLOAD);
 
             if (commandlineOptions.ContainsKey(WebServerLoader.OPTION_REDUCED_REPORTING))
             {
@@ -1692,6 +1697,7 @@ namespace Duplicati.Server
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_API_ONLY, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverApiOnlyDescription, Strings.Program.WebserverApiOnlyDescription),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_DONT_AUTOCREATE_DATABASE, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverDontAutocreateDatabaseDescription, Strings.Program.WebserverDontAutocreateDatabaseDescription),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_DISABLE_SIGNIN_TOKENS, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverDisableSigninTokensDescription, Strings.Program.WebserverDisableSigninTokensDescription),
+            new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_DISABLE_RESTORE_DOWNLOAD, CommandLineArgument.ArgumentType.Boolean, Strings.Program.WebserverDisableRestoreDownloadShort, Strings.Program.WebserverDisableRestoreDownloadLong),
             new CommandLineArgument(WebServerLoader.OPTION_REDUCED_REPORTING, CommandLineArgument.ArgumentType.Boolean, Strings.Program.ReducedReportingShort, Strings.Program.ReducedReportingLong),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_SPAPATHS, CommandLineArgument.ArgumentType.Path, Strings.Program.WebserverSpaPathsDescription, Strings.Program.WebserverSpaPathsDescription, WebServerLoader.DEFAULT_OPTION_SPAPATHS),
             new CommandLineArgument(WebServerLoader.OPTION_WEBSERVICE_TIMEZONE, CommandLineArgument.ArgumentType.String, Strings.Program.WebserverTimezoneDescription, Strings.Program.WebserverTimezoneDescription, TimeZoneHelper.GetLocalTimeZone(), null, TimeZoneHelper.GetTimeZones().Select(x => x.Id).ToArray()),

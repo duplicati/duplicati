@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Logging;
+using Duplicati.Server;
 using Duplicati.Server.Database;
 using Duplicati.WebserverCore.Abstractions;
 using Duplicati.WebserverCore.Exceptions;
@@ -137,6 +138,7 @@ public partial class Auth : IEndpointV1
                 case "export":
                 case "bugreport":
                 case "websocket":
+                case RestoreDownload.TokenOperation:
                     break;
 
                 default:

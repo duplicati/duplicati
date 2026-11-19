@@ -18,6 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
 // DEALINGS IN THE SOFTWARE.
+using Duplicati.Library.RestAPI;
 using Duplicati.Library.Utility;
 using Duplicati.Server;
 using Duplicati.Server.Database;
@@ -36,9 +37,14 @@ public class BackupPutDelete : IEndpointV1
             => ExecutePut(GetBackup(connection, id), connection, input))
             .RequireAuthorization();
 
-        group.MapDelete("/backup/{id}", ([FromServices] Connection connection, [FromServices] ISchedulerService schedulerService, [FromServices] IQueueRunnerService queueRunnerService, [FromServices] LiveControls liveControls, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id, [FromQuery(Name = "delete-remote-files")] bool? delete_remote_files, [FromQuery(Name = "delete-local-db")] bool? delete_local_db, [FromQuery] bool? force) =>
+        group.MapDelete("/backup/{id}", ([FromServices] Connection connection, [FromServices] ISchedulerService schedulerService, [FromServices] IQueueRunnerService queueRunnerService, [FromServices] LiveControls liveControls, [FromServices] IHttpContextAccessor httpContextAccessor, [FromRoute] string id, [FromQuery(Name = "delete-remote-files")] bool? delete_remote_files, [FromQuery(Name = "delete-local-db")] bool? delete_local_db, [FromQuery] bool? force, [FromQuery(Name = RemoteDestinationDelete.QueryParameter)] string[]? remote_destinations) =>
         {
-            var res = ExecuteDelete(GetBackup(connection, id), schedulerService, queueRunnerService, liveControls, delete_remote_files ?? false, delete_local_db, force ?? false);
+            var backup = GetBackup(connection, id);
+            // The destinations are checked before a running task of the job is stopped
+            // The binding gives an empty list when the parameter is left out, which is not the same as naming no destination
+            var named = httpContextAccessor.HttpContext?.Request.Query.ContainsKey(RemoteDestinationDelete.QueryParameter) == true;
+            var destinations = RemoteDestinationDelete.Resolve(backup, named ? remote_destinations ?? [] : null, delete_remote_files);
+            var res = ExecuteDelete(backup, schedulerService, queueRunnerService, liveControls, delete_remote_files ?? false, delete_local_db, force ?? false, destinations);
             if (res.Status != "OK" && httpContextAccessor.HttpContext != null)
                 httpContextAccessor.HttpContext.Response.StatusCode = 500;
             return res;
@@ -150,7 +156,7 @@ public class BackupPutDelete : IEndpointV1
         }
     }
 
-    private static Dto.DeleteBackupOutputDto ExecuteDelete(IBackup backup, ISchedulerService schedulerService, IQueueRunnerService queueRunnerService, LiveControls liveControls, bool delete_remote_files, bool? delete_local_db, bool force)
+    private static Dto.DeleteBackupOutputDto ExecuteDelete(IBackup backup, ISchedulerService schedulerService, IQueueRunnerService queueRunnerService, LiveControls liveControls, bool delete_remote_files, bool? delete_local_db, bool force, IReadOnlyList<string>? remote_destinations)
     {
         try
         {
@@ -196,7 +202,9 @@ public class BackupPutDelete : IEndpointV1
         var extra = new Dictionary<string, string?>();
         if (delete_local_db.HasValue)
             extra["delete-local-db"] = delete_local_db.Value.ToString();
-        if (delete_remote_files)
+        if (remote_destinations != null)
+            extra[RemoteDestinationDelete.TaskOption] = string.Join(",", remote_destinations);
+        else if (delete_remote_files)
             extra["delete-remote-files"] = "true";
 
         return new Dto.DeleteBackupOutputDto("OK", null, queueRunnerService.AddTask(Runner.CreateDeleteTask(backup, extra, (_) => schedulerService.Reschedule())));

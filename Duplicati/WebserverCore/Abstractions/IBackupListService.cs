@@ -28,7 +28,11 @@ public interface IBackupListService
 {
     IEnumerable<Dto.BackupAndScheduleOutputDto> List(string? orderBy);
 
-    Dto.ImportBackupOutputDto Import(bool cmdline, bool import_metadata, bool direct, bool temporary, string passphrase, string tempfile, Dictionary<string, string>? replace_settings, bool expand_env_vars = false);
+    /// <summary>
+    /// Imports a backup configuration
+    /// </summary>
+    /// <param name="global_options">What to do with the global advanced options in the configuration: "ignore" (or null), "merge" into the backup, or "apply" as global options of this server (only with direct)</param>
+    Dto.ImportBackupOutputDto Import(bool cmdline, bool import_metadata, bool direct, bool temporary, string passphrase, string tempfile, Dictionary<string, string>? replace_settings, bool expand_env_vars = false, string? global_options = null);
 
     Dto.CreateBackupDto Add(Dto.BackupAndScheduleInputDto data, bool temporary, bool existingDb);
 }

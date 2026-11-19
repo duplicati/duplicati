@@ -133,6 +133,7 @@ public class RemoteControl : IEndpointV1
             CanEnable: remoteController.CanEnable,
             IsEnabled: remoteController.IsEnabled,
             IsConnected: remoteController.Connected,
+            PausedUntil: remoteController.PausedUntil,
             IsRegistering: registration.IsRegistering,
             IsRegisteringFaulted: registration.IsRegistering && registration.WaitForRegistrationAsync().IsFaulted,
             IsRegisteringCompleted: registration.IsRegistering && registration.WaitForRegistrationAsync().IsCompleted,

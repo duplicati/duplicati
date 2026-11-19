@@ -95,6 +95,11 @@ namespace Duplicati.Server
             public bool CaseSensitiveSearch { get; internal set; } = false;
             public bool SearchMetadata { get; internal set; } = false;
 
+            /// <summary>
+            /// Whether a restore goes to a temporary folder, to be downloaded by the browser
+            /// </summary>
+            internal bool RestoreForDownload { get; set; }
+
             public DateTime? TaskStarted { get; set; }
             public DateTime? TaskFinished { get; set; }
 
@@ -554,7 +559,8 @@ namespace Duplicati.Server
         public static IRunnerData CreateRestoreTask(IBackup backup, string[]? filters,
                                                     DateTime time, string? restoreTarget, bool? overwrite, bool? restore_permissions,
                                                     bool? skip_metadata, string? passphrase,
-                                                    IReadOnlyDictionary<string, string?>? options)
+                                                    IReadOnlyDictionary<string, string?>? options,
+                                                    bool download = false)
         {
             var dict = new Dictionary<string, string?>();
 
@@ -578,16 +584,21 @@ namespace Duplicati.Server
                 dict["restore-permissions"] = restore_permissions.Value ? bool.TrueString : bool.FalseString;
             if (skip_metadata.HasValue)
                 dict["skip-metadata"] = skip_metadata.Value ? bool.TrueString : bool.FalseString;
-            if (!string.IsNullOrWhiteSpace(restoreTarget))
+            // A restore for download goes to a temporary folder, which the runner sets when the task runs
+            if (download)
+                dict.Remove("restore-path");
+            else if (!string.IsNullOrWhiteSpace(restoreTarget))
                 dict["restore-path"] = SpecialFolders.ExpandEnvironmentVariables(restoreTarget);
             if (!(passphrase is null))
                 dict["passphrase"] = passphrase;
 
-            return CreateTask(
+            var task = CreateTask(
                 DuplicatiOperation.Restore,
                 backup,
                 dict,
                 filters);
+            ((RunnerData)task).RestoreForDownload = download;
+            return task;
         }
 
         public static IRunnerData CreateRestoreControlFilesTask(IBackup backup, string restorePath, string[] files)
@@ -1015,6 +1026,7 @@ namespace Duplicati.Server
 
             backup.Metadata ??= new Dictionary<string, string>();
             TempFolder? tempfolder = null;
+            TempFolder? downloadFolder = null;
 
             try
             {
@@ -1067,6 +1079,13 @@ namespace Duplicati.Server
                 // Always remove this option as it is a server-only option
                 options.Remove(STORE_TASK_CONFIG_OPTION);
 
+                // A restore for download goes to a folder of its own, packed for the browser when the restore is done
+                if (data is RunnerData { RestoreForDownload: true } && data.Operation == DuplicatiOperation.Restore)
+                {
+                    downloadFolder = new TempFolder();
+                    options["restore-path"] = downloadFolder;
+                }
+
                 // The scheduler options are a server concern; the engine must not see them
                 Scheduler.RemoveSchedulerOptions(options);
 
@@ -1079,6 +1098,7 @@ namespace Duplicati.Server
                     log[ILogWriteHandler.LiveLogEntry.LOG_EXTRA_BACKUPID] = data.BackupID;
                 }))
                 using (tempfolder)
+                using (downloadFolder)
                 using (var controller = await CreateControllerAsync(url, options, sink, useOutOfProcess).ConfigureAwait(false))
                 {
                     try
@@ -1184,6 +1204,8 @@ namespace Duplicati.Server
                                     ? await controller.SyncRestoreAsync(GetExpandedSources(backup), data.FilterStrings).ConfigureAwait(false)
                                     : await controller.RestoreAsync(data.FilterStrings).ConfigureAwait(false);
                                 UpdateMetadataBase(databaseConnection, eventPollNotify, notificationUpdateService, backup, r);
+                                if (downloadFolder != null)
+                                    RegisterRestoreDownload(databaseConnection, backup, downloadFolder);
                                 return r;
                             }
                         case DuplicatiOperation.RestoreControlFiles:
@@ -1249,7 +1271,10 @@ namespace Duplicati.Server
                                 {
                                     // A sync job leaves no backup volumes at the destination, only the
                                     // copied files, which are kept, even if they look like volumes
-                                    if (backup.OperationType != OperationType.Sync && Utility.ParseBoolOption(data.ExtraOptions.AsReadOnly(), "delete-remote-files"))
+                                    data.ExtraOptions.TryGetValue(RemoteDestinationDelete.TaskOption, out var chosenDestinations);
+                                    if (backup.OperationType != OperationType.Sync && !string.IsNullOrWhiteSpace(chosenDestinations))
+                                        await DeleteRemoteDestinationsAsync(controller, backup, databaseConnection, applicationSettings, options, sink, useOutOfProcess, chosenDestinations.Split(',')).ConfigureAwait(false);
+                                    else if (backup.OperationType != OperationType.Sync && Utility.ParseBoolOption(data.ExtraOptions.AsReadOnly(), "delete-remote-files"))
                                         await controller.DeleteAllRemoteFilesAsync().ConfigureAwait(false);
 
                                     if (Utility.ParseBoolOption(data.ExtraOptions.AsReadOnly(), "delete-local-db"))
@@ -1521,6 +1546,100 @@ namespace Duplicati.Server
             {
                 Library.Logging.Log.WriteWarningMessage(LOGTAG, "FileWatcherCompleteFailed", ex, "Could not finish the file watcher handoff for backup {0}", handoff.BackupId);
             }
+        }
+
+        /// <summary>
+        /// Deletes the remote files of the chosen destinations of a job, the main one with the
+        /// controller of the task and each secondary one with a controller of its own. Every
+        /// destination is tried; a destination fails when it cannot be listed or a file is left.
+        /// Files deleted before are not looked for again, so a delete that is started again
+        /// only deletes what is left.
+        /// </summary>
+        /// <param name="controller">The controller of the task, for the main destination</param>
+        /// <param name="backup">The job</param>
+        /// <param name="databaseConnection">The server database</param>
+        /// <param name="applicationSettings">The settings of the server</param>
+        /// <param name="options">The options of the task</param>
+        /// <param name="sink">The message sink of the task</param>
+        /// <param name="useOutOfProcess">Whether the controllers run in a process of their own</param>
+        /// <param name="destinations">The keys of the destinations, checked when the task was added</param>
+        /// <exception cref="RemoteDestinationDeleteException">When the files of a destination could not be deleted</exception>
+        private static async Task DeleteRemoteDestinationsAsync(Library.Main.IController controller, IBackup backup, Connection databaseConnection, IApplicationSettings applicationSettings, Dictionary<string, string?> options, MessageSink sink, bool useOutOfProcess, IEnumerable<string> destinations)
+        {
+            var failed = new List<string>();
+            foreach (var key in destinations)
+            {
+                try
+                {
+                    IListRemoteResults result;
+                    if (key == RemoteDestinationDelete.PrimaryKey)
+                    {
+                        result = await controller.DeleteAllRemoteFilesAsync().ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        var target = (backup.AdditionalTargetURLs ?? []).FirstOrDefault(x => x.TargetUrlKey == key)
+                            ?? throw new UserInformationException($"The job has no destination with the key: {key}", "RemoteDestinationsUnknown");
+
+                        // The secondary destination holds a copy of the files of the main one,
+                        // so the database of the job tells which of its files belong to the job
+                        var targetOptions = new Dictionary<string, string?>(options);
+                        targetOptions.Remove("remote-sync-json-config");
+                        targetOptions.Remove(RemoteDestinationDelete.TaskOption);
+                        foreach (var opt in target.Options ?? [])
+                            if (opt.Value != null && !opt.Key.Equals("url", StringComparison.OrdinalIgnoreCase) && !opt.Key.Equals("mode", StringComparison.OrdinalIgnoreCase) && !opt.Key.Equals("interval", StringComparison.OrdinalIgnoreCase))
+                                targetOptions[opt.Key] = opt.Value is JsonElement { ValueKind: JsonValueKind.String } element ? element.GetString() : opt.Value.ToString();
+
+                        using var targetController = await CreateControllerAsync(ApplyDuplicatiStorageCredentials(databaseConnection, target.TargetUrl), targetOptions, sink, useOutOfProcess).ConfigureAwait(false);
+                        await targetController.SetSecretProviderAsync(applicationSettings.SecretProvider).ConfigureAwait(false);
+                        result = await targetController.DeleteAllRemoteFilesAsync().ConfigureAwait(false);
+                    }
+
+                    if (result.Files?.Any() == true)
+                    {
+                        Library.Logging.Log.WriteWarningMessage(LOGTAG, "RemoteDestinationDeleteIncomplete", null, "{0} remote files of the destination {1} could not be deleted", result.Files.Count(), key);
+                        failed.Add(key);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Library.Logging.Log.WriteWarningMessage(LOGTAG, "RemoteDestinationDeleteFailed", ex, "The remote files of the destination {0} could not be deleted: {1}", key, ex.Message);
+                    failed.Add(key);
+                }
+            }
+
+            if (failed.Count > 0)
+                throw new RemoteDestinationDeleteException(failed);
+        }
+
+        /// <summary>
+        /// Packs the files restored for download, registers the file and tells the user it is ready
+        /// </summary>
+        /// <param name="databaseConnection">The database connection</param>
+        /// <param name="backup">The backup that was restored</param>
+        /// <param name="folder">The folder the files were restored to</param>
+        private static void RegisterRestoreDownload(Connection databaseConnection, Serialization.Interface.IBackup backup, string folder)
+        {
+            var packed = RestoreDownload.Pack(folder);
+            if (packed == null)
+            {
+                Library.Logging.Log.WriteWarningMessage(LOGTAG, "RestoreDownloadEmpty", null, "No files were restored, so there is nothing to download");
+                return;
+            }
+
+            var tempid = databaseConnection.RegisterTempFile(RestoreDownload.TempFileOriginPrefix + packed.Value.Name, packed.Value.Path, DateTime.Now.Add(RestoreDownload.Lifetime));
+            databaseConnection.RegisterNotification(
+                NotificationType.Information,
+                "Restore ready for download",
+                $"The restored files are ready for download: {packed.Value.Name}",
+                null,
+                backup.ID,
+                RestoreDownload.NotificationActionPrefix + tempid,
+                null,
+                "RestoreDownloadReady",
+                "",
+                (n, a) => n
+            );
         }
 
         private static async Task<Library.Main.IController> CreateControllerAsync(string url, Dictionary<string, string?> options, MessageSink sink, bool useOutOfProcess)

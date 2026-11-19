@@ -97,7 +97,7 @@ public interface IController : IDisposable
     /// <summary>
     /// Deletes all remote files
     /// </summary>
-    /// <returns>The list of remote results</returns>
+    /// <returns>The results, with the files that could not be deleted as the files</returns>
     Task<IListRemoteResults> DeleteAllRemoteFilesAsync();
 
     /// <summary>

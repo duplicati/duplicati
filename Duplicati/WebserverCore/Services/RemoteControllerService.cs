@@ -80,6 +80,19 @@ public class RemoteControllerService(Connection connection, IRemoteControllerHan
         }
     }
 
+    /// <inheritdoc />
+    public DateTimeOffset? PausedUntil
+    {
+        get
+        {
+            var remoteConnection = _keepRemoteConnection;
+            if (!IsEnabled || remoteConnection == null || remoteConnection.State == KeepRemoteConnection.ConnectionState.Authenticated)
+                return null;
+
+            return remoteConnection.AutoReconnectDisabledUntil;
+        }
+    }
+
     /// <summary>
     /// The remote control connection handler that this service is wrapping.
     /// </summary>

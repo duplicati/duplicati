@@ -80,12 +80,31 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
     /// The extension is reported on every server; the GET endpoint tells which actions the computer allows.
     /// </summary>
     public const string QueueCompletionActionExtension = "v1:serverstate:queue-completion-action";
+    /// <summary>
+    /// The API extension that signals a restore can be downloaded by the browser: the restore "download" field,
+    /// the "restore:download:{id}" notification action and the "/restore-download/{id}" endpoint.
+    /// It is not reported when the "webservice-disable-restore-download" option turns the feature off.
+    /// </summary>
+    public const string RestoreDownloadExtension = "v1:backup:restore-download";
 
     /// <summary>
     /// The API extension that signals the temporary backups, such as those made for a direct restore,
     /// can be listed with "GET /backups/temporary"
     /// </summary>
     public const string TemporaryBackupListExtension = "v1:backups:temporary";
+
+    /// <summary>
+    /// The API extension that signals the status reports the result of the last update check:
+    /// the "UpdateCheckFinished" status field, when the check finished, and the "UpdateCheckError" status field,
+    /// why the check could not be done, or null when it was done
+    /// </summary>
+    public const string UpdateCheckErrorExtension = "v1:serverstate:update-check-error";
+    
+    /// <summary>
+    /// The API extension that signals exported configuration files carry the global advanced options
+    /// in the "GlobalSettings" field, and that the import takes "global_options" to ignore, merge or apply them
+    /// </summary>
+    public const string ExportGlobalSettingsExtension = "v1:backup:export-global-settings";
 
     /// <summary>
     /// The API extensions that are available
@@ -123,10 +142,14 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         "v2:systemstatus",
         "v2:backup:restore-test",
         BackupEnableDisableExtension,
+        ExportGlobalSettingsExtension,
         BackupRunAfterExtension,
         QueueCompletionActionExtension,
         SkipNextRunExtension,
         CopyToTempDestination.ApiExtension,
+        RemoteDestinationDelete.ApiExtension,
+        RestoreDownloadExtension,
+        UpdateCheckErrorExtension,
         SyncSnapshotsExtension,
         SyncRestoreExtension,
         McpServerExtension,
@@ -484,7 +507,8 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
             SpecialFolders = systeminfo.SpecialFolders,
             APIExtensions = SupportedAPIExtensions
                 .Concat(Proprietary.LoaderHelper.Configuration.LicensedAPIExtensions)
-                .Where(ext => !disabledAPIExtensions.Contains(ext)).ToArray(),
+                .Where(ext => !disabledAPIExtensions.Contains(ext))
+                .Where(ext => ext != RestoreDownloadExtension || !connection.ApplicationSettings.DisableRestoreDownload).ToArray(),
             APIScopes = APIScopes,
             BrowserLocale = new SystemInfoDto.LocaleDto()
             {

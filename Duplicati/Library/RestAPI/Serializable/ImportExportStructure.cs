@@ -30,6 +30,12 @@ namespace Duplicati.Server.Serializable
         public required Duplicati.Server.Database.Schedule? Schedule { get; init; }
         public required Duplicati.Server.Database.Backup Backup { get; init; }
         public required Dictionary<string, string> DisplayNames { get; init; }
+        /// <summary>
+        /// The global advanced options of the server the backup was exported from, kept apart from the
+        /// backup's own settings, so the import can decide whether they are applied as global options,
+        /// ignored, or merged into the backup. Files exported by older versions do not have it.
+        /// </summary>
+        public Duplicati.Server.Serialization.Interface.ISetting[]? GlobalSettings { get; set; }
     }
 }
 

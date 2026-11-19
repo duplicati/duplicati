@@ -29,4 +29,5 @@ namespace Duplicati.WebserverCore.Dto;
 /// <param name="TaskFinished">When the task finished</param>
 /// <param name="ErrorMessage">The error message</param>
 /// <param name="Exception">The exception</param>
-public record GetTaskStateDto(string Status, long ID, DateTime? TaskStarted, DateTime? TaskFinished, string? ErrorMessage = null, string? Exception = null);
+/// <param name="FailedDestinations">For a delete of a job with the remote files of chosen destinations that failed, the keys of the destinations whose files could not be deleted ("primary" for the main destination); otherwise null</param>
+public record GetTaskStateDto(string Status, long ID, DateTime? TaskStarted, DateTime? TaskFinished, string? ErrorMessage = null, string? Exception = null, IReadOnlyList<string>? FailedDestinations = null);
