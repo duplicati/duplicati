@@ -236,13 +236,7 @@ public class SendTelegramMessage : ReportHelper
             body = string.Join(Environment.NewLine, subject, body);
 
             // Split message into chunks if needed
-            var messages = body.Length <= TELEGRAM_MAX_LENGTH
-                ? [body]
-                : Enumerable.Range(0, (body.Length + TELEGRAM_CHUNK_LENGTH - 1) / TELEGRAM_CHUNK_LENGTH)
-                    .Select(i => body.Substring(
-                        i * TELEGRAM_CHUNK_LENGTH,
-                        Math.Min(TELEGRAM_CHUNK_LENGTH, body.Length - i * TELEGRAM_CHUNK_LENGTH)))
-                    .ToArray();
+            var messages = SplitMessage(body);
 
             // Send all chunks sequentially
             for (var i = 0; i < messages.Length; i++)
@@ -253,6 +247,32 @@ public class SendTelegramMessage : ReportHelper
             Logging.Log.WriteWarningMessage(LOGTAG, "telegramSendError", e,
                 "Failed to process message for telegram: {0}", e.Message);
         }
+    }
+
+    /// <summary>
+    /// Splits a message that is too long for one Telegram message into parts that leave room
+    /// for the "Part n/total:" line. A part never ends between the two halves of a surrogate pair,
+    /// which would turn the character into two replacement characters when it is sent.
+    /// </summary>
+    /// <param name="body">The message</param>
+    /// <returns>The parts, or the message itself when it fits</returns>
+    private static string[] SplitMessage(string body)
+    {
+        if (body.Length <= TELEGRAM_MAX_LENGTH)
+            return [body];
+
+        var parts = new List<string>();
+        for (var start = 0; start < body.Length;)
+        {
+            var length = Math.Min(TELEGRAM_CHUNK_LENGTH, body.Length - start);
+            if (start + length < body.Length && char.IsHighSurrogate(body[start + length - 1]))
+                length--;
+
+            parts.Add(body.Substring(start, length));
+            start += length;
+        }
+
+        return parts.ToArray();
     }
 
     /// <summary>
