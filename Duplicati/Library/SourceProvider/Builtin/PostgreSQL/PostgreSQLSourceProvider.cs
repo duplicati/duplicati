@@ -196,17 +196,69 @@ public sealed class PostgreSQLSourceProvider : ISourceProviderModule, ISequentia
         var options = m_options = PostgreSQLOptions.Parse(m_rawOptions);
         var server = await GetServerInfoAsync(options, cancellationToken).ConfigureAwait(false);
 
+        // A source that is listed to be shown is read from the catalog, and no dump is started
+        if (options.EnumerationMode)
+        {
+            var listed = await PostgreSQLClientTools.ListTablesAsync(PostgreSQLClientTools.LocateAnyPsql(options), options, cancellationToken).ConfigureAwait(false);
+            m_root = PostgreSQLSourceEntry.CreateListing(m_mountPoint, options, listed, DateTime.UtcNow);
+            return;
+        }
+
+        // Refused before the dump starts, so nothing of a database that is too large is read
+        if (options.MaxDatabaseSize is { } maxDatabaseSize && server.DatabaseSize > maxDatabaseSize)
+            throw new UserInformationException(
+                Strings.PostgreSQLSourceProvider.DatabaseTooLarge(
+                    options.Database,
+                    Library.Utility.Utility.FormatSizeString(server.DatabaseSize),
+                    Library.Utility.Utility.FormatSizeString(maxDatabaseSize),
+                    PostgreSQLOptions.MaxDatabaseSizeOption),
+                PostgreSQLEventIds.DatabaseTooLarge);
+
         // A dump is only restored by the tools of the same major version, so it is made with them
         var pgDump = PostgreSQLClientTools.LocateTool(PostgreSQLClientTools.PgDump, server.Major, options);
         await PostgreSQLClientTools.VerifyToolVersionAsync(PostgreSQLClientTools.PgDump, pgDump, server.Major, options, cancellationToken).ConfigureAwait(false);
 
         var tool = PostgreSQLClientTools.Start(
             PostgreSQLClientTools.PgDump,
-            PostgreSQLClientTools.BuildStartInfo(pgDump, PostgreSQLClientTools.BuildDumpArguments(options, server.Major), options));
+            PostgreSQLClientTools.BuildStartInfo(pgDump, PostgreSQLClientTools.BuildDumpArguments(options, server.Major, await TablesLeftOutAsync(options, cancellationToken).ConfigureAwait(false)), options));
 
         m_session = await PostgreSQLDumpSession.StartAsync(tool, cancellationToken).ConfigureAwait(false);
         m_root = PostgreSQLSourceEntry.CreateTree(m_session, m_mountPoint, options, server, DateTime.UtcNow, Guid.NewGuid().ToString("N"));
     }
+
+    /// <summary>
+    /// The tables the filter of the backup leaves out. Their rows are left out of the dump, so they
+    /// are not read from the server at all; a restore still creates the tables, empty.
+    /// </summary>
+    private async Task<IReadOnlyList<(string Schema, string Table)>> TablesLeftOutAsync(PostgreSQLOptions options, CancellationToken cancellationToken)
+    {
+        if (options.Filter == null || options.Filter.Empty)
+            return [];
+
+        var tables = await PostgreSQLClientTools.ListTablesAsync(PostgreSQLClientTools.LocateAnyPsql(options), options, cancellationToken).ConfigureAwait(false);
+        return TablesLeftOut(options.Filter, m_mountPoint, tables);
+    }
+
+    /// <summary>
+    /// Picks the tables a filter leaves out, by the path each table has in the backup. A table is
+    /// only picked when the filter leaves out the table itself, which is how the backup decides it.
+    /// </summary>
+    /// <param name="filter">The filter of the backup</param>
+    /// <param name="mountPoint">The path of the database folder</param>
+    /// <param name="tables">The tables of the database</param>
+    /// <returns>The tables that are left out</returns>
+    public static IReadOnlyList<(string Schema, string Table)> TablesLeftOut(Library.Utility.IFilter filter, string mountPoint, IEnumerable<(string Schema, string Table)> tables)
+        => tables.Where(x => !Library.Utility.FilterExpression.Matches(filter, TablePath(mountPoint, x.Schema, x.Table), out _)).ToList();
+
+    /// <summary>
+    /// The path a table has in the backup
+    /// </summary>
+    /// <param name="mountPoint">The path of the database folder</param>
+    /// <param name="schema">The schema</param>
+    /// <param name="table">The table name</param>
+    /// <returns>The path</returns>
+    public static string TablePath(string mountPoint, string schema, string table)
+        => Util.AppendDirSeparator(Util.AppendDirSeparator(mountPoint) + TablesFolderName) + TableEntryName(schema, table);
 
     /// <inheritdoc />
     public async Task TestAsync(CancellationToken cancellationToken)
@@ -287,7 +339,8 @@ public sealed class PostgreSQLSourceProvider : ISourceProviderModule, ISequentia
 /// </summary>
 public sealed class PostgreSQLSourceEntry : ISequentialSourceProviderEntry
 {
-    private readonly PostgreSQLDumpSession m_session;
+    /// <summary>The dump the entry is read from; null for an entry that is only listed</summary>
+    private readonly PostgreSQLDumpSession? m_session;
     private readonly string m_type;
     private readonly DateTime m_runStarted;
     private readonly Dictionary<string, string?> m_metadata;
@@ -296,7 +349,7 @@ public sealed class PostgreSQLSourceEntry : ISequentialSourceProviderEntry
     private readonly int m_blockSize;
     private readonly byte[]? m_content;
 
-    private PostgreSQLSourceEntry(PostgreSQLDumpSession session, string type, string path, bool isFolder, bool isRoot, DateTime runStarted, Dictionary<string, string?> metadata, int dumpId, int blockSize, byte[]? content)
+    private PostgreSQLSourceEntry(PostgreSQLDumpSession? session, string type, string path, bool isFolder, bool isRoot, DateTime runStarted, Dictionary<string, string?> metadata, int dumpId, int blockSize, byte[]? content)
     {
         m_session = session;
         m_type = type;
@@ -369,6 +422,46 @@ public sealed class PostgreSQLSourceEntry : ISequentialSourceProviderEntry
     }
 
     /// <summary>
+    /// Builds the entries of a database that is listed to be shown: the same entries a backup has,
+    /// from the catalog of the database, without a dump to read them from
+    /// </summary>
+    /// <param name="mountPoint">The path of the database folder</param>
+    /// <param name="options">The provider options</param>
+    /// <param name="tables">The tables of the database</param>
+    /// <param name="listed">When the tables were listed</param>
+    /// <returns>The root entry</returns>
+    public static PostgreSQLSourceEntry CreateListing(string mountPoint, PostgreSQLOptions options, IEnumerable<(string Schema, string Table)> tables, DateTime listed)
+    {
+        var rootPath = Util.AppendDirSeparator(mountPoint);
+        var tablesPath = Util.AppendDirSeparator(rootPath + PostgreSQLSourceProvider.TablesFolderName);
+
+        var rootMetadata = new Dictionary<string, string?>
+        {
+            [PostgreSQLSourceProvider.MetadataDatabase] = options.Database,
+            [PostgreSQLSourceProvider.MetadataExtendedType] = PostgreSQLOptions.Scheme,
+        };
+        var root = new PostgreSQLSourceEntry(null, PostgreSQLSourceProvider.TypeDatabase, rootPath, true, true, listed, rootMetadata, 0, options.BlockSize, null);
+        root.m_children.Add(new PostgreSQLSourceEntry(null, PostgreSQLSourceProvider.TypeTableOfContents, rootPath + PostgreSQLSourceProvider.TableOfContentsName, false, false, listed, [], 0, options.BlockSize, null));
+
+        var folder = new PostgreSQLSourceEntry(null, PostgreSQLSourceProvider.TypeTables, tablesPath, true, false, listed, [], 0, options.BlockSize, null);
+        root.m_children.Add(folder);
+        foreach (var (schema, table) in tables)
+        {
+            var metadata = new Dictionary<string, string?>
+            {
+                [PostgreSQLSourceProvider.MetadataSchema] = schema,
+                [PostgreSQLSourceProvider.MetadataTable] = table,
+            };
+            folder.m_children.Add(new PostgreSQLSourceEntry(null, PostgreSQLSourceProvider.TypeTable, tablesPath + PostgreSQLSourceProvider.TableEntryName(schema, table), false, false, listed, metadata, 0, options.BlockSize, null));
+        }
+
+        if (options.IncludeLargeObjects)
+            root.m_children.Add(new PostgreSQLSourceEntry(null, PostgreSQLSourceProvider.TypeLargeObjects, rootPath + PostgreSQLSourceProvider.LargeObjectsName, false, false, listed, [], PostgreSQLSourceProvider.LargeObjectsId, options.BlockSize, null));
+
+        return root;
+    }
+
+    /// <summary>
     /// Finds an entry by its path
     /// </summary>
     /// <param name="path">The path</param>
@@ -425,6 +518,9 @@ public sealed class PostgreSQLSourceEntry : ISequentialSourceProviderEntry
         // The table of contents was read when the dump started and is kept in memory
         if (m_content != null)
             return Task.FromResult<Stream>(new MemoryStream(m_content, false));
+
+        if (m_session == null)
+            throw new InvalidOperationException(Strings.PostgreSQLSourceProvider.ListedEntryNotReadable(Path));
 
         var openFailure = m_session.TryOpen(m_dumpId)
             ? null

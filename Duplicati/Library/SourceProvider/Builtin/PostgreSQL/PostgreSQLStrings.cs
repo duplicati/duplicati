@@ -45,6 +45,10 @@ internal static class PostgreSQLSourceProvider
     public static string SslRootCertContentLong => LC.L(@"The root certificate that the server certificate is verified against, as PEM text, for the verify-ca and verify-full modes. Use this where there is no file to point to.");
     public static string RootCertGivenTwice(string fileOption, string contentOption) => LC.L(@"Set the root certificate with --{0} or with --{1}, not with both", fileOption, contentOption);
     public static string RootCertNotPem(string option) => LC.L(@"The value of --{0} is not a certificate in PEM format", option);
+    public static string MaxDatabaseSizeShort => LC.L(@"The largest database to back up");
+    public static string MaxDatabaseSizeLong => LC.L(@"The largest size the database may have, as the server reports it. A backup of a larger database fails before anything is read. Without this there is no limit.");
+    public static string DatabaseTooLarge(string database, string size, string limit, string option) => LC.L(@"The database {0} is {1}, which is more than the {2} a backup of it may cover (--{3})", database, size, limit, option);
+    public static string ListedEntryNotReadable(string path) => LC.L(@"The entry {0} was listed to be shown and has no dump to be read from", path);
     public static string IncludeLargeObjectsShort => LC.L(@"Include large objects");
     public static string IncludeLargeObjectsLong => LC.L(@"Include large objects in the backup. The role must be able to read every large object, or the backup fails.");
     public static string ClientPathShort => LC.L(@"The folder with the PostgreSQL client programs");
@@ -99,4 +103,46 @@ internal static class PostgreSQLRestoreProvider
     public static string TargetOlderThanSource(int source, int target) => LC.L(@"The backup is of a PostgreSQL {0} database and the target server runs PostgreSQL {1}. A whole database can only be restored to the same or a newer version. Use --postgresql-restore-mode=tables to load the rows of tables into tables that exist.", source, target);
     public static string ClientTooOld(string tool) => LC.L(@"The program {0} is too old a release of its version to restore safely. Install the current PostgreSQL client programs.", tool);
     public static string UnsupportedArchiveClient(string version) => LC.L(@"The backup was made with pg_dump ""{0}"", which is not a version this restore supports", version);
+}
+
+internal static class PostgreSQLWebModule
+{
+    public static string DisplayName => LC.L(@"PostgreSQL database checks");
+    public static string Description => LC.L(@"Checks a PostgreSQL database before it is backed up or restored to: whether the role can do what is needed, and how much the database holds.");
+    public static string OperationShort => LC.L(@"The check to run");
+    public static string OperationLong => LC.L(@"Use ""CheckPermissions"" to check what the role can do, and ""CountItems"" to count the tables and read the size of the database.");
+    public static string UrlShort => LC.L(@"The URL of the database");
+    public static string UrlLong => LC.L(@"The URL of the database, as it is given for a backup.");
+    public static string PurposeShort => LC.L(@"What the database is checked for");
+    public static string PurposeLong => LC.L(@"Use ""restore"" to check the database as the target of a restore. Without this it is checked as the source of a backup.");
+    public static string RequireEncryptionShort => LC.L(@"Require an encrypted connection");
+    public static string RequireEncryptionLong => LC.L(@"Fail the check when the connection to the database is not encrypted. Without this a connection that is not encrypted is only reported.");
+
+    public static string MissingUrl => LC.L(@"The URL of the database is missing");
+    public static string NotADatabaseUrl(string scheme) => LC.L(@"The URL is not a {0} URL", scheme);
+    public static string UnsupportedOperation(string operation) => LC.L(@"The operation ""{0}"" is not supported", operation);
+    public static string UnexpectedAnswer => LC.L(@"The server answered a check with something other than what was asked for");
+    public static string NamesAndMore(string names, long more) => LC.L(@"{0} and {1} more", names, more);
+
+    public static string Connected(string database, string host, int port, string username) => LC.L(@"Connected to the database {0} on {1}:{2} as {3}.", database, host, port, username);
+    public static string Encrypted => LC.L(@"The connection is encrypted with TLS.");
+    public static string NotEncrypted => LC.L(@"The connection is not encrypted.");
+    public static string ServerVersion(string version) => LC.L(@"The server runs PostgreSQL {0}.", version);
+    public static string ServerVersionNotBackedUp(string version, string supported) => LC.L(@"The server runs PostgreSQL {0}. Only PostgreSQL {1} can be backed up.", version, supported);
+    public static string ServerVersionNotRestoredTo(string version, string supported) => LC.L(@"The server runs PostgreSQL {0}. Only PostgreSQL {1} can be restored to.", version, supported);
+    public static string TablesReadable(long tables) => LC.L(@"The role can read all {0} table(s).", tables);
+    public static string TablesNotReadable(string names) => LC.L(@"The role cannot read {0}.", names);
+    public static string NoRowSecurity => LC.L(@"No table has row-level security.");
+    public static string RowSecurityBypassed(long tables) => LC.L(@"{0} table(s) have row-level security, and the role bypasses it.", tables);
+    public static string RowSecurityHidesRows(long tables) => LC.L(@"{0} table(s) have row-level security, and the role neither has BYPASSRLS nor is a superuser, so it does not see every row.", tables);
+    public static string NoLargeObjects => LC.L(@"The database has no large objects.");
+    public static string LargeObjectsLeftOut(long count) => LC.L(@"The database has {0} large object(s). They are not in the backup: the backup is set up to leave large objects out.", count);
+    public static string LargeObjectsReadable(long count) => LC.L(@"The role can read all {0} large object(s), and they are in the backup.", count);
+    public static string LargeObjectsNotReadable(long unreadable, long count, string oids) => LC.L(@"The role cannot read {0} of the {1} large object(s): OID {2}.", unreadable, count, oids);
+    public static string Superuser => LC.L(@"The role is a superuser. A backup only reads; use a role that can do no more than that.");
+    public static string NotSuperuser => LC.L(@"The role is not a superuser.");
+    public static string CanCreate => LC.L(@"The role can create schemas in the database, which a restore of the whole database does.");
+    public static string CannotCreate => LC.L(@"The role cannot create schemas in the database. A restore of the whole database needs that; loading rows into tables that exist does not.");
+    public static string NoTables => LC.L(@"The database has no tables.");
+    public static string HasTables(long tables) => LC.L(@"The database has {0} table(s). A restore of the whole database stops unless it may replace what exists.", tables);
 }
