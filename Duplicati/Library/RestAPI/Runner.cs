@@ -976,7 +976,7 @@ namespace Duplicati.Server
 
         private static async Task<IBasicResults?> RunInternalAsync(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IApplicationSettings applicationSettings, IChangeTrackingService? changeTracking, IRunnerData data, bool fromQueue)
         {
-            data.TaskStarted = DateTime.Now;
+            data.TaskStarted = DateTime.UtcNow;
             if (data is CustomRunnerTask task)
             {
                 try
@@ -1014,7 +1014,7 @@ namespace Duplicati.Server
                 finally
                 {
                     eventPollNotify.SignalProgressUpdate(null);
-                    data.TaskFinished = DateTime.Now;
+                    data.TaskFinished = DateTime.UtcNow;
                 }
 
                 return null;
@@ -1379,7 +1379,7 @@ namespace Duplicati.Server
             finally
             {
                 data.SetController(null);
-                data.TaskFinished = DateTime.Now;
+                data.TaskFinished = DateTime.UtcNow;
                 eventPollNotify.SignalProgressUpdate(progressStateProviderService?.GenerateProgressState);
             }
         }

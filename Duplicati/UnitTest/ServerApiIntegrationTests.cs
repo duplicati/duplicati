@@ -462,6 +462,27 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
 
     [Test]
     [Category("Integration")]
+    public async Task TaskTimesAreReportedInUtc_Async()
+    {
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            Directory.CreateDirectory(this.DATAFOLDER);
+            File.WriteAllText(Path.Combine(this.DATAFOLDER, "utc.txt"), "utc");
+            var backupId = await CreateBackupAsync(httpClient, "integration-passphrase").ConfigureAwait(false);
+            var task = await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/run").ConfigureAwait(false);
+
+            using var state = JsonDocument.Parse(await httpClient.GetStringAsync($"/api/v1/task/{task.ID}").ConfigureAwait(false));
+            string Time(string name)
+                => state.RootElement.EnumerateObject().First(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)).Value.GetString()!;
+
+            // A UTC time is written with a Z; a local time is written with its offset, even on a server that runs in UTC
+            Assert.That(Time("TaskStarted"), Does.EndWith("Z"), "The start time should be in UTC");
+            Assert.That(Time("TaskFinished"), Does.EndWith("Z"), "The finish time should be in UTC, like the start time");
+        }).ConfigureAwait(false);
+    }
+
+    [Test]
+    [Category("Integration")]
     public async Task HttpClientHelperStillCreatesClientsAfterTheServerStops_Async()
     {
         await WithAuthenticatedServerAsync(_ => Task.CompletedTask).ConfigureAwait(false);
