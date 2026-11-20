@@ -43,9 +43,11 @@ async function clickThreeDotMenu(page: Page, action: string) {
     })
     .click();
 
+  // The menu opens as a dialog titled with the backup name.
   // Match the name exactly: "Delete" would also match "Delete versions"
-  await backupElement
-    .locator("div.options")
+  await page
+    .getByRole("dialog")
+    .filter({ has: page.getByRole("heading", { name: BACKUP_NAME }) })
     .getByRole("button", { name: action, exact: true })
     .click();
 }
