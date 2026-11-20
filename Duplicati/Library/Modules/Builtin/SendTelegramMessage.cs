@@ -22,6 +22,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
@@ -291,27 +292,26 @@ public class SendTelegramMessage : ReportHelper
             if (string.IsNullOrWhiteSpace(m_apikey))
                 throw new Exception("Telegram API Key is required and not set");
 
-            var p = new
-            {
-                chat_id = Uri.EscapeDataString(m_channelId),
-                message_thread_id = string.IsNullOrWhiteSpace(m_topicId) ? null : Uri.EscapeDataString(m_topicId),
-                text = Uri.EscapeDataString(totalParts > 1
-                    ? $"Part {partNumber}/{totalParts}:\n{message}"
-                    : message),
-                botId = Uri.EscapeDataString(m_botid),
-                apiKey = Uri.EscapeDataString(m_apikey)
-            };
+            var url = $"https://api.telegram.org/bot{Uri.EscapeDataString(m_botid)}:{Uri.EscapeDataString(m_apikey)}/sendMessage";
 
-            var baseUrl = $"https://api.telegram.org/bot{p.botId}:{p.apiKey}/sendMessage";
-            var url = $"{baseUrl}?chat_id={p.chat_id}&text={p.text}" +
-                      $"{(!string.IsNullOrWhiteSpace(m_topicId) ? $"&message_thread_id={m_topicId}" : string.Empty)}";
+            // The message goes in the body, as the Bot API allows, so the length of the URL does not grow with the report
+            var fields = new List<KeyValuePair<string, string>>
+            {
+                new("chat_id", m_channelId),
+                new("text", totalParts > 1
+                    ? $"Part {partNumber}/{totalParts}:\n{message}"
+                    : message)
+            };
+            if (!string.IsNullOrWhiteSpace(m_topicId))
+                fields.Add(new("message_thread_id", m_topicId));
 
             using var timeoutToken = new CancellationTokenSource();
             timeoutToken.CancelAfter(REQUEST_TIMEOUT);
 
             using var client = HttpClientHelper.CreateClient();
             client.Timeout = Timeout.InfiniteTimeSpan;
-            var response = await client.GetAsync(url, timeoutToken.Token).ConfigureAwait(false);
+            using var content = new FormUrlEncodedContent(fields);
+            var response = await client.PostAsync(url, content, timeoutToken.Token).ConfigureAwait(false);
             var responseContent = await response.Content.ReadAsStringAsync(timeoutToken.Token).ConfigureAwait(false);
 
             if (!responseContent.Contains("\"ok\":true"))

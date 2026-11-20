@@ -48,23 +48,39 @@ namespace Duplicati.UnitTest
         private const int TELEGRAM_MAX_LENGTH = 4096;
 
         /// <summary>
-        /// Accepts every request without a network and keeps the text of each message
+        /// A request as Telegram received it
+        /// </summary>
+        /// <param name="Method">The HTTP method</param>
+        /// <param name="Uri">The request URL</param>
+        /// <param name="ContentType">The media type of the body, if any</param>
+        /// <param name="Form">The fields of the form in the body</param>
+        private sealed record ReceivedRequest(HttpMethod Method, Uri Uri, string ContentType, Dictionary<string, string> Form);
+
+        /// <summary>
+        /// Accepts every request without a network and keeps each request and the text of each message
         /// </summary>
         private sealed class StubTelegram : HttpMessageHandler, IHttpClientFactory
         {
             public ConcurrentQueue<string> Texts { get; } = new();
+            public ConcurrentQueue<ReceivedRequest> Requests { get; } = new();
 
             public HttpClient CreateClient(string name) => new HttpClient(this, false);
 
-            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
-                var text = request.RequestUri!.Query.TrimStart('?').Split('&').Single(x => x.StartsWith("text=", StringComparison.Ordinal));
-                Texts.Enqueue(Uri.UnescapeDataString(text.Substring("text=".Length)));
+                var body = request.Content == null ? string.Empty : await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                var form = body.Split('&', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Split('=', 2))
+                    .ToDictionary(x => WebUtility.UrlDecode(x[0]), x => WebUtility.UrlDecode(x.Length > 1 ? x[1] : string.Empty));
 
-                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                Requests.Enqueue(new ReceivedRequest(request.Method, request.RequestUri!, request.Content?.Headers.ContentType?.MediaType, form));
+                if (form.TryGetValue("text", out var text))
+                    Texts.Enqueue(text);
+
+                return new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent("{\"ok\":true}")
-                });
+                };
             }
         }
 
@@ -73,14 +89,17 @@ namespace Duplicati.UnitTest
         /// </summary>
         private sealed class TestableTelegramModule : SendTelegramMessage
         {
-            public TestableTelegramModule()
+            public TestableTelegramModule(string topicId = null)
             {
-                ConfigureModule(new Dictionary<string, string>
+                var options = new Dictionary<string, string>
                 {
                     ["send-telegram-channel-id"] = "1",
                     ["send-telegram-bot-id"] = "1",
                     ["send-telegram-api-key"] = "test"
-                });
+                };
+                if (topicId != null)
+                    options["send-telegram-topid-id"] = topicId;
+                ConfigureModule(options);
             }
 
             public void Send(string body) => SendMessage(string.Empty, body);
@@ -184,6 +203,40 @@ namespace Duplicati.UnitTest
             foreach (var text in texts)
                 Assert.LessOrEqual(text.Length, TELEGRAM_MAX_LENGTH);
             Assert.AreEqual(sent, string.Concat(texts.Select(WithoutPartHeader)), "The emoji should arrive whole, in one of the parts");
+        }
+
+        /// <summary>
+        /// The report goes in the body of a POST, as the Bot API allows, so the length of the URL does not grow with the report.
+        /// Characters outside ASCII take about 9 characters each once escaped in a URL.
+        /// </summary>
+        [Test]
+        public void TheReportIsSentAsAFormInThePostBody()
+        {
+            var body = "バックアップが完了しました & 100% done = ok?\n😀";
+            new TestableTelegramModule(topicId: "42").Send(body);
+
+            Assert.IsTrue(SpinWait.SpinUntil(() => !m_telegram.Requests.IsEmpty, TimeSpan.FromSeconds(10)), "Nothing was sent");
+            var request = m_telegram.Requests.Single();
+
+            Assert.AreEqual(HttpMethod.Post, request.Method);
+            Assert.AreEqual("https://api.telegram.org/bot1:test/sendMessage", request.Uri.GetLeftPart(UriPartial.Path));
+            Assert.AreEqual(string.Empty, request.Uri.Query, "The report should not be in the URL");
+            Assert.AreEqual("application/x-www-form-urlencoded", request.ContentType);
+            Assert.AreEqual("1", request.Form["chat_id"]);
+            Assert.AreEqual("42", request.Form["message_thread_id"]);
+            Assert.AreEqual(Environment.NewLine + body, request.Form["text"]);
+        }
+
+        /// <summary>
+        /// Without a topic, the form has no thread id
+        /// </summary>
+        [Test]
+        public void TheFormHasNoThreadIdWithoutATopic()
+        {
+            new TestableTelegramModule().Send("report");
+
+            Assert.IsTrue(SpinWait.SpinUntil(() => !m_telegram.Requests.IsEmpty, TimeSpan.FromSeconds(10)), "Nothing was sent");
+            Assert.IsFalse(m_telegram.Requests.Single().Form.ContainsKey("message_thread_id"));
         }
     }
 }
