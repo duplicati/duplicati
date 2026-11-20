@@ -92,8 +92,16 @@ public sealed class PostgreSQLOptions : IDisposable
     public const int DefaultPort = 5432;
     /// <summary>The TLS mode used when none is given</summary>
     public const string DefaultSslMode = "require";
+    /// <summary>
+    /// The TLS modes with which the client tools do not connect without TLS. With the other modes the
+    /// connection is encrypted only if the server offers it.
+    /// </summary>
+    public static readonly string[] EncryptedSslModes = [DefaultSslMode, "verify-ca", "verify-full"];
     /// <summary>The TLS modes libpq accepts</summary>
-    public static readonly string[] SslModes = ["disable", "allow", "prefer", DefaultSslMode, "verify-ca", "verify-full"];
+    public static readonly string[] SslModes = ["disable", "allow", "prefer", .. EncryptedSslModes];
+
+    /// <summary>Whether the TLS mode is one the client tools do not connect without TLS with</summary>
+    public bool RequiresEncryption => EncryptedSslModes.Contains(SslMode, StringComparer.Ordinal);
 
     /// <summary>The server host name</summary>
     public required string Host { get; init; }

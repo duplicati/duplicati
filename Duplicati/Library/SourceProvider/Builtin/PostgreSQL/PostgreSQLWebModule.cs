@@ -106,8 +106,21 @@ public sealed class PostgreSQLWebModule : IWebModule
         + " where a.privilege_type = 'SELECT' and (a.grantee = 0 or pg_has_role(a.grantee, 'USAGE'))))";
 
     /// <summary>
+    /// Decides whether the connection to a database is encrypted. With a TLS mode that does not connect
+    /// without TLS it is, whatever the server reports: behind a connection pooler the server reports
+    /// the pooler's connection to it, not the one from the client tools. With the other modes the
+    /// server's word is the only one there is.
+    /// </summary>
+    /// <param name="database">The database</param>
+    /// <param name="serverReportsTls">Whether the server reports TLS for the connection it sees</param>
+    /// <returns>True if the connection is encrypted</returns>
+    private static bool UsesTls(PostgreSQLOptions database, string serverReportsTls)
+        => database.RequiresEncryption || serverReportsTls == True;
+
+    /// <summary>
     /// One row: the server version number, the version as the server writes it, whether the
-    /// connection uses TLS, whether the role is a superuser, and whether it bypasses row-level security.
+    /// connection the server sees uses TLS, whether the role is a superuser, and whether it bypasses
+    /// row-level security.
     /// </summary>
     public const string SessionQuery =
         "select current_setting('server_version_num'), current_setting('server_version'),"
@@ -264,7 +277,7 @@ public sealed class PostgreSQLWebModule : IWebModule
     {
         var session = await SingleRowAsync(source, SessionQuery, 5, cancellationToken).ConfigureAwait(false);
         var major = PostgreSQLClientTools.MajorFromServerVersionNum((int)ParseCount(session[0]));
-        var usesTls = session[2] == True;
+        var usesTls = UsesTls(source, session[2]);
         var isSuperuser = session[3] == True;
         var bypassesRowSecurity = isSuperuser || session[4] == True;
         var supportedVersion = PostgreSQLClientTools.SupportedMajorVersions.Contains(major);
@@ -326,7 +339,7 @@ public sealed class PostgreSQLWebModule : IWebModule
     {
         var session = await SingleRowAsync(target, SessionQuery, 5, cancellationToken).ConfigureAwait(false);
         var major = PostgreSQLClientTools.MajorFromServerVersionNum((int)ParseCount(session[0]));
-        var usesTls = session[2] == True;
+        var usesTls = UsesTls(target, session[2]);
         var supportedVersion = PostgreSQLClientTools.SupportedMajorVersions.Contains(major);
 
         var tables = ParseCount((await SingleRowAsync(target, TableSummaryQuery, 2, cancellationToken).ConfigureAwait(false))[0]);
