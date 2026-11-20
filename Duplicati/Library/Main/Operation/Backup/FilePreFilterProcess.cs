@@ -94,10 +94,16 @@ namespace Duplicati.Library.Main.Operation.Backup
                         LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "FailedToReadSize", e.Entry.Path, "Failed to read size on \"{0}\"");
                     }
 
-                    await stats.AddExaminedFileAsync(filestatsize);
+                    // A size that is not known counts as nothing
+                    await stats.AddExaminedFileAsync(Math.Max(0, filestatsize));
+
+                    // The entries of a sequential source are parts of one stream, such as a database
+                    // dump, that only make sense together. Their sizes and times describe the stream and
+                    // not the content, so only the path filters leave such an entry out.
+                    var isSequentialEntry = e.Entry is ISequentialSourceProviderEntry;
 
                     // Stop now if the file is too large
-                    var tooLargeFile = SKIPFILESLARGERTHAN != 0 && filestatsize >= 0 && filestatsize > SKIPFILESLARGERTHAN;
+                    var tooLargeFile = !isSequentialEntry && SKIPFILESLARGERTHAN != 0 && filestatsize >= 0 && filestatsize > SKIPFILESLARGERTHAN;
                     if (tooLargeFile)
                     {
                         Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckTooLarge", "Skipped checking file, because the size exceeds limit {0}", e.Entry.Path);
@@ -106,7 +112,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
 
                     // A file whose size cannot be read is kept
-                    var tooSmallFile = SKIPFILESSMALLERTHAN > 0 && filestatsize >= 0 && filestatsize < SKIPFILESSMALLERTHAN;
+                    var tooSmallFile = !isSequentialEntry && SKIPFILESSMALLERTHAN > 0 && filestatsize >= 0 && filestatsize < SKIPFILESSMALLERTHAN;
                     if (tooSmallFile)
                     {
                         Logging.Log.WriteVerboseMessage(FILELOGTAG, "SkipCheckTooSmall", "Skipped checking file, because the size is below limit {0}", e.Entry.Path);
@@ -115,7 +121,7 @@ namespace Duplicati.Library.Main.Operation.Backup
                     }
 
                     // A file without a modification time is kept, as it cannot be told apart
-                    var skippedByTime = e.LastWrite.Ticks != 0
+                    var skippedByTime = !isSequentialEntry && e.LastWrite.Ticks != 0
                         && ((SKIPFILESMODIFIEDBEFORE.HasValue && e.LastWrite < SKIPFILESMODIFIEDBEFORE.Value)
                             || (SKIPFILESMODIFIEDAFTER.HasValue && e.LastWrite > SKIPFILESMODIFIEDAFTER.Value));
                     if (skippedByTime)

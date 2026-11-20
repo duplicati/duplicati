@@ -501,15 +501,26 @@ namespace Duplicati.Library.Main.Operation.Backup
                         // only by casing
                         var known = new HashSet<string>(StringComparer.Ordinal);
 
+                        // The children of a sequential source can only be read in the order they are
+                        // yielded, so they are collected and pushed in reverse to pop in that order.
+                        // Every other source is pushed as it is yielded.
+                        var ordered = e is ISequentialSourceProviderEntry ? new List<ISourceProviderEntry>() : null;
+
                         // We only filter new items, as we assume the input is already filtered
                         await foreach (var r in e.Enumerate(cancellationToken).ConfigureAwait(false))
                             if (await filter(r).ConfigureAwait(false))
                             {
-                                if (known.Add(r.Path))
-                                    work.Push(r);
-                                else
+                                if (!known.Add(r.Path))
                                     Logging.Log.WriteWarningMessage(FILTER_LOGTAG, "DuplicatePath", null, "Duplicate path found: {0}", r.Path);
+                                else if (ordered != null)
+                                    ordered.Add(r);
+                                else
+                                    work.Push(r);
                             }
+
+                        if (ordered != null)
+                            for (var i = ordered.Count - 1; i >= 0; i--)
+                                work.Push(ordered[i]);
                     }
                     catch (Exception ex) when (ex is not OperationCanceledException)
                     {

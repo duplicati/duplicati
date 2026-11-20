@@ -542,6 +542,9 @@ namespace Duplicati.Library.Main.Operation
             private readonly IRestoreDestinationProvider _inner;
             private readonly string _targetDestination;
 
+            /// <summary>The destination the restore of the version writes to</summary>
+            public IRestoreDestinationProvider Inner => _inner;
+
             public VersionedRestoreDestinationProvider(IRestoreDestinationProvider inner, string targetDestination)
             {
                 _inner = inner;
@@ -566,6 +569,15 @@ namespace Duplicati.Library.Main.Operation
             public IList<string> GetPriorityFiles() => _inner.GetPriorityFiles();
             public void Dispose() => _inner.Dispose();
         }
+
+        /// <summary>
+        /// The destination as a receiver of the restore selection, looking through the wrapper of a
+        /// restore of several versions, or null when it does not take the selection
+        /// </summary>
+        /// <param name="restoreDestination">The destination</param>
+        /// <returns>The receiver, or null</returns>
+        private static IRestoreSelectionReceiver? AsSelectionReceiver(IRestoreDestinationProvider restoreDestination)
+            => (restoreDestination is VersionedRestoreDestinationProvider versioned ? versioned.Inner : restoreDestination) as IRestoreSelectionReceiver;
 
         /// <summary>
         /// A selected fileset: its database ID, its timestamp, and its version index (position
@@ -1841,6 +1853,15 @@ namespace Duplicati.Library.Main.Operation
                     await database.SetTargetPathsAsync("", "", result.TaskControl.ProgressToken).ConfigureAwait(false);
                     await MapVirtualEntriesToOriginalPathsAsync(database, restoreDestination, result.TaskControl.ProgressToken).ConfigureAwait(false);
                 }
+
+            // A destination that has to see the whole selection is given it before any file is written
+            if (AsSelectionReceiver(restoreDestination) is { } selectionReceiver)
+            {
+                var targetPaths = new List<string>();
+                await foreach (var file in database.GetFilesToRestoreAsync(false, result.TaskControl.ProgressToken).ConfigureAwait(false))
+                    targetPaths.Add(file.Path);
+                await selectionReceiver.SetRestoreSelection(targetPaths, result.TaskControl.ProgressToken).ConfigureAwait(false);
+            }
 
             // Create a temporary table BLOCKS that lists all blocks that needs to be recovered
             using (new Logging.Timer(LOGTAG, "FindMissingBlocks", "FindMissingBlocks"))

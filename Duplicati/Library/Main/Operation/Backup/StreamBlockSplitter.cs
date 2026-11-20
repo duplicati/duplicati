@@ -19,6 +19,8 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
+#nullable enable
+
 using System;
 using CoCoL;
 using Duplicati.Library.Main.Operation.Common;
@@ -80,15 +82,22 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 var blocklistbuffer = ArrayPool<byte>.Shared.Rent(blocksize);
                                 var blocklistoffset = 0L;
 
+                                // A streamed source has no length before it is read to the end
                                 long fslen = -1;
-                                try
+                                if (!e.IsStreamed)
                                 {
-                                    fslen = stream.Length;
+                                    try
+                                    {
+                                        fslen = stream.Length;
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "FileLengthFailure", e.Path, "Failed to read file length for \"{0}\"");
+                                    }
                                 }
-                                catch (Exception ex)
-                                {
-                                    LogExceptionHelper.LogCommonWarning(ex, FILELOGTAG, "FileLengthFailure", e.Path, "Failed to read file length for \"{0}\"");
-                                }
+
+                                // The error that ended a streamed source early, if any
+                                Exception? streamFailure = null;
 
                                 if (e.IsMetadata && fslen > maxmetadatasize)
                                 {
@@ -122,8 +131,37 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 // stopped answering, would hold up the backup, so stop waiting for it instead. The
                                 // buffer is not returned to the pool on that path, so a read that ends later does not
                                 // write into a reused one.
-                                while ((lastread = await stream.ForceStreamReadAsync(buf, blocksize, taskreader.ProgressToken).UntilCancelledAsync(taskreader.ProgressToken)) != 0)
+                                while (true)
                                 {
+                                    if (!e.IsStreamed)
+                                    {
+                                        lastread = await stream.ForceStreamReadAsync(buf, blocksize, taskreader.ProgressToken).UntilCancelledAsync(taskreader.ProgressToken);
+                                    }
+                                    else
+                                    {
+                                        // A streamed source can fail part-way. The blocks read so far are already on
+                                        // their way to the output, so what arrived is recorded, including the part
+                                        // of this block that was read, and the caller decides what to do with it
+                                        lastread = 0;
+                                        try
+                                        {
+                                            while (lastread < blocksize)
+                                            {
+                                                var read = await stream.ReadAsync(buf, lastread, blocksize - lastread, taskreader.ProgressToken).UntilCancelledAsync(taskreader.ProgressToken);
+                                                if (read == 0)
+                                                    break;
+                                                lastread += read;
+                                            }
+                                        }
+                                        catch (Exception ex) when (!ex.IsRetiredException() && !taskreader.ProgressToken.IsCancellationRequested)
+                                        {
+                                            streamFailure = ex;
+                                        }
+                                    }
+
+                                    if (lastread == 0)
+                                        break;
+
                                     // Run file hashing concurrently to squeeze a little extra concurrency out of it
                                     var pftask = Task.Run(() => filehasher.TransformBlock(buf, 0, lastread, buf, 0));
 
@@ -157,6 +195,9 @@ namespace Duplicati.Library.Main.Operation.Backup
                                     await pftask.ConfigureAwait(false);
                                     await DataBlock.AddBlockToOutputAsync(self.BlockOutput, hashkey, buf, 0, lastread, e.Hint, false);
                                     buf = ArrayPool<byte>.Shared.Rent(blocksize);
+
+                                    if (streamFailure != null)
+                                        break;
                                 }
 
                                 // If we have more than a single block of data, output the (trailing) blocklist
@@ -168,9 +209,13 @@ namespace Duplicati.Library.Main.Operation.Backup
                                 }
 
                                 filehasher.TransformFinalBlock(empty_block, 0, 0);
-                                var filehash = Convert.ToBase64String(filehasher.Hash);
-                                var blocksetid = await database.AddBlocksetAsync(filehash, filesize, blocksize, hashcollector, blocklisthashes, taskreader.ProgressToken);
-                                cur.SetResult(new StreamProcessResult() { Streamlength = filesize, Streamhash = filehash, Blocksetid = blocksetid });
+                                var filehash = Convert.ToBase64String(filehasher.Hash ?? throw new InvalidDataException("Unexpected missing hash"));
+
+                                // A streamed source that failed before any data arrived has nothing to record
+                                var blocksetid = streamFailure != null && filesize == 0
+                                    ? -1
+                                    : await database.AddBlocksetAsync(filehash, filesize, blocksize, hashcollector, blocklisthashes, taskreader.ProgressToken);
+                                cur.SetResult(new StreamProcessResult() { Streamlength = filesize, Streamhash = filehash, Blocksetid = blocksetid, StreamFailure = streamFailure });
                                 cur = null;
                             }
                         }
