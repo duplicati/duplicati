@@ -165,7 +165,7 @@ public class QueueRunnerService(
 
             // If the task is completed, don't call OnFinished again
             completed = true;
-            AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, task.TaskFinished ?? DateTime.Now, null, GetResultErrorMessage(result)));
+            AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, task.TaskFinished ?? DateTime.UtcNow, null, GetResultErrorMessage(result)));
             if (task.OnFinished != null)
                 await task.OnFinished(null).ConfigureAwait(false);
         }
@@ -181,7 +181,7 @@ public class QueueRunnerService(
             connection.LogError(task.BackupID, "Error in worker", ex);
             if (!completed)
             {
-                AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, task.TaskFinished ?? DateTime.Now, ex));
+                AddTaskResult(new CachedTaskResult(task.TaskID, task.BackupID, task.TaskStarted, task.TaskFinished ?? DateTime.UtcNow, ex));
                 if (task.OnFinished != null)
                     await task.OnFinished(ex).ConfigureAwait(false);
             }
