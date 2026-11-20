@@ -92,6 +92,10 @@ namespace Duplicati.Library.Main.Database.Local
         /// </summary>
         private SqliteCommand m_insertTempBlockListHash = null!;
         /// <summary>
+        /// Adds a blocklist hash to the temporary table of blocklists that are not yet turned into blocks and blockset entries.
+        /// </summary>
+        private SqliteCommand m_insertPendingBlockListHash = null!;
+        /// <summary>
         /// Inserts or ignores a file hash, block hash, and block size into the temporary small blockset table.
         /// </summary>
         private SqliteCommand m_insertSmallBlockset = null!;
@@ -132,6 +136,11 @@ namespace Duplicati.Library.Main.Database.Local
         /// Temporary table name for small blocksets, containing file hashes, block hashes, and block sizes.
         /// </summary>
         private string m_tempsmalllist = null!;
+        /// <summary>
+        /// Temporary table name for the blocklist hashes in the temporary blocklist table that
+        /// <see cref="FindMissingBlocklistHashesAsync"/> has not yet turned into blocks and blockset entries.
+        /// </summary>
+        private string m_temppendingblocklist = null!;
 
         /// <summary>
         /// A lookup table that prevents multiple downloads of the same volume.
@@ -145,9 +154,17 @@ namespace Duplicati.Library.Main.Database.Local
         /// <param name="blockhashsize">The size of the block hashes.</param>
         /// <param name="temptable">The name of the temporary table containing blocklist hashes and indices.</param>
         /// <param name="fullBlockListBlockCount">The number of blocks in the full block list, used to calculate the full index.</param>
+        /// <param name="pendingtable">If set, the name of a temporary table of blocklist hashes; only the entries of these blocklists are selected.</param>
         /// <returns>A SQL query string that selects blocklist entries with their full index and block size.</returns>
-        private static string SELECT_BLOCKLIST_ENTRIES(long blocksize, long blockhashsize, string temptable, long fullBlockListBlockCount)
+        private static string SELECT_BLOCKLIST_ENTRIES(long blocksize, long blockhashsize, string temptable, long fullBlockListBlockCount, string? pendingtable = null)
         {
+            var pendingFilter = pendingtable == null
+                ? ""
+                : $@"
+                                    AND ""A"".""Hash"" IN (
+                                        SELECT ""BlockListHash""
+                                        FROM ""{pendingtable}""
+                                    )";
             var str_blocksize = Library.Utility.Utility.FormatInvariantValue(blocksize);
             var str_blockhashsize = Library.Utility.Utility.FormatInvariantValue(blockhashsize);
             var str_fullBlockListBlockCount = Library.Utility.Utility.FormatInvariantValue(fullBlockListBlockCount);
@@ -175,7 +192,7 @@ namespace Duplicati.Library.Main.Database.Local
                                     ""BlocklistHash"" ""A"",
                                     ""Blockset"" ""B""
                                 WHERE
-                                    ""B"".""ID"" = ""A"".""BlocksetID""
+                                    ""B"".""ID"" = ""A"".""BlocksetID""{pendingFilter}
                             ) ""C"",
                             ""Block"" ""D""
                         WHERE
@@ -209,6 +226,7 @@ namespace Duplicati.Library.Main.Database.Local
 
             dbnew.m_tempblocklist = $"TempBlocklist_{Library.Utility.Utility.GetHexGuid()}";
             dbnew.m_tempsmalllist = $"TempSmalllist_{Library.Utility.Utility.GetHexGuid()}";
+            dbnew.m_temppendingblocklist = $"TempPendingBlocklist_{Library.Utility.Utility.GetHexGuid()}";
 
             if (dbnew.m_connection == null)
                 throw new Exception("Connection is null");
@@ -226,6 +244,13 @@ namespace Duplicati.Library.Main.Database.Local
             await cmd.ExecuteNonQueryAsync($@"
                 CREATE INDEX ""Index_{dbnew.m_tempblocklist}""
                 ON ""{dbnew.m_tempblocklist}"" (""BlockListHash"");
+            ", token)
+                .ConfigureAwait(false);
+
+            await cmd.ExecuteNonQueryAsync($@"
+                CREATE TEMPORARY TABLE ""{dbnew.m_temppendingblocklist}"" (
+                    ""BlockListHash"" TEXT NOT NULL PRIMARY KEY
+                )
             ", token)
                 .ConfigureAwait(false);
 
@@ -341,6 +366,12 @@ namespace Duplicati.Library.Main.Database.Local
                     @BlockHash,
                     @Index
                 )
+            ", token)
+                .ConfigureAwait(false);
+
+            dbnew.m_insertPendingBlockListHash = await dbnew.m_connection.CreateCommandAsync($@"
+                INSERT OR IGNORE INTO ""{dbnew.m_temppendingblocklist}"" (""BlockListHash"")
+                VALUES (@BlocklistHash)
             ", token)
                 .ConfigureAwait(false);
 
@@ -465,7 +496,7 @@ namespace Duplicati.Library.Main.Database.Local
                     ""BlockHash"" AS ""FullHash"",
                     ""BlockSize"" AS ""Length""
                 FROM (
-                    {SELECT_BLOCKLIST_ENTRIES(blocksize, hashsize, m_tempblocklist, blocksize / hashsize)}
+                    {SELECT_BLOCKLIST_ENTRIES(blocksize, hashsize, m_tempblocklist, blocksize / hashsize, m_temppendingblocklist)}
                 )
             ";
 
@@ -530,7 +561,7 @@ namespace Duplicati.Library.Main.Database.Local
                     ""D"".""FullIndex"" AS ""Index"",
                     ""F"".""ID"" AS ""BlockID""
                 FROM
-                    ({SELECT_BLOCKLIST_ENTRIES(blocksize, hashsize, m_tempblocklist, blocksize / hashsize)}) ""D"",
+                    ({SELECT_BLOCKLIST_ENTRIES(blocksize, hashsize, m_tempblocklist, blocksize / hashsize, m_temppendingblocklist)}) ""D"",
                     ""BlocklistHash"" ""E"",
                     ""Block"" ""F"",
                     ""Block"" ""G""
@@ -618,6 +649,33 @@ namespace Duplicati.Library.Main.Database.Local
 
                 throw new Exception("The recreate failed, please create a bug-report from this database and send it to the developers for further analysis");
             }
+
+            // A blocklist is done once every blockset that uses it has the blocklist block, with its size, in the Block table:
+            // its blocks and blockset entries are then in place, and processing it again adds nothing.
+            // The others stay pending, as a later volume may hold the blocklist block.
+            var str_fullBlockListBlockCount = Library.Utility.Utility.FormatInvariantValue(blocksize / hashsize);
+            var str_blocksize = Library.Utility.Utility.FormatInvariantValue(blocksize);
+            var str_hashsize = Library.Utility.Utility.FormatInvariantValue(hashsize);
+            await cmd.ExecuteNonQueryAsync($@"
+                DELETE FROM ""{m_temppendingblocklist}""
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM ""BlocklistHash"" ""A""
+                    WHERE
+                        ""A"".""Hash"" = ""{m_temppendingblocklist}"".""BlockListHash""
+                        AND NOT EXISTS (
+                            SELECT 1
+                            FROM
+                                ""Blockset"" ""B"",
+                                ""Block"" ""D""
+                            WHERE
+                                ""B"".""ID"" = ""A"".""BlocksetID""
+                                AND ""D"".""Hash"" = ""A"".""Hash""
+                                AND ""D"".""Size"" = MIN({str_fullBlockListBlockCount} * {str_hashsize}, (((""B"".""Length"" + {str_blocksize} - 1) / {str_blocksize}) - (""A"".""Index"" * ({str_fullBlockListBlockCount}))) * {str_hashsize})
+                        )
+                )
+            ", token)
+                .ConfigureAwait(false);
 
             await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
         }
@@ -1083,6 +1141,12 @@ namespace Duplicati.Library.Main.Database.Local
                     .ExecuteNonQueryAsync(true, token)
                     .ConfigureAwait(false);
             }
+
+            await m_insertPendingBlockListHash
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@BlocklistHash", hash)
+                .ExecuteNonQueryAsync(true, token)
+                .ConfigureAwait(false);
 
             return true;
         }
@@ -1627,6 +1691,21 @@ namespace Duplicati.Library.Main.Database.Local
                     finally
                     {
                         m_tempblocklist = null!;
+                    }
+
+                if (m_temppendingblocklist != null)
+                    try
+                    {
+                        await cmd.ExecuteNonQueryAsync(@$"DROP TABLE IF EXISTS ""{m_temppendingblocklist}""", default)
+                            .ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "FailedToDropTempPendingBlocklist", ex, "Failed to drop temporary pending blocklist table {0}", m_temppendingblocklist);
+                    }
+                    finally
+                    {
+                        m_temppendingblocklist = null!;
                     }
 
                 if (m_tempsmalllist != null)
