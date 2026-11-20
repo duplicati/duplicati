@@ -385,7 +385,7 @@ namespace Duplicati.Library.Main.Operation.Restore
                 sw_set_wake_get?.Stop();
 
                 sw_set_set?.Start();
-                bool fullfills = waiters_exist && entry.Count >= m_blockcount[blockID];
+                bool fullfills = waiters_exist && entry.Count >= GetBlockCount(blockID);
                 bool added_to_cache = !fullfills && m_block_cache_max > 0;
                 if (added_to_cache)
                 {
@@ -413,6 +413,22 @@ namespace Duplicati.Library.Main.Operation.Restore
                     // This method is responsible for the disposal
                     value.Dispose();
                 sw_cacheevict?.Stop();
+            }
+
+            /// <summary>
+            /// Gets the remaining uses of a block.
+            /// </summary>
+            /// <remarks>
+            /// <see cref="Set"/> runs in the process that reads the decompressed blocks, while
+            /// <see cref="CheckCountsAsync"/> changes and removes the counts from the file processors, and the
+            /// dictionary cannot be read while another thread changes it. So the count is read under the same lock.
+            /// </remarks>
+            /// <param name="blockID">The ID of the block.</param>
+            /// <returns>The remaining uses of the block.</returns>
+            private long GetBlockCount(long blockID)
+            {
+                lock (m_blockcount_lock)
+                    return m_blockcount[blockID];
             }
 
             /// <summary>
