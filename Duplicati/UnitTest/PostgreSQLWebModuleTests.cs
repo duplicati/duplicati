@@ -110,17 +110,34 @@ public class PostgreSQLWebModuleTests
         var answers = HealthyDatabase();
         answers[PostgreSQLWebModule.SessionQuery] = "170004|17.4|f|f|f\n";
 
-        var reported = (await ChecksAsync(answers, Url, false, false))[PostgreSQLWebModule.TlsCheck];
+        // A mode that connects without TLS when the server does not offer it
+        var url = Url + "&postgresql-sslmode=prefer";
+
+        var reported = (await ChecksAsync(answers, url, false, false))[PostgreSQLWebModule.TlsCheck];
         Assert.That(reported.Enabled, Is.False);
         Assert.That(reported.RequiredForBackup, Is.False, "A database on the same machine is often reached without TLS");
 
-        var required = (await ChecksAsync(answers, Url, true, false))[PostgreSQLWebModule.TlsCheck];
+        var required = (await ChecksAsync(answers, url, true, false))[PostgreSQLWebModule.TlsCheck];
         Assert.That(required.Enabled, Is.False);
         Assert.That(required.RequiredForBackup, Is.True);
 
-        var forRestore = (await ChecksAsync(answers, Url, true, true))[PostgreSQLWebModule.TlsCheck];
+        var forRestore = (await ChecksAsync(answers, url, true, true))[PostgreSQLWebModule.TlsCheck];
         Assert.That(forRestore.RequiredForRestore, Is.True);
         Assert.That(forRestore.RequiredForBackup, Is.False);
+    }
+
+    [TestCase("require")]
+    [TestCase("verify-ca")]
+    [TestCase("verify-full")]
+    public async Task AConnectionThroughAPoolerIsEncryptedWhenTheTlsModeDoesNotConnectWithoutTls(string sslMode)
+    {
+        // The server sees the pooler's connection, which has no TLS; the client tools' connection has
+        var answers = HealthyDatabase();
+        answers[PostgreSQLWebModule.SessionQuery] = "170004|17.4|f|f|f\n";
+        var url = Url + "&postgresql-sslmode=" + sslMode;
+
+        Assert.That((await ChecksAsync(answers, url, true, false))[PostgreSQLWebModule.TlsCheck].Enabled, Is.True);
+        Assert.That((await ChecksAsync(answers, url, true, true))[PostgreSQLWebModule.TlsCheck].Enabled, Is.True);
     }
 
     [Test]
