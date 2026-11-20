@@ -232,6 +232,11 @@ public class StreamedSourceTests : BasicSetupHelper
         Assert.That(OpenOrder, Is.EqualTo(files.Select(x => x.Name)), "The files must be opened in the order the source lists them");
         Assert.That(MaxOpenStreams, Is.EqualTo(1), "Only one file may be open at a time");
 
+        var read = files.Sum(x => (long)x.Data.Length);
+        Assert.That(result.ExaminedFiles, Is.EqualTo(files.Count), "Each file is counted once");
+        Assert.That(result.SizeOfExaminedFiles, Is.EqualTo(read), "The size of the source is what was read, as no file knew its size before");
+        Assert.That(result.SizeOfOpenedFiles, Is.EqualTo(read));
+
         var listed = await ListLatestAsync();
         foreach (var f in files)
             Assert.That(listed[f.Name], Is.EqualTo(f.Data.Length), "The size is the number of bytes read");

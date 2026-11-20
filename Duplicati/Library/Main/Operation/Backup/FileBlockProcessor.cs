@@ -102,6 +102,13 @@ namespace Duplicati.Library.Main.Operation.Backup
 
                         await stats.AddOpenedFileAsync(filestreamdata.Streamlength).ConfigureAwait(false);
 
+                        // The size of an entry of a sequential source, such as a table in a database dump,
+                        // is often not known before it is read, and it then counted as nothing when the
+                        // entry was examined. What was read is its size, so the size of the source in the
+                        // report is that of the stream and not only of the entries that knew theirs.
+                        if (e.Entry is ISequentialSourceProviderEntry && e.Entry.Size < 0)
+                            await stats.AddExaminedFilesAsync(0, filestreamdata.Streamlength).ConfigureAwait(false);
+
                         var metadataid = await metatask.ConfigureAwait(false);
 
                         // A streamed source that failed part-way must not replace the entry of the previous
