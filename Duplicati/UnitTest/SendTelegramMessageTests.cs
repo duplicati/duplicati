@@ -167,5 +167,23 @@ namespace Duplicati.UnitTest
 
             Assert.AreEqual(sent, string.Concat(texts.Select(WithoutPartHeader)));
         }
+
+        /// <summary>
+        /// The length of a part without its header, as the module splits a long report
+        /// </summary>
+        private const int TELEGRAM_CHUNK_LENGTH = TELEGRAM_MAX_LENGTH - 20;
+
+        [Test]
+        public void ACharacterOutsideTheBasicPlaneIsNotSplitBetweenParts()
+        {
+            // The emoji is two UTF-16 chars, and the first part would end between them
+            var body = new string('a', TELEGRAM_CHUNK_LENGTH - Environment.NewLine.Length - 1) + "\U0001F600" + new string('b', 100);
+            var (sent, texts) = SendReport(body);
+
+            Assert.AreEqual(2, texts.Length);
+            foreach (var text in texts)
+                Assert.LessOrEqual(text.Length, TELEGRAM_MAX_LENGTH);
+            Assert.AreEqual(sent, string.Concat(texts.Select(WithoutPartHeader)), "The emoji should arrive whole, in one of the parts");
+        }
     }
 }
