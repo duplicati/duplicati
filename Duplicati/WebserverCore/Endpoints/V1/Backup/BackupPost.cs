@@ -259,7 +259,7 @@ public class BackupPost : IEndpointV1
         ipx.ID = null;
 
         var assignedId = connection.RegisterTemporaryBackup(ipx, null);
-        return new Dto.CreateBackupDto(assignedId, ipx.IsTemporary);
+        return new Dto.CreateBackupDto(assignedId, true);
     }
 
     private static async Task<IEnumerable<RestoreTaskConfigElementDto>> ExecuteRestoreTaskConfigAsync(Connection connection, IQueueRunnerService queueRunnerService, IBackup backup)
