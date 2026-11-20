@@ -1,3 +1,259 @@
+2026-11-20 - 2.4.1.103_canary_2026-11-20
+==========
+This release is a canary release intended to be used for testing.
+
+# PostgreSQL databases as a source
+
+A backup can now use a PostgreSQL database as its source. Duplicati reads the database with `pg_dump` and stores each table as its own entry, so a restore can pick single tables. PostgreSQL 14 to 18 is supported, and the client programs of the server's version must be installed, or found with `--postgresql-client-path`.
+
+A restore can load the whole database, or only the rows of chosen tables with `--postgresql-restore-mode=tables`, and the rows are loaded as they are restored, so nothing the size of the database is written to disk. The root certificate for a verified TLS connection can be given as a file or as text with `--postgresql-sslrootcert-content`, and `--postgresql-max-database-size` stops a backup of a database that has grown larger than expected.
+
+The new UI can pick PostgreSQL as a remote source and as a restore destination, check the permissions of the role, and count the tables and their size before the backup is saved.
+
+# Full disk backup is open source
+
+The full disk backup source was moved out of the proprietary part of Duplicati and is now open source under the MIT license.
+
+# Running backups in order, and after the queue
+
+- A backup can be set to run after another backup, when that one succeeds or always. Chains and one backup starting several others are supported, and a loop is refused.
+- The server can shut down or restart the computer, or run the script from the `post-queue-processing-script` setting, once the queue of backups has run empty. The new UI has a "Start all" button that queues every enabled backup, and can choose such an action for when they are done, thanks @JamBalaya56562.
+- The backup menu in the new UI has "Skip next run", which moves the schedule past the next run without disabling the backup, thanks @JamBalaya56562.
+- `--skip-missed-scheduled-backups` skips a scheduled run that is more than 10 minutes late, such as one missed while the machine was off, instead of starting it right away, thanks @JamBalaya56562.
+- `--min-time-between-scheduled-runs` skips a scheduled run when the last run finished less than the given time ago, so a backup that runs longer than its interval does not start again at once, thanks @JamBalaya56562.
+- `--run-skipped-on-ac-power` queues a backup that `--disable-on-battery` skipped once the machine is on AC power again, thanks @JamBalaya56562.
+
+# Changes to be aware of
+
+- Saving a job through the API now keeps each field the request leaves out, such as the operation type, target, filters, tags and schedule. A client that sent only some fields cleared the rest, and the "Suppress" button on a log warning turned a sync job into a backup job. A field that is sent, also empty, is applied as before, thanks @JamBalaya56562.
+- `--sync-then-delete` now also deletes the remote folders that are gone from the source, with everything in them. Box, Dropbox, Google Drive, OneDrive, S3 and iDrive e2 delete a folder in one call. A destination with snapshot folders is refused.
+- The scheduler options are no longer listed for the command line, where they had no effect. They still work from the UI and the server.
+- Masking the secrets of a target URL, and removing them on export, now changes only the secret values. The URL was rebuilt, which decoded encoded separators, joined repeated parameters and dropped empty ones, so saving a job without changes could change its URL. A password in the user info of a URL (`user:password@host`) is now masked as well, thanks @JamBalaya56562.
+- An exported configuration now includes the global advanced options in their own field. An import ignores them by default, and can merge them into the backup or apply them to the server, thanks @JamBalaya56562.
+
+# New backup options
+
+- `--max-backup-runtime` stops a backup after it has run the given time, and saves it as a partial backup that the next run continues, so a long first backup does not block the queue, thanks @JamBalaya56562.
+- `--keep-missing-sources` keeps the files of a local source folder that does not exist, such as a disconnected drive, from the previous version, instead of recording them as deleted, thanks @JamBalaya56562.
+- `--skip-files-smaller-than` leaves out files below the given size, thanks @JamBalaya56562.
+- `--disable-filetime-check-for` reads the files that match a filter on every backup, for encrypted containers that keep their time stamp and size when changed, thanks @JamBalaya56562.
+- `--remote-filename-suffix` appends a suffix to the name of each remote file, for storage that refuses some file types, thanks @JamBalaya56562.
+- `--gpg-encryption-recipient` encrypts GPG volumes to a public key, and `--gpg-encryption-cipher-algo` chooses the cipher, thanks @JamBalaya56562.
+- `--truncate-before-delete` empties a remote file that cannot be deleted and tries again, for full copy-on-write file systems such as ZFS and Btrfs, thanks @JamBalaya56562.
+- A full backup that follows a partial backup is now uploaded even when nothing changed, so the latest version is not left partial, thanks @JamBalaya56562.
+- The paths of deleted files and folders are now logged at the verbose level, so a report can list them, thanks @JamBalaya56562.
+- Case-insensitive filters and the SMB transport option now work under the Turkish culture, thanks @menes97.
+
+# Restore
+
+- A restore can be downloaded in the browser instead of written to a folder. A single file is downloaded as it is, several in a zip file. `--webservice-disable-restore-download` turns this off, thanks @JamBalaya56562.
+- `--restore-files-modified-after` restores only files modified after a date, or an interval back from now, thanks @JamBalaya56562.
+- A restore of millions of files uses much less memory. The files are read in batches, the block counts are kept in compact arrays, and each block gets a buffer that fits it. `--restore-temp-tables-on-disk` keeps the temporary tables in a file instead of in memory, thanks @JamBalaya56562.
+- The restore page in the new UI offers to continue a direct restore that was left, as long as the server still has it, thanks @JamBalaya56562.
+- A stopped restore left decrypted temporary files behind, thanks @JamBalaya56562.
+
+# Retention, compact and repair
+
+- `--retention-policy-minimum-versions` always keeps at least the given number of versions, thanks @JamBalaya56562.
+- `--retention-policy-delete-partials` lets the retention policy delete partial backups that have a full backup before and after them, thanks @JamBalaya56562.
+- Compact now reports its progress, so a long compact no longer looks stalled, thanks @JamBalaya56562.
+- A repair that recreates a missing dblock now reads locked source files through a VSS or LVM snapshot, thanks @JamBalaya56562.
+- A dry-run repair changed the local database, and failed without a local database. Both are fixed, thanks @JamBalaya56562.
+- The number of versions and the destination size are updated after a repair, thanks @JamBalaya56562.
+- A recreate now processes only the new blocklists after each block volume, and the experimental recreate works again, thanks @JamBalaya56562.
+
+# Storage providers
+
+- WebDAV can authenticate with a client certificate, with `--webdav-client-certificate` and `--webdav-client-certificate-password`, thanks @JamBalaya56562.
+- `--googledrive-use-trash` moves deleted files to the trash, which the Content manager role of a shared drive is allowed to do, thanks @JamBalaya56562.
+- `--list-verify-uploads` now looks up the single file on local folders and S3 instead of listing the whole folder, thanks @JamBalaya56562.
+- FTPS uploads to vsftpd over TLS 1.3 failed on Windows. The automatic choice now switches to Bouncy Castle in that case, thanks @JamBalaya56562.
+- A sync to the root of an SMB share gave two warnings about the `.` and `..` entries, thanks @JamBalaya56562.
+- Box can work with files below the backend folder, iDrive e2 accepts nested names, and S3 V1 listings continue correctly when the server leaves out the marker.
+
+# Reports and scripts
+
+- Reports can use `%BeginTime%`, `%EndTime%` and `%Duration%`, thanks @JamBalaya56562.
+- Telegram reports are sent in the body of a POST, and a long report is split so each part fits the message limit without cutting a character in two, thanks @JonathanGodley and @JamBalaya56562.
+- Scripts get the sources of the job in `DUPLICATI__BACKUP_SOURCES`, and the names of options changed by a `run-script-before` script are logged, thanks @JamBalaya56562.
+- On Windows, `.ps1` scripts are run through PowerShell, thanks @JamBalaya56562.
+
+# Server and command line
+
+- Ctrl+C now stops the running command line operation, a second press aborts it, and a third ends the process, thanks @JamBalaya56562.
+- `duplicati-server-util` has an `update-backup` command that changes parts of a backup from a JSON file, and the import can expand `%VAR%` environment variables with `--expand-env-vars`, thanks @JamBalaya56562.
+- The TrayIcon follows the server over the websocket, and its tooltip shows the running backup and the result of the last run, thanks @JamBalaya56562.
+- A Time Machine snapshot on macOS could not be found when other snapshots were listed after it, thanks @Marukome0743.
+- The result of an update check is reported, so a client can show why a check failed, thanks @JamBalaya56562.
+- The system information reports whether the database is encrypted and where `preload.json` is read from, thanks @JamBalaya56562.
+- Windows no longer loads `Mono.Unix`.
+
+# Current user interface (`ngclient`)
+
+- A new page compares two versions of a backup, and a log entry of a backup can be compared with the version before it, thanks @JamBalaya56562.
+- The menu of a backup is now a dialog with the available commands.
+- The source list shows remote and local sources alike, with an icon for the kind of data, and the folder a shortcut such as `%HOME%` points to, thanks @JamBalaya56562.
+- The settings page can upload an HTTPS certificate, and the theme can follow the system or the server default, thanks @JamBalaya56562.
+- An optional sign-out after a period of inactivity, thanks @JamBalaya56562.
+- The home page shows when the last run of a backup failed, thanks @JamBalaya56562.
+- "Verify files" reports the result when the task finishes, thanks @JamBalaya56562.
+- The log pages can download the loaded entries, thanks @JamBalaya56562.
+- Alerts and notifications have a "Dismiss all" button.
+- The restore version list shows the number of files in each version, and files chosen one by one are grouped in the restore tree, thanks @JamBalaya56562.
+- Folders that have excluded paths below them are marked in the source tree, thanks @JamBalaya56562.
+- Browsing an SFTP destination asks to approve an unknown host key, thanks @JamBalaya56562.
+- A new remote backup without encryption asks for confirmation before it is saved, thanks @JamBalaya56562.
+- The remote connection shows when it is paused until a given time.
+- The missing TLS warning is not shown when the server is reached on the loopback address.
+
+# Old user interface (`ngax`)
+
+- AngularJS is updated to 1.8.3, thanks @JamBalaya56562.
+- The home page shows "Running" or "Queued to run" instead of "Run now" for a backup that is already running or queued, thanks @JamBalaya56562.
+- A typed source path is checked with the server instead of asking if it is a file, thanks @JamBalaya56562.
+- Dialogs with only an OK button close with Enter, thanks @JamBalaya56562.
+
+## Detailed list of changes
+
+- Added PostgreSQL as a backup source, with enumeration, a size limit and a web module for permission checks
+- Added restoring to a PostgreSQL database
+- Added passing the PostgreSQL root certificate as text
+- Fixed the TLS detection of the PostgreSQL permission check
+- Moved the full disk backup source into the open source code
+- Added running a backup after another backup
+- Added shutting down, restarting or running a script when the queue is empty
+- Added an endpoint to skip the next scheduled run of a backup, thanks @JamBalaya56562
+- Added `--skip-missed-scheduled-backups`, thanks @JamBalaya56562
+- Added `--min-time-between-scheduled-runs`, thanks @JamBalaya56562
+- Added `--run-skipped-on-ac-power`, thanks @JamBalaya56562
+- Moved the scheduler options out of the command line options
+- Fixed a job update clearing the fields it leaves out, thanks @JamBalaya56562
+- Fixed a job update without an operation type turning a sync job into a backup job, thanks @JamBalaya56562
+- Fixed a job update with an empty target giving 500 instead of 400, thanks @JamBalaya56562
+- Changed `--sync-then-delete` to also delete remote folders
+- Removed the lightweight backend manager, and made the sync tool use the sync operation
+- Fixed masking and export changing other parts of a target URL, thanks @JamBalaya56562
+- Fixed the password in the user info of a target URL not being masked, thanks @JamBalaya56562
+- Fixed the place of repeated masked parameters on save, thanks @JamBalaya56562
+- Added exporting the global advanced options, thanks @JamBalaya56562
+- Added expanding environment variables on import, thanks @JamBalaya56562
+- Added the `update-backup` command to ServerUtil, thanks @JamBalaya56562
+- Added an endpoint that lists temporary backups, thanks @JamBalaya56562
+- Added copying a job to a temporary job for one of its secondary destinations, thanks @JamBalaya56562
+- Added deleting the remote files of chosen destinations with a job, thanks @JamBalaya56562
+- Added `--max-backup-runtime`, thanks @JamBalaya56562
+- Added `--keep-missing-sources`, thanks @JamBalaya56562
+- Added `--skip-files-smaller-than`, thanks @JamBalaya56562
+- Added `--disable-filetime-check-for`, thanks @JamBalaya56562
+- Added `--remote-filename-suffix`, thanks @JamBalaya56562
+- Added `--gpg-encryption-recipient`, thanks @JamBalaya56562
+- Added `--gpg-encryption-cipher-algo`, thanks @JamBalaya56562
+- Added `--truncate-before-delete`, thanks @JamBalaya56562
+- Fixed an unchanged full backup after a partial backup not being uploaded, thanks @JamBalaya56562
+- Added logging the paths of deleted entries, thanks @JamBalaya56562
+- Fixed case-insensitive filters under the Turkish culture, thanks @menes97
+- Fixed the SMB transport option under the Turkish culture, thanks @menes97
+- Fixed the `list-changes` count of files and folders
+- Added restoring as a download in the browser, thanks @JamBalaya56562
+- Added `--restore-files-modified-after`, thanks @JamBalaya56562
+- Added `--restore-temp-tables-on-disk`, thanks @JamBalaya56562
+- Improved the memory use of restores with many files, thanks @JamBalaya56562
+- Fixed reading the block count of a restore without the lock, thanks @JamBalaya56562
+- Fixed a stopped restore leaving decrypted volumes behind, thanks @JamBalaya56562
+- Fixed opening a file of a zip archive by the name it is listed with, thanks @JamBalaya56562
+- Added `--retention-policy-minimum-versions`, thanks @JamBalaya56562
+- Added `--retention-policy-delete-partials`, thanks @JamBalaya56562
+- Added progress reporting for compact, thanks @JamBalaya56562
+- Added reading locked files through a snapshot when repair recreates a dblock, thanks @JamBalaya56562
+- Fixed a dry-run repair changing the local database, thanks @JamBalaya56562
+- Fixed a dry-run repair failing without a local database, thanks @JamBalaya56562
+- Fixed the versions at the destination not being updated after a repair, thanks @JamBalaya56562
+- Improved recreate to process only new blocklists after each block volume, thanks @JamBalaya56562
+- Fixed the SQL of the experimental recreate, thanks @JamBalaya56562
+- Added `--webdav-client-certificate`, thanks @JamBalaya56562
+- Added `--googledrive-use-trash`, thanks @JamBalaya56562
+- Added verifying uploads with a single-file lookup on local folders and S3, thanks @JamBalaya56562
+- Fixed FTPS uploads to vsftpd over TLS 1.3, thanks @JamBalaya56562
+- Fixed the `.` and `..` entries of an SMB share root giving warnings, thanks @JamBalaya56562
+- Added deleting folders in one call to Box, Dropbox, Google Drive, OneDrive, S3 and iDrive e2
+- Fixed Box files below the backend folder, iDrive e2 nested names and S3 V1 listings without a marker
+- Added the `%BeginTime%`, `%EndTime%` and `%Duration%` report keys, thanks @JamBalaya56562
+- Fixed split Telegram reports exceeding the message limit, thanks @JonathanGodley
+- Fixed split Telegram reports cutting a character in two, thanks @JamBalaya56562
+- Changed Telegram reports to be sent in the body of a POST, thanks @JamBalaya56562
+- Added `DUPLICATI__BACKUP_SOURCES` for scripts, thanks @JamBalaya56562
+- Added logging the options changed by a `run-script-before` script, thanks @JamBalaya56562
+- Added running `.ps1` scripts through PowerShell on Windows, thanks @JamBalaya56562
+- Added stopping the command line operation on Ctrl+C, thanks @JamBalaya56562
+- Added the filters to the command line debug output, thanks @JamBalaya56562
+- Added a Google Drive example to the command line example help, thanks @JamBalaya56562
+- Added following the server state over the websocket in the TrayIcon, thanks @JamBalaya56562
+- Added the running backup and state to the TrayIcon tooltip, thanks @JamBalaya56562
+- Fixed finding the created APFS snapshot on macOS, thanks @Marukome0743
+- Added reporting the result of an update check, thanks @JamBalaya56562
+- Added database encryption and preload paths to the system info, thanks @JamBalaya56562
+- Added a paused-until value to the remote connection state
+- Fixed task start and finish times not being in UTC, thanks @JamBalaya56562
+- Fixed a temporary job not being reported as temporary when created, thanks @JamBalaya56562
+- Fixed a missing destination folder not being reported as such through the controller process, thanks @JamBalaya56562
+- Fixed a crash when logging the license grace period message
+- Fixed `Mono.Unix` being loaded on Windows
+- Removed thread interruption code with no effect, thanks @JamBalaya56562
+- Fixed building the Windows MSI packages with WiX on Windows, thanks @JamBalaya56562
+- Updated ngax to AngularJS 1.8.3 and angular-gettext 2.4.2, thanks @JamBalaya56562
+- Changed the ngax theme to be stored per browser instead of in a cookie, thanks @JamBalaya56562
+- Added showing the queued and running state in ngax, thanks @JamBalaya56562
+- Added detecting typed source folders in ngax, thanks @JamBalaya56562
+- Added closing single-button ngax dialogs with Enter, thanks @JamBalaya56562
+- Added a ShellCheck CI job and fixed the error-level findings, thanks @JamBalaya56562
+- Added debug log instructions to the bug report template, thanks @JamBalaya56562
+- Fixed restore tests not respecting uncompressed restore paths, thanks @pcbeingused333
+
+## ngclient changes
+
+- Added a page to compare two versions of a backup
+- Added comparing a backup run with the previous version from the log, thanks @JamBalaya56562
+- Changed the backup menu into a dialog
+- Added PostgreSQL as a remote source and restore destination
+- Added run-after and actions for when the queue is empty
+- Added a Start all button and dialog, thanks @JamBalaya56562
+- Added a Skip next run action, thanks @JamBalaya56562
+- Added restoring as a download in the browser, thanks @JamBalaya56562
+- Added continuing an unfinished direct restore, thanks @JamBalaya56562
+- Added choosing how imported global options are handled, thanks @JamBalaya56562
+- Improved the display of source paths, and moved the Microsoft 365 and Google Workspace checks into the dialog
+- Added showing the folder a shortcut source path points to, thanks @JamBalaya56562
+- Added showing junction and symbolic link targets in the file tree, thanks @JamBalaya56562
+- Added marking folders with excluded paths below them, thanks @JamBalaya56562
+- Added previewing attribute exclusions in the source tree, thanks @JamBalaya56562
+- Simplified the filter selection
+- Added HTTPS certificate upload to the settings page, thanks @JamBalaya56562
+- Added the system and server default choices to the theme toggle
+- Added an optional sign-out after inactivity, thanks @JamBalaya56562
+- Added showing a failed last run on the home page, thanks @JamBalaya56562
+- Added reporting the outcome of Verify files, thanks @JamBalaya56562
+- Added showing compact progress during a backup, thanks @JamBalaya56562
+- Added the result of an update check on the About page, thanks @JamBalaya56562
+- Added database encryption and preload paths on the About page, thanks @JamBalaya56562
+- Added loading the changelog of an available update from the notification, thanks @JamBalaya56562
+- Added Download buttons to the log pages, thanks @JamBalaya56562
+- Added Dismiss all buttons to alerts and notifications
+- Added a Report an issue link to the side menu, thanks @JamBalaya56562
+- Added the file count to the restore version list, thanks @JamBalaya56562
+- Added grouping individually backed-up files in the restore tree, thanks @JamBalaya56562
+- Added approving an unknown SSH host key before browsing, thanks @JamBalaya56562
+- Added a confirmation for new unencrypted remote backups, thanks @JamBalaya56562
+- Added offering existing command line databases for new backup destinations, thanks @JamBalaya56562
+- Fixed deleting a job removing a database shared with the command line, thanks @JamBalaya56562
+- Fixed suppressing a warning changing a sync job into a backup job, thanks @JamBalaya56562
+- Added the paused-until indicator for the remote connection
+- Fixed the missing TLS warning showing for the loopback address
+- Added digit grouping to file counts in the status bar, thanks @JamBalaya56562
+- Added a name and explanation to the global throttle action, thanks @JamBalaya56562
+- Changed many forms to use Signal Forms, thanks @JamBalaya56562
+- Fixed several status, websocket and backup list lifetime issues, thanks @JamBalaya56562
+- Added many end-to-end tests against a real server, thanks @JamBalaya56562
+
 2026-11-14 - 2.4.1.102_canary_2026-11-14
 ==========
 This release is a canary release intended to be used for testing.
