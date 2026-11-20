@@ -121,9 +121,19 @@ namespace Duplicati.Library.Main.Operation
             }
             else
             {
-                await RunRepairCommonAsync().ConfigureAwait(false);
-                await RunRepairBrokenFilesetsAsync(backendManager).ConfigureAwait(false);
-                await RunRepairRemoteAsync(backendManager, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                var databaseNeedsRepair = await RunRepairCommonAsync().ConfigureAwait(false);
+
+                // A real run repairs the database before it compares the database with the destination.
+                // A dry run leaves the database as it is, so that comparison would only report what the database repair fixes.
+                if (m_options.Dryrun && databaseNeedsRepair)
+                {
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "SkippingRemoteRepair", "Would check the destination once the database is repaired");
+                }
+                else
+                {
+                    await RunRepairBrokenFilesetsAsync(backendManager).ConfigureAwait(false);
+                    await RunRepairRemoteAsync(backendManager, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                }
             }
 
             // Optionally refresh lock information from the backend
@@ -1563,9 +1573,9 @@ namespace Duplicati.Library.Main.Operation
         /// Runs the common repair operations on the database, such as fixing duplicate entries and missing blocklist hashes.
         /// This method does not require any remote access and can be run without a backend manager.
         /// </summary>
-        /// <returns>A task that completes when the repair is finished.</returns>
+        /// <returns><c>true</c> if the database had something to repair; in a dry run, it is still there.</returns>
         /// <exception cref="UserInformationException">If the database file does not exist.</exception>
-        public async Task RunRepairCommonAsync()
+        public async Task<bool> RunRepairCommonAsync()
         {
             if (!File.Exists(m_options.Dbpath))
                 throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
@@ -1586,21 +1596,22 @@ namespace Duplicati.Library.Main.Operation
             // legitimate, and it is identified by hash as well as by length.
             var emptyFileHash = Utility.CalculateEmptyFileHash(m_options);
 
-            await db
+            var needsRepair = false;
+            needsRepair |= await db
                 .FixOrphanBlocksetEntriesAsync(m_options.Dryrun, m_result.TaskControl.ProgressToken)
-                .ConfigureAwait(false);
-            await db
+                .ConfigureAwait(false) > 0;
+            needsRepair |= await db
                 .FixEmptyBlocksetWithBlocksAsync(emptyFileHash, m_options.Dryrun, m_result.TaskControl.ProgressToken)
-                .ConfigureAwait(false);
+                .ConfigureAwait(false) > 0;
 
-            await db.FixDuplicateMetahashAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-            await db.FixDuplicateFileentriesAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-            await db.FixDuplicatePathsInFilesetsAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-            await db
-                .FixDuplicateBlocklistHashesAsync(m_options.Blocksize, m_options.BlockhashSize, m_result.TaskControl.ProgressToken)
+            needsRepair |= await db.FixDuplicateMetahashAsync(m_options.Dryrun, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            needsRepair |= await db.FixDuplicateFileentriesAsync(m_options.Dryrun, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            needsRepair |= await db.FixDuplicatePathsInFilesetsAsync(m_options.Dryrun, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            needsRepair |= await db
+                .FixDuplicateBlocklistHashesAsync(m_options.Blocksize, m_options.BlockhashSize, m_options.Dryrun, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
-            await db
-                .FixMissingBlocklistHashesAsync(m_options.BlockHashAlgorithm, m_options.Blocksize, m_result.TaskControl.ProgressToken)
+            needsRepair |= await db
+                .FixMissingBlocklistHashesAsync(m_options.BlockHashAlgorithm, m_options.Blocksize, m_options.Dryrun, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
             await ReportEmptyMetadatasetsAsync(db).ConfigureAwait(false);
 
@@ -1608,6 +1619,8 @@ namespace Duplicati.Library.Main.Operation
             await db
                 .ReportBlocksetLengthMismatchesAsync(emptyFileHash, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false);
+
+            return needsRepair;
         }
 
         /// <summary>

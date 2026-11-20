@@ -991,9 +991,10 @@ namespace Duplicati.Library.Main.Database.Local
         /// <summary>
         /// Fixes duplicate metadata hashes in the database.
         /// </summary>
+        /// <param name="dryrun">If <c>true</c>, only report what would be repaired.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
-        /// <returns>A task that when completed indicates that the repair has been attempted.</returns>
-        public async Task FixDuplicateMetahashAsync(CancellationToken token)
+        /// <returns><c>true</c> if there was something to repair.</returns>
+        public async Task<bool> FixDuplicateMetahashAsync(bool dryrun, CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
 
@@ -1018,6 +1019,12 @@ namespace Duplicati.Library.Main.Database.Local
 
             if (x > 1)
             {
+                if (dryrun)
+                {
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "DuplicateMetadataHashes", "Would repair duplicate metadatahashes");
+                    return true;
+                }
+
                 Logging.Log.WriteInformationMessage(LOGTAG, "DuplicateMetadataHashes", "Found duplicate metadatahashes, repairing");
 
                 var tablename = $"TmpFile-{Library.Utility.Utility.GetHexGuid()}";
@@ -1172,15 +1179,20 @@ namespace Duplicati.Library.Main.Database.Local
                 Logging.Log.WriteInformationMessage(LOGTAG, "DuplicateMetadataHashesFixed", "Duplicate metadatahashes repaired succesfully");
 
                 await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
+
+                return true;
             }
+
+            return false;
         }
 
         /// <summary>
         /// Fixes duplicate file entries in the database.
         /// </summary>
+        /// <param name="dryrun">If <c>true</c>, only report what would be repaired.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
-        /// <returns>A task that when completed indicates that the repair has been attempted.</returns>
-        public async Task FixDuplicateFileentriesAsync(CancellationToken token)
+        /// <returns><c>true</c> if there was something to repair.</returns>
+        public async Task<bool> FixDuplicateFileentriesAsync(bool dryrun, CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
 
@@ -1208,6 +1220,12 @@ namespace Duplicati.Library.Main.Database.Local
 
             if (x > 0)
             {
+                if (dryrun)
+                {
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "DuplicateFileEntries", "Would repair duplicate file entries");
+                    return true;
+                }
+
                 Logging.Log.WriteInformationMessage(LOGTAG, "DuplicateFileEntries", "Found duplicate file entries, repairing");
 
                 var sql = @"
@@ -1284,7 +1302,11 @@ namespace Duplicati.Library.Main.Database.Local
                 Logging.Log.WriteInformationMessage(LOGTAG, "DuplicateFileEntriesFixed", "Duplicate file entries repaired succesfully");
 
                 await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
+
+                return true;
             }
+
+            return false;
 
         }
 
@@ -1292,9 +1314,10 @@ namespace Duplicati.Library.Main.Database.Local
         /// Fixes duplicate paths in filesets by removing duplicate entries,
         /// keeping the entry with the highest FileID (most recent).
         /// </summary>
+        /// <param name="dryrun">If <c>true</c>, only report what would be repaired.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
-        /// <returns>A task that when completed indicates that the repair has been attempted.</returns>
-        public async Task FixDuplicatePathsInFilesetsAsync(CancellationToken token)
+        /// <returns><c>true</c> if there was something to repair.</returns>
+        public async Task<bool> FixDuplicatePathsInFilesetsAsync(bool dryrun, CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
 
@@ -1317,6 +1340,12 @@ namespace Duplicati.Library.Main.Database.Local
 
             if (duplicateCount > 0)
             {
+                if (dryrun)
+                {
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "DuplicatePathsInFilesets", "Would remove {0} duplicate paths across filesets", duplicateCount);
+                    return true;
+                }
+
                 Logging.Log.WriteInformationMessage(LOGTAG, "DuplicatePathsInFilesets",
                     "Found {0} duplicate paths across filesets, repairing", duplicateCount);
 
@@ -1346,7 +1375,11 @@ namespace Duplicati.Library.Main.Database.Local
                     "Removed {0} duplicate path entries from filesets", deletedCount);
 
                 await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
+
+                return true;
             }
+
+            return false;
         }
 
         /// <summary>
@@ -1354,9 +1387,10 @@ namespace Duplicati.Library.Main.Database.Local
         /// </summary>
         /// <param name="blockhashalgorithm">The hash algorithm used for the blocklist hashes.</param>
         /// <param name="blocksize">The size of each block in bytes.</param>
+        /// <param name="dryrun">If <c>true</c>, only report what would be repaired.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
-        /// <returns>A task that when completed indicates that the repair has been attempted.</returns>
-        public async Task FixMissingBlocklistHashesAsync(string blockhashalgorithm, long blocksize, CancellationToken token)
+        /// <returns><c>true</c> if there was something to repair.</returns>
+        public async Task<bool> FixMissingBlocklistHashesAsync(string blockhashalgorithm, long blocksize, bool dryrun, CancellationToken token)
         {
             var blocklistbuffer = new byte[blocksize];
 
@@ -1408,6 +1442,12 @@ namespace Duplicati.Library.Main.Database.Local
 
             if (itemswithnoblocklisthash != 0)
             {
+                if (dryrun)
+                {
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "MissingBlocklistHashes", "Would repair {0} missing blocklisthash entries", itemswithnoblocklisthash);
+                    return true;
+                }
+
                 Logging.Log.WriteInformationMessage(LOGTAG, "MissingBlocklistHashes", "Found {0} missing blocklisthash entries, repairing", itemswithnoblocklisthash);
                 await using (var c2 = m_connection.CreateCommand(m_rtr.Transaction))
                 await using (var c3 = m_connection.CreateCommand(m_rtr.Transaction))
@@ -1610,7 +1650,11 @@ namespace Duplicati.Library.Main.Database.Local
                 Logging.Log.WriteInformationMessage(LOGTAG, "MissingBlocklisthashesRepaired", "Missing blocklisthashes repaired succesfully");
 
                 await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
+
+                return true;
             }
+
+            return false;
 
         }
 
@@ -1619,9 +1663,10 @@ namespace Duplicati.Library.Main.Database.Local
         /// </summary>
         /// <param name="blocksize">The size of each block in bytes.</param>
         /// <param name="hashsize">The size of each hash in bytes.</param>
+        /// <param name="dryrun">If <c>true</c>, only report what would be repaired.</param>
         /// <param name="token">A cancellation token to cancel the operation.</param>
-        /// <returns>A task that when completed indicates that the repair has been attempted.</returns>
-        public async Task FixDuplicateBlocklistHashesAsync(long blocksize, long hashsize, CancellationToken token)
+        /// <returns><c>true</c> if there was something to repair.</returns>
+        public async Task<bool> FixDuplicateBlocklistHashesAsync(long blocksize, long hashsize, bool dryrun, CancellationToken token)
         {
             await using var cmd = m_connection.CreateCommand(m_rtr.Transaction);
 
@@ -1650,6 +1695,12 @@ namespace Duplicati.Library.Main.Database.Local
 
             if (x > 0)
             {
+                if (dryrun)
+                {
+                    Logging.Log.WriteDryrunMessage(LOGTAG, "DuplicateBlocklistHashes", "Would repair duplicate blocklisthash entries");
+                    return true;
+                }
+
                 Logging.Log.WriteInformationMessage(LOGTAG, "DuplicateBlocklistHashes", "Found duplicate blocklisthash entries, repairing");
 
                 var unique_count = await cmd.ExecuteScalarInt64Async(@"
@@ -1720,7 +1771,11 @@ namespace Duplicati.Library.Main.Database.Local
                 Logging.Log.WriteInformationMessage(LOGTAG, "DuplicateBlocklistHashesRepaired", "Duplicate blocklisthashes repaired succesfully");
 
                 await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
+
+                return true;
             }
+
+            return false;
         }
 
         /// <summary>
