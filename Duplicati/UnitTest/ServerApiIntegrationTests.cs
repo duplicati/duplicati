@@ -1930,7 +1930,7 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
         return new Uri(normalized).AbsoluteUri;
     }
 
-    private async Task<string> CreateBackupAsync(HttpClient httpClient, string passphrase, string? backupName = null, string? targetFolder = null, IEnumerable<BackupAndScheduleInputDto.SettingInputDto>? extraSettings = null)
+    private async Task<string> CreateBackupAsync(HttpClient httpClient, string passphrase, string? backupName = null, string? targetFolder = null, IEnumerable<BackupAndScheduleInputDto.SettingInputDto>? extraSettings = null, Dictionary<string, string>? metadata = null)
     {
         var backupTarget = targetFolder ?? this.TARGETFOLDER;
         Directory.CreateDirectory(backupTarget);
@@ -1956,7 +1956,7 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
                 Sources = new[] { this.DATAFOLDER },
                 Settings = settings,
                 Filters = Array.Empty<BackupAndScheduleInputDto.FilterInputDto>(),
-                Metadata = new Dictionary<string, string>()
+                Metadata = metadata ?? new Dictionary<string, string>()
             }
         };
 

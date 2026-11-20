@@ -345,6 +345,7 @@ public class DeleteResultsDto : BasicResultsDto
 public class RepairResultsDto : BasicResultsDto
 {
     public RecreateDatabaseResultsDto RecreateDatabaseResults { get; set; }
+    public BackendStatisticsDto BackendStatistics { get; set; }
 
     public static RepairResultsDto FromResults(IRepairResults results)
     {
@@ -359,7 +360,8 @@ public class RepairResultsDto : BasicResultsDto
             Messages = results.Messages?.ToList() ?? new List<string>(),
             ParsedResult = results.ParsedResult,
             Interrupted = results.Interrupted,
-            RecreateDatabaseResults = RecreateDatabaseResultsDto.FromResults(results.RecreateDatabaseResults)
+            RecreateDatabaseResults = RecreateDatabaseResultsDto.FromResults(results.RecreateDatabaseResults),
+            BackendStatistics = BackendStatisticsDto.FromResults(results.BackendStatistics)
         };
     }
 }

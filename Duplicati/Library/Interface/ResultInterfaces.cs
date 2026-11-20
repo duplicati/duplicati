@@ -471,7 +471,11 @@ namespace Duplicati.Library.Interface
         IEnumerable<string> Files { get; }
     }
 
-    public interface IRepairResults : IBasicResults
+    /// <summary>
+    /// The results of a repair. The backend statistics describe the destination when the repair has listed it,
+    /// and are null otherwise.
+    /// </summary>
+    public interface IRepairResults : IBasicResults, IBackendStatsticsReporter
     {
         IRecreateDatabaseResults RecreateDatabaseResults { get; }
     }
