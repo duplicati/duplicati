@@ -497,7 +497,7 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
     /// <summary>
     /// Called by the RPC server when a log message is written
     /// </summary>
-    public Task OnLogMessageAsync(LogEntryDto entry)
+    public Task OnLogMessageAsync(LogEntryDto? entry)
     {
         if (_messageSink != null && entry != null)
         {
@@ -537,7 +537,7 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
     /// <summary>
     /// Called by the RPC server when an operation completes
     /// </summary>
-    public Task OnOperationCompletedAsync(OperationResultDto result, ExceptionDto exception)
+    public Task OnOperationCompletedAsync(OperationResultDto? result, ExceptionDto? exception)
     {
         // The operation completion is handled by the return value of the RPC call
         return Task.CompletedTask;
@@ -546,7 +546,7 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
     /// <summary>
     /// Called by the RPC server when backend progress updates
     /// </summary>
-    public Task OnBackendProgressAsync(BackendProgressDto progress)
+    public Task OnBackendProgressAsync(BackendProgressDto? progress)
     {
         if (_messageSink != null && progress != null)
             _messageSink.SetBackendProgress(new BackendProgressWrapper(progress));
@@ -556,7 +556,7 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
     /// <summary>
     /// Called by the RPC server when operation progress updates
     /// </summary>
-    public Task OnOperationProgressAsync(OperationProgressDto progress)
+    public Task OnOperationProgressAsync(OperationProgressDto? progress)
     {
         if (_messageSink != null && progress != null)
         {
