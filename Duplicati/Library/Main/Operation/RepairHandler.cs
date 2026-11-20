@@ -66,7 +66,7 @@ namespace Duplicati.Library.Main.Operation
             if (!File.Exists(m_options.Dbpath))
             {
                 await RunRepairLocalAsync(backendManager, filter).ConfigureAwait(false);
-                await RunRepairCommonAsync().ConfigureAwait(false);
+                await RunRepairCommonOnRecreatedDatabaseAsync().ConfigureAwait(false);
 
                 // Optionally refresh lock information from the backend
                 if (m_options.RepairRefreshLockInfo)
@@ -117,7 +117,7 @@ namespace Duplicati.Library.Main.Operation
                 }
 
                 await RunRepairLocalAsync(backendManager, filter).ConfigureAwait(false);
-                await RunRepairCommonAsync().ConfigureAwait(false);
+                await RunRepairCommonOnRecreatedDatabaseAsync().ConfigureAwait(false);
             }
             else
             {
@@ -132,6 +132,23 @@ namespace Duplicati.Library.Main.Operation
 
             m_result.EndTime = DateTime.UtcNow;
 
+        }
+
+        /// <summary>
+        /// Runs the common repair operations on the database that the recreate has just written.
+        /// A dry run recreates the database in a temporary file, which is gone by now, so there is nothing to run them on:
+        /// the database at the database path is either missing or the one a real run would set aside.
+        /// </summary>
+        /// <returns>A task that completes when the repair is finished.</returns>
+        private async Task RunRepairCommonOnRecreatedDatabaseAsync()
+        {
+            if (m_options.Dryrun)
+            {
+                Logging.Log.WriteDryrunMessage(LOGTAG, "SkippingCommonRepairOnRecreate", "Would check the recreated database for duplicate and missing entries");
+                return;
+            }
+
+            await RunRepairCommonAsync().ConfigureAwait(false);
         }
 
         public async Task RunRepairLocalAsync(IBackendManager backendManager, IFilter filter)
