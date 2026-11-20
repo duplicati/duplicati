@@ -183,10 +183,103 @@ public class PostgreSQLSourceProviderTests
     }
 
     [Test]
+    public void TheLargestDatabaseToBackUpIsReadAsASize()
+    {
+        using var none = PostgreSQLTestOptions.Parse(Url, new Dictionary<string, string?>());
+        Assert.That(none.MaxDatabaseSize, Is.Null, "Without the option there is no limit");
+
+        using var gigabytes = PostgreSQLTestOptions.Parse(Url, new Dictionary<string, string?> { [PostgreSQLOptions.MaxDatabaseSizeOption] = "5gb" });
+        Assert.That(gigabytes.MaxDatabaseSize, Is.EqualTo(5L * 1024 * 1024 * 1024));
+
+        using var bytes = PostgreSQLTestOptions.Parse(Url, new Dictionary<string, string?> { [PostgreSQLOptions.MaxDatabaseSizeOption] = "1073741824b" });
+        Assert.That(bytes.MaxDatabaseSize, Is.EqualTo(1073741824L));
+
+        foreach (var invalid in new[] { "0", "-1gb", "large" })
+            Assert.That(() => PostgreSQLTestOptions.Parse(Url, new Dictionary<string, string?> { [PostgreSQLOptions.MaxDatabaseSizeOption] = invalid }),
+                Throws.InstanceOf<UserInformationException>(), invalid);
+    }
+
+    [Test]
+    public void TheTablesAFilterLeavesOutAreNotDumped()
+    {
+        var tables = new[] { ("app", "orders"), ("app", "Orders"), ("app", "audit_log"), ("app", "odd.name"), ("logs", "events"), ("we\"ird", "na|me") };
+        var separator = Path.PathSeparator;
+
+        IReadOnlyList<(string Schema, string Table)> LeftOut(string filter)
+            => PostgreSQLSourceProvider.TablesLeftOut(PostgreSQLOptions.ParseFilter(filter)!, "/backup", tables);
+
+        Assert.That(LeftOut("-" + PostgreSQLSourceProvider.TablePath("/backup", "app", "audit_log")), Is.EqualTo(new[] { ("app", "audit_log") }));
+
+        // Names are told apart by their casing, so leaving out one table never leaves out another
+        Assert.That(LeftOut("-" + PostgreSQLSourceProvider.TablePath("/backup", "app", "orders")), Is.EqualTo(new[] { ("app", "orders") }));
+
+        // A wildcard over a schema, and several expressions
+        Assert.That(LeftOut("-" + TablePath("logs.*")), Is.EqualTo(new[] { ("logs", "events") }));
+        Assert.That(LeftOut("-" + PostgreSQLSourceProvider.TablePath("/backup", "app", "audit_log") + separator + "-" + PostgreSQLSourceProvider.TablePath("/backup", "app", "odd.name")),
+            Is.EquivalentTo(new[] { ("app", "audit_log"), ("app", "odd.name") }));
+
+        // An include before an exclude keeps the table
+        Assert.That(LeftOut("+" + PostgreSQLSourceProvider.TablePath("/backup", "app", "orders") + separator + "-" + TablePath("app.*")),
+            Is.EquivalentTo(new[] { ("app", "Orders"), ("app", "audit_log"), ("app", "odd.name") }));
+
+        // A filter on something else leaves every table in
+        Assert.That(LeftOut("-/backup/large-objects"), Is.Empty);
+        Assert.That(PostgreSQLOptions.ParseFilter(null), Is.Null);
+        Assert.That(PostgreSQLOptions.ParseFilter(" "), Is.Null);
+    }
+
+    [Test]
+    public void ATableLeftOutIsNamedExactlyToTheDumpProgram()
+    {
+        using var options = PostgreSQLTestOptions.Parse(Url, new Dictionary<string, string?>());
+
+        var arguments = PostgreSQLClientTools.BuildDumpArguments(options, 17, [("app", "audit_log"), ("My Schema", "we\"ird*.name")]);
+
+        Assert.That(arguments, Has.Member("--exclude-table-data=\"app\".\"audit_log\""));
+        Assert.That(arguments, Has.Member("--exclude-table-data=\"My Schema\".\"we\"\"ird*.name\""));
+        Assert.That(PostgreSQLClientTools.BuildDumpArguments(options, 17, []), Has.None.StartsWith("--exclude-table-data"));
+    }
+
+    [Test]
+    public void TheTableListIsReadWhateverCharactersTheNamesHold()
+    {
+        static string Hex(string text) => Convert.ToHexString(Encoding.UTF8.GetBytes(text)).ToLowerInvariant();
+
+        var output = $"{Hex("app")}|{Hex("orders")}\n{Hex("we|ird")}|{Hex("line\nbreak æ")}\n\n";
+
+        Assert.That(PostgreSQLClientTools.ParseTableList(output), Is.EqualTo(new[] { ("app", "orders"), ("we|ird", "line\nbreak æ") }));
+        Assert.That(PostgreSQLClientTools.ParseTableList(string.Empty), Is.Empty);
+    }
+
+    [Test]
+    public async Task ADatabaseListedToBeShownHasTheEntriesOfABackupAndNoDump()
+    {
+        using var options = PostgreSQLTestOptions.Parse(Url + "&postgresql-include-large-objects=true", new Dictionary<string, string?> { [PostgreSQLOptions.EnumerationModeOption] = "true" });
+        Assert.That(options.EnumerationMode, Is.True);
+
+        var root = PostgreSQLSourceEntry.CreateListing("/backup", options, [("app", "orders"), ("app", "odd.name")], new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+
+        var top = await ChildrenAsync(root);
+        Assert.That(top.Select(x => x.Path), Is.EqualTo(new[]
+        {
+            "/backup" + Path.DirectorySeparatorChar + PostgreSQLSourceProvider.TableOfContentsName,
+            "/backup" + Path.DirectorySeparatorChar + PostgreSQLSourceProvider.TablesFolderName + Path.DirectorySeparatorChar,
+            "/backup" + Path.DirectorySeparatorChar + PostgreSQLSourceProvider.LargeObjectsName,
+        }));
+
+        var tables = await ChildrenAsync(top[1]);
+        Assert.That(tables.Select(x => x.Path), Is.EqualTo(new[] { TablePath("app.orders"), TablePath("app.odd%2Ename") }));
+        Assert.That(tables[0].Path, Is.EqualTo(PostgreSQLSourceProvider.TablePath("/backup", "app", "orders")), "The listed path is the path the filter of a backup is matched against");
+        Assert.That((await tables[1].GetMinorMetadata(CancellationToken.None))[PostgreSQLSourceProvider.MetadataTable], Is.EqualTo("odd.name"));
+
+        Assert.That(async () => await tables[0].OpenRead(CancellationToken.None), Throws.InstanceOf<InvalidOperationException>());
+    }
+
+    [Test]
     public void ThePasswordIsOnlyInTheEnvironment()
     {
         var options = PostgreSQLTestOptions.Parse(Url, new Dictionary<string, string?>());
-        var psi = PostgreSQLClientTools.BuildStartInfo("pg_dump", PostgreSQLClientTools.BuildDumpArguments(options, 17), options);
+        var psi = PostgreSQLClientTools.BuildStartInfo("pg_dump", PostgreSQLClientTools.BuildDumpArguments(options, 17, []), options);
 
         Assert.That(psi.ArgumentList, Has.None.Contains("s3cret"));
         Assert.That(psi.Arguments, Does.Not.Contain("s3cret"));
@@ -197,15 +290,15 @@ public class PostgreSQLSourceProviderTests
         Assert.That(psi.ArgumentList, Is.EquivalentTo(new[] { "--format=custom", "--compress=0", "--no-password", "--encoding=UTF8", "--no-large-objects" }));
 
         var withLargeObjects = PostgreSQLTestOptions.Parse(Url + "&postgresql-include-large-objects=true", new Dictionary<string, string?>());
-        Assert.That(PostgreSQLClientTools.BuildDumpArguments(withLargeObjects, 17), Has.None.EqualTo("--no-large-objects"));
+        Assert.That(PostgreSQLClientTools.BuildDumpArguments(withLargeObjects, 17, []), Has.None.EqualTo("--no-large-objects"));
 
         // pg_dump 14 and 15 know large objects as blobs
         foreach (var major in new[] { 14, 15 })
         {
-            Assert.That(PostgreSQLClientTools.BuildDumpArguments(options, major), Has.Member("--no-blobs").And.None.EqualTo("--no-large-objects"));
-            Assert.That(PostgreSQLClientTools.BuildDumpArguments(withLargeObjects, major), Has.None.EqualTo("--no-blobs"));
+            Assert.That(PostgreSQLClientTools.BuildDumpArguments(options, major, []), Has.Member("--no-blobs").And.None.EqualTo("--no-large-objects"));
+            Assert.That(PostgreSQLClientTools.BuildDumpArguments(withLargeObjects, major, []), Has.None.EqualTo("--no-blobs"));
         }
-        Assert.That(PostgreSQLClientTools.BuildDumpArguments(options, 16), Has.Member("--no-large-objects"));
+        Assert.That(PostgreSQLClientTools.BuildDumpArguments(options, 16, []), Has.Member("--no-large-objects"));
     }
 
     [Test]

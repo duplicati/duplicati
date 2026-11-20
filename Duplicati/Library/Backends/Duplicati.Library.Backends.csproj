@@ -38,6 +38,7 @@
     <ProjectReference Include="..\Backend\WEBDAV\Duplicati.Library.Backend.WEBDAV.csproj" />
     <ProjectReference Include="..\Backend\AliyunOSS\Duplicati.Library.Backend.AliyunOSS.csproj" />
     <ProjectReference Include="..\SourceProvider\DiskImage\Duplicati.Library.SourceProvider.DiskImage.csproj" />
+    <ProjectReference Include="..\SourceProvider\Builtin\Duplicati.Library.SourceProvider.Builtin.csproj" />
     <ProjectReference Include="../../../proprietary/LoaderHelper/Duplicati.Proprietary.LoaderHelper.csproj" />
   </ItemGroup>
 

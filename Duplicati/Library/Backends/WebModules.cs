@@ -76,6 +76,7 @@ public static class WebModules
         new Duplicati.ListBackupsModule(),
         new Filen.GetApiKeyModule(),
         new SourceProvider.DiskImage.WebModule(),
+        new SourceProvider.Builtin.PostgreSQL.PostgreSQLWebModule(),
     }
     .Concat(ProprietaryWebModules.Value)
     .WhereNotNull()

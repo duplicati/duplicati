@@ -264,14 +264,72 @@ public static class PostgreSQLClientTools
     /// </summary>
     /// <param name="options">The provider options</param>
     /// <param name="major">The major version of pg_dump</param>
+    /// <param name="tablesWithoutData">The tables whose rows are left out of the dump; they are still created by a restore, empty</param>
     /// <returns>The arguments</returns>
-    public static IReadOnlyList<string> BuildDumpArguments(PostgreSQLOptions options, int major)
+    public static IReadOnlyList<string> BuildDumpArguments(PostgreSQLOptions options, int major, IEnumerable<(string Schema, string Table)> tablesWithoutData)
     {
         var arguments = new List<string> { PostgreSQLArguments.CustomFormat, PostgreSQLArguments.NoCompression, PostgreSQLArguments.NoPassword, PostgreSQLArguments.Utf8Encoding };
         if (!options.IncludeLargeObjects)
             arguments.Add(major >= FirstMajorWithLargeObjectsOption ? PostgreSQLArguments.NoLargeObjects : PostgreSQLArguments.NoBlobs);
+        foreach (var (schema, table) in tablesWithoutData)
+            arguments.Add(PostgreSQLArguments.ExcludeTableDataPrefix + TablePattern(schema, table));
         return arguments;
     }
+
+    /// <summary>
+    /// The pattern that names exactly one table to pg_dump. Inside double quotes a name is taken as
+    /// it is written, without the wildcards and the case folding of a pattern.
+    /// </summary>
+    /// <param name="schema">The schema</param>
+    /// <param name="table">The table</param>
+    /// <returns>The pattern</returns>
+    public static string TablePattern(string schema, string table)
+        => QuotePatternName(schema) + "." + QuotePatternName(table);
+
+    private static string QuotePatternName(string name)
+        => "\"" + name.Replace("\"", "\"\"") + "\"";
+
+    /// <summary>
+    /// The statement that lists the tables whose rows a dump holds: ordinary tables, partitions
+    /// included, outside the system schemas and not belonging to an extension. Each name is written
+    /// in hexadecimal, so a name can hold the separator or a line break.
+    /// </summary>
+    public const string TableListQuery =
+        "select encode(convert_to(n.nspname, 'UTF8'), 'hex') || '|' || encode(convert_to(c.relname, 'UTF8'), 'hex')"
+        + " from pg_class c join pg_namespace n on n.oid = c.relnamespace"
+        + " where c.relkind = 'r' and n.nspname !~ '^pg_' and n.nspname <> 'information_schema'"
+        + " and not exists (select 1 from pg_depend d where d.classid = 'pg_class'::regclass and d.objid = c.oid and d.deptype = 'e')"
+        + " order by n.nspname, c.relname";
+
+    /// <summary>
+    /// Reads what <see cref="TableListQuery"/> returns
+    /// </summary>
+    /// <param name="output">The rows, one on each line</param>
+    /// <returns>The schema and name of each table</returns>
+    public static IReadOnlyList<(string Schema, string Table)> ParseTableList(string output)
+    {
+        var tables = new List<(string Schema, string Table)>();
+        foreach (var line in output.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var parts = line.Split('|');
+            if (parts.Length != 2)
+                throw new UserInformationException(Strings.PostgreSQLSourceProvider.ToolFailed(Psql, 0, line), PostgreSQLEventIds.ToolFailed);
+
+            tables.Add((Encoding.UTF8.GetString(Convert.FromHexString(parts[0])), Encoding.UTF8.GetString(Convert.FromHexString(parts[1]))));
+        }
+
+        return tables;
+    }
+
+    /// <summary>
+    /// Lists the tables of the database from its catalog
+    /// </summary>
+    /// <param name="psqlPath">The psql program</param>
+    /// <param name="options">The provider options</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The schema and name of each table</returns>
+    public static async Task<IReadOnlyList<(string Schema, string Table)>> ListTablesAsync(string psqlPath, PostgreSQLOptions options, CancellationToken cancellationToken)
+        => ParseTableList(await QueryAsync(psqlPath, TableListQuery, options, cancellationToken).ConfigureAwait(false));
 
     /// <summary>
     /// The arguments for running one statement and printing the result as unaligned rows

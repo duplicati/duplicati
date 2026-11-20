@@ -1255,7 +1255,13 @@ namespace Duplicati.Library.Main.Operation
                     // Everything the run reads reflects the file system at or after this instant,
                     // which the change list provider needs to know what to report to the next run
                     var referenceTime = DateTime.UtcNow;
-                    using (var source = await GetSourceProviderAsync(sources, m_options, m_taskReader.ProgressToken).ConfigureAwait(false))
+                    // The filter is among the options while the sources are created, so a source that can
+                    // leave out what the filter excludes need not read it from where it is stored
+                    ISourceProvider createdSource;
+                    using (Controller.PushFilterToOptions(m_options, m_filter))
+                        createdSource = await GetSourceProviderAsync(sources, m_options, m_taskReader.ProgressToken).ConfigureAwait(false);
+
+                    using (var source = createdSource)
                     {
                         // The snapshot exists now, so the host's recording is closed here
                         var changeListHandoff = await DrainChangeListAsync(source, referenceTime).ConfigureAwait(false);

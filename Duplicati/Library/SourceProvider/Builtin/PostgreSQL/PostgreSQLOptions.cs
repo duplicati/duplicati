@@ -58,8 +58,25 @@ public sealed class PostgreSQLOptions : IDisposable
     private const string PemCertificateHeader = "-----BEGIN CERTIFICATE-----";
     /// <summary>The option that includes large objects in the backup</summary>
     public const string IncludeLargeObjectsOption = "postgresql-include-large-objects";
+    /// <summary>
+    /// The option with the largest database a backup may cover. A backup of a larger database
+    /// fails before anything is read, so the size a backup may grow to can be capped.
+    /// </summary>
+    public const string MaxDatabaseSizeOption = "postgresql-max-database-size";
     /// <summary>The option with the folder that holds the PostgreSQL client programs</summary>
     public const string ClientPathOption = "postgresql-client-path";
+
+    /// <summary>
+    /// The option that says the source is listed to be shown, not backed up. The tables are then read
+    /// from the catalog of the database and no dump is started.
+    /// </summary>
+    public const string EnumerationModeOption = "enumeration-mode";
+    /// <summary>
+    /// The option a backup hands its filter to the source in, as the filter expressions with their
+    /// plus or minus prefix, joined by the path separator. The rows of the tables it leaves out
+    /// are not dumped, so they are never read from the server.
+    /// </summary>
+    public const string FilterOption = "filter";
 
     /// <summary>
     /// The name of the backup option with the block size. The row segments are padded to this size,
@@ -100,6 +117,12 @@ public sealed class PostgreSQLOptions : IDisposable
     private Library.Utility.TempFile? m_rootCertFile;
     /// <summary>True when large objects are part of the backup</summary>
     public required bool IncludeLargeObjects { get; init; }
+    /// <summary>True when the source is listed to be shown, and no dump is started</summary>
+    public required bool EnumerationMode { get; init; }
+    /// <summary>The filter of the backup, or null when it has none</summary>
+    public required IFilter? Filter { get; init; }
+    /// <summary>The largest database a backup may cover, in bytes, or null when there is no limit</summary>
+    public required long? MaxDatabaseSize { get; init; }
     /// <summary>The folder with the client programs, or null to look in the standard places</summary>
     public required string? ClientPath { get; init; }
     /// <summary>The block size of the backup, in bytes</summary>
@@ -119,6 +142,7 @@ public sealed class PostgreSQLOptions : IDisposable
         new CommandLineArgument(SslRootCertOption, CommandLineArgument.ArgumentType.Path, Strings.PostgreSQLSourceProvider.SslRootCertShort, Strings.PostgreSQLSourceProvider.SslRootCertLong),
         new CommandLineArgument(SslRootCertContentOption, CommandLineArgument.ArgumentType.String, Strings.PostgreSQLSourceProvider.SslRootCertContentShort, Strings.PostgreSQLSourceProvider.SslRootCertContentLong),
         new CommandLineArgument(IncludeLargeObjectsOption, CommandLineArgument.ArgumentType.Boolean, Strings.PostgreSQLSourceProvider.IncludeLargeObjectsShort, Strings.PostgreSQLSourceProvider.IncludeLargeObjectsLong, "false"),
+        new CommandLineArgument(MaxDatabaseSizeOption, CommandLineArgument.ArgumentType.Size, Strings.PostgreSQLSourceProvider.MaxDatabaseSizeShort, Strings.PostgreSQLSourceProvider.MaxDatabaseSizeLong),
         new CommandLineArgument(ClientPathOption, CommandLineArgument.ArgumentType.Path, Strings.PostgreSQLSourceProvider.ClientPathShort, Strings.PostgreSQLSourceProvider.ClientPathLong),
     ];
 
@@ -148,6 +172,23 @@ public sealed class PostgreSQLOptions : IDisposable
         var blockSize = Sizeparser.ParseSize(Get(BlockSizeOption) ?? DefaultBlockSize, "kb");
         if (blockSize <= 0 || blockSize > int.MaxValue)
             throw new UserInformationException(Strings.PostgreSQLSourceProvider.InvalidOption(BlockSizeOption, blockSize.ToString()), PostgreSQLEventIds.InvalidOption);
+
+        long? maxDatabaseSize = null;
+        var maxDatabaseSizeText = Get(MaxDatabaseSizeOption);
+        if (maxDatabaseSizeText != null)
+        {
+            try
+            {
+                maxDatabaseSize = Sizeparser.ParseSize(maxDatabaseSizeText, "mb");
+            }
+            catch (Exception ex)
+            {
+                throw new UserInformationException(Strings.PostgreSQLSourceProvider.InvalidOption(MaxDatabaseSizeOption, maxDatabaseSizeText), PostgreSQLEventIds.InvalidOption, ex);
+            }
+
+            if (maxDatabaseSize <= 0)
+                throw new UserInformationException(Strings.PostgreSQLSourceProvider.InvalidOption(MaxDatabaseSizeOption, maxDatabaseSizeText), PostgreSQLEventIds.InvalidOption);
+        }
 
         var rootCert = Get(SslRootCertOption);
         var rootCertContent = Get(SslRootCertContentOption);
@@ -186,10 +227,38 @@ public sealed class PostgreSQLOptions : IDisposable
             SslMode = sslMode,
             SslRootCert = rootCertFile != null ? (string)rootCertFile : rootCert,
             IncludeLargeObjects = Library.Utility.Utility.ParseBool(Get(IncludeLargeObjectsOption), false),
+            MaxDatabaseSize = maxDatabaseSize,
+            EnumerationMode = Library.Utility.Utility.ParseBool(Get(EnumerationModeOption), false),
+            Filter = ParseFilter(Get(FilterOption)),
             ClientPath = Get(ClientPathOption),
             BlockSize = (int)blockSize,
             m_rootCertFile = rootCertFile,
         };
+    }
+
+    /// <summary>
+    /// Reads the filter of a backup. The expressions tell names apart by their casing, as the
+    /// provider asks the backup to do, so a table is only taken to be left out when the backup
+    /// leaves out exactly that table.
+    /// </summary>
+    /// <param name="filter">The filter expressions, joined by the path separator, or null</param>
+    /// <returns>The filter, or null when there is none</returns>
+    public static IFilter? ParseFilter(string? filter)
+    {
+        if (string.IsNullOrWhiteSpace(filter))
+            return null;
+
+        IFilter? result = null;
+        foreach (var expression in filter.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
+        {
+            var include = expression.StartsWith('+');
+            if (!include && !expression.StartsWith('-'))
+                continue;
+
+            result = FilterExpression.Combine(result, new FilterExpression(expression.Substring(1), include, true));
+        }
+
+        return result;
     }
 
     /// <summary>

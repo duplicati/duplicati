@@ -28,6 +28,8 @@ internal static class PostgreSQLArguments
 {
     /// <summary>Never prompt for a password</summary>
     public const string NoPassword = "--no-password";
+    /// <summary>pg_dump: leave out the rows of the tables a pattern names; the pattern follows</summary>
+    public const string ExcludeTableDataPrefix = "--exclude-table-data=";
     /// <summary>psql: do not read the startup file of the user</summary>
     public const string NoPsqlrc = "--no-psqlrc";
     /// <summary>psql: print no informational messages</summary>
@@ -95,6 +97,7 @@ internal static class PostgreSQLEventIds
     public const string ClientVersionMismatch = "PostgreSQLClientVersionMismatch";
     public const string InvalidOption = "PostgreSQLInvalidOption";
     public const string MissingOption = "PostgreSQLMissingOption";
+    public const string DatabaseTooLarge = "PostgreSQLDatabaseTooLarge";
 
     public const string RestoreMixedVersions = "PostgreSQLRestoreMixedVersions";
     public const string RestoreNoTableOfContents = "PostgreSQLRestoreNoTableOfContents";
