@@ -341,7 +341,8 @@ namespace Duplicati.Library.Main.Operation
 
     /// <summary>
     /// Remove backups according to the --retention-policy option.
-    /// Partial backups are not removed.
+    /// Partial backups are not removed, unless --retention-policy-delete-partials is set: then a partial backup
+    /// with a full backup before and after it is removed, as --keep-versions does, except in a time frame that keeps all versions.
     /// </summary>
     public class RetentionPolicyRemover : FilesetRemover
     {
@@ -372,6 +373,12 @@ namespace Duplicati.Library.Main.Operation
             IListResultFileset mostRecentBackup = clonedBackupList.ElementAt(0);
             clonedBackupList.RemoveAt(0);
             bool deleteMostRecentBackup = this.Options.AllowFullRemoval;
+
+            // The partial backups that --keep-versions also deletes: those with a full backup before and after them
+            bool deletePartials = this.Options.RetentionPolicyDeletePartials;
+            DateTime[] fullBackupTimes = sortedFilesets.Where(x => x.IsFullBackup == BackupType.FULL_BACKUP).Select(x => x.Time).ToArray();
+            bool IsBetweenFullBackups(IListResultFileset fileset)
+                => fullBackupTimes.Any(x => x < fileset.Time) && fullBackupTimes.Any(x => x > fileset.Time);
 
             Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "FramesAndIntervals", "Time frames and intervals pairs: {0}", string.Join(", ", retentionPolicyOptionValues));
             Logging.Log.WriteInformationMessage(LOGTAG_RETENTION, "BackupList", "Backups to consider: {0}", string.Join(", ", clonedBackupList.Select(x => x.Time)));
@@ -407,6 +414,14 @@ namespace Duplicati.Library.Main.Operation
                 foreach (IListResultFileset fileset in backupsInTimeFrame)
                 {
                     bool isFullBackup = fileset.IsFullBackup == BackupType.FULL_BACKUP;
+
+                    // A partial backup never counts towards the interval, so it is kept or deleted on its own
+                    if (!isFullBackup && deletePartials && !singleRetentionPolicyOptionValue.IsKeepAllVersions() && IsBetweenFullBackups(fileset))
+                    {
+                        Logging.Log.WriteProfilingMessage(LOGTAG_RETENTION, "DeletingBackups", "Deleting partial backup between full backups: {0}", fileset.Time);
+                        versionsToDelete.Add(fileset);
+                        continue;
+                    }
 
                     // Keep this backup if
                     // - no backup has yet been added to the time frame (keeps at least the oldest backup in a time frame)
