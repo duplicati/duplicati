@@ -129,7 +129,7 @@ public class BackupListService(Connection connection) : IBackupListService
                 }
             }
 
-            return new Dto.CreateBackupDto(assignedId, backup.IsTemporary);
+            return new Dto.CreateBackupDto(assignedId, temporary);
         }
         catch (Exception ex)
         {
