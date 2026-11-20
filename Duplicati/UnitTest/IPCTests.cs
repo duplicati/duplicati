@@ -239,4 +239,41 @@ public class IPCTests : BasicSetupHelper
         Assert.That(counts.Count(x => x > 0 && x < fileCount), NUnit.Framework.Is.GreaterThan(0), "the processed file count was not updated while the files were processed");
         Assert.That(maxBytesRead, NUnit.Framework.Is.GreaterThan(0), "the bytes read were not passed on from the controller process");
     }
+
+    /// <summary>
+    /// The web server catches a missing destination folder by its type, to report it as such.
+    /// The controller process must pass that type on, rather than a generic remote error.
+    /// </summary>
+    [Test]
+    [Category("IPC")]
+    public async Task AMissingDestinationFolderIsReportedAsMissingThroughTheControllerProcess_Async()
+    {
+        var exePath = typeof(ControllerRpcProxy)
+            .GetMethod("GetControllerExecutablePath", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)
+            ?.Invoke(null, null) as string;
+
+        if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+        {
+            Assert.Ignore($"Controller executable not found at '{exePath}', skipping IPC test.");
+            return;
+        }
+
+        var options = new Dictionary<string, string?>(TestOptions)
+        {
+            ["no-local-db"] = "true",
+        };
+        var missing = Path.Combine(TARGETFOLDER, "missing-folder");
+
+        IController controller = await ControllerRpcProxy.CreateProxyAsync("file://" + missing, options, new RecordingMessageSink());
+        try
+        {
+            var ex = Assert.CatchAsync(async () => await controller.ListFilesetsAsync());
+            Assert.That(ex, NUnit.Framework.Is.InstanceOf<Duplicati.Library.Interface.FolderMissingException>(), $"Expected a missing folder, got {ex?.GetType().FullName}: {ex?.Message}");
+            Assert.AreEqual("FolderMissing", ((Duplicati.Library.Interface.UserInformationException)ex!).HelpID);
+        }
+        finally
+        {
+            (controller as IDisposable)?.Dispose();
+        }
+    }
 }

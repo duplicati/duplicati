@@ -32,6 +32,7 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Main.IPC.Dto;
 using Duplicati.Library.Utility;
 using StreamJsonRpc;
+using StreamJsonRpc.Protocol;
 
 #nullable enable
 
@@ -316,6 +317,10 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         {
             throw ConnectionLost(method, ex);
         }
+        catch (RemoteInvocationException ex) when (FromRemoteException(ex) is { } mapped)
+        {
+            throw mapped;
+        }
     }
 
     /// <summary>
@@ -335,6 +340,26 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         {
             throw ConnectionLost(method, ex);
         }
+        catch (RemoteInvocationException ex) when (FromRemoteException(ex) is { } mapped)
+        {
+            throw mapped;
+        }
+    }
+
+    /// <summary>
+    /// Recreates the exceptions that callers catch by their type, such as a missing destination folder.
+    /// The controller process reports an exception by its type name only, so any other exception is passed on as it arrived.
+    /// </summary>
+    /// <param name="ex">The exception reported by the controller process</param>
+    /// <returns>The recreated exception, or <c>null</c> if the type is not one of them</returns>
+    internal static Exception? FromRemoteException(RemoteInvocationException ex)
+    {
+        var typeName = (ex.DeserializedErrorData as CommonErrorData)?.TypeName;
+        if (typeName == typeof(FolderMissingException).FullName)
+            return new FolderMissingException(ex.Message, ex);
+        if (typeName == typeof(FileMissingException).FullName)
+            return new FileMissingException(ex.Message, ex);
+        return null;
     }
 
     /// <summary>
