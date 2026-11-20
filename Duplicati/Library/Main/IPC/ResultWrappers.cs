@@ -206,6 +206,8 @@ public class RepairResultsWrapper : BasicResultsWrapper, IRepairResults
 
     public IRecreateDatabaseResults RecreateDatabaseResults =>
         _dto.RecreateDatabaseResults == null ? null : new RecreateDatabaseResultsWrapper(_dto.RecreateDatabaseResults);
+
+    public IBackendStatstics BackendStatistics => _dto.BackendStatistics == null ? null : new BackendStatisticsWrapper(_dto.BackendStatistics);
 }
 
 /// <summary>
