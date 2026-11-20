@@ -67,10 +67,7 @@ namespace Duplicati.Library.Main.Operation
             {
                 await RunRepairLocalAsync(backendManager, filter).ConfigureAwait(false);
                 await RunRepairCommonOnRecreatedDatabaseAsync().ConfigureAwait(false);
-
-                // Optionally refresh lock information from the backend
-                if (m_options.RepairRefreshLockInfo)
-                    await RunRefreshLockInfoAsync(backendManager).ConfigureAwait(false);
+                await RunRefreshLockInfoAfterRecreateAsync(backendManager).ConfigureAwait(false);
 
                 m_result.EndTime = DateTime.UtcNow;
                 return;
@@ -118,6 +115,10 @@ namespace Duplicati.Library.Main.Operation
 
                 await RunRepairLocalAsync(backendManager, filter).ConfigureAwait(false);
                 await RunRepairCommonOnRecreatedDatabaseAsync().ConfigureAwait(false);
+                await RunRefreshLockInfoAfterRecreateAsync(backendManager).ConfigureAwait(false);
+
+                m_result.EndTime = DateTime.UtcNow;
+                return;
             }
             else
             {
@@ -142,6 +143,26 @@ namespace Duplicati.Library.Main.Operation
 
             m_result.EndTime = DateTime.UtcNow;
 
+        }
+
+        /// <summary>
+        /// Refreshes the lock information in the database that the recreate has just written, if asked to.
+        /// As with the database checks, a dry run has no recreated database left to refresh it in.
+        /// </summary>
+        /// <param name="backendManager">The backend manager</param>
+        /// <returns>A task that completes when the refresh is finished.</returns>
+        private async Task RunRefreshLockInfoAfterRecreateAsync(IBackendManager backendManager)
+        {
+            if (!m_options.RepairRefreshLockInfo)
+                return;
+
+            if (m_options.Dryrun)
+            {
+                Logging.Log.WriteDryrunMessage(LOGTAG, "SkippingLockRefreshOnRecreate", "Would refresh the lock information in the recreated database");
+                return;
+            }
+
+            await RunRefreshLockInfoAsync(backendManager).ConfigureAwait(false);
         }
 
         /// <summary>
