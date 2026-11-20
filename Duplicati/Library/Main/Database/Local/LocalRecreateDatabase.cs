@@ -712,7 +712,7 @@ namespace Duplicati.Library.Main.Database.Local
                         ""TS"".""BlockSize""
                     FROM ""{m_tempsmalllist}"" ""TS""
                     WHERE NOT EXISTS (
-                        SELECT ""X""
+                        SELECT 1
                         FROM Block AS ""B""
                         WHERE
                             ""B"".""Hash"" =  ""TS"".""BlockHash""
