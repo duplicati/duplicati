@@ -148,6 +148,30 @@ namespace Duplicati.Library.Main.Operation
                 await new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
                     .RunAsync(m_options.Dryrun ? (string)f : m_options.Dbpath, backendManager, filter, filelistfilter, null)
                     .ConfigureAwait(false);
+
+                // A full recreate describes the whole destination, so report it as a backup does, for the
+                // server to show the versions that are there (a partial one for some versions does not)
+                if (!m_options.Dryrun && filelistfilter == null)
+                    await AnalyseRecreatedDestinationAsync(backendManager).ConfigureAwait(false);
+            }
+        }
+
+        /// <summary>
+        /// Analyses the list of remote files against the recreated database, without changing anything, to fill in the
+        /// backend statistics. A failure only leaves them out, as the recreate itself has completed.
+        /// </summary>
+        /// <param name="backendManager">The backend manager</param>
+        private async Task AnalyseRecreatedDestinationAsync(IBackendManager backendManager)
+        {
+            try
+            {
+                await using var db = await LocalRepairDatabase.CreateRepairDatabaseAsync(m_options.Dbpath, null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                await FilelistProcessor.RemoteListAnalysisAsync(backendManager, m_options, db, m_result.BackendWriter, null, null, FilelistProcessor.VerifyMode.VerifyOnly, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+                m_result.DestinationAnalysed = true;
+            }
+            catch (Exception ex) when (!m_result.TaskControl.ProgressToken.IsCancellationRequested)
+            {
+                Logging.Log.WriteInformationMessage(LOGTAG, "RecreatedDestinationNotAnalysed", "Could not analyse the destination after the recreate: {0}", ex.Message);
             }
         }
 
@@ -186,6 +210,7 @@ namespace Duplicati.Library.Main.Operation
                     .GetLastIncompleteFilesetVolumeAsync(cancellationToken)
                     .ConfigureAwait(false);
                 var tp = await FilelistProcessor.RemoteListAnalysisAsync(backendManager, m_options, db, m_result.BackendWriter, [lastTempFilelist.Name], null, FilelistProcessor.VerifyMode.VerifyAndCleanForced, cancellationToken).ConfigureAwait(false);
+                m_result.DestinationAnalysed = true;
                 await db.Transaction
                     .CommitAsync("CommitRemoteListAnalysisTransaction", token: cancellationToken)
                     .ConfigureAwait(false);

@@ -815,6 +815,16 @@ namespace Duplicati.Library.Main
         public RepairResults(BasicResults p) : base(p) { }
         public IRecreateDatabaseResults RecreateDatabaseResults { get; internal set; }
 
+        /// <summary>
+        /// Set once the repair has analysed the list of remote files, so the backend statistics describe the destination
+        /// </summary>
+        internal bool DestinationAnalysed { get; set; }
+
+        /// <summary>
+        /// The backend statistics, once they describe the destination; before that, the counts of the destination are not known
+        /// </summary>
+        IBackendStatstics IBackendStatsticsReporter.BackendStatistics => DestinationAnalysed ? BackendStatistics : null;
+
         public override ParsedResultType ParsedResult
         {
             get
