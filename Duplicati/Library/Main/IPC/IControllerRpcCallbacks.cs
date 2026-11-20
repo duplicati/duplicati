@@ -39,17 +39,17 @@ namespace Duplicati.Library.Main.IPC;
 public partial interface IControllerRpcCallbacks
 {
     // Log message forwarding
-    Task OnLogMessageAsync(LogEntryDto entry);
+    Task OnLogMessageAsync(LogEntryDto? entry);
 
     // Progress updates
     Task OnBackendEventAsync(BackendActionType action, BackendEventType type, string path, long size);
-    Task OnBackendProgressAsync(BackendProgressDto progress);
-    Task OnOperationProgressAsync(OperationProgressDto progress);
+    Task OnBackendProgressAsync(BackendProgressDto? progress);
+    Task OnOperationProgressAsync(OperationProgressDto? progress);
     Task OnPhaseChangedAsync(OperationPhase phase, OperationPhase previousPhase);
 
     // Operation lifecycle
     Task OnOperationStartedAsync(OperationMode operation);
-    Task OnOperationCompletedAsync(OperationResultDto result, ExceptionDto exception);
+    Task OnOperationCompletedAsync(OperationResultDto? result, ExceptionDto? exception);
 
     // Change list handoff: the backup asks the host for the paths that changed
     // since the previous backup, after the snapshot was created. Returns the
