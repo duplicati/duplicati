@@ -168,6 +168,8 @@ public partial class ServerApiIntegrationTests
 
             var deleted = await httpClient.DeleteAsync($"/api/v1/backup/{temporaryId}?delete-local-db=true").ConfigureAwait(false);
             deleted.EnsureSuccessStatusCode();
+            var deleteTask = await deleted.Content.ReadFromJsonAsync<DeleteBackupOutputDto>(JsonOptions).ConfigureAwait(false);
+            await WaitForTaskCompletionAsync(httpClient, deleteTask?.ID ?? throw new InvalidOperationException("Delete did not start a task")).ConfigureAwait(false);
             var listed = await httpClient.GetFromJsonAsync<TemporaryBackupDto[]>("/api/v1/backups/temporary", JsonOptions).ConfigureAwait(false);
             Assert.That(listed!.Select(x => x.ID), Does.Not.Contain(temporaryId));
             Directory.Move(secondary + "-away", secondary);
