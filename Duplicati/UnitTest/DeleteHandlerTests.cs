@@ -197,6 +197,46 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
+        /// With --retention-policy-delete-partials a partial backup between two full backups is deleted, as --keep-versions
+        /// does, but not one in a time frame that keeps all versions, nor one with no full backup before it (issue #4317).
+        /// Without it, every partial backup in a time frame is kept, as before.
+        /// </summary>
+        [Test]
+        [Category("DeleteHandler")]
+        [TestCase(true, new long[] { 4, 6 })]
+        [TestCase(false, new long[0])]
+        public void RetentionPolicyCanDeletePartialBackupsBetweenFullBackups(bool deletePartials, long[] expectedVersionsToRemove)
+        {
+            Options options = new Options(new Dictionary<string, string>
+            {
+                { "retention-policy", "1W:U,1Y:1M" },
+                { "retention-policy-delete-partials", deletePartials ? "true" : "false" }
+            });
+
+            DateTime now = DateTime.Now;
+            IListResultFileset[] filesets =
+            {
+                new Fileset(0, BackupType.PARTIAL_BACKUP, now), // Keep; most recent backup
+                new Fileset(1, BackupType.PARTIAL_BACKUP, now.AddDays(-1)), // Keep; the past week keeps all versions
+                new Fileset(2, BackupType.FULL_BACKUP, now.AddDays(-2)),
+
+                // As in the issue: full backups a month apart, with partial backups a few days after the first
+                new Fileset(3, BackupType.FULL_BACKUP, now.AddDays(-40)), // Keep; first in interval
+                new Fileset(4, BackupType.PARTIAL_BACKUP, now.AddDays(-64)), // Delete; partial between full backups 5 and 3
+                new Fileset(5, BackupType.FULL_BACKUP, now.AddDays(-75)), // Keep; first in interval
+                new Fileset(6, BackupType.PARTIAL_BACKUP, now.AddDays(-65)), // Delete; partial between full backups 5 and 3
+
+                // The oldest backup is partial, so there is no full backup before it
+                new Fileset(7, BackupType.PARTIAL_BACKUP, now.AddDays(-100)), // Keep
+            };
+
+            RetentionPolicyRemover remover = new RetentionPolicyRemover(options);
+            long[] versionsToRemove = remover.GetFilesetsToDelete(filesets).Select(x => x.Version).ToArray();
+
+            CollectionAssert.AreEquivalent(expectedVersionsToRemove, versionsToRemove);
+        }
+
+        /// <summary>
         /// A weekly scheduled backup can start a few seconds later than the week before, and that
         /// must not make the retention policy delete it for being too close (issue #3987)
         /// </summary>

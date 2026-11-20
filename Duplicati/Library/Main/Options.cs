@@ -643,6 +643,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("remote-file-lock-duration", CommandLineArgument.ArgumentType.Timespan, Strings.Options.RemotefilelockdurationShort, Strings.Options.RemotefilelockdurationLong),
             new CommandLineArgument("retention-policy", CommandLineArgument.ArgumentType.String, Strings.Options.RetentionPolicyShort, Strings.Options.RetentionPolicyLong),
             new CommandLineArgument("retention-policy-minimum-versions", CommandLineArgument.ArgumentType.Integer, Strings.Options.RetentionPolicyMinimumVersionsShort, Strings.Options.RetentionPolicyMinimumVersionsLong, "0"),
+            new CommandLineArgument("retention-policy-delete-partials", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RetentionPolicyDeletePartialsShort, Strings.Options.RetentionPolicyDeletePartialsLong, "false"),
             new CommandLineArgument("upload-verification-file", CommandLineArgument.ArgumentType.Boolean, Strings.Options.UploadverificationfileShort, Strings.Options.UploadverificationfileLong, "false"),
             new CommandLineArgument("allow-passphrase-change", CommandLineArgument.ArgumentType.Boolean, Strings.Options.AllowpassphrasechangeShort, Strings.Options.AllowpassphrasechangeLong, "false"),
             new CommandLineArgument("no-local-blocks", CommandLineArgument.ArgumentType.Boolean, Strings.Options.NolocalblocksShort, Strings.Options.NolocalblocksLong, "false", null, null, Strings.Options.NolocalblocksDeprecated("restore-with-local-blocks")),
@@ -1064,6 +1065,11 @@ namespace Duplicati.Library.Main
         /// Gets the minimum number of full versions the retention policy must leave; 0 disables the minimum
         /// </summary>
         public int RetentionPolicyMinimumVersions => Math.Max(0, GetInt("retention-policy-minimum-versions", 0));
+
+        /// <summary>
+        /// Gets a value indicating if the retention policy deletes the partial backups that have a full backup before and after them
+        /// </summary>
+        public bool RetentionPolicyDeletePartials => GetBool("retention-policy-delete-partials");
 
         /// <summary>
         /// Gets the time frames and intervals for the retention policy
