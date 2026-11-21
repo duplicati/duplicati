@@ -61,7 +61,7 @@ Restore
 %RECOVERY_EXE% restore <localfolder> [version] [options]
 
 Restores all files to their respective destinations. Use --targetpath to choose another folder where the files are restored into.
-Use the filters, --exclude, to perform a partial restore.
+Use the filters, --include and --exclude, to perform a partial restore.
 Version can be either a number, a filename or a date. If omitted the most recent backup is used.
 
 The restore process requires a fast lookup, which is optimal if all the hashes can be kept in memory.
@@ -81,7 +81,7 @@ List
 Lists contents of <localfolder> backups.
 Version can be either a number, a filename or a date. 
 If [version] is omitted a list of backup versions are shown, if [version] is supplied, files from that version are listed.
-Use the filters, --exclude, to show a subset of files.
+Use the filters, --include and --exclude, to show a subset of files.
 
 
 

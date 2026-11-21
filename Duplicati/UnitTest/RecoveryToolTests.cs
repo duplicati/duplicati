@@ -483,5 +483,36 @@ namespace Duplicati.UnitTest
             using (var c = new Controller(backendURL, options, null))
                 TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
         }
+
+        /// <summary>
+        /// A filter with only include rules leaves out every file that no rule matches, as it
+        /// does for a normal restore. The recovery tool returned those files too, so
+        /// "--include=*.txt" listed and restored every file (#5242).
+        /// </summary>
+        [Test]
+        [Category("RecoveryTool")]
+        public async Task IncludeFilterSelectsOnlyTheMatchingFilesAsync()
+        {
+            var source = Path.Combine(this.DATAFOLDER, "source");
+            Directory.CreateDirectory(source);
+            File.WriteAllText(Path.Combine(source, "a.txt"), "text");
+            File.WriteAllText(Path.Combine(source, "b.dat"), "data");
+
+            var options = new Dictionary<string, string>(this.TestOptions) { ["no-encryption"] = "true" };
+            options.Remove("passphrase");
+            using (var c = new Controller("file://" + this.TARGETFOLDER, options, null))
+                TestUtils.AssertResults(await c.BackupAsync([source]));
+
+            var downloadFolder = Path.Combine(this.RESTOREFOLDER, "downloaded");
+            var restoreFolder = Path.Combine(this.RESTOREFOLDER, "restored");
+            Directory.CreateDirectory(downloadFolder);
+            Directory.CreateDirectory(restoreFolder);
+            Assert.That(CommandLine.RecoveryTool.Program.Main(["download", "file://" + this.TARGETFOLDER, downloadFolder]), Is.EqualTo(0));
+            Assert.That(CommandLine.RecoveryTool.Program.Main(["index", downloadFolder]), Is.EqualTo(0));
+            Assert.That(CommandLine.RecoveryTool.Program.Main(["restore", downloadFolder, $"--targetpath={restoreFolder}", "--include=*.txt"]), Is.EqualTo(0));
+
+            var restored = Directory.GetFiles(restoreFolder, "*", SearchOption.AllDirectories).Select(Path.GetFileName).ToArray();
+            Assert.That(restored, Is.EquivalentTo(new[] { "a.txt" }), "Only the files that the include filter matches are restored");
+        }
     }
 }
