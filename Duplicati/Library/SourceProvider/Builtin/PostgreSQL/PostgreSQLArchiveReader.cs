@@ -97,7 +97,7 @@ public sealed class PostgreSQLArchiveReader
     private const int FormatMinor14 = 14;
     /// <summary>The minor version PostgreSQL 16 writes: the compression is a method byte, where it was a level before</summary>
     private const int FormatMinorCompressionMethod = 15;
-    /// <summary>The minor version PostgreSQL 17 and 18 write: each entry has a relation kind</summary>
+    /// <summary>The minor version PostgreSQL 17, 18 and 19 write: each entry has a relation kind</summary>
     private const int FormatMinorRelationKind = 16;
 
     /// <summary>

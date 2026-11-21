@@ -26,7 +26,7 @@ namespace Duplicati.Library.SourceProvider.Strings;
 internal static class PostgreSQLSourceProvider
 {
     public static string DisplayName => LC.L(@"PostgreSQL database");
-    public static string Description => LC.L(@"Backs up a PostgreSQL database with pg_dump. The dump is read as a stream and stored as one entry per table, so a single table can be restored. Supports PostgreSQL 14 to 18.");
+    public static string Description => LC.L(@"Backs up a PostgreSQL database with pg_dump. The dump is read as a stream and stored as one entry per table, so a single table can be restored. Supports PostgreSQL 14 to 19.");
     public static string HostShort => LC.L(@"The database server");
     public static string HostLong => LC.L(@"The host name or address of the PostgreSQL server.");
     public static string PortShort => LC.L(@"The server port");
@@ -71,7 +71,7 @@ internal static class PostgreSQLSourceProvider
 internal static class PostgreSQLRestoreProvider
 {
     public static string DisplayName => LC.L(@"PostgreSQL database");
-    public static string Description => LC.L(@"Restores a backup of a PostgreSQL database into a database. The rows are loaded as they are restored, so nothing the size of the database is written to disk. Supports PostgreSQL 14 to 18.");
+    public static string Description => LC.L(@"Restores a backup of a PostgreSQL database into a database. The rows are loaded as they are restored, so nothing the size of the database is written to disk. Supports PostgreSQL 14 to 19.");
     public static string ModeShort => LC.L(@"What the restore does to the database");
     public static string ModeLong => LC.L(@"Use ""database"" to restore the whole database: its objects are created, the rows are loaded, and then the indexes and constraints are created. This needs every table of the backup to be part of the restore. Use ""tables"" to load only the rows of the restored tables into tables that exist. The tables are loaded independently of each other with their constraints in place, so a table whose foreign keys refer to another restored table can fail to load, and a table that other tables refer to cannot be replaced with --overwrite. Large objects that exist are only replaced with --overwrite. In ""database"" mode, --overwrite drops and recreates every object of the backup before any rows are loaded.");
     public static string CreateTablesShort => LC.L(@"Create missing tables");
