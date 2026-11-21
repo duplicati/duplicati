@@ -31,6 +31,8 @@ using Renci.SshNet.Common;
 using SshNet.Agent;
 using System.Diagnostics;
 using System.Globalization;
+using System.Net;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Runtime.Versioning;
 using Duplicati.StreamUtil;
@@ -355,6 +357,82 @@ namespace Duplicati.Library.Backend
                 return m_con;
             }
 
+            // A name can stand for several addresses. SSH.NET tries them in turn, but within one
+            // timeout, so an address that does not answer used it all and the next was never tried
+            // (#4238). Each address is therefore tried with a timeout of its own.
+            var hosts = await GetHostsToTryAsync(cancelToken).ConfigureAwait(false);
+            for (var i = 0; ; i++)
+            {
+                var con = await CreateClientAsync(hosts[i], cancelToken).ConfigureAwait(false);
+                try
+                {
+                    await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => con.ConnectAsync(ct)).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (i < hosts.Length - 1 && !cancelToken.IsCancellationRequested && IsConnectFailure(ex))
+                {
+                    Log.WriteInformationMessage(LOGTAG, "ConnectToAddressFailed", "Could not connect to {0} at {1}, trying the next address: {2}", m_server, hosts[i], ex.Message);
+                    con.Dispose();
+                    continue;
+                }
+
+                if (m_useRelativePath && (string.IsNullOrWhiteSpace(con.WorkingDirectory) || !con.WorkingDirectory.StartsWith("/")))
+                    throw new UserInformationException("Server does not report absolute initial directory, please switch to absolute paths", "RelativePathNotSupported");
+                m_initialDirectory = con.WorkingDirectory;
+
+                return m_con = con;
+            }
+        }
+
+        /// <summary>
+        /// Resolves a server name to its addresses; tests replace it
+        /// </summary>
+        internal Func<string, CancellationToken, Task<IPAddress[]>> HostResolver { get; set; } = Dns.GetHostAddressesAsync;
+
+        /// <summary>
+        /// Gives the hosts to connect to, in the order to try them. A name that stands for one address,
+        /// or that cannot be resolved here, is left for SSH.NET to resolve, as before.
+        /// </summary>
+        /// <param name="cancelToken">The token to cancel the lookup</param>
+        /// <returns>The hosts to try</returns>
+        private async Task<string[]> GetHostsToTryAsync(CancellationToken cancelToken)
+        {
+            if (IPAddress.TryParse(m_server, out _))
+                return [m_server];
+
+            IPAddress[] addresses;
+            try
+            {
+                addresses = await HostResolver(m_server, cancelToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!cancelToken.IsCancellationRequested)
+            {
+                Log.WriteVerboseMessage(LOGTAG, "ResolveHostFailed", ex, "Could not resolve {0}, leaving it to the connection", m_server);
+                return [m_server];
+            }
+
+            return addresses.Length > 1
+                ? addresses.Select(x => x.ToString()).ToArray()
+                : [m_server];
+        }
+
+        /// <summary>
+        /// Tells whether an exception says that the server could not be reached, so that another address may work.
+        /// A server that was reached and refused the host key or the login is not one of them.
+        /// </summary>
+        /// <param name="ex">The exception from the connection</param>
+        /// <returns>True if the next address should be tried</returns>
+        private static bool IsConnectFailure(Exception ex)
+            => ex is SocketException or TimeoutException or SshOperationTimeoutException
+                || ex.InnerException is SocketException;
+
+        /// <summary>
+        /// Creates a client for one host, with the credentials and settings of the backend
+        /// </summary>
+        /// <param name="host">The name or address to connect to</param>
+        /// <param name="cancelToken">The token to cancel the operation</param>
+        /// <returns>The client, not connected yet</returns>
+        private async Task<SftpClient> CreateClientAsync(string host, CancellationToken cancelToken)
+        {
             SftpClient con;
 
             m_options.TryGetValue(SSH_KEYFILE_OPTION, out var keyFile);
@@ -362,16 +440,16 @@ namespace Duplicati.Library.Backend
 
             if (!string.IsNullOrWhiteSpace(keyFile) || !string.IsNullOrWhiteSpace(keyInline))
             {
-                con = new SftpClient(m_server, m_port, m_username, ValidateKeyFile(keyFile, keyInline, m_password));
+                con = new SftpClient(host, m_port, m_username, ValidateKeyFile(keyFile, keyInline, m_password));
             }
             else if (!string.IsNullOrWhiteSpace(m_password))
             {
-                con = new SftpClient(m_server, m_port, m_username, m_password);
+                con = new SftpClient(host, m_port, m_username, m_password);
             }
             else if (m_useAgent)
             {
                 var agentKeys = await GetPrivateKeySources(cancelToken);
-                var connectionInfo = new ConnectionInfo(m_server, m_port, m_username,
+                var connectionInfo = new ConnectionInfo(host, m_port, m_username,
                 [
                     new PrivateKeyAuthenticationMethod(m_username, agentKeys),
                 ]);
@@ -379,7 +457,7 @@ namespace Duplicati.Library.Backend
             }
             else
             {
-                con = new SftpClient(m_server, m_port, m_username, string.Empty);
+                con = new SftpClient(host, m_port, m_username, string.Empty);
             }
 
             con.HostKeyReceived += (sender, e) =>
@@ -416,12 +494,7 @@ namespace Duplicati.Library.Backend
             if (m_keepaliveinterval.TotalSeconds > 0)
                 con.KeepAliveInterval = m_keepaliveinterval;
 
-            await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => con.ConnectAsync(ct)).ConfigureAwait(false);
-            if (m_useRelativePath && (string.IsNullOrWhiteSpace(con.WorkingDirectory) || !con.WorkingDirectory.StartsWith("/")))
-                throw new UserInformationException("Server does not report absolute initial directory, please switch to absolute paths", "RelativePathNotSupported");
-            m_initialDirectory = con.WorkingDirectory;
-
-            return m_con = con;
+            return con;
         }
 
         /// <summary>
