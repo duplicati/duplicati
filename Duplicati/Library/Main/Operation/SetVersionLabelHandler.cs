@@ -76,10 +76,17 @@ namespace Duplicati.Library.Main.Operation
 
             var fileset = filesets[version];
 
-            Log.WriteInformationMessage(LOGTAG, "UpdatingVersionLabel", "Setting label for version {0} ({1:u}) to \"{2}\"", version, fileset.Value.ToUniversalTime(), label);
+            if (options.Dryrun)
+            {
+                Log.WriteDryrunMessage(LOGTAG, "WouldUpdateVersionLabel", "Would set label for version {0} ({1:u}) to \"{2}\"", version, fileset.Value.ToUniversalTime(), label);
+            }
+            else
+            {
+                Log.WriteInformationMessage(LOGTAG, "UpdatingVersionLabel", "Setting label for version {0} ({1:u}) to \"{2}\"", version, fileset.Value.ToUniversalTime(), label);
 
-            await db.UpdateFilesetLabelAsync(fileset.Key, label, token).ConfigureAwait(false);
-            await db.Transaction.CommitAsync(token).ConfigureAwait(false);
+                await db.UpdateFilesetLabelAsync(fileset.Key, label, token).ConfigureAwait(false);
+                await db.Transaction.CommitAsync(token).ConfigureAwait(false);
+            }
 
             result.BackupVersion = version;
             result.Time = fileset.Value;
