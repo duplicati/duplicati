@@ -480,13 +480,14 @@ namespace Duplicati.Library.Main.Database.Local
                     await cmd.ExecuteNonQueryAsync($@"DROP TABLE IF EXISTS ""{m_tempblocktable}"" ", token)
                         .ConfigureAwait(false);
 
+                    // "TargetPath" is added by SetTargetPathsAsync, as a column that is computed and not stored
                     await cmd.ExecuteNonQueryAsync($@"
                         CREATE TEMPORARY TABLE ""{m_tempfiletable}"" (
                             ""ID"" INTEGER PRIMARY KEY,
                             ""Path"" TEXT NOT NULL,
                             ""BlocksetID"" INTEGER NOT NULL,
                             ""MetadataID"" INTEGER NOT NULL,
-                            ""TargetPath"" TEXT NULL,
+                            ""TargetPathOverride"" TEXT NULL,
                             ""DataVerified"" BOOLEAN NOT NULL,
                             ""LatestBlocksetId"" INTEGER,
                             ""LocalSourceExists"" BOOLEAN
@@ -938,13 +939,16 @@ namespace Duplicati.Library.Main.Database.Local
         {
             const string belowMount = @"LOWER(SUBSTR(""Path"", 1, @MountLength)) = LOWER(@Mount)";
 
+            // An entry with no recorded local path gets an empty target path,
+            // as without an override the target path is computed from "Path"
+
             await using var cmd = m_connection.CreateCommand($@"
                 UPDATE ""{m_tempfiletable}""
-                SET ""TargetPath"" = (
+                SET ""TargetPathOverride"" = COALESCE((
                     SELECT json_extract(""md"".""Content"", @JsonPath)
                     FROM ""Metadataset"" ""md""
                     WHERE ""md"".""ID"" = ""{m_tempfiletable}"".""MetadataID""
-                )
+                ), '')
                 WHERE {belowMount}
             ")
                 .SetTransaction(m_rtr)
@@ -956,7 +960,7 @@ namespace Duplicati.Library.Main.Database.Local
             await cmd.SetCommandAndParameters($@"
                 DELETE FROM ""{m_tempfiletable}""
                 WHERE {belowMount}
-                AND ""TargetPath"" IS NULL
+                AND ""TargetPathOverride"" = ''
                 AND ""BlocksetID"" = @FolderBlocksetId
             ")
                 .SetParameterValue("@Mount", mountedPath)
@@ -1225,6 +1229,9 @@ namespace Duplicati.Library.Main.Database.Local
         /// <summary>
         /// Sets the target paths for files in the temporary file table.
         /// This method adjusts the target paths based on the largest prefix and destination provided.
+        /// The target paths are not stored: <c>"TargetPath"</c> is added as a virtual column that computes
+        /// them from <c>"Path"</c>, unless a path was set in <c>"TargetPathOverride"</c>. The temporary tables
+        /// are kept in memory, and the stored paths were a third of them (#7538).
         /// </summary>
         /// <param name="largest_prefix">The largest prefix path to use for adjusting target paths.</param>
         /// <param name="destination">The destination path to prepend to the target paths.</param>
@@ -1237,141 +1244,103 @@ namespace Duplicati.Library.Main.Database.Local
                 :
                 largest_prefix);
 
+            var restoreOnUnix = OperatingSystem.IsMacOS() || OperatingSystem.IsLinux();
+            var restoreOnWindows = OperatingSystem.IsWindows();
+            var windowsRoot = string.IsNullOrEmpty(destination) && restoreOnWindows && dirsep == "/"
+                ? Util.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath) ?? "").Replace("\\", "/")
+                : "";
+
+            var expression = GetTargetPathExpression(dirsep, largest_prefix, destination, restoreOnUnix, restoreOnWindows, windowsRoot);
+
             await using var cmd = m_connection.CreateCommand()
                 .SetTransaction(m_rtr);
+            await cmd.ExecuteNonQueryAsync($@"
+                ALTER TABLE ""{m_tempfiletable}""
+                ADD COLUMN ""TargetPath"" TEXT
+                GENERATED ALWAYS AS (COALESCE(""TargetPathOverride"", {expression})) VIRTUAL
+            ", token)
+                .ConfigureAwait(false);
+
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Gets the SQL expression that computes the target path of a file from its <c>"Path"</c>.
+        /// </summary>
+        /// <param name="dirsep">The directory separator of the backed up paths.</param>
+        /// <param name="largest_prefix">The prefix to remove from the paths, or empty to keep the full paths.</param>
+        /// <param name="destination">The folder to restore to, or empty to restore to the original location.</param>
+        /// <param name="restoreOnUnix">Whether the restore runs on Linux or macOS.</param>
+        /// <param name="restoreOnWindows">Whether the restore runs on Windows.</param>
+        /// <param name="windowsRoot">The root to restore Linux paths to on Windows, when there is no destination.</param>
+        /// <returns>The SQL expression.</returns>
+        internal static string GetTargetPathExpression(string dirsep, string largest_prefix, string destination, bool restoreOnUnix, bool restoreOnWindows, string windowsRoot)
+        {
+            const string path = @"""Path""";
+            string expression;
+
             if (string.IsNullOrEmpty(destination))
             {
                 //The string fixing here is meant to provide some non-random
                 // defaults when restoring cross OS, e.g. backup on Linux, restore on Windows
                 //This is mostly meaningless, and the user really should use --restore-path
 
-                if ((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) && dirsep == "\\")
+                if (restoreOnUnix && dirsep == "\\")
                 {
                     // For Win -> Linux, we remove the colon from the drive letter, and use the drive letter as root folder
-                    await cmd.ExecuteNonQueryAsync($@"
-                        UPDATE ""{m_tempfiletable}""
-                        SET ""Targetpath"" =
-                        CASE
-                            WHEN SUBSTR(""Path"", 2, 1) == ':'
-                            THEN '\\' || SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3)
-                            ELSE ""Path""
-                        END
-                    ", token)
-                        .ConfigureAwait(false);
-
-                    await cmd.ExecuteNonQueryAsync($@"
-                        UPDATE ""{m_tempfiletable}""
-                        SET ""Targetpath"" =
-                        CASE
-                            WHEN SUBSTR(""Path"", 1, 2) == '\\'
-                            THEN '\\' || SUBSTR(""Path"", 2)
-                            ELSE ""Targetpath""
-                        END
-                    ", token)
-                        .ConfigureAwait(false);
-
+                    var driveLetter = $@"CASE WHEN SUBSTR({path}, 2, 1) == ':' THEN '\\' || SUBSTR({path}, 1, 1) || SUBSTR({path}, 3) ELSE {path} END";
+                    expression = $@"CASE WHEN SUBSTR({path}, 1, 2) == '\\' THEN '\\' || SUBSTR({path}, 2) ELSE {driveLetter} END";
                 }
-                else if (OperatingSystem.IsWindows() && dirsep == "/")
+                else if (restoreOnWindows && dirsep == "/")
                 {
                     // For Linux -> Win, we use the temporary folder's drive as the root path
-                    await cmd.SetCommandAndParameters($@"
-                        UPDATE ""{m_tempfiletable}""
-                        SET ""Targetpath"" =
-                            CASE
-                                WHEN SUBSTR(""Path"", 1, 1) == '/'
-                                THEN @Path || SUBSTR(""Path"", 2)
-                                ELSE ""Path""
-                            END
-                    ")
-                        .SetParameterValue("@Path", Util.AppendDirSeparator(System.IO.Path.GetPathRoot(Library.Utility.TempFolder.SystemTempPath) ?? "").Replace("\\", "/"))
-                        .ExecuteNonQueryAsync(true, token)
-                        .ConfigureAwait(false);
+                    expression = $@"CASE WHEN SUBSTR({path}, 1, 1) == '/' THEN {SqlStringLiteral(windowsRoot)} || SUBSTR({path}, 2) ELSE {path} END";
                 }
                 else
                 {
                     // Same OS, just use the path directly
-                    await cmd.ExecuteNonQueryAsync($@"
-                        UPDATE ""{m_tempfiletable}""
-                        SET ""Targetpath"" = ""Path""
-                    ", token)
-                        .ConfigureAwait(false);
+                    expression = path;
                 }
+            }
+            else if (string.IsNullOrEmpty(largest_prefix))
+            {
+                //Special case, restoring to new folder, but files are from different drives (no shared root on Windows)
+
+                // We use the format <restore path> / <drive letter> / <source path>
+                var driveLetter = $@"CASE WHEN SUBSTR({path}, 2, 1) == ':' THEN SUBSTR({path}, 1, 1) || SUBSTR({path}, 3) ELSE {path} END";
+
+                // For UNC paths, we use \\server\folder -> <restore path> / <servername> / <source path>,
+                // removing both leading separators, as the restore path already ends with one
+                expression = $@"CASE WHEN SUBSTR({path}, 1, 2) == '\\' THEN SUBSTR({path}, 3) ELSE {driveLetter} END";
             }
             else
             {
-                if (string.IsNullOrEmpty(largest_prefix))
-                {
-                    //Special case, restoring to new folder, but files are from different drives (no shared root on Windows)
-
-                    // We use the format <restore path> / <drive letter> / <source path>
-                    await cmd.ExecuteNonQueryAsync($@"
-                        UPDATE ""{m_tempfiletable}""
-                        SET ""TargetPath"" =
-                            CASE
-                                WHEN SUBSTR(""Path"", 2, 1) == ':'
-                                THEN SUBSTR(""Path"", 1, 1) || SUBSTR(""Path"", 3)
-                                ELSE ""Path""
-                            END
-                    ", token)
-                        .ConfigureAwait(false);
-
-                    // For UNC paths, we use \\server\folder -> <restore path> / <servername> / <source path>,
-                    // removing both leading separators, as the restore path already ends with one
-                    await cmd.ExecuteNonQueryAsync($@"
-                        UPDATE ""{m_tempfiletable}""
-                        SET ""TargetPath"" =
-                        CASE
-                            WHEN SUBSTR(""Path"", 1, 2) == '\\'
-                            THEN SUBSTR(""Path"", 3)
-                            ELSE ""TargetPath""
-                        END
-                    ", token)
-                        .ConfigureAwait(false);
-                }
-                else
-                {
-                    largest_prefix = Util.AppendDirSeparator(largest_prefix, dirsep);
-                    await cmd.SetCommandAndParameters($@"
-                        UPDATE ""{m_tempfiletable}""
-                        SET ""TargetPath"" = SUBSTR(""Path"", @PrefixLength)
-                    ")
-                        .SetParameterValue("@PrefixLength", largest_prefix.Length + 1)
-                        .ExecuteNonQueryAsync(true, token)
-                        .ConfigureAwait(false);
-                }
+                expression = $@"SUBSTR({path}, {Util.AppendDirSeparator(largest_prefix, dirsep).Length + 1})";
             }
 
             // Cross-os path remapping support
-            if ((OperatingSystem.IsMacOS() || OperatingSystem.IsLinux()) && dirsep == "\\")
+            if (restoreOnUnix && dirsep == "\\")
                 // For Win paths on Linux
-                await cmd.ExecuteNonQueryAsync($@"
-                    UPDATE ""{m_tempfiletable}""
-                    SET ""TargetPath"" = REPLACE(""TargetPath"", '\', '/')
-                ", token)
-                    .ConfigureAwait(false);
-            else if (OperatingSystem.IsWindows() && dirsep == "/")
+                expression = $@"REPLACE({expression}, '\', '/')";
+            else if (restoreOnWindows && dirsep == "/")
                 // For Linux paths on Windows
-                await cmd.ExecuteNonQueryAsync($@"
-                    UPDATE ""{m_tempfiletable}""
-                    SET ""TargetPath"" = REPLACE(REPLACE(""TargetPath"", '\', '_'), '/', '\')
-                ", token)
-                    .ConfigureAwait(false);
+                expression = $@"REPLACE(REPLACE({expression}, '\', '_'), '/', '\')";
 
+            // Paths are now relative with target-os naming system
+            // so we prefix them with the target path
             if (!string.IsNullOrEmpty(destination))
-            {
-                // Paths are now relative with target-os naming system
-                // so we prefix them with the target path
-                await cmd.SetCommandAndParameters($@"
-                    UPDATE ""{m_tempfiletable}""
-                    SET ""TargetPath"" = @Destination || ""TargetPath""
-                ")
-                    .SetParameterValue("@Destination", Util.AppendDirSeparator(destination))
-                    .ExecuteNonQueryAsync(true, token)
-                    .ConfigureAwait(false);
-            }
+                expression = $@"{SqlStringLiteral(Util.AppendDirSeparator(destination))} || {expression}";
 
-            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
+            return expression;
         }
+
+        /// <summary>
+        /// Quotes a string as an SQL string literal. A generated column cannot use parameters.
+        /// </summary>
+        /// <param name="value">The string to quote.</param>
+        /// <returns>The SQL string literal.</returns>
+        private static string SqlStringLiteral(string value)
+            => "'" + value.Replace("'", "''") + "'";
 
         /// <summary>
         /// Indexes the paths of the files to restore. The legacy restore looks up the files by their path when it
@@ -1501,7 +1470,7 @@ namespace Duplicati.Library.Main.Database.Local
         {
             await using var cmd = m_connection.CreateCommand($@"
                 UPDATE ""{m_tempfiletable}""
-                SET ""TargetPath"" = @TargetPath
+                SET ""TargetPathOverride"" = @TargetPath
                 WHERE ""ID"" = @ID
             ");
             await cmd
