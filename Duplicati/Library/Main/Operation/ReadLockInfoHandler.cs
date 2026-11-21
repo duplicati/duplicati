@@ -98,8 +98,14 @@ namespace Duplicati.Library.Main.Operation
                     // Only update if the value has changed
                     if (remoteLockExpiration != lockExpiration)
                     {
-                        await database.UpdateRemoteVolumeLockExpirationAsync(name, remoteLockExpiration, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
                         updatedCount++;
+                        if (m_options.Dryrun)
+                        {
+                            Log.WriteDryrunMessage(LOGTAG, "WouldUpdateLockExpiration", "Would update lock expiration for {0} to {1}", name, remoteLockExpiration);
+                            continue;
+                        }
+
+                        await database.UpdateRemoteVolumeLockExpirationAsync(name, remoteLockExpiration, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
                         Log.WriteVerboseMessage(LOGTAG, "UpdatedLockExpiration", "Updated lock expiration for {0} to {1}", name, remoteLockExpiration);
                     }
@@ -117,8 +123,13 @@ namespace Duplicati.Library.Main.Operation
             }
 
             await backendManager.WaitForEmptyAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-            await backendManager.FlushPendingMessagesAsync(database, m_result.TaskControl.ProgressToken);
-            await database.Transaction.CommitAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+
+            // A dry run leaves the database as it is
+            if (!m_options.Dryrun)
+            {
+                await backendManager.FlushPendingMessagesAsync(database, m_result.TaskControl.ProgressToken);
+                await database.Transaction.CommitAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            }
 
             m_result.VolumesRead = readCount;
             m_result.VolumesUpdated = updatedCount;
