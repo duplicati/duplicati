@@ -254,30 +254,19 @@ namespace Duplicati.Library.Main.Database.Local
             ", token)
                 .ConfigureAwait(false);
 
+            // The small files and metadata, which have a single block. The temporary tables are kept in memory,
+            // and this has two rows for every small file (#7538), so it is kept small:
+            // - The key is the only index. The content decides both hashes, so a file hash and size
+            //   has a single block hash, and the queries only scan this table.
+            // - "BlockHash" is NULL when it equals "FileHash", which it does when the block and the
+            //   file are hashed with the same algorithm. Read it with COALESCE("BlockHash", "FileHash").
             await cmd.ExecuteNonQueryAsync($@"
                 CREATE TEMPORARY TABLE ""{dbnew.m_tempsmalllist}"" (
                     ""FileHash"" TEXT NOT NULL,
-                    ""BlockHash"" TEXT NOT NULL,
-                    ""BlockSize"" INTEGER NOT NULL
-                )
-            ", token)
-                .ConfigureAwait(false);
-
-            await cmd.ExecuteNonQueryAsync($@"
-                CREATE UNIQUE INDEX ""Index_File_{dbnew.m_tempsmalllist}""
-                ON ""{dbnew.m_tempsmalllist}"" (
-                    ""FileHash"",
-                    ""BlockSize""
-                );
-            ", token)
-                .ConfigureAwait(false);
-
-            await cmd.ExecuteNonQueryAsync($@"
-                CREATE UNIQUE INDEX ""Index_Block_{dbnew.m_tempsmalllist}""
-                ON ""{dbnew.m_tempsmalllist}"" (
-                    ""BlockHash"",
-                    ""BlockSize""
-                );
+                    ""BlockHash"" TEXT NULL,
+                    ""BlockSize"" INTEGER NOT NULL,
+                    PRIMARY KEY (""FileHash"", ""BlockSize"")
+                ) WITHOUT ROWID
             ", token)
                 .ConfigureAwait(false);
 
@@ -383,7 +372,7 @@ namespace Duplicati.Library.Main.Database.Local
                 )
                 VALUES (
                     @FileHash,
-                    @BlockHash,
+                    NULLIF(@BlockHash, @FileHash),
                     @BlockSize
                 )
             ", token)
@@ -486,7 +475,7 @@ namespace Duplicati.Library.Main.Database.Local
 
             var selectSmallBlocks = $@"
                 SELECT
-                    ""BlockHash"",
+                    COALESCE(""BlockHash"", ""FileHash"") AS ""BlockHash"",
                     ""BlockSize""
                 FROM ""{m_tempsmalllist}""
             ";
@@ -585,7 +574,7 @@ namespace Duplicati.Library.Main.Database.Local
                     ""{m_tempsmalllist}"" ""S""
                 WHERE
                     ""Blockset"".""Fullhash"" = ""S"".""FileHash""
-                    AND ""S"".""BlockHash"" = ""Block"".""Hash""
+                    AND COALESCE(""S"".""BlockHash"", ""S"".""FileHash"") = ""Block"".""Hash""
                     AND ""S"".""BlockSize"" = ""Block"".""Size""
                     AND ""Blockset"".""Length"" = ""S"".""BlockSize""
                     AND ""Blockset"".""Length"" <= {Library.Utility.Utility.FormatInvariantValue(blocksize)}
@@ -708,14 +697,14 @@ namespace Duplicati.Library.Main.Database.Local
             var extra = hashOnly ? "" : $@"
                     UNION
                     SELECT
-                        ""TS"".""BlockHash"",
+                        COALESCE(""TS"".""BlockHash"", ""TS"".""FileHash"") AS ""BlockHash"",
                         ""TS"".""BlockSize""
                     FROM ""{m_tempsmalllist}"" ""TS""
                     WHERE NOT EXISTS (
                         SELECT 1
                         FROM Block AS ""B""
                         WHERE
-                            ""B"".""Hash"" =  ""TS"".""BlockHash""
+                            ""B"".""Hash"" = COALESCE(""TS"".""BlockHash"", ""TS"".""FileHash"")
                             AND ""B"".""Size"" = ""TS"".""BlockSize""
                     )
                 ";
@@ -772,7 +761,7 @@ namespace Duplicati.Library.Main.Database.Local
                         )
                     JOIN ""Block"" ""BL""
                         ON (
-                            ""BL"".""Hash"" = ""TS"".""BlockHash""
+                            ""BL"".""Hash"" = COALESCE(""TS"".""BlockHash"", ""TS"".""FileHash"")
                             AND ""BL"".""Size"" = ""TS"".""BlockSize""
                         )
                     LEFT OUTER JOIN ""BlocksetEntry"" ""BE""
@@ -1777,7 +1766,7 @@ namespace Duplicati.Library.Main.Database.Local
             await using var cmd = m_connection.CreateCommand($@"
                 SELECT
                     ""BS"".""ID"",
-                    ""TS"".""BlockHash"",
+                    COALESCE(""TS"".""BlockHash"", ""TS"".""FileHash""),
                     ""TS"".""BlockSize""
                 FROM ""{m_tempsmalllist}"" ""TS""
                 JOIN ""Blockset"" ""BS""
