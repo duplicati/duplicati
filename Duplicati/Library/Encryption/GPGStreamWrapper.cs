@@ -31,6 +31,7 @@ namespace Duplicati.Library.Encryption
         private System.Diagnostics.Process m_p;
         private Task m_copier;
         private Task<string> m_stderr;
+        private readonly bool m_decrypting;
 
         /// <summary>
         /// Wraps a crypto stream, ensuring that it is correctly disposed
@@ -39,7 +40,8 @@ namespace Duplicati.Library.Encryption
         /// <param name="copier">The task that copies the other end of the GPG process</param>
         /// <param name="stderr">The task that reads the GPG error output</param>
         /// <param name="basestream">The stream to wrap</param>
-        public GPGStreamWrapper(System.Diagnostics.Process p, Task copier, Task<string> stderr, Stream basestream)
+        /// <param name="decrypting">True if GPG decrypts, so a failure is a decryption error</param>
+        public GPGStreamWrapper(System.Diagnostics.Process p, Task copier, Task<string> stderr, Stream basestream, bool decrypting)
             : base(basestream)
         {
             if (p == null)
@@ -52,6 +54,7 @@ namespace Duplicati.Library.Encryption
             m_p = p;
             m_copier = copier;
             m_stderr = stderr;
+            m_decrypting = decrypting;
         }
 
         protected override void Dispose(bool disposing)
@@ -109,7 +112,9 @@ namespace Duplicati.Library.Encryption
             m_p.WaitForExit();
 
             var errmsg = m_stderr.GetAwaiter().GetResult();
-            if (errmsg.Contains("decryption failed:"))
+            // The messages of GPG are translated, but a failed decryption always exits with a code other than 0.
+            // A GPG that was stopped because the copy failed exits that way too, and then the copy error is reported
+            if (errmsg.Contains("decryption failed:") || (m_decrypting && failure == null && m_p.ExitCode != 0))
                 throw new System.Security.Cryptography.CryptographicException(Strings.GPGStreamWrapper.DecryptionError(errmsg));
 
             if (failure != null)

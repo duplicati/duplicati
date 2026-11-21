@@ -299,13 +299,13 @@ namespace Duplicati.Library.Encryption
                 //Prevent blocking of the output buffer
                 copier = StartCopy(p.StandardOutput.BaseStream, input);
 
-                return new GPGStreamWrapper(p, copier, stderr, p.StandardInput.BaseStream);
+                return new GPGStreamWrapper(p, copier, stderr, p.StandardInput.BaseStream, false);
             }
 
             //Prevent blocking of the input buffer
             copier = StartCopy(input, p.StandardInput.BaseStream);
 
-            return new GPGStreamWrapper(p, copier, stderr, p.StandardOutput.BaseStream);
+            return new GPGStreamWrapper(p, copier, stderr, p.StandardOutput.BaseStream, true);
         }
 
         /// <summary>
