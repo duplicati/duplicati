@@ -1882,6 +1882,11 @@ namespace Duplicati.Library.Main.Operation
             if (!buildBlockList)
                 return;
 
+            using (new Logging.Timer(LOGTAG, "CreateFilePathIndex", "CreateFilePathIndex"))
+                await database
+                    .CreateFilePathIndexAsync(result.TaskControl.ProgressToken)
+                    .ConfigureAwait(false);
+
             // Create a temporary table BLOCKS that lists all blocks that needs to be recovered
             using (new Logging.Timer(LOGTAG, "FindMissingBlocks", "FindMissingBlocks"))
                 await database

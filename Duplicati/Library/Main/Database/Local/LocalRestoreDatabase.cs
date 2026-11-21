@@ -714,11 +714,7 @@ namespace Duplicati.Library.Main.Database.Local
                     // There is no index on "ID", which is the rowid, or on "TargetPath", which no query
                     // looks up or sorts by. The temporary tables are kept in memory, and the
                     // "TargetPath" index alone held more than a quarter of them (#7538).
-                    await cmd.ExecuteNonQueryAsync($@"
-                        CREATE INDEX ""{m_tempfiletable}_Path""
-                        ON ""{m_tempfiletable}"" (""Path"")
-                    ", token)
-                        .ConfigureAwait(false);
+                    // The index on "Path" is only made for the legacy restore, see CreateFilePathIndexAsync.
 
                     // Both of these are joined on when the missing blocks are collected, and
                     // without them SQLite builds a transient index of its own for each join.
@@ -1375,6 +1371,24 @@ namespace Duplicati.Library.Main.Database.Local
             }
 
             await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Indexes the paths of the files to restore. The legacy restore looks up the files by their path when it
+        /// looks for existing local copies of their blocks (<see cref="GetFilesAndSourceBlocksFastAsync"/>). No query
+        /// of the new restore uses the index, and it is about as large as the paths themselves (#7538).
+        /// </summary>
+        /// <param name="token">A cancellation token to monitor for cancellation requests.</param>
+        /// <returns>A task that completes when the index has been created.</returns>
+        public async Task CreateFilePathIndexAsync(CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+            await cmd.ExecuteNonQueryAsync($@"
+                CREATE INDEX IF NOT EXISTS ""{m_tempfiletable}_Path""
+                ON ""{m_tempfiletable}"" (""Path"")
+            ", token)
+                .ConfigureAwait(false);
         }
 
         /// <summary>
