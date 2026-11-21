@@ -43,7 +43,7 @@ namespace Duplicati.UnitTest;
 [Category("PostgreSQL")]
 public class PostgreSQLRestoreProviderTests
 {
-    private static readonly string[] RecordedDumps = ["pg14.dump", "pg15.dump", "pg16.dump", "pg17.dump", "pg18.dump"];
+    private static readonly string[] RecordedDumps = ["pg14.dump", "pg15.dump", "pg16.dump", "pg17.dump", "pg18.dump", "pg19.dump"];
 
     private const string Url = "postgresql://?postgresql-host=db.example.com&postgresql-database=app&postgresql-username=restore&postgresql-password=s3cret";
 
