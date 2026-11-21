@@ -500,7 +500,8 @@ public class SMBShareConnection : IDisposable, IAsyncDisposable
             }
             ).ConfigureAwait(false);
 
-            if (status == NTStatus.STATUS_SUCCESS || fileStatus != FileStatus.FILE_DOES_NOT_EXIST)
+            // Only a successful open returns a usable handle; any other status falls through to the error branches
+            if (status == NTStatus.STATUS_SUCCESS)
             {
                 try
                 {
