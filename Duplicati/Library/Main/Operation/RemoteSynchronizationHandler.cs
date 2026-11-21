@@ -300,6 +300,9 @@ internal class RemoteSynchronizationHandler : IDisposable
         {
             case RemoteSyncTriggerMode.Inline:
                 return true;
+            // Without a local database there is no record of an earlier synchronization, as for the first one
+            case RemoteSyncTriggerMode.Interval or RemoteSyncTriggerMode.Counting when string.IsNullOrWhiteSpace(m_dbpath):
+                return true;
             case RemoteSyncTriggerMode.Interval:
                 {
                     using var db = SQLiteLoader.LoadConnection(m_dbpath!);
