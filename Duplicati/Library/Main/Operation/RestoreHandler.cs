@@ -941,8 +941,10 @@ namespace Duplicati.Library.Main.Operation
 
             // Prepare the block and file list and create the directory structure
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateFileList);
+            // The blocks of each file are read from the database as the file is restored, so the
+            // list of every block to restore and its progress tables are not built (#7538)
             using (new Logging.Timer(LOGTAG, "PrepareBlockList", "PrepareBlockList"))
-                await PrepareBlockAndFileListAsync(database, m_options, filter, restoreDestination, m_result, m_restoredHashesTable)
+                await PrepareBlockAndFileListAsync(database, m_options, filter, restoreDestination, m_result, m_restoredHashesTable, buildBlockList: false)
                     .ConfigureAwait(false);
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateTargetFolders);
             using (new Logging.Timer(LOGTAG, "CreateDirectory", "CreateDirectory"))
@@ -1219,7 +1221,7 @@ namespace Duplicati.Library.Main.Operation
             //Figure out what files are to be patched, and what blocks are needed
             m_result.OperationProgressUpdater.UpdatePhase(OperationPhase.Restore_CreateFileList);
             using (new Logging.Timer(LOGTAG, "PrepareBlockList", "PrepareBlockList"))
-                await PrepareBlockAndFileListAsync(database, m_options, filter, restoreDestination, m_result, m_restoredHashesTable)
+                await PrepareBlockAndFileListAsync(database, m_options, filter, restoreDestination, m_result, m_restoredHashesTable, buildBlockList: true)
                     .ConfigureAwait(false);
 
             //Make the entire output setup
@@ -1734,7 +1736,21 @@ namespace Duplicati.Library.Main.Operation
             await blockmarker.CommitAsync(result.TaskControl.ProgressToken).ConfigureAwait(false);
         }
 
-        private async Task PrepareBlockAndFileListAsync(LocalRestoreDatabase database, Options options, Library.Utility.IFilter? filter, IRestoreDestinationProvider restoreDestination, RestoreResults result, string? restoredHashesTable)
+        /// <summary>
+        /// Prepares the list of files to restore and sets their target paths
+        /// </summary>
+        /// <param name="database">The restore database</param>
+        /// <param name="options">The options of the restore</param>
+        /// <param name="filter">The filter of the files to restore</param>
+        /// <param name="restoreDestination">The destination to restore to</param>
+        /// <param name="result">The results of the restore</param>
+        /// <param name="restoredHashesTable">The table of the file hashes restored by earlier versions, if any</param>
+        /// <param name="buildBlockList">
+        /// <c>true</c> to also build the list of every block to restore and the tables that track its progress.
+        /// The legacy restore works from that list. The new restore reads the blocks of each file when it restores
+        /// the file, and for a restore of many files the list is a large part of the memory it uses.
+        /// </param>
+        private async Task PrepareBlockAndFileListAsync(LocalRestoreDatabase database, Options options, Library.Utility.IFilter? filter, IRestoreDestinationProvider restoreDestination, RestoreResults result, string? restoredHashesTable, bool buildBlockList)
         {
             // Create a temporary table FILES by selecting the files from fileset that matches a specific operation id
             // Delete all entries from the temp table that are excluded by the filter(s)
@@ -1862,6 +1878,9 @@ namespace Duplicati.Library.Main.Operation
                     targetPaths.Add(file.Path);
                 await selectionReceiver.SetRestoreSelection(targetPaths, result.TaskControl.ProgressToken).ConfigureAwait(false);
             }
+
+            if (!buildBlockList)
+                return;
 
             // Create a temporary table BLOCKS that lists all blocks that needs to be recovered
             using (new Logging.Timer(LOGTAG, "FindMissingBlocks", "FindMissingBlocks"))
