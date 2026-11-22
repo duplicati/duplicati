@@ -159,7 +159,10 @@ namespace Duplicati.Library.Compression.ZipCompression
                 if (mode == ArchiveMode.Write)
                     throw;
 
-                Log.WriteWarningMessage(LOGTAG, "system-io-compression-error", ex, "Failed to create built-in ZIP archive, falling back to SharpCompress");
+                // Only reading gets here. Older versions wrote archives with more than 65535
+                // entries with a wrong entry count, which the built-in library refuses and
+                // SharpCompress reads (#6251)
+                Log.WriteWarningMessage(LOGTAG, "system-io-compression-error", ex, "The built-in ZIP library could not read the archive, reading it with SharpCompress instead. Archives written by older versions can cause this.");
             }
 
             m_archive = archive ?? new SharpCompressZipArchive(stream, mode, parsedOptions);

@@ -161,5 +161,41 @@ namespace Duplicati.UnitTest
             }
 
         }
+
+        [Test]
+        [Category("Targeted")]
+        public void AnArchiveTheBuiltInLibraryRefusesIsReadWithAWarningThatSaysSo()
+        {
+            // #6251: archives written by older versions can carry a wrong entry count in the
+            // end of central directory record. The built-in library refuses them, SharpCompress
+            // reads them, and the warning said "Failed to create built-in ZIP archive"
+            using var archive = new MemoryStream();
+            using (var zip = new System.IO.Compression.ZipArchive(archive, System.IO.Compression.ZipArchiveMode.Create, true))
+            {
+                foreach (var name in new[] { "a.txt", "b.txt" })
+                    using (var writer = new StreamWriter(zip.CreateEntry(name).Open()))
+                        writer.Write("data of " + name);
+            }
+
+            var bytes = archive.ToArray();
+            var eocd = bytes.Length - 22;
+            Assert.AreEqual(0x06054b50, BitConverter.ToInt32(bytes, eocd), "The archive should end with the end of central directory record");
+            // The entries on this disk and in total
+            BitConverter.GetBytes((short)1).CopyTo(bytes, eocd + 8);
+            BitConverter.GetBytes((short)1).CopyTo(bytes, eocd + 10);
+
+            var messages = new System.Collections.Concurrent.ConcurrentQueue<Library.Logging.LogEntry>();
+            string[] files;
+            using (Library.Logging.Log.StartIsolatingScope(true))
+            using (Library.Logging.Log.StartScope(messages.Enqueue))
+            using (var stream = new MemoryStream(bytes))
+            using (var reader = new Library.Compression.ZipCompression.FileArchiveZip(stream, Library.Interface.ArchiveMode.Read, new System.Collections.Generic.Dictionary<string, string>()))
+                files = reader.ListFiles(null);
+
+            Assert.That(files, Is.EquivalentTo(new[] { "a.txt", "b.txt" }), "SharpCompress should read the archive");
+            var warning = messages.Single(x => x.Id == "system-io-compression-error");
+            Assert.That(warning.FormattedMessage, Does.Not.Contain("create"), "Only reading falls back, so the warning should not talk about creating the archive");
+            Assert.That(warning.FormattedMessage, Does.Contain("SharpCompress"));
+        }
     }
 }
