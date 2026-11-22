@@ -507,7 +507,9 @@ namespace Duplicati.Library.Main.Operation
         /// <returns>Results from the pre-backup verification</returns>
         private static async Task<PreBackupVerifyResult> PreBackupVerifyAsync(Options options, BackupResults result, IBackendManager backendManager)
         {
-            result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
+            // The local database is opened and checked first, which can take a while on a large one,
+            // so it has a phase of its own instead of looking like the check of the remote data (#4671)
+            result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_VerifyDatabase);
 
             // Setup variables
             LocalBackupDatabase database = null;
@@ -578,6 +580,8 @@ namespace Duplicati.Library.Main.Operation
                     await database
                         .VerifyConsistencyAsync(options.Blocksize, options.BlockhashSize, !options.DisableFilelistConsistencyChecks, result.TaskControl.ProgressToken)
                         .ConfigureAwait(false);
+
+                    result.OperationProgressUpdater.UpdatePhase(OperationPhase.Backup_PreBackupVerify);
 
                     // Guard the last filelist
                     if (!options.DisableSyntheticFilelist)
