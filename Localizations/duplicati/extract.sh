@@ -1,9 +1,9 @@
 #!/bin/bash
 # gettext in PATH necessary
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd $SCRIPT_DIR
-cd ../../Duplicati/
-find . -type f -name *.cs > $SCRIPT_DIR"/"filelist_cs.txt
+cd "$SCRIPT_DIR" || exit 1
+cd ../../Duplicati/ || exit 1
+find . -type f -name '*.cs' > $SCRIPT_DIR"/"filelist_cs.txt
 
 # Required to make sure we don't have \r\n in the extracted strings.
 # Strip them in a temporary copy, so the source files keep their line endings
@@ -13,7 +13,7 @@ while IFS= read -r file; do
     mkdir -p "$TMP_DIR/$(dirname "$file")"
     tr -d "\r" < "$file" > "$TMP_DIR/$file"
 done < $SCRIPT_DIR"/"filelist_cs.txt
-cd "$TMP_DIR"
+cd "$TMP_DIR" || exit 1
 
 xgettext -k --from-code=UTF-8 --output=$SCRIPT_DIR"/"localization.pot --files-from=$SCRIPT_DIR"/"filelist_cs.txt --language=C# --keyword=LC.L
 

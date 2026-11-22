@@ -2,7 +2,7 @@
 set -e
 
 # Extract the command to run
-CMD="$@"
+CMD="$*"
 
 if [ -z "$CMD" ]; then
     echo "ERROR: No command specified to run."

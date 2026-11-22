@@ -1,4 +1,4 @@
 #!/bin/bash
 # transifex client in PATH necessary
-cd $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+cd "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" || exit 1
 tx pull -use-git-timestamps --all --force --mode onlytranslated --minimum-perc 10

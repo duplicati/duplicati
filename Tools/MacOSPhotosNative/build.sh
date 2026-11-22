@@ -6,7 +6,6 @@ BUILD_DIR="${SCRIPT_DIR}/build"
 mkdir -p "${BUILD_DIR}/arm64" "${BUILD_DIR}/x86_64"
 
 SRC="${SCRIPT_DIR}/DuplicatiPhotos.m"
-HEADER="${SCRIPT_DIR}/DuplicatiPhotos.h"
 OUTPUT="${SCRIPT_DIR}/libDuplicatiPhotos.dylib"
 
 # Oldest macOS the library may load on. Without this, clang uses the SDK

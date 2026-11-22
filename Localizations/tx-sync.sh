@@ -1,5 +1,5 @@
 #!/bin/bash
-cd $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+cd "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )" || exit 1
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
 

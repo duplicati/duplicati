@@ -21,6 +21,7 @@ DEFAULT=/etc/default/$NAME
 
 # If we don't have the basics, don't bother
 test -x $DAEMON || exit 0
+# shellcheck source=/dev/null
 test -f $DEFAULT && . $DEFAULT        
 
 running_pid()

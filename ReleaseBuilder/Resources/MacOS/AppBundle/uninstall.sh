@@ -2,7 +2,7 @@
 LAUNCHAGENT_LABEL="com.duplicati.app.launchagent"
 LAUNCHAGENT_PLIST="/Library/LaunchAgents/$LAUNCHAGENT_LABEL.plist"
 
-ANY_ULOAD_FAILURES=""
+ANY_UNLOAD_FAILURES=""
 
 if [ -f "$LAUNCHAGENT_PLIST" ]; then
 
@@ -18,7 +18,7 @@ if [ -f "$LAUNCHAGENT_PLIST" ]; then
                 echo "Successfully unloaded LaunchAgent for user with UID: $USER_ID."
             else
                 echo "Failed to unload LaunchAgent for user with UID: $USER_ID."
-                ANY_ULOAD_FAILURES="1"
+                ANY_UNLOAD_FAILURES="1"
             fi
         fi
     done
