@@ -21,7 +21,6 @@
 using Duplicati.Library.Localization.Short;
 namespace Duplicati.Library.SQLiteHelper.Strings {
     internal static class DatabaseUpgrader {
-        public static string BackupFilenamePrefix { get { return LC.L(@"backup"); } }
         public static string DatabaseFormatError(string message) { return LC.L(@"Unable to determine database format: {0}", message); }
         public static string InvalidVersionError(int actualversion, int maxversion, string backupfolder) { return LC.L(@"
 The database has version {0} but the largest supported version is {1}.

@@ -81,6 +81,23 @@ namespace Duplicati.Library.SQLiteHelper
         /// </summary>
         private static readonly string LOGTAG = Logging.Log.LogTagFromType(typeof(DatabaseUpgrader));
 
+        /// <summary>
+        /// The first word of the name of the copy kept before an upgrade:
+        /// &quot;backup &lt;database name&gt; &lt;yyyyMMddHHmmss&gt;.sqlite&quot;
+        /// </summary>
+        private const string BACKUP_FILENAME_PREFIX = "backup";
+
+        /// <summary>
+        /// The first words that earlier releases used, as the prefix was translated
+        /// to the language of the user interface
+        /// </summary>
+        private static readonly string[] TranslatedBackupFilenamePrefixes =
+        [
+            "back-up", "copia de seguridad", "cópia", "cópia de segurança", "copie de rezervă",
+            "kopia", "rezervna kopija", "sauvegarde", "säkerhetskopia", "Sicherung", "yedekleme",
+            "záloha", "резервная копия", "バックアップ", "備份", "备份", "백업"
+        ];
+
         /// <summary> Helper func to evaluate a condition like "sqlitever > 3.8.2" </summary>
         private static bool evalCondition(string cond, IDictionary<string, IComparable> vars)
         {
@@ -446,7 +463,7 @@ namespace Duplicati.Library.SQLiteHelper
                     {
                         backupfile = System.IO.Path.Combine(
                             backupfolder,
-                            Strings.DatabaseUpgrader.BackupFilenamePrefix + " " + System.IO.Path.GetFileNameWithoutExtension(sourcefile) + " " + (DateTime.Now + TimeSpan.FromSeconds(i * 1.5)).ToString("yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture) + ".sqlite");
+                            BACKUP_FILENAME_PREFIX + " " + System.IO.Path.GetFileNameWithoutExtension(sourcefile) + " " + (DateTime.Now + TimeSpan.FromSeconds(i * 1.5)).ToString("yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture) + ".sqlite");
 
                         if (i < 9 && System.IO.File.Exists(backupfile))
                             continue;
@@ -552,10 +569,60 @@ namespace Duplicati.Library.SQLiteHelper
                         cmd.Transaction = null;
                         transaction?.Dispose();
                     }
+
+                    if (applied)
+                        DeleteOlderBackups(sourcefile, backupfile);
                 }
             }
 
             SyncSchemaScriptTable(connection, scripts, applied);
+        }
+
+        /// <summary>
+        /// Deletes the copies that earlier upgrades kept of the database. Only the copy from the
+        /// upgrade that just ran is kept: an older copy is from before a later upgrade, and does
+        /// not match the remote files once the database has been used since then. A copy named
+        /// less than a minute ago is kept, as another process upgrading the same database at
+        /// the same time may still be writing or deleting it.
+        /// </summary>
+        /// <param name="sourcefile">The database that was upgraded</param>
+        /// <param name="keep">The copy kept before this upgrade</param>
+        private static void DeleteOlderBackups(string sourcefile, string keep)
+        {
+            var folder = System.IO.Path.GetDirectoryName(sourcefile);
+            var prefixes = new[] { BACKUP_FILENAME_PREFIX }.Concat(TranslatedBackupFilenamePrefixes).Select(Regex.Escape);
+            var pattern = new Regex(
+                "^(" + string.Join("|", prefixes) + ") " + Regex.Escape(System.IO.Path.GetFileNameWithoutExtension(sourcefile)) + @" (?<stamp>[0-9]{14})\.sqlite$",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+            var recent = DateTime.Now.AddMinutes(-1);
+
+            try
+            {
+                foreach (var file in System.IO.Directory.EnumerateFiles(folder, "*.sqlite"))
+                {
+                    var name = System.IO.Path.GetFileName(file);
+                    var match = pattern.Match(name);
+                    if (!match.Success || string.Equals(name, System.IO.Path.GetFileName(keep), StringComparison.Ordinal))
+                        continue;
+
+                    if (!DateTime.TryParseExact(match.Groups["stamp"].Value, "yyyyMMddHHmmss", CultureInfo.InvariantCulture, DateTimeStyles.None, out var stamp) || stamp > recent)
+                        continue;
+
+                    try
+                    {
+                        System.IO.File.Delete(file);
+                        Logging.Log.WriteInformationMessage(LOGTAG, "DeletedOldDatabaseBackup", "Deleted {0}, a copy kept before an earlier upgrade", file);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.Log.WriteWarningMessage(LOGTAG, "DeleteOldDatabaseBackupFailed", ex, "Failed to delete {0}, a copy kept before an earlier upgrade", file);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "DeleteOldDatabaseBackupsFailed", ex, "Failed to look for copies kept before earlier upgrades in {0}", folder);
+            }
         }
     }
 
