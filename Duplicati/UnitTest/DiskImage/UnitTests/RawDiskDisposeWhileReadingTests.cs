@@ -28,11 +28,15 @@ public partial class DiskImageUnitTests : BasicSetupHelper
         var completed = 0;
         var stopped = 0;
 
+        // Each reader reads until the disk is disposed. A fixed number of reads could all end
+        // before the dispose on a fast machine, and then no reader was stopped by it.
+        // The deadline only ends the readers if the dispose does not stop them.
+        var deadline = DateTime.UtcNow.AddSeconds(60);
         var readers = Enumerable.Range(0, 4).Select(_ => Task.Run(async () =>
         {
             var buffer = new byte[length];
             started.Release();
-            for (var i = 0; i < 50; i++)
+            while (DateTime.UtcNow < deadline)
             {
                 try
                 {
