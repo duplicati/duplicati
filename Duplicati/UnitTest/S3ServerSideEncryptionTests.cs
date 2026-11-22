@@ -40,13 +40,15 @@ namespace Duplicati.UnitTest;
 
 /// <summary>
 /// Checks that --s3-server-side-encryption asks the server to encrypt the objects it stores (#2193),
-/// with both S3 clients, for uploads and for the copy a rename makes
+/// with both S3 clients, for uploads and for the copy a rename makes, and that uploads carry the
+/// --s3-storage-class (#4803)
 /// </summary>
 [TestFixture]
 public class S3ServerSideEncryptionTests
 {
     private const string EncryptionHeader = "x-amz-server-side-encryption";
     private const string KmsKeyHeader = "x-amz-server-side-encryption-aws-kms-key-id";
+    private const string StorageClassHeader = "x-amz-storage-class";
 
     /// <summary>
     /// Records the method, path and headers of every request, and answers as S3 would
@@ -97,6 +99,10 @@ public class S3ServerSideEncryptionTests
                 string reply = "";
                 if (request.Url?.Query.Contains("location") == true)
                     reply = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">us-east-1</LocationConstraint>";
+                else if (request.HttpMethod == "POST" && request.Url?.Query.Contains("uploads") == true)
+                    reply = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><InitiateMultipartUploadResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Bucket>test-bucket</Bucket><Key>pfx/a.txt</Key><UploadId>upload-1</UploadId></InitiateMultipartUploadResult>";
+                else if (request.HttpMethod == "POST" && request.Url?.Query.Contains("uploadId") == true)
+                    reply = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><CompleteMultipartUploadResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Bucket>test-bucket</Bucket><Key>pfx/a.txt</Key><ETag>\"d41d8cd98f00b204e9800998ecf8427e-2\"</ETag></CompleteMultipartUploadResult>";
                 else if (request.HttpMethod == "PUT" && headers.ContainsKey("x-amz-copy-source"))
                     reply = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><CopyObjectResult><LastModified>2026-01-01T00:00:00.000Z</LastModified><ETag>\"d41d8cd98f00b204e9800998ecf8427e\"</ETag></CopyObjectResult>";
 
@@ -206,6 +212,47 @@ public class S3ServerSideEncryptionTests
             Assert.That(request.Headers.GetValueOrDefault(EncryptionHeader), Is.EqualTo("aws:kms"), all);
             Assert.That(request.Headers.GetValueOrDefault(KmsKeyHeader), Is.EqualTo("arn:aws:kms:us-east-1:111122223333:key/test-key"), all);
         }
+    }
+
+    [Test]
+    [Category("Backend")]
+    [TestCase("aws")]
+    [TestCase("minio")]
+    public async Task TheStorageClassIsSentWithUploadsAsync(string client)
+    {
+        // #4803: the Minio client took --s3-storage-class but did not send it
+        var (upload, _, all) = await UploadAndRenameAsync(client, new() { ["s3-storage-class"] = "ONEZONE_IA" }).ConfigureAwait(false);
+
+        Assert.That(upload.Headers.GetValueOrDefault(StorageClassHeader), Is.EqualTo("ONEZONE_IA"), all);
+    }
+
+    [Test]
+    [Category("Backend")]
+    public async Task TheStorageClassStartsAMultipartUploadWithMinioAsync()
+    {
+        // Minio uploads 5 MiB and more in parts; the storage class goes with the request that
+        // starts the upload
+        using var server = new FakeS3();
+        using (var backend = new S3("s3://test-bucket/pfx", Options(server.Port, "minio", new() { ["s3-storage-class"] = "ONEZONE_IA" })))
+        using (var data = new MemoryStream(new byte[6 * 1024 * 1024]))
+            await backend.PutAsync("a.txt", data, CancellationToken.None).ConfigureAwait(false);
+
+        var requests = server.Requests.ToList();
+        var all = string.Join(Environment.NewLine, requests);
+        var start = requests.SingleOrDefault(x => x.Method == "POST" && x.Query.Contains("uploads"));
+        Assert.That(start, Is.Not.Null, "No multipart upload was started: " + all);
+        Assert.That(start!.Headers.GetValueOrDefault(StorageClassHeader), Is.EqualTo("ONEZONE_IA"), all);
+    }
+
+    [Test]
+    [Category("Backend")]
+    [TestCase("aws")]
+    [TestCase("minio")]
+    public async Task WithoutAStorageClassNoneIsSentAsync(string client)
+    {
+        var (upload, _, all) = await UploadAndRenameAsync(client, new()).ConfigureAwait(false);
+
+        Assert.That(upload.Headers.ContainsKey(StorageClassHeader), Is.False, all);
     }
 
     [Test]
