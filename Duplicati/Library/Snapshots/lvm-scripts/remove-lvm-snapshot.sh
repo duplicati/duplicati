@@ -7,8 +7,6 @@
 #  $2 = name of the device for which the snapshot was created, same as given to create-lvm-snapshot, usually a LVM id like "vg_name/lv_name"
 #  $3 = name of the temporary folder reported by create-lvm-snapshot, usually "/tmp/duplicati-0102030011234567"
 
-NAME=$1
-DEVICE=$2
 TMPDIR=$3
 
 #
