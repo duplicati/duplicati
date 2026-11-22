@@ -83,6 +83,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private const string OPTION_EXTRA_PARAMETERS = "send-http-extra-parameters";
         /// <summary>
+        /// Option used to specify extra request headers
+        /// </summary>
+        private const string OPTION_HEADERS = "send-http-headers";
+        /// <summary>
         /// Option used to specify report level
         /// </summary>
         private const string OPTION_SENDLEVEL = "send-http-level";
@@ -171,6 +175,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// The message parameter name
         /// </summary>
         private string m_extraParameters;
+        /// <summary>
+        /// The extra request headers, empty for none
+        /// </summary>
+        private Dictionary<string, string> m_headers = new();
 
         /// <summary>
         /// Option to accept any SSL certificate
@@ -232,6 +240,7 @@ namespace Duplicati.Library.Modules.Builtin
             new CommandLineArgument(OPTION_MESSAGE, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpmessageShort, Strings.SendHttpMessage.SendhttpmessageLong, DEFAULT_BODY),
             new CommandLineArgument(OPTION_MESSAGE_PARAMETER_NAME, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpmessageparameternameShort, Strings.SendHttpMessage.SendhttpmessageparameternameLong, DEFAULT_MESSAGE_PARAMETER_NAME),
             new CommandLineArgument(OPTION_EXTRA_PARAMETERS, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpextraparametersShort, Strings.SendHttpMessage.SendhttpextraparametersLong),
+            new CommandLineArgument(OPTION_HEADERS, CommandLineArgument.ArgumentType.Password, Strings.SendHttpMessage.SendhttpheadersShort, Strings.SendHttpMessage.SendhttpheadersLong),
             new CommandLineArgument(OPTION_SENDLEVEL, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttplevelShort, Strings.SendHttpMessage.SendhttplevelLong(ParsedResultType.Success.ToString(), ParsedResultType.Warning.ToString(), ParsedResultType.Error.ToString(), ParsedResultType.Fatal.ToString(), "All"), DEFAULT_LEVEL, null, Enum.GetNames(typeof(ParsedResultType)).Union(new string[] { "All" } ).ToArray()),
             new CommandLineArgument(OPTION_SENDALL, CommandLineArgument.ArgumentType.Boolean, Strings.SendHttpMessage.SendhttpanyoperationShort, Strings.SendHttpMessage.SendhttpanyoperationLong),
             new CommandLineArgument(OPTION_SEND_OPERATIONS, CommandLineArgument.ArgumentType.Flags, Strings.ReportHelper.OptionOperationsShort, Strings.ReportHelper.OptionOperationsLong, DEFAULT_OPERATIONS, null, ValidOperationNames),
@@ -310,6 +319,8 @@ namespace Duplicati.Library.Modules.Builtin
                 m_messageParameterName = DEFAULT_MESSAGE_PARAMETER_NAME;
 
             commandlineOptions.TryGetValue(OPTION_EXTRA_PARAMETERS, out m_extraParameters);
+            commandlineOptions.TryGetValue(OPTION_HEADERS, out var headers);
+            m_headers = ParseHeaders(headers);
             m_acceptAnyCertificate = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_ACCEPT_ANY_CERTIFICATE);
             m_acceptSpecificCertificates = commandlineOptions.ContainsKey(OPTION_ACCEPT_SPECIFIED_CERTIFICATE) ? commandlineOptions[OPTION_ACCEPT_SPECIFIED_CERTIFICATE].Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries) : null;
             m_ignoreRevocationFailure = Utility.Utility.ParseBoolOption(commandlineOptions.AsReadOnly(), OPTION_IGNORE_REVOCATION_FAILURE);
@@ -322,6 +333,37 @@ namespace Duplicati.Library.Modules.Builtin
 
         #endregion
 
+        /// <summary>
+        /// Reads the extra request headers, given as a JSON object of names and values
+        /// </summary>
+        /// <param name="value">The option value</param>
+        /// <returns>The headers, empty if none or if the value cannot be read</returns>
+        internal static Dictionary<string, string> ParseHeaders(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return new();
+
+            // The value is not written to the log, as it may hold a key
+            Dictionary<string, string> headers;
+            try
+            {
+                headers = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(value) ?? new();
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "InvalidHttpHeaders", null, Strings.SendHttpMessage.InvalidHeaders(OPTION_HEADERS, "it is not a JSON object of names and values"));
+                return new();
+            }
+
+            var invalid = headers.Keys.FirstOrDefault(name => string.IsNullOrWhiteSpace(name) || name.Any(c => c <= ' ' || c == ':' || c > '~'));
+            if (invalid != null)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "InvalidHttpHeaders", null, Strings.SendHttpMessage.InvalidHeaders(OPTION_HEADERS, $"\"{invalid}\" is not a header name"));
+                return new();
+            }
+
+            return headers;
+        }
         /// <summary>
         /// Sends the message to the specified target.
         /// </summary>
@@ -380,6 +422,22 @@ namespace Duplicati.Library.Modules.Builtin
                 };
                 request.Content.Headers.ContentType = contenttype;
                 request.Headers.Authorization = authorization;
+                foreach (var header in m_headers)
+                {
+                    // A header given here replaces the one the module sets, such as the
+                    // authentication from the URL or the content type. A content header, such
+                    // as Content-Type, cannot go on the request itself, which throws.
+                    try
+                    {
+                        request.Headers.Remove(header.Key);
+                        request.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        request.Content.Headers.Remove(header.Key);
+                        request.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                    }
+                }
 
                 var response = await client.SendAsync(request);
                 var responseContent = await response.Content.ReadAsStringAsync();
