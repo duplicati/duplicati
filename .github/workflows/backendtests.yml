@@ -286,9 +286,13 @@ jobs:
           dotnet build --no-restore
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
       - name: Setup Testcontainers Cloud Client
+        # The wait gives up after 120 seconds; the tests then run as they did without it
+        continue-on-error: true
         uses: atomicjar/testcontainers-cloud-setup-action@7d1bab3fdfe0027c91936deca6b924d8a8a7a04d # v1.4.0
         with:
           token: "${{ secrets.TC_CLOUD_TOKEN }}"
+          # Wait until the agent runs, so the tests can find the Docker endpoint
+          wait: true
       - name: Run FTP tests
         env:
           TC_CLOUD_TOKEN: "${{ secrets.TC_CLOUD_TOKEN }}"
@@ -441,9 +445,13 @@ jobs:
           dotnet build --no-restore
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
       - name: Setup Testcontainers Cloud Client
+        # The wait gives up after 120 seconds; the tests then run as they did without it
+        continue-on-error: true
         uses: atomicjar/testcontainers-cloud-setup-action@7d1bab3fdfe0027c91936deca6b924d8a8a7a04d # v1.4.0
         with:
           token: "${{ secrets.TC_CLOUD_TOKEN }}"
+          # Wait until the agent runs, so the tests can find the Docker endpoint
+          wait: true
       - name: Run Webdav tests
         env:
           TC_CLOUD_TOKEN: "${{ secrets.TC_CLOUD_TOKEN }}"
@@ -517,9 +525,13 @@ jobs:
           dotnet build --no-restore
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
       - name: Setup Testcontainers Cloud Client
+        # The wait gives up after 120 seconds; the tests then run as they did without it
+        continue-on-error: true
         uses: atomicjar/testcontainers-cloud-setup-action@7d1bab3fdfe0027c91936deca6b924d8a8a7a04d # v1.4.0
         with:
           token: "${{ secrets.TC_CLOUD_TOKEN }}"
+          # Wait until the agent runs, so the tests can find the Docker endpoint
+          wait: true
       - name: Run SSH tests
         env:
           TC_CLOUD_TOKEN: "${{ secrets.TC_CLOUD_TOKEN }}"
@@ -557,9 +569,13 @@ jobs:
           dotnet build --no-restore
           LiveTests/Duplicati.Backend.Tests/Duplicati.Backend.Tests.slnx
       - name: Setup Testcontainers Cloud Client
+        # The wait gives up after 120 seconds; the tests then run as they did without it
+        continue-on-error: true
         uses: atomicjar/testcontainers-cloud-setup-action@7d1bab3fdfe0027c91936deca6b924d8a8a7a04d # v1.4.0
         with:
           token: "${{ secrets.TC_CLOUD_TOKEN }}"
+          # Wait until the agent runs, so the tests can find the Docker endpoint
+          wait: true
       - name: Run SFTP tests
         env:
           TC_CLOUD_TOKEN: "${{ secrets.TC_CLOUD_TOKEN }}"
