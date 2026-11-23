@@ -21,8 +21,10 @@
 
 #nullable enable
 
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Database.Local;
@@ -66,28 +68,43 @@ namespace Duplicati.Library.Main.Operation
         /// <returns>An awaitable task</returns>
         public async Task RunAsync(string[]? paths, IFilter? filter)
         {
-            if (!File.Exists(m_options.Dbpath))
-                throw new UserInformationException(string.Format("Database file does not exist: {0}", m_options.Dbpath), "DatabaseDoesNotExist");
+            var (fileCount, fileSize, volumes) = await GetRestoreVolumesAsync(m_options, paths, filter, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
+            m_result.FileCount = fileCount;
+            m_result.FileSize = fileSize;
+            m_result.Volumes = volumes;
+        }
+
+        /// <summary>
+        /// Works out the remote volumes a restore of the selected files reads
+        /// </summary>
+        /// <param name="options">The options, with the database, version and time to use</param>
+        /// <param name="paths">The paths to restore, as given to the restore command</param>
+        /// <param name="filter">The filter to restore with</param>
+        /// <param name="token">The cancellation token</param>
+        /// <returns>The number and size of the files, and the remote volumes in the order the restore reads them</returns>
+        internal static async Task<(long FileCount, long FileSize, List<IListRestoreVolume> Volumes)> GetRestoreVolumesAsync(Options options, string[]? paths, IFilter? filter, CancellationToken token)
+        {
+            if (!File.Exists(options.Dbpath))
+                throw new UserInformationException(string.Format("Database file does not exist: {0}", options.Dbpath), "DatabaseDoesNotExist");
 
             // The same selection as the restore makes
             filter = JoinedFilterExpression.Join(new FilterExpression(paths), filter);
 
-            var token = m_result.TaskControl.ProgressToken;
-            await using var db = await LocalRestoreDatabase.CreateAsync(m_options.Dbpath, null, token).ConfigureAwait(false);
+            await using var db = await LocalRestoreDatabase.CreateAsync(options.Dbpath, null, token).ConfigureAwait(false);
 
             var files = await db
-                .PrepareRestoreFilelistAsync(m_options.Time, m_options.Version, filter, m_options.DisableAdsRestore, token)
+                .PrepareRestoreFilelistAsync(options.Time, options.Version, filter, options.DisableAdsRestore, token)
                 .ConfigureAwait(false);
-            m_result.FileCount = files.Item1;
-            m_result.FileSize = files.Item2;
 
             // Nothing is taken from local files here, so every block the files consist of is
             // read from the destination, which is the most a restore can need
-            await db.FindMissingBlocksAsync(m_options.SkipMetadata, token).ConfigureAwait(false);
-            m_result.Volumes = await db.GetMissingVolumesAsync(token)
+            await db.FindMissingBlocksAsync(options.SkipMetadata, token).ConfigureAwait(false);
+            var volumes = await db.GetMissingVolumesAsync(token)
                 .Select(x => (IListRestoreVolume)new ListRestoreVolume(x.Name, x.Size))
                 .ToListAsync(token)
                 .ConfigureAwait(false);
+
+            return (files.Item1, files.Item2, volumes);
         }
     }
 }

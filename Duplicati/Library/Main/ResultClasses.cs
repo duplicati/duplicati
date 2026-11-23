@@ -722,6 +722,24 @@ namespace Duplicati.Library.Main
         public override OperationMode MainOperation { get { return OperationMode.ListRestoreVolumes; } }
     }
 
+    /// <summary>
+    /// A remote volume that a restore reads, with whether it can be read now
+    /// </summary>
+    /// <param name="Name">The name of the remote volume</param>
+    /// <param name="Size">The size of the remote volume, or -1 if it is not known</param>
+    /// <param name="State">Whether the volume can be read, after any request made</param>
+    /// <param name="Requested">Whether the volume was asked to be brought back</param>
+    internal sealed record UnfreezeVolume(string Name, long Size, ArchiveRestoreState State, bool Requested) : IUnfreezeVolume;
+
+    internal class UnfreezeResults : BasicResults, IUnfreezeResults
+    {
+        public IEnumerable<IUnfreezeVolume> Volumes { get; set; } = [];
+        public long FileCount { get; set; }
+        public long FileSize { get; set; }
+
+        public override OperationMode MainOperation { get { return OperationMode.Unfreeze; } }
+    }
+
     internal class DeleteResults : BasicResults, IDeleteResults
     {
         [System.Text.Json.Serialization.JsonIgnore]

@@ -29,7 +29,7 @@ namespace Duplicati.Library.Backend.AzureBlob
 {
     // ReSharper disable once UnusedMember.Global
     // This class is instantiated dynamically in the BackendLoader.
-    public class AzureBlobBackend : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
+    public class AzureBlobBackend : IStreamingBackend, ILockingBackend, IRenameEnabledBackend, IArchiveRestoreEnabledBackend
     {
         /// <summary>
         /// The access to Azure blob storage
@@ -56,6 +56,14 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// The option to specify the Azure access tier
         /// </summary>
         private const string AZURE_ACCESS_TIER_OPTION = "azure-access-tier";
+        /// <summary>
+        /// The option to specify the tier that archived blobs are rehydrated to
+        /// </summary>
+        private const string AZURE_REHYDRATE_TIER_OPTION = "azure-rehydrate-tier";
+        /// <summary>
+        /// The option to specify the rehydration priority
+        /// </summary>
+        private const string AZURE_REHYDRATE_PRIORITY_OPTION = "azure-rehydrate-priority";
         /// <summary>
         /// The option to specify the number of internal retries
         /// </summary>
@@ -93,6 +101,14 @@ namespace Duplicati.Library.Backend.AzureBlob
         /// The immutability policy mode
         /// </summary>
         private readonly BlobImmutabilityPolicyMode _immutabilityPolicyMode;
+        /// <summary>
+        /// The tier that archived blobs are rehydrated to
+        /// </summary>
+        private readonly AccessTier _rehydrateTier = AccessTier.Hot;
+        /// <summary>
+        /// The rehydration priority
+        /// </summary>
+        private readonly RehydratePriority _rehydratePriority = RehydratePriority.Standard;
 
         /// <summary>
         /// The default storage classes that are considered archive classes
@@ -156,6 +172,11 @@ namespace Duplicati.Library.Backend.AzureBlob
                 throw new UserInformationException(Strings.AzureBlobBackend.InvalidUploadBlockSize(AZURE_UPLOAD_BLOCK_SIZE_OPTION), "AzureInvalidUploadBlockSize");
 
             _immutabilityPolicyMode = Utility.Utility.ParseEnumOption(options, AZURE_BLOB_IMMUTABILITY_POLICY_MODE_OPTION, DEFAULT_IMMUTABILITY_MODE);
+
+            var rehydrateTier = options.GetValueOrDefault(AZURE_REHYDRATE_TIER_OPTION);
+            if (!string.IsNullOrWhiteSpace(rehydrateTier))
+                _rehydrateTier = new AccessTier(rehydrateTier.Trim());
+            _rehydratePriority = Utility.Utility.ParseEnumOption(options, AZURE_REHYDRATE_PRIORITY_OPTION, RehydratePriority.Standard);
 
             _azureBlob = new AzureBlobWrapper(auth.Username!, auth.Password, sasToken, containerName, prefix, accessTier, archiveClasses, timeouts, internalRetries, uploadBlockSize);
         }
@@ -228,6 +249,14 @@ namespace Duplicati.Library.Backend.AzureBlob
             return WrapWithExceptionHandler(_azureBlob.SetObjectLockUntilAsync(remotename, lockUntilUtc, _immutabilityPolicyMode, cancellationToken));
         }
 
+        /// <inheritdoc />
+        public Task<ArchiveRestoreState> GetArchiveRestoreStateAsync(string remotename, CancellationToken cancellationToken)
+            => _azureBlob.GetArchiveRestoreStateAsync(remotename, cancellationToken);
+
+        /// <inheritdoc />
+        public Task RequestArchiveRestoreAsync(string remotename, CancellationToken cancellationToken)
+            => WrapWithExceptionHandler(_azureBlob.RequestArchiveRestoreAsync(remotename, _rehydrateTier, _rehydratePriority, cancellationToken));
+
         public IList<ICommandLineArgument> SupportedCommands
         {
             get
@@ -263,6 +292,20 @@ namespace Duplicati.Library.Backend.AzureBlob
                         "",
                         null,
                         ACCESS_TIERS.Select(x => x.ToString()).ToArray()),
+                    new CommandLineArgument(AZURE_REHYDRATE_TIER_OPTION,
+                        CommandLineArgument.ArgumentType.Enumeration,
+                        Strings.AzureBlobBackend.RehydrateTierDescriptionShort,
+                        Strings.AzureBlobBackend.RehydrateTierDescriptionLong,
+                        "Hot",
+                        null,
+                        ["Hot", "Cool", "Cold"]),
+                    new CommandLineArgument(AZURE_REHYDRATE_PRIORITY_OPTION,
+                        CommandLineArgument.ArgumentType.Enumeration,
+                        Strings.AzureBlobBackend.RehydratePriorityDescriptionShort,
+                        Strings.AzureBlobBackend.RehydratePriorityDescriptionLong,
+                        "Standard",
+                        null,
+                        ["Standard", "High"]),
                     new CommandLineArgument(AZURE_INTERNAL_RETRIES_OPTION,
                         CommandLineArgument.ArgumentType.Integer,
                         Strings.AzureBlobBackend.InternalRetriesDescriptionShort,

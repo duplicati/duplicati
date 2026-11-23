@@ -53,6 +53,11 @@ namespace Duplicati.Library.Backend.Strings
         public static string S3StorageclassDescriptionShort { get { return LC.L(@"Specify storage class"); } }
         public static string S3ArchiveClassesDescriptionShort { get { return LC.L(@"Specify archive storage class"); } }
         public static string S3ArchiveClassesDescriptionLong { get { return LC.L(@"Use this option to specify what storage classes are considered archive storage classes. With this option it is possible to allow lifecycle policies to move data to cheaper storage classes and prevent Duplicati from accessing archived data. This option is only supported for the AWS client."); } }
+        public static string ArchiveRestoreRequiresAwsClient { get { return LC.L(@"Bringing files back from archive storage is only supported by the AWS client. Use --s3-client=aws, or bring the files back with the tools of the storage provider."); } }
+        public static string S3ArchiveRestoreDaysShort { get { return LC.L(@"Days to keep files brought back from archive storage"); } }
+        public static string S3ArchiveRestoreDaysLong { get { return LC.L(@"When the unfreeze command asks for files to be brought back from archive storage, such as S3 Glacier Flexible Retrieval or Deep Archive, a temporary copy is made that can be read for this number of days. The restore has to run within that time."); } }
+        public static string S3ArchiveRestoreTierShort { get { return LC.L(@"Retrieval tier for files in archive storage"); } }
+        public static string S3ArchiveRestoreTierLong { get { return LC.L(@"The retrieval tier the unfreeze command asks for when it brings files back from archive storage. Expedited is the fastest and most expensive, Bulk the slowest and cheapest. Deep Archive does not support Expedited."); } }
         public static string DescriptionListApiVersionShort { get { return LC.L(@"Specify the S3 list API version to use"); } }
         public static string DescriptionListApiVersionLong { get { return LC.L(@"Use this option to specify the S3 list API version to use. This can be used to work around issues with some S3 providers. If this option is not set, the Minio client uses v2."); } }
         public static string ListApiVersionDeprecated(string legacyOption, string option) { return LC.L(@"The option {0} is deprecated, use {1} instead.", legacyOption, option); }

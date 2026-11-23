@@ -107,6 +107,7 @@ namespace Duplicati.CommandLine
                         ["test-filter"] = Commands.TestFilters,
                         ["affected"] = Commands.Affected,
                         ["list-restore-volumes"] = Commands.ListRestoreVolumes,
+                        ["unfreeze"] = Commands.Unfreeze,
                         ["vacuum"] = Commands.Vacuum,
                         ["set-locks"] = Commands.SetLocks,
                         ["setlocks"] = Commands.SetLocks,

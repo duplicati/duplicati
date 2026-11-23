@@ -328,6 +328,70 @@ namespace Duplicati.Library.Backend.AzureBlob
             }
         }
 
+        /// <summary>
+        /// Gets whether a blob can be read now, or has to be rehydrated from the archive tier first
+        /// </summary>
+        /// <param name="keyName">The name of the blob</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>The state of the blob</returns>
+        public async Task<ArchiveRestoreState> GetArchiveRestoreStateAsync(string keyName, CancellationToken cancellationToken)
+        {
+            var blobClient = _container.GetBlobClient(_prefix + keyName);
+
+            try
+            {
+                var properties = (await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, ct
+                    => blobClient.GetPropertiesAsync(cancellationToken: ct)
+                ).ConfigureAwait(false)).Value;
+
+                // While a blob is rehydrated it stays in the archive tier, with a status that says where it goes
+                if (!string.IsNullOrWhiteSpace(properties.ArchiveStatus) && properties.ArchiveStatus.StartsWith("rehydrate-pending", StringComparison.OrdinalIgnoreCase))
+                    return ArchiveRestoreState.RestoreInProgress;
+
+                // Only the archive tier is offline; cool and cold blobs are read directly
+                if (string.Equals(properties.AccessTier, AccessTier.Archive.ToString(), StringComparison.OrdinalIgnoreCase))
+                    return ArchiveRestoreState.Archived;
+
+                return ArchiveRestoreState.Available;
+            }
+            catch (RequestFailedException e) when (e.Status == 404
+                                                    || e.ErrorCode == BlobErrorCode.BlobNotFound
+                                                    || e.ErrorCode == BlobErrorCode.ResourceNotFound)
+            {
+                throw new FileMissingException(e.Message, e);
+            }
+        }
+
+        /// <summary>
+        /// Asks for a blob in the archive tier to be rehydrated to an online tier
+        /// </summary>
+        /// <param name="keyName">The name of the blob</param>
+        /// <param name="targetTier">The tier to rehydrate to</param>
+        /// <param name="priority">The rehydration priority</param>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>An awaitable task</returns>
+        public async Task RequestArchiveRestoreAsync(string keyName, AccessTier targetTier, RehydratePriority priority, CancellationToken cancellationToken)
+        {
+            var blobClient = _container.GetBlobClient(_prefix + keyName);
+
+            try
+            {
+                await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, ct
+                    => blobClient.SetAccessTierAsync(targetTier, rehydratePriority: priority, cancellationToken: ct)
+                ).ConfigureAwait(false);
+            }
+            catch (RequestFailedException e) when (e.Status == 409 && e.ErrorCode == BlobErrorCode.BlobBeingRehydrated)
+            {
+                // Asked for already, which is the outcome wanted
+            }
+            catch (RequestFailedException e) when (e.Status == 404
+                                                    || e.ErrorCode == BlobErrorCode.BlobNotFound
+                                                    || e.ErrorCode == BlobErrorCode.ResourceNotFound)
+            {
+                throw new FileMissingException(e.Message, e);
+            }
+        }
+
         public async Task SetObjectLockUntilAsync(string keyName, DateTime lockUntilUtc, BlobImmutabilityPolicyMode policyMode, CancellationToken cancellationToken)
         {
             var blobClient = _container.GetBlobClient(_prefix + keyName);

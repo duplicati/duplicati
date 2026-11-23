@@ -135,5 +135,26 @@ namespace Duplicati.Library.Backend
         /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The file entry, or null if not found</returns>
         Task<IFileEntry?> GetFileEntryAsync(string bucketName, string keyName, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Gets whether an object can be read now, or has to be brought back from archive storage first
+        /// </summary>
+        /// <param name="bucketName">The bucket containing the object.</param>
+        /// <param name="keyName">The full object key.</param>
+        /// <param name="cancelToken">The cancellation token.</param>
+        /// <returns>The state of the object</returns>
+        Task<ArchiveRestoreState> GetArchiveRestoreStateAsync(string bucketName, string keyName, CancellationToken cancelToken)
+            => throw new UserInformationException(Strings.S3Backend.ArchiveRestoreRequiresAwsClient, "S3ArchiveRestoreNotSupported");
+
+        /// <summary>
+        /// Asks for an object to be brought back from archive storage
+        /// </summary>
+        /// <param name="bucketName">The bucket containing the object.</param>
+        /// <param name="keyName">The full object key.</param>
+        /// <param name="days">The number of days the restored copy is kept</param>
+        /// <param name="tier">The retrieval tier, such as Standard, Bulk or Expedited</param>
+        /// <param name="cancelToken">The cancellation token.</param>
+        Task RequestArchiveRestoreAsync(string bucketName, string keyName, int days, string tier, CancellationToken cancelToken)
+            => throw new UserInformationException(Strings.S3Backend.ArchiveRestoreRequiresAwsClient, "S3ArchiveRestoreNotSupported");
     }
 }

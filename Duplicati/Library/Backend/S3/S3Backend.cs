@@ -32,7 +32,7 @@ using System.Text.RegularExpressions;
 
 namespace Duplicati.Library.Backend
 {
-    public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend, IFolderDeleteEnabledBackend, ILockingBackend, IFileInfoEnabledBackend
+    public class S3 : IBackend, IStreamingBackend, IRenameEnabledBackend, IFolderEnabledBackend, IFolderDeleteEnabledBackend, ILockingBackend, IFileInfoEnabledBackend, IArchiveRestoreEnabledBackend
     {
         private const string AUTH_USERNAME_OPTION = "aws-access-key-id";
         private const string AUTH_PASSWORD_OPTION = "aws-secret-access-key";
@@ -47,6 +47,10 @@ namespace Duplicati.Library.Backend
         private const string S3_RECURSIVE_LIST = "s3-recursive-list";
         private const string S3_LOCK_MODE_OPTION = "s3-lock-mode";
         private const string S3_AUTHENTICATION_REGION_OPTION = "s3-authentication-region";
+        private const string S3_ARCHIVE_RESTORE_DAYS_OPTION = "s3-archive-restore-days";
+        private const string S3_ARCHIVE_RESTORE_TIER_OPTION = "s3-archive-restore-tier";
+        private const int DEFAULT_ARCHIVE_RESTORE_DAYS = 7;
+        private const string DEFAULT_ARCHIVE_RESTORE_TIER = "Standard";
 
         public static readonly Dictionary<string, string?> KNOWN_S3_PROVIDERS = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase) {
             { "Amazon S3", "s3.amazonaws.com" },
@@ -247,6 +251,15 @@ namespace Duplicati.Library.Backend
         private const string DEFAULT_S3_HOST = "s3.amazonaws.com";
         private readonly IS3Client m_s3Client;
 
+        /// <summary>
+        /// The number of days a copy brought back from archive storage is kept
+        /// </summary>
+        private readonly int m_archiveRestoreDays = DEFAULT_ARCHIVE_RESTORE_DAYS;
+        /// <summary>
+        /// The retrieval tier asked for when bringing files back from archive storage
+        /// </summary>
+        private readonly string m_archiveRestoreTier = DEFAULT_ARCHIVE_RESTORE_TIER;
+
         public S3()
         {
             m_bucket = null!;
@@ -269,6 +282,7 @@ namespace Duplicati.Library.Backend
             m_prefix = NormalizePrefix(uri.Path);
             m_recurseLists = Utility.Utility.ParseBoolOption(options, S3_RECURSIVE_LIST);
             m_pointInTime = PointInTimeOptionsHelper.Parse(options);
+            (m_archiveRestoreDays, m_archiveRestoreTier) = ParseArchiveRestoreOptions(options);
             m_s3Client = client;
         }
 
@@ -309,6 +323,7 @@ namespace Duplicati.Library.Backend
 
             m_recurseLists = Utility.Utility.ParseBoolOption(options, S3_RECURSIVE_LIST);
             m_pointInTime = PointInTimeOptionsHelper.Parse(options);
+            (m_archiveRestoreDays, m_archiveRestoreTier) = ParseArchiveRestoreOptions(options);
 
             // Auto-disable DNS lookup for non-AWS configurations
             if (!options.ContainsKey("s3-ext-forcepathstyle") && !hostname.EndsWith(".amazonaws.com", StringComparison.OrdinalIgnoreCase))
@@ -551,6 +566,29 @@ namespace Duplicati.Library.Backend
             return Connection.SetObjectLockUntilAsync(m_bucket, GetFullKey(remotename), lockUntilUtc, cancelToken);
         }
 
+        /// <summary>
+        /// Reads the options for bringing files back from archive storage
+        /// </summary>
+        /// <param name="options">The backend options</param>
+        /// <returns>The number of days to keep the copy, and the retrieval tier</returns>
+        private static (int Days, string Tier) ParseArchiveRestoreOptions(Dictionary<string, string?> options)
+        {
+            var days = Utility.Utility.ParseIntOption(options, S3_ARCHIVE_RESTORE_DAYS_OPTION, DEFAULT_ARCHIVE_RESTORE_DAYS);
+            if (days < 1)
+                throw new UserInformationException(string.Format("The option --{0} must be at least 1", S3_ARCHIVE_RESTORE_DAYS_OPTION), "S3ArchiveRestoreDaysInvalid");
+
+            var tier = options.GetValueOrDefault(S3_ARCHIVE_RESTORE_TIER_OPTION);
+            return (days, string.IsNullOrWhiteSpace(tier) ? DEFAULT_ARCHIVE_RESTORE_TIER : tier.Trim());
+        }
+
+        /// <inheritdoc/>
+        public Task<ArchiveRestoreState> GetArchiveRestoreStateAsync(string remotename, CancellationToken cancellationToken)
+            => Connection.GetArchiveRestoreStateAsync(m_bucket, GetFullKey(remotename), cancellationToken);
+
+        /// <inheritdoc/>
+        public Task RequestArchiveRestoreAsync(string remotename, CancellationToken cancellationToken)
+            => Connection.RequestArchiveRestoreAsync(m_bucket, GetFullKey(remotename), m_archiveRestoreDays, m_archiveRestoreTier, cancellationToken);
+
         /// <inheritdoc/>
         public IList<ICommandLineArgument> SupportedCommands
         {
@@ -577,6 +615,8 @@ namespace Duplicati.Library.Backend
                     new CommandLineArgument(S3_DISABLE_CHUNK_ENCODING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionDisableChunkEncodingShort, Strings.S3Backend.DescriptionDisableChunkEncodingLong, "false"),
                     new CommandLineArgument(S3_DISABLE_PAYLOAD_SIGNING_OPTION, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionDisablePayloadSigningShort, Strings.S3Backend.DescriptionDisablePayloadSigningLong, "false"),
                     new CommandLineArgument(S3AwsClient.S3_ARCHIVE_CLASSES_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.S3Backend.S3ArchiveClassesDescriptionShort, Strings.S3Backend.S3ArchiveClassesDescriptionLong, string.Join(",", S3AwsClient.DEFAULT_ARCHIVE_CLASSES.Select(x => x.Value)), null, KNOWN_S3_STORAGE_CLASSES.Select(x => x.Value).WhereNotNullOrWhiteSpace().ToArray()),
+                    new CommandLineArgument(S3_ARCHIVE_RESTORE_DAYS_OPTION, CommandLineArgument.ArgumentType.Integer, Strings.S3Backend.S3ArchiveRestoreDaysShort, Strings.S3Backend.S3ArchiveRestoreDaysLong, DEFAULT_ARCHIVE_RESTORE_DAYS.ToString()),
+                    new CommandLineArgument(S3_ARCHIVE_RESTORE_TIER_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.S3ArchiveRestoreTierShort, Strings.S3Backend.S3ArchiveRestoreTierLong, DEFAULT_ARCHIVE_RESTORE_TIER, null, ["Standard", "Bulk", "Expedited"]),
                     new CommandLineArgument(S3AwsClient.S3_LIST_API_VERSION_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.DescriptionListApiVersionShort, Strings.S3Backend.DescriptionListApiVersionLong, "v1", null, ["v1", "v2"]),
                     new CommandLineArgument(S3AwsClient.S3_LEGACY_LIST_API_VERSION_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.S3Backend.DescriptionListApiVersionShort, Strings.S3Backend.DescriptionListApiVersionLong, "v1", null, ["v1", "v2"], Strings.S3Backend.ListApiVersionDeprecated(S3AwsClient.S3_LEGACY_LIST_API_VERSION_OPTION, S3AwsClient.S3_LIST_API_VERSION_OPTION)),
                     new CommandLineArgument(S3_RECURSIVE_LIST, CommandLineArgument.ArgumentType.Boolean, Strings.S3Backend.DescriptionRecursiveListShort, Strings.S3Backend.DescriptionRecursiveListLong, "false"),

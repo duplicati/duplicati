@@ -285,6 +285,10 @@ public class ControllerRpcServer : IController, IDisposable
         => Controller.ListRestoreVolumesAsync(paths, filter);
 
     /// <inheritdoc />
+    public Task<IUnfreezeResults> UnfreezeAsync(string[]? paths, IFilter? filter = null)
+        => Controller.UnfreezeAsync(paths, filter);
+
+    /// <inheritdoc />
     public Task<IRestoreControlFilesResults> RestoreControlFilesAsync(IEnumerable<string>? files = null, IFilter? filter = null)
         => Controller.RestoreControlFilesAsync(files, filter);
 

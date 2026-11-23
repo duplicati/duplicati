@@ -778,6 +778,64 @@ namespace Duplicati.Library.Backend
             }
         }
 
+        /// <summary>
+        /// The storage classes whose objects have to be brought back before they can be read.
+        /// Glacier Instant Retrieval is read directly, so it is not one of them.
+        /// </summary>
+        private static readonly IReadOnlySet<S3StorageClass> RESTORE_REQUIRED_CLASSES = new HashSet<S3StorageClass>([
+            S3StorageClass.Glacier, S3StorageClass.DeepArchive
+        ]);
+
+        /// <inheritdoc />
+        public async Task<ArchiveRestoreState> GetArchiveRestoreStateAsync(string bucketName, string keyName, CancellationToken cancelToken)
+        {
+            try
+            {
+                var request = new GetObjectMetadataRequest { BucketName = bucketName, Key = keyName };
+                var response = await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_client.GetObjectMetadataAsync(request, ct)).ConfigureAwait(false);
+
+                if (response.RestoreInProgress == true)
+                    return ArchiveRestoreState.RestoreInProgress;
+
+                // A restored copy can be read until it expires
+                if (response.StorageClass != null && RESTORE_REQUIRED_CLASSES.Contains(response.StorageClass) && response.RestoreExpiration == null)
+                    return ArchiveRestoreState.Archived;
+
+                return ArchiveRestoreState.Available;
+            }
+            catch (AmazonS3Exception s3Ex)
+            {
+                TranslateException(s3Ex, keyName);
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task RequestArchiveRestoreAsync(string bucketName, string keyName, int days, string tier, CancellationToken cancelToken)
+        {
+            var request = new RestoreObjectRequest
+            {
+                BucketName = bucketName,
+                Key = keyName,
+                Days = days,
+                RetrievalTier = GlacierJobTier.FindValue(tier)
+            };
+
+            try
+            {
+                await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => m_client.RestoreObjectAsync(request, ct)).ConfigureAwait(false);
+            }
+            catch (AmazonS3Exception s3Ex) when ("RestoreAlreadyInProgress".Equals(s3Ex.ErrorCode, StringComparison.OrdinalIgnoreCase))
+            {
+                // Asked for already, which is the outcome wanted
+            }
+            catch (AmazonS3Exception s3Ex)
+            {
+                TranslateException(s3Ex, keyName);
+                throw;
+            }
+        }
+
         #region IDisposable Members
 
         public void Dispose()

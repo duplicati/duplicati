@@ -56,5 +56,6 @@ public enum OperationMode
     RemoteSynchronization,
     SetVersionLabel,
     RestoreTest,
-    ListRestoreVolumes
+    ListRestoreVolumes,
+    Unfreeze
 }

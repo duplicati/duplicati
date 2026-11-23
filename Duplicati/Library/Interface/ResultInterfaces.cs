@@ -369,6 +369,41 @@ namespace Duplicati.Library.Interface
         long FileSize { get; }
     }
 
+    /// <summary>
+    /// A remote volume that a restore reads, with whether it can be read now
+    /// </summary>
+    public interface IUnfreezeVolume : IListRestoreVolume
+    {
+        /// <summary>
+        /// Whether the volume can be read, after any request made
+        /// </summary>
+        ArchiveRestoreState State { get; }
+        /// <summary>
+        /// Whether the volume was asked to be brought back from archive storage
+        /// </summary>
+        bool Requested { get; }
+    }
+
+    /// <summary>
+    /// The remote volumes that a restore of the selected files reads, with the ones in archive
+    /// storage asked to be brought back
+    /// </summary>
+    public interface IUnfreezeResults : IBasicResults
+    {
+        /// <summary>
+        /// The remote volumes, in the order the restore reads them
+        /// </summary>
+        IEnumerable<IUnfreezeVolume> Volumes { get; }
+        /// <summary>
+        /// The number of files and folders the restore covers
+        /// </summary>
+        long FileCount { get; }
+        /// <summary>
+        /// The size of the files the restore covers
+        /// </summary>
+        long FileSize { get; }
+    }
+
     public interface IListAffectedResults : IBasicResults
     {
         IEnumerable<IListResultFileset> Filesets { get; }

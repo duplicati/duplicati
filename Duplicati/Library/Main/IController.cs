@@ -138,6 +138,15 @@ public interface IController : IDisposable
     Task<IListRestoreVolumesResults> ListRestoreVolumesAsync(string[]? paths, IFilter? filter = null);
 
     /// <summary>
+    /// Asks the destination to bring back the remote volumes a restore of the selected files reads,
+    /// when they are in archive storage
+    /// </summary>
+    /// <param name="paths">The paths to restore</param>
+    /// <param name="filter">The filter to restore with</param>
+    /// <returns>The remote volumes the restore reads, and whether they can be read</returns>
+    Task<IUnfreezeResults> UnfreezeAsync(string[]? paths, IFilter? filter = null);
+
+    /// <summary>
     /// Lists broken files in the backup
     /// </summary>
     /// <param name="filter">The filter to apply</param>
