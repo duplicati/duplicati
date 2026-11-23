@@ -101,6 +101,30 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// </summary>
     internal const string HELP_ID_POINT_IN_TIME_NOT_AVAILABLE = "DuplicatiStoragePointInTimeNotAvailable";
     /// <summary>
+    /// The help id used when the server names a storage backend this version cannot connect with
+    /// </summary>
+    internal const string HELP_ID_UNSUPPORTED_BACKEND = "DuplicatiStorageUnsupportedBackend";
+    /// <summary>
+    /// The mode reported by the server when the client connects to the storage provider itself
+    /// </summary>
+    private const string MODE_DIRECT = "direct";
+    /// <summary>
+    /// The mode reported by the server when all data goes through the server
+    /// </summary>
+    private const string MODE_GATEWAY = "gateway";
+    /// <summary>
+    /// The scheme of the S3 backend, used when the server sends S3 credentials instead of a connection string
+    /// </summary>
+    private const string S3_SCHEME = "s3";
+    /// <summary>
+    /// How long before the credentials expire they are renewed
+    /// </summary>
+    private static readonly TimeSpan CREDENTIALS_RENEWAL_MARGIN = TimeSpan.FromMinutes(5);
+    /// <summary>
+    /// How long credentials are used when the server does not say when they expire
+    /// </summary>
+    private static readonly TimeSpan DEFAULT_CREDENTIALS_LIFETIME = TimeSpan.FromMinutes(15);
+    /// <summary>
     /// The S3 option that selects the retention mode for object locks
     /// </summary>
     private const string S3_LOCK_MODE_OPTION = "s3-lock-mode";
@@ -161,9 +185,13 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// </summary>
     private string _mode = "unknown";
     /// <summary>
-    /// The S3 backend used for direct mode
+    /// The backend used for direct mode: the one the server's connection string names
     /// </summary>
-    private S3? _s3Backend;
+    private IStreamingBackend? _directBackend;
+    /// <summary>
+    /// The connection string the direct mode backend was created from; it carries credentials
+    /// </summary>
+    private string? _directConnectionString;
     /// <summary>
     /// The credential expiration time for direct mode
     /// </summary>
@@ -174,9 +202,13 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// </summary>
     private bool? _objectLockEnabled;
     /// <summary>
-    /// The options the S3 backend was created with in direct mode, or <c>null</c> in gateway mode; used for testing
+    /// The options the direct mode backend was created with on top of its connection string, or <c>null</c> in gateway mode; used for testing
     /// </summary>
     internal IReadOnlyDictionary<string, string?>? DirectModeOptions { get; private set; }
+    /// <summary>
+    /// The backend used in direct mode, or <c>null</c> in gateway mode; used for testing
+    /// </summary>
+    internal IBackend? DirectModeBackend => _directBackend;
     /// <summary>
     /// The lock used to protect the credentials
     /// </summary>
@@ -338,48 +370,79 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     }
 
     /// <summary>
-    /// Ensures that we have valid credentials for direct S3 access
+    /// Ensures that we have valid credentials for direct access to the storage provider
     /// </summary>
     /// <param name="cancelToken">The cancellation token</param>
     /// <returns>An awaitable task</returns>
     internal async Task EnsureCredentialsAsync(CancellationToken cancelToken)
     {
-        if (_mode == "gateway")
+        if (_mode == MODE_GATEWAY)
             return;
 
-        // Credentials are still valid with a 5-minute buffer
-        if (_mode == "direct" && _s3Backend != null && DateTime.UtcNow < _credentialsExpiry.AddMinutes(-5))
+        if (HasValidDirectCredentials())
             return;
 
         await _credentialsLock.WaitAsync(cancelToken).ConfigureAwait(false);
         try
         {
             // Double-check after acquiring lock
-            if (_mode == "direct" && _s3Backend != null && DateTime.UtcNow < _credentialsExpiry.AddMinutes(-5))
+            if (HasValidDirectCredentials())
                 return;
 
             var creds = await FetchCredentialsAsync(_authTimeout, cancelToken).ConfigureAwait(false);
             _objectLockEnabled = creds?.ObjectLockEnabled;
-            if (creds != null &&
-                creds.Mode == "direct" &&
+
+            if (creds?.Mode == MODE_DIRECT && !string.IsNullOrWhiteSpace(creds.ConnectionString))
+            {
+                // The server decides which backend holds the data and sends the complete
+                // connection string for it, so any backend can be used without knowing it here
+                var scheme = new Utility.RelaxedUri(creds.ConnectionString).Scheme;
+                if (string.Equals(scheme, PROTOCOL, StringComparison.OrdinalIgnoreCase))
+                    throw new UserInformationException(Strings.DuplicatiBackend.ErrorUnsupportedBackend(scheme), HELP_ID_UNSUPPORTED_BACKEND);
+
+                // The point in time is only passed on when the server says the storage keeps
+                // older versions, which it reports as object locking
+                if (_pointInTime.HasValue && creds.ObjectLockEnabled != true)
+                    throw new UserInformationException(Strings.DuplicatiBackend.ErrorPointInTimeNotAvailable, HELP_ID_POINT_IN_TIME_NOT_AVAILABLE);
+
+                _mode = MODE_DIRECT;
+                // The credentials in the connection string can stop working at this time,
+                // so the time the server reports is used as it is
+                _credentialsExpiry = creds.RotateAfter.HasValue
+                    ? DateTime.UnixEpoch.AddSeconds(creds.RotateAfter.Value)
+                    : DateTime.UtcNow.Add(DEFAULT_CREDENTIALS_LIFETIME);
+
+                if (_directBackend == null || _directConnectionString != creds.ConnectionString)
+                {
+                    var options = new Dictionary<string, string?>();
+                    PointInTimeOptionsHelper.ApplyTo(_pointInTime, options);
+                    _timeouts.ApplyTo(options, overwrite: true);
+
+                    SetDirectBackend(CreateDirectBackend(creds.ConnectionString, scheme, options), creds.ConnectionString, options);
+                }
+            }
+            else if (creds != null &&
+                creds.Mode == MODE_DIRECT &&
                 !string.IsNullOrEmpty(creds.Endpoint) &&
                 !string.IsNullOrEmpty(creds.AccessKeyId) &&
                 !string.IsNullOrEmpty(creds.SecretKey) &&
                 !string.IsNullOrEmpty(creds.Bucket))
             {
+                // A server that sends S3 credentials instead of a connection string
+
                 // Older versions only exist on a bucket with object locking, which implies versioning,
                 // so without it there is no earlier state to read
                 if (_pointInTime.HasValue && creds.ObjectLockEnabled != true)
                     throw new UserInformationException(Strings.DuplicatiBackend.ErrorPointInTimeNotAvailable, HELP_ID_POINT_IN_TIME_NOT_AVAILABLE);
 
-                _mode = "direct";
+                _mode = MODE_DIRECT;
                 _credentialsExpiry = DateTime.UnixEpoch.AddSeconds(creds.RotateAfter ?? 0);
                 // In case the server doesn't provide a rotate-after value, we set a buffer
-                if (_credentialsExpiry - DateTime.UtcNow < TimeSpan.FromMinutes(15))
-                    _credentialsExpiry = DateTime.UtcNow.AddMinutes(15);
+                if (_credentialsExpiry - DateTime.UtcNow < DEFAULT_CREDENTIALS_LIFETIME)
+                    _credentialsExpiry = DateTime.UtcNow.Add(DEFAULT_CREDENTIALS_LIFETIME);
 
                 // Build S3 URL: s3://bucket
-                var s3Url = $"s3://{creds.Bucket}";
+                var s3Url = $"{S3_SCHEME}://{creds.Bucket}";
                 if (!string.IsNullOrWhiteSpace(creds.Prefix))
                     s3Url += (creds.Prefix.StartsWith('/') ? "" : "/") + creds.Prefix;
 
@@ -403,9 +466,7 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
                 // Plug in timeout options
                 _timeouts.ApplyTo(s3Options, overwrite: true);
 
-                _s3Backend?.Dispose();
-                _s3Backend = new S3(s3Url, s3Options);
-                DirectModeOptions = s3Options;
+                SetDirectBackend(new S3(s3Url, s3Options), null, s3Options);
             }
             else
             {
@@ -414,16 +475,54 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
                 if (_pointInTime.HasValue)
                     throw new UserInformationException(Strings.DuplicatiBackend.ErrorPointInTimeNotAvailable, HELP_ID_POINT_IN_TIME_NOT_AVAILABLE);
 
-                _mode = "gateway";
-                _s3Backend?.Dispose();
-                _s3Backend = null;
-                DirectModeOptions = null;
+                _mode = MODE_GATEWAY;
+                SetDirectBackend(null, null, null);
             }
         }
         finally
         {
             _credentialsLock.Release();
         }
+    }
+
+    /// <summary>
+    /// Checks if direct mode is set up with credentials that are not about to expire
+    /// </summary>
+    /// <returns><c>true</c> if the credentials can be used; <c>false</c> if they must be requested</returns>
+    private bool HasValidDirectCredentials()
+        => _mode == MODE_DIRECT && _directBackend != null && DateTime.UtcNow < _credentialsExpiry.Subtract(CREDENTIALS_RENEWAL_MARGIN);
+
+    /// <summary>
+    /// Creates the backend the server's connection string names
+    /// </summary>
+    /// <param name="connectionString">The connection string</param>
+    /// <param name="scheme">The scheme of the connection string</param>
+    /// <param name="options">The options to add to those in the connection string</param>
+    /// <returns>The backend</returns>
+    private static IStreamingBackend CreateDirectBackend(string connectionString, string scheme, Dictionary<string, string?> options)
+    {
+        var backend = BackendFactory.Create(connectionString, options);
+        if (backend is IStreamingBackend streamingBackend)
+            return streamingBackend;
+
+        // A backend this version does not have must not fall back to gateway mode,
+        // which would send the data somewhere else than the server intends
+        backend?.Dispose();
+        throw new UserInformationException(Strings.DuplicatiBackend.ErrorUnsupportedBackend(scheme), HELP_ID_UNSUPPORTED_BACKEND);
+    }
+
+    /// <summary>
+    /// Replaces the direct mode backend, disposing the previous one
+    /// </summary>
+    /// <param name="backend">The new backend, or <c>null</c> for gateway mode</param>
+    /// <param name="connectionString">The connection string the backend was created from, or <c>null</c> if it was not created from one</param>
+    /// <param name="options">The options the backend was created with, or <c>null</c> for gateway mode</param>
+    private void SetDirectBackend(IStreamingBackend? backend, string? connectionString, Dictionary<string, string?>? options)
+    {
+        _directBackend?.Dispose();
+        _directBackend = backend;
+        _directConnectionString = connectionString;
+        DirectModeOptions = options;
     }
 
     /// <summary>
@@ -856,8 +955,10 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     {
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
         EnsureObjectLockEnabled();
-        if (_s3Backend != null)
-            return await _s3Backend.GetObjectLockUntilAsync(remotename, cancelToken).ConfigureAwait(false);
+        if (_directBackend is ILockingBackend lockingBackend)
+            return await lockingBackend.GetObjectLockUntilAsync(remotename, cancelToken).ConfigureAwait(false);
+        if (_directBackend != null)
+            throw new ObjectLockNotSupportedException(Strings.DuplicatiBackend.ErrorObjectLockNotEnabled, HELP_ID_OBJECT_LOCK_NOT_ENABLED);
 
         using var request = new HttpRequestMessage(HttpMethod.Get, $"/lock/{remotename}");
         using var response = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken,
@@ -884,11 +985,13 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         EnsureWritable();
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
         EnsureObjectLockEnabled();
-        if (_s3Backend != null)
+        if (_directBackend is ILockingBackend lockingBackend)
         {
-            await _s3Backend.SetObjectLockUntilAsync(remotename, lockUntilUtc, cancelToken).ConfigureAwait(false);
+            await lockingBackend.SetObjectLockUntilAsync(remotename, lockUntilUtc, cancelToken).ConfigureAwait(false);
             return;
         }
+        if (_directBackend != null)
+            throw new ObjectLockNotSupportedException(Strings.DuplicatiBackend.ErrorObjectLockNotEnabled, HELP_ID_OBJECT_LOCK_NOT_ENABLED);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, $"/lock/{remotename}");
         request.Content = JsonContent.Create(new SetLockRequest(lockUntilUtc.ToUniversalTime()));
@@ -943,9 +1046,9 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     {
         EnsureWritable();
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
-        if (_s3Backend != null)
+        if (_directBackend != null)
         {
-            await _s3Backend.CreateFolderAsync(cancelToken).ConfigureAwait(false);
+            await _directBackend.CreateFolderAsync(cancelToken).ConfigureAwait(false);
         }
         else
         {
@@ -971,9 +1074,9 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     {
         EnsureWritable();
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
-        if (_s3Backend != null)
+        if (_directBackend != null)
         {
-            await _s3Backend.DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
+            await _directBackend.DeleteAsync(remotename, cancelToken).ConfigureAwait(false);
         }
         else
         {
@@ -1000,9 +1103,9 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     private async Task GetCoreAsync(string remotename, Stream destination, CancellationToken cancelToken)
     {
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
-        if (_s3Backend != null)
+        if (_directBackend != null)
         {
-            await _s3Backend.GetAsync(remotename, destination, cancelToken).ConfigureAwait(false);
+            await _directBackend.GetAsync(remotename, destination, cancelToken).ConfigureAwait(false);
         }
         else
         {
@@ -1074,9 +1177,9 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     private async IAsyncEnumerable<IFileEntry> ListCoreAsync([EnumeratorCancellation] CancellationToken cancelToken)
     {
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
-        if (_s3Backend != null)
+        if (_directBackend != null)
         {
-            await foreach (var f in _s3Backend.ListAsync(cancelToken).ConfigureAwait(false))
+            await foreach (var f in _directBackend.ListAsync(cancelToken).ConfigureAwait(false))
                 yield return f;
         }
         else
@@ -1116,9 +1219,9 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     {
         EnsureWritable();
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
-        if (_s3Backend != null)
+        if (_directBackend != null)
         {
-            await _s3Backend.PutAsync(remotename, source, cancelToken).ConfigureAwait(false);
+            await _directBackend.PutAsync(remotename, source, cancelToken).ConfigureAwait(false);
         }
         else
         {
@@ -1161,9 +1264,13 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     {
         EnsureWritable();
         await EnsureCredentialsAsync(cancelToken).ConfigureAwait(false);
-        if (_s3Backend != null)
+        if (_directBackend is IRenameEnabledBackend renameBackend)
         {
-            await _s3Backend.RenameAsync(oldname, newname, cancelToken).ConfigureAwait(false);
+            await renameBackend.RenameAsync(oldname, newname, cancelToken).ConfigureAwait(false);
+        }
+        else if (_directBackend != null)
+        {
+            throw new NotSupportedException(Strings.DuplicatiBackend.ErrorRenameNotSupported(_directBackend.ProtocolKey));
         }
         else
         {
@@ -1201,6 +1308,11 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         /// The mode for connecting to storage, either "direct" or "gateway"
         /// </summary>
         public string? Mode { get; set; }
+        /// <summary>
+        /// The complete connection string of the backend to use in "direct" mode, credentials
+        /// included. When set, that backend is used with it as supplied, and the S3 fields are ignored.
+        /// </summary>
+        public string? ConnectionString { get; set; }
         /// <summary>
         /// The S3 endpoint to connect to, in "direct" mode
         /// </summary>

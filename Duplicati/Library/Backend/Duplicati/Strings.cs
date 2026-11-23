@@ -48,6 +48,8 @@ internal static class DuplicatiBackend
     public static string ErrorReadOnlyKey(string errorMessage) { return LC.L(@"The operation failed because the API key is read-only and cannot change the stored data, error message: {0}", errorMessage); }
     public static string ErrorObjectLockNotEnabled { get { return LC.L(@"Object locking is not enabled for this storage account"); } }
     public static string ErrorSetObjectLockNoRetention { get { return LC.L(@"Failed to set object lock, the server accepted the request but reported no retention date"); } }
+    public static string ErrorUnsupportedBackend(string scheme) { return LC.L(@"The storage server stores the data with a backend ({0}) that this version of Duplicati cannot use. Update Duplicati to use this storage.", scheme); }
+    public static string ErrorRenameNotSupported(string scheme) { return LC.L(@"The storage backend ({0}) does not support renaming files", scheme); }
     public static string ErrorPointInTimeNotAvailable { get { return LC.L(@"Reading the destination at a point in time is not available for this account."); } }
 }
 

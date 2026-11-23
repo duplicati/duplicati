@@ -162,6 +162,14 @@ namespace Duplicati.Library.DynamicLoader
         /// </summary>
         private static readonly BackendLoaderSub _backendLoader = new BackendLoaderSub();
 
+        /// <summary>
+        /// Makes the loader available to code that cannot reference it, such as a backend that wraps another backend
+        /// </summary>
+        static BackendLoader()
+        {
+            BackendFactory.Register(GetBackend);
+        }
+
         #region Public static API
 
         /// <summary>

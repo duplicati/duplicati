@@ -44,6 +44,10 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         private const string STORAGECLASS_OPTION = "gcs-storage-class";
         private const string SERVICE_ACCOUNT_JSON_OPTION = "gcs-service-account-json";
         private const string SERVICE_ACCOUNT_FILE_OPTION = "gcs-service-account-file";
+        /// <summary>
+        /// The option that supplies an OAuth access token obtained elsewhere
+        /// </summary>
+        internal const string ACCESS_TOKEN_OPTION = "gcs-access-token";
         private const string RETENTION_POLICY_MODE_OPTION = "gcs-retention-policy-mode";
 
         private const RetentionPolicyMode DEFAULT_RETENTION_POLICY_MODE = RetentionPolicyMode.Unlocked;
@@ -87,6 +91,18 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         }
 
         public GoogleCloudStorage(string url, Dictionary<string, string?> options)
+            : this(url, options, null)
+        {
+        }
+
+        /// <summary>
+        /// Creates a backend, optionally talking through the supplied <see cref="HttpClient"/>
+        /// so the Cloud Storage API responses can be decided by a test
+        /// </summary>
+        /// <param name="url">The backend url</param>
+        /// <param name="options">The options to use</param>
+        /// <param name="httpClient">The client to send the requests through, or <c>null</c> to use the default; used for testing</param>
+        internal GoogleCloudStorage(string url, Dictionary<string, string?> options, HttpClient? httpClient)
         {
             var uri = new Utility.RelaxedUri(url);
 
@@ -100,6 +116,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
 
             var serviceAccountFile = options.GetValueOrDefault(SERVICE_ACCOUNT_FILE_OPTION);
             var serviceAccountJson = options.GetValueOrDefault(SERVICE_ACCOUNT_JSON_OPTION);
+            var accessToken = options.GetValueOrDefault(ACCESS_TOKEN_OPTION);
             m_timeouts = TimeoutOptionsHelper.Parse(options);
             m_project = options.GetValueOrDefault(PROJECT_OPTION);
             m_location = options.GetValueOrDefault(LOCATION_OPTION);
@@ -110,7 +127,26 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             // the JSON key of a service account, and the loader that takes any kind of credential
             // would read whatever arrived -- including an external account configuration, which
             // names the endpoint it fetches tokens from.
-            if (!string.IsNullOrWhiteSpace(serviceAccountJson))
+            if (!string.IsNullOrWhiteSpace(accessToken))
+            {
+                // The token carries the access it was issued with, so the same client serves
+                // the requests that otherwise need the full control scope
+                var client = new AccessTokenHttpClient(accessToken, httpClient);
+                m_oauth = client;
+                m_create_oauth_fullcontrol = () => client;
+            }
+            else if (httpClient != null)
+            {
+                var authId = AuthIdOptionsHelper.Parse(options)
+                    .RequireCredentials(TOKEN_URL);
+
+                m_oauth = new GoogleOAuthHelperHttpClient(authId.AuthId!, this.ProtocolKey, authId.OAuthUrl, httpClient)
+                {
+                    AutoAuthHeader = true
+                };
+                m_create_oauth_fullcontrol = () => null;
+            }
+            else if (!string.IsNullOrWhiteSpace(serviceAccountJson))
             {
                 m_oauth = new ServiceAccountHttpClient(CredentialFactory.FromJson<ServiceAccountCredential>(serviceAccountJson).ToGoogleCredential().CreateScoped(CREDENTIAL_SCOPE));
                 m_create_oauth_fullcontrol = () => new ServiceAccountHttpClient(CredentialFactory.FromJson<ServiceAccountCredential>(serviceAccountJson).ToGoogleCredential().CreateScoped(CREDENTIAL_SCOPE_FULL_CONTROL));
@@ -132,25 +168,6 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 // This does not work with the current OAuth server as it only grants read/write access.
                 m_create_oauth_fullcontrol = () => null;
             }
-        }
-
-        /// <summary>
-        /// Creates a backend that talks through the supplied <see cref="HttpClient"/>,
-        /// so the Cloud Storage API responses can be decided by a test
-        /// </summary>
-        /// <param name="url">The backend url</param>
-        /// <param name="options">The options to use</param>
-        /// <param name="httpClient">The client to send the requests through</param>
-        internal GoogleCloudStorage(string url, Dictionary<string, string?> options, HttpClient httpClient)
-            : this(url, options)
-        {
-            var authId = AuthIdOptionsHelper.Parse(options)
-                .RequireCredentials(TOKEN_URL);
-
-            m_oauth = new GoogleOAuthHelperHttpClient(authId.AuthId!, this.ProtocolKey, authId.OAuthUrl, httpClient)
-            {
-                AutoAuthHeader = true
-            };
         }
 
         private class ListBucketResponse
@@ -425,6 +442,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                     .. AuthIdOptionsHelper.GetOptions(TOKEN_URL),
                     new CommandLineArgument(SERVICE_ACCOUNT_JSON_OPTION, CommandLineArgument.ArgumentType.Password, Strings.GoogleCloudStorage.ServiceAccountJsonDescriptionShort, Strings.GoogleCloudStorage.ServiceAccountJsonDescriptionLong),
                     new CommandLineArgument(SERVICE_ACCOUNT_FILE_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.ServiceAccountFileDescriptionShort, Strings.GoogleCloudStorage.ServiceAccountFileDescriptionLong),
+                    new CommandLineArgument(ACCESS_TOKEN_OPTION, CommandLineArgument.ArgumentType.Password, Strings.GoogleCloudStorage.AccessTokenDescriptionShort, Strings.GoogleCloudStorage.AccessTokenDescriptionLong),
                     new CommandLineArgument(RETENTION_POLICY_MODE_OPTION, CommandLineArgument.ArgumentType.Enumeration, Strings.GoogleCloudStorage.RetentionPolicyModeDescriptionShort, Strings.GoogleCloudStorage.RetentionPolicyModeDescriptionLong, DEFAULT_RETENTION_POLICY_MODE.ToString(), null, Enum.GetNames(typeof(RetentionPolicyMode))),
                     new CommandLineArgument(PROJECT_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.ProjectDescriptionShort, Strings.GoogleCloudStorage.ProjectDescriptionLong),
                     .. TimeoutOptionsHelper.GetOptions(),
