@@ -117,6 +117,24 @@ namespace Duplicati.UnitTest
 
         [Test]
         [Category("Targeted")]
+        public void AccessDeniedWithReasonNamesTheReason()
+        {
+            // A provider that knows why the service refused the entry passes the reason on,
+            // so the warning says what must change for the entry to be backed up
+            var ex = new Duplicati.Library.Interface.SourceEntryAccessDeniedException("refused", "cannotDownloadFile, downloading is turned off for viewers", new InvalidOperationException("refused"));
+            var captured = new List<LogEntry>();
+            using (Log.StartScope(e => captured.Add(e)))
+                LogExceptionHelper.LogCommonWarning(ex, "TestTag", "SomeCallerId", "/some/path", FileAttributes.Archive, "Failed to process path: {0}");
+
+            var warnings = captured.Where(e => e.Level == LogMessageType.Warning).ToList();
+            Assert.AreEqual(1, warnings.Count);
+            Assert.AreEqual("PermissionDenied", warnings[0].Id);
+            Assert.IsNull(warnings[0].Exception, "Permission denied is a known problem and must not attach the exception");
+            Assert.AreEqual("Excluding path due to permission denied: /some/path (reason: cannotDownloadFile, downloading is turned off for viewers)", warnings[0].FormattedMessage);
+        }
+
+        [Test]
+        [Category("Targeted")]
         public void LocalFileReadFailureIsNotReportedAsNonLocal()
         {
             // Without the non-local attributes the same error stays an unknown failure, with the exception kept.

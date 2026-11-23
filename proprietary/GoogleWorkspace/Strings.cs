@@ -100,6 +100,10 @@ internal static class Strings
     public static string ContactsSyncTokenExpired(string userId) => LC.L($"The stored sync token of the contacts of user {userId} is no longer accepted, listing the contacts in full");
     public static string ContactsSyncTokenMissing(string userId) => LC.L($"The listing of the contacts of user {userId} did not end with a sync token, so the contacts are listed in full next time");
     public static string ContentNotDownloadable(string description, string error) => LC.L($"Google does not hand out {description} to the account used for the backup, skipping it: {error}");
+    public static string CannotDownloadFileReason(string reason) => LC.L($"{reason}, the account used for the backup is only a viewer or commenter, and downloading is turned off for those on the file or its shared drive; give the account editor access, or allow viewers and commenters to download");
+    public static string CannotDownloadAbusiveFileReason(string reason) => LC.L($"{reason}, Google flagged the file as malware or spam, and only its owner can download it");
+    public static string CannotDownloadRevisionReason(string reason) => LC.L($"{reason}, only editors of the file can download its revisions");
+    public static string ExportThroughLink(string fileId) => LC.L($"File {fileId} is too large for an export through the Drive API, exporting it through its export link");
     public static string ContentGone(string description, string error) => LC.L($"Google no longer has {description}, it was removed after it was listed, skipping it: {error}");
     public static string FileNotDownloadable(string fileId) => LC.L($"The content of file {fileId} cannot be downloaded by the account used for the backup, skipping it");
     public static string RevisionsNotReadable(string fileId) => LC.L($"The revisions of file {fileId} cannot be read by the account used for the backup, skipping them");

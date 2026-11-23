@@ -356,4 +356,24 @@ namespace Duplicati.Library.Interface
         {
         }
     }
+
+    /// <summary>
+    /// Thrown by a source provider when the remote service refuses an entry to the account
+    /// used for the backup and says why. The backup reports it as permission denied, with
+    /// the reason, so the warning tells what must change for the entry to be backed up.
+    /// </summary>
+    [Serializable]
+    public class SourceEntryAccessDeniedException : UnauthorizedAccessException
+    {
+        /// <summary>
+        /// The reason the service gave, in words fit for the warning; it never holds a path
+        /// </summary>
+        public string Reason { get; }
+
+        public SourceEntryAccessDeniedException(string message, string reason, Exception innerException)
+            : base(message, innerException)
+        {
+            Reason = reason;
+        }
+    }
 }

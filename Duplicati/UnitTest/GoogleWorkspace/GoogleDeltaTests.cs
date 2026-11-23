@@ -658,9 +658,58 @@ public class GoogleDeltaTests
         var entries = await CollectAsync(MyDrive(provider), true);
         var content = entries.Single(x => x.Path == F(MyDrivePath, "A", "content"));
 
-        var ex = Assert.ThrowsAsync<UnauthorizedAccessException>(() => content.OpenRead(CancellationToken.None));
+        var ex = Assert.ThrowsAsync<SourceEntryAccessDeniedException>(() => content.OpenRead(CancellationToken.None));
         Assert.That(ex!.InnerException, Is.InstanceOf<Google.GoogleApiException>());
+        Assert.That(ex.Reason, Does.StartWith("cannotDownloadFile"), "The reason Drive gave reaches the warning");
         Assert.That(handler.CountRequests("alt=media"), Is.EqualTo(1), "A refusal is not retried");
+    }
+
+    private const string DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    private static string GoogleDocFile(string id, string parent) => $"{{\"id\":\"{id}\",\"name\":\"{id}\",\"mimeType\":\"application/vnd.google-apps.document\",\"parents\":[\"{parent}\"],\"modifiedTime\":\"2024-01-01T00:00:00Z\"}}";
+
+    [Test]
+    [Category("GoogleWorkspace")]
+    public async Task DriveDocTooLargeForExportIsExportedThroughItsLinkAsync()
+    {
+        // Files.Export refuses an export over 10 MB; the export link Drive lists for the file
+        // has no such limit, so the document is exported through it
+        var exportUrl = "https://docs.google.com/feeds/download/documents/export/Export?id=D&exportFormat=docx";
+        var handler = FileChildren(new FakeGoogleHandler()
+            .Json("/changes?", Changes("9", Change(GoogleDocFile("D", "R"))))
+            .Sequence("/files/D/export", () => GoogleWorkspaceTestSupport.GoogleError(HttpStatusCode.Forbidden, "exportSizeLimitExceeded", "This file is too large to be exported."))
+            .Json("/files/D?", $"{{\"exportLinks\":{{\"{DOCX_MIME}\":\"{exportUrl}\"}}}}")
+            .Sequence("/feeds/download/", () => new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(Encoding.UTF8.GetBytes("large document")) }), "D");
+        var provider = CreateProvider(handler, new Dictionary<string, string> { [MyDriveKey] = StoredMap("5", "R") });
+
+        var entries = await CollectAsync(MyDrive(provider), true);
+        var content = entries.Single(x => x.Path == F(MyDrivePath, "D", "content"));
+
+        using (var stream = await content.OpenRead(CancellationToken.None))
+        using (var reader = new StreamReader(stream))
+            Assert.That(await reader.ReadToEndAsync(), Is.EqualTo("large document"));
+
+        Assert.That(handler.CountRequests("/files/D/export"), Is.EqualTo(1), "The refused export is not retried");
+        Assert.That(handler.Requests.Single(x => x.Contains("/files/D?", StringComparison.Ordinal)), Does.Contain("fields=exportLinks").And.Contain("supportsAllDrives=true"));
+        Assert.That(handler.CountRequests("/feeds/download/"), Is.EqualTo(1));
+        Assert.That(FolderMap.Deserialize(provider.ExportChangeTrackingState()[MyDriveKey])!.Token, Is.EqualTo("9"), "Nothing fails, so the drive advances");
+    }
+
+    [Test]
+    [Category("GoogleWorkspace")]
+    public async Task DriveDocTooLargeForExportWithoutALinkReportsTheRefusalAsync()
+    {
+        var handler = FileChildren(new FakeGoogleHandler()
+            .Json("/changes?", Changes("9", Change(GoogleDocFile("D", "R"))))
+            .Sequence("/files/D/export", () => GoogleWorkspaceTestSupport.GoogleError(HttpStatusCode.Forbidden, "exportSizeLimitExceeded", "This file is too large to be exported."))
+            .Json("/files/D?", "{\"exportLinks\":{\"application/pdf\":\"https://docs.google.com/feeds/download/documents/export/Export?id=D&exportFormat=pdf\"}}"), "D");
+        var provider = CreateProvider(handler, new Dictionary<string, string> { [MyDriveKey] = StoredMap("5", "R") });
+
+        var entries = await CollectAsync(MyDrive(provider), true);
+        var content = entries.Single(x => x.Path == F(MyDrivePath, "D", "content"));
+
+        var ex = Assert.ThrowsAsync<Google.GoogleApiException>(() => content.OpenRead(CancellationToken.None));
+        Assert.That(GoogleServiceErrors.IsExportSizeLimitExceeded(ex!), Is.True, "Without a link for the type, the original refusal is reported");
+        Assert.That(handler.CountRequests("/feeds/download/"), Is.EqualTo(0));
     }
 
     [Test]
