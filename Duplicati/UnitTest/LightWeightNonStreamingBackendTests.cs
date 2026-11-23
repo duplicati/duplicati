@@ -62,7 +62,7 @@ public class LightWeightNonStreamingBackendTests : BasicSetupHelper
         // ReSharper disable once UnusedMember.Global
         public FileOnlyBackend(string url, Dictionary<string, string?> options)
         {
-            m_backend = new Library.Backend.File(new Library.Utility.RelaxedUri(url).SetScheme("file").ToString(), options);
+            m_backend = new Library.Backend.File(new Library.Utility.Uri(url).SetScheme("file").ToString(), options);
         }
 
         public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancellationToken) => m_backend!.ListAsync(cancellationToken);

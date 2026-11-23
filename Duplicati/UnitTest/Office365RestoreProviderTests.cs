@@ -230,7 +230,7 @@ public class Office365RestoreProviderTests
                 await provider.WriteMetadata(path, metadata, false, false, false, CancellationToken.None);
             }
 
-            await provider.Finalize(null, true, CancellationToken.None);
+            await provider.Finalize(null, CancellationToken.None);
         }
 
         return messages;

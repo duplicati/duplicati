@@ -105,7 +105,7 @@ namespace Duplicati.UnitTest
                 using var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null);
                 var results = await c.RestoreAsync(new[] { "*" });
                 // Evicting for disk pressure is expected here, and warns after a few evictions
-                TestUtils.AssertResults(results, "CachePressure");
+                TestUtils.AssertResults(results, new[] { "CachePressure" });
 
                 Assert.That(((RestoreResults)results).CachePressureEvictions, Is.GreaterThan(0),
                     "Cached volumes are evicted to make room for the volume that is downloaded");
@@ -167,7 +167,7 @@ namespace Duplicati.UnitTest
                 }))
                 {
                     using var c = new Controller("file://" + this.TARGETFOLDER, restoreOptions, null);
-                    TestUtils.AssertResults(await c.RestoreAsync(new[] { "*" }), "CachePressure");
+                    TestUtils.AssertResults(await c.RestoreAsync(new[] { "*" }), new[] { "CachePressure" });
                 }
             }
             finally

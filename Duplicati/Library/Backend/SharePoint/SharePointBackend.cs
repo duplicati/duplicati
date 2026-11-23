@@ -29,6 +29,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using SP = Microsoft.SharePoint.Client;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend
 {
 

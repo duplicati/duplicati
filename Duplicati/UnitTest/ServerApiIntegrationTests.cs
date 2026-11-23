@@ -1085,7 +1085,6 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
-    /// <summary>
     /// The new UI lists several folders of a backup at the same time, for example when folders are
     /// opened quickly in the restore tree. Such listings must wait for each other instead of failing
     /// with DatabaseLocked, which only a running operation such as a backup should cause.

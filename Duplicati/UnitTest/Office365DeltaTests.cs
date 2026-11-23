@@ -236,7 +236,7 @@ public class Office365DeltaTests
 
         // The tenant is configured by its domain name, so its id comes from the token
         var timeouts = new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
-        var authOptions = AuthOptionsHelper.ParseWithAlias(new Dictionary<string, string?>(), "test", "test", "test-user", "test-pass");
+        var authOptions = AuthOptionsHelper.ParseWithAlias(new Dictionary<string, string?>(), new Library.Utility.Uri("https://test:test@localhost"), "test-user", "test-pass");
         var api = new APIHelper(new HttpClient(handler, disposeHandler: false), authOptions, "contoso.example", GRAPH, timeouts, null, null, "https://graph.microsoft.com/.default", FakeJwt($"{{\"tid\":\"{OwnTenant}\"}}"));
         var provider = new SourceProvider("office365://tenant", Mount, new Dictionary<string, string?>
         {

@@ -65,7 +65,7 @@ public class VanishingDestinationTests : BasicSetupHelper
         // ReSharper disable once UnusedMember.Global
         public VanishingFileBackend(string url, Dictionary<string, string> options)
         {
-            var fileUrl = new Library.Utility.RelaxedUri(url).SetScheme("file").ToString();
+            var fileUrl = new Library.Utility.Uri(url).SetScheme("file").ToString();
             m_backend = Library.DynamicLoader.BackendLoader.GetBackend(fileUrl, options);
         }
 

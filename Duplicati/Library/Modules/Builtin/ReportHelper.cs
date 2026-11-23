@@ -707,7 +707,7 @@ namespace Duplicati.Library.Modules.Builtin
                 // A result without times leaves the keys to be removed below, as before
                 foreach (var key in RESULT_TIME_TEMPLATE_KEYS)
                     if (TryGetResultTimeValue(key, result, out var timeValue))
-                        input = Expand(input, key, () => timeValue);
+                        input = Regex.Replace(input, $"%{key}%", _ => timeValue, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
                 // Remove any remaining template keys
                 input = Regex.Replace(input, "\\%[^\\%]+\\%", "");

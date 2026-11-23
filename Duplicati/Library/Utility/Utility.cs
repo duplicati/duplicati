@@ -1880,7 +1880,7 @@ namespace Duplicati.Library.Utility
                 // The host part of an S3 url is the bucket; the server is in the s3-server-name option
                 var queryIndex = url.IndexOf('?');
                 var query = queryIndex < 0 ? "" : url[(queryIndex + 1)..];
-                var serverName = UrlEncoding.ParseQueryString(query, true)[S3_SERVER_NAME_OPTION]?.Trim();
+                var serverName = Uri.ParseQueryString(query, true)[S3_SERVER_NAME_OPTION]?.Trim();
 
                 // Without a server name, the S3 backend connects to Amazon
                 var hostname = string.IsNullOrEmpty(serverName)

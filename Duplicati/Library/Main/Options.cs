@@ -1222,7 +1222,7 @@ namespace Duplicati.Library.Main
             string? scheme = null;
             try
             {
-                scheme = new Library.Utility.RelaxedUri(backendUrl).Scheme;
+                scheme = new Library.Utility.Uri(backendUrl).Scheme;
             }
             catch
             {
@@ -2212,7 +2212,7 @@ namespace Duplicati.Library.Main
             string? scheme = null;
             try
             {
-                scheme = new Library.Utility.RelaxedUri(backendUrl).Scheme;
+                scheme = new Library.Utility.Uri(backendUrl).Scheme;
             }
             catch
             {

@@ -54,7 +54,7 @@ namespace Duplicati.UnitTest
         /// <param name="Uri">The request URL</param>
         /// <param name="ContentType">The media type of the body, if any</param>
         /// <param name="Form">The fields of the form in the body</param>
-        private sealed record ReceivedRequest(HttpMethod Method, Uri Uri, string ContentType, Dictionary<string, string> Form);
+        private sealed record ReceivedRequest(HttpMethod Method, System.Uri Uri, string ContentType, Dictionary<string, string> Form);
 
         /// <summary>
         /// Accepts every request without a network and keeps each request and the text of each message
@@ -117,7 +117,7 @@ namespace Duplicati.UnitTest
         [TearDown]
         public void TearDown()
         {
-            HttpClientHelper.Unconfigure(m_telegram);
+            HttpClientHelper.Configure(null!);
             m_telegram.Dispose();
         }
 

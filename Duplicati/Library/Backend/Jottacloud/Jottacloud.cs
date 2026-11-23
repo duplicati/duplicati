@@ -499,9 +499,9 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
 
     /// <inheritdoc/>
     public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(new string[] {
-        new Uri(JFS_ROOT).Host,
-        new Uri(JFS_ROOT_UPLOAD).Host,
-        new Uri(JFS_API_ROOT).Host
+        new System.Uri(JFS_ROOT).Host,
+        new System.Uri(JFS_ROOT_UPLOAD).Host,
+        new System.Uri(JFS_API_ROOT).Host
     });
 
     /// <inheritdoc/>

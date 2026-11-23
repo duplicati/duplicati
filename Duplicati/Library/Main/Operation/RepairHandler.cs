@@ -50,7 +50,7 @@ namespace Duplicati.Library.Main.Operation
         /// Can be replaced by tests.
         /// </summary>
         internal static Func<IEnumerable<string>, Options, ISnapshotService> CreateSnapshotForLockedFiles =
-            (paths, options) => Common.SourceProviderFactory.GetFileSnapshotService(paths, [], options);
+            (paths, options) => Common.SourceProviderFactory.GetFileSnapshotService(paths, options);
 
         public RepairHandler(Options options, RepairResults result)
         {
