@@ -67,6 +67,8 @@ namespace Duplicati.Library.Modules.Builtin.Strings
     }
     internal static class SendMail
     {
+        public static string TestMessageSubject { get { return LC.L(@"Duplicati test email"); } }
+        public static string TestMessageBody { get { return LC.L(@"This is a test email from Duplicati. The email report settings work, and reports will be sent to this address."); } }
         public static string AcceptAnyCertificateLong(string optionname) { return LC.L(@"Use this option to accept any server certificate, regardless of what errors it may have. Please use --{0} instead, whenever possible.", optionname); }
         public static string AcceptAnyCertificateShort { get { return LC.L(@"Accept any server certificate"); } }
         public static string AcceptSpecifiedCertificateLong { get { return LC.L(@"If your server certificate is reported as invalid (e.g. with self-signed certificates), you can supply the certificate hash (SHA1) to approve it anyway. The hash value must be entered in hex format without spaces or colons. You can enter multiple hashes separated by commas."); } }
