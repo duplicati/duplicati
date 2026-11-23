@@ -40,7 +40,7 @@ public static class PostgreSQLClientTools
     /// <summary>
     /// The server major versions the provider is tested against, newest first
     /// </summary>
-    public static readonly int[] SupportedMajorVersions = [18, 17, 16, 15, 14];
+    public static readonly int[] SupportedMajorVersions = [19, 18, 17, 16, 15, 14];
 
     /// <summary>The first major version where pg_dump names large objects in its options; before it they are blobs</summary>
     private const int FirstMajorWithLargeObjectsOption = 16;

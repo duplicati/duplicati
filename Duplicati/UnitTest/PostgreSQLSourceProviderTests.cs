@@ -45,7 +45,7 @@ namespace Duplicati.UnitTest;
 [Category("PostgreSQL")]
 public class PostgreSQLSourceProviderTests
 {
-    private static readonly string[] RecordedDumps = ["pg14.dump", "pg15.dump", "pg16.dump", "pg17.dump", "pg18.dump"];
+    private static readonly string[] RecordedDumps = ["pg14.dump", "pg15.dump", "pg16.dump", "pg17.dump", "pg18.dump", "pg19.dump"];
 
     /// <summary>The archive format each version of pg_dump writes</summary>
     private static readonly Dictionary<string, string> ArchiveVersions = new()
@@ -55,6 +55,7 @@ public class PostgreSQLSourceProviderTests
         ["pg16.dump"] = "1.15.0",
         ["pg17.dump"] = "1.16.0",
         ["pg18.dump"] = "1.16.0",
+        ["pg19.dump"] = "1.16.0",
     };
 
     private const string Url = "postgresql://?postgresql-host=db.example.com&postgresql-database=app&postgresql-username=backup&postgresql-password=s3cret";
