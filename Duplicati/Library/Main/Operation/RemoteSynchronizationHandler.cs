@@ -44,6 +44,12 @@ internal class RemoteSynchronizationHandler : IDisposable
     private static readonly string LOGTAG = Logging.Log.LogTagFromType<RemoteSynchronizationHandler>();
 
     private string? m_dbpath;
+
+    /// <summary>
+    /// The start of the description of the rows in the Operation table that record a synchronization to a destination.
+    /// They only record when a synchronization ran, and are not operations that other entries belong to.
+    /// </summary>
+    internal const string OperationDescriptionPrefix = "Rsync ";
     private bool m_enabled = false;
     private List<RemoteSyncDestinationConfig> m_destinations = [];
     private string m_source;
@@ -294,7 +300,7 @@ internal class RemoteSynchronizationHandler : IDisposable
         if (index < 0 || index >= m_destinations.Count)
             return false;
 
-        var description = $"Rsync {index}";
+        var description = $"{OperationDescriptionPrefix}{index}";
 
         switch (dest.Mode)
         {
@@ -387,7 +393,7 @@ internal class RemoteSynchronizationHandler : IDisposable
                 @timestamp
             )";
         cmd.SetTransaction(transaction);
-        cmd.AddNamedParameter("@description", $"Rsync {index}");
+        cmd.AddNamedParameter("@description", $"{OperationDescriptionPrefix}{index}");
         cmd.AddNamedParameter("@timestamp", Duplicati.Library.Utility.Utility.NormalizeDateTimeToEpochSeconds(DateTime.UtcNow));
         cmd.ExecuteNonQuery();
         transaction.Commit();

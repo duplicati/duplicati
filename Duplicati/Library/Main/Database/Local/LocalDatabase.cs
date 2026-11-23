@@ -342,15 +342,19 @@ namespace Duplicati.Library.Main.Database.Local
             }
             else
             {
-                // Get last operation
-                await using var rd = await cmd.ExecuteReaderAsync(@"
+                // Get last operation. A remote synchronization after a backup adds a row that only records when it ran,
+                // and the entries written after it, such as the result of the backup, belong to the backup.
+                await using var rd = await cmd.SetCommandAndParameters(@"
                     SELECT
                         ""ID"",
                         ""Timestamp""
                     FROM ""Operation""
+                    WHERE ""Description"" NOT LIKE @SyncPrefix
                     ORDER BY ""Timestamp""
                     DESC LIMIT 1
-                ", token)
+                ")
+                    .SetParameterValue("@SyncPrefix", Duplicati.Library.Main.Operation.RemoteSynchronizationHandler.OperationDescriptionPrefix + "%")
+                    .ExecuteReaderAsync(true, token)
                     .ConfigureAwait(false);
 
                 if (!await rd.ReadAsync(token).ConfigureAwait(false))
