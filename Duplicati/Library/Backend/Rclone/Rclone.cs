@@ -43,6 +43,11 @@ namespace Duplicati.Library.Backend
         private const string OPTION_REMOTE_PATH = "rclone-remote-path";
         private const string OPTION_RCLONE = "rclone-option";
         private const string OPTION_RCLONE_EXECUTABLE = "rclone-executable";
+        private const string OPTION_CONFIG_PASSWORD = "rclone-config-password";
+        /// <summary>
+        /// The environment variable rclone reads the password of an encrypted configuration from
+        /// </summary>
+        internal const string RCLONE_CONFIG_PASS = "RCLONE_CONFIG_PASS";
         private const string RCLONE_ERROR_DIRECTORY_NOT_FOUND = "directory not found";
         private const string RCLONE_ERROR_CONFIG_NOT_FOUND = "didn't find section in config file";
 
@@ -51,6 +56,7 @@ namespace Duplicati.Library.Backend
         private readonly string remote_path;
         private readonly string opt_rclone;
         private readonly string rclone_executable;
+        private readonly string? config_password;
         private readonly TimeoutOptionsHelper.Timeouts timeouts;
 
         public Rclone()
@@ -73,6 +79,7 @@ namespace Duplicati.Library.Backend
             remote_path = options.GetValueOrDefault(OPTION_REMOTE_PATH) ?? "";
             opt_rclone = options.GetValueOrDefault(OPTION_RCLONE) ?? "";
             rclone_executable = options.GetValueOrDefault(OPTION_RCLONE_EXECUTABLE) ?? "";
+            config_password = options.GetValueOrDefault(OPTION_CONFIG_PASSWORD);
 
             if (string.IsNullOrWhiteSpace(local_repo))
                 local_repo = "local";
@@ -113,6 +120,10 @@ namespace Duplicati.Library.Backend
                 UseShellExecute = false,
                 WindowStyle = ProcessWindowStyle.Hidden
             };
+
+            // The password goes in the environment of rclone only, so it is not on the command line
+            if (!string.IsNullOrEmpty(config_password))
+                psi.Environment[RCLONE_CONFIG_PASS] = config_password;
 
 #if DEBUG
             Console.Error.WriteLine("command executing: {0} {1}", psi.FileName, psi.Arguments);
@@ -301,6 +312,7 @@ namespace Duplicati.Library.Backend
             new CommandLineArgument(OPTION_REMOTE_PATH, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneRemotePathShort, Strings.Rclone.RcloneRemotePathLong, "backup"),
             new CommandLineArgument(OPTION_RCLONE, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneOptionRcloneShort, Strings.Rclone.RcloneOptionRcloneLong, ""),
             new CommandLineArgument(OPTION_RCLONE_EXECUTABLE, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneExecutableShort, Strings.Rclone.RcloneExecutableLong, "rclone"),
+            new CommandLineArgument(OPTION_CONFIG_PASSWORD, CommandLineArgument.ArgumentType.Password, Strings.Rclone.RcloneConfigPasswordShort, Strings.Rclone.RcloneConfigPasswordLong),
             .. TimeoutOptionsHelper.GetOptions()
                 .Where(x => x.Name != TimeoutOptionsHelper.ReadWriteTimeoutOption)
         ];
