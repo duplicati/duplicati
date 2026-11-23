@@ -29,10 +29,25 @@ internal static class GoogleDownloads
     {
         using var message = request.CreateRequest();
         var url = message.RequestUri?.ToString() ?? throw new InvalidOperationException($"The request for {description} has no URL");
-        var service = request.Service;
+        return OpenMediaAsync(request.Service, url, expectedLength, readTimeout, description, cancellationToken);
+    }
 
-        // A refused request is reported the way the client library reports one, with the
-        // error Google sent, so the callers see the same exception as for any other request
+    /// <summary>
+    /// Opens the media at a URL that belongs to a service, such as an export link Drive
+    /// hands out, through the client of that service, which carries the credentials. A
+    /// refused request is reported the way the client library reports one, as a
+    /// <see cref="Google.GoogleApiException"/> with the error Google sent, so the callers can
+    /// tell the refusals apart as for any other request of the service.
+    /// </summary>
+    /// <param name="service">The service the media belongs to</param>
+    /// <param name="url">The media URL</param>
+    /// <param name="expectedLength">The length from the listing, or <c>null</c> if the listing gave none</param>
+    /// <param name="readTimeout">How long a read may wait for bytes before the connection is taken as stalled and the download resumed</param>
+    /// <param name="description">What is downloaded, for log and error messages</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The content stream, opened so a refused request fails here</returns>
+    public static Task<Stream> OpenMediaAsync(Google.Apis.Services.IClientService service, string url, long? expectedLength, TimeSpan readTimeout, string description, CancellationToken cancellationToken)
+    {
         async Task<Exception> toError(HttpResponseMessage response, CancellationToken ct)
         {
             // The body is buffered first, by the retry handler or here, so it can be read again
@@ -147,7 +162,7 @@ internal static class GoogleDownloads
     /// <c>Content-Length</c> header for all content of any size: a file in a drive always
     /// lists its size. Nothing states the length of an export, which Google generates on the
     /// fly, or of some attachments; those are read into a temporary file first, so the length
-    /// is known, and they are the small kind, as an export is capped by Google.
+    /// is known.
     /// </remarks>
     /// <param name="client">The client of the service the media belongs to, which carries the credentials</param>
     /// <param name="url">The media URL</param>
