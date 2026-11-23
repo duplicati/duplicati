@@ -55,5 +55,6 @@ public enum OperationMode
     ReadLockInfo,
     RemoteSynchronization,
     SetVersionLabel,
-    RestoreTest
+    RestoreTest,
+    ListRestoreVolumes
 }

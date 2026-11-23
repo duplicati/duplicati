@@ -761,6 +761,10 @@ public class ControllerRpcProxy : IController, IDisposable, IControllerRpcCallba
         => await InvokeAsync<IListAffectedResults>(nameof(IController.ListAffectedAsync), args).ConfigureAwait(false);
 
     /// <inheritdoc />
+    public async Task<IListRestoreVolumesResults> ListRestoreVolumesAsync(string[]? paths, IFilter? filter = null)
+        => await InvokeAsync<IListRestoreVolumesResults>(nameof(IController.ListRestoreVolumesAsync), paths, filter).ConfigureAwait(false);
+
+    /// <inheritdoc />
     public async Task<IRestoreControlFilesResults> RestoreControlFilesAsync(IEnumerable<string>? files = null, IFilter? filter = null)
         => await InvokeAsync<IRestoreControlFilesResults>(nameof(IController.RestoreControlFilesAsync), files, filter).ConfigureAwait(false);
 

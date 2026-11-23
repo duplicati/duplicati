@@ -333,6 +333,42 @@ namespace Duplicati.Library.Interface
         Dictionary<string, string> Metadata { get; }
     }
 
+    /// <summary>
+    /// A remote volume that a restore reads
+    /// </summary>
+    public interface IListRestoreVolume
+    {
+        /// <summary>
+        /// The name of the remote volume
+        /// </summary>
+        string Name { get; }
+        /// <summary>
+        /// The size of the remote volume, or -1 if it is not known
+        /// </summary>
+        long Size { get; }
+    }
+
+    /// <summary>
+    /// The remote volumes that a restore of the selected files reads, worked out from the local
+    /// database without contacting the destination. Volumes in archive storage have to be
+    /// brought back before the restore can read them.
+    /// </summary>
+    public interface IListRestoreVolumesResults : IBasicResults
+    {
+        /// <summary>
+        /// The remote volumes, in the order the restore reads them
+        /// </summary>
+        IEnumerable<IListRestoreVolume> Volumes { get; }
+        /// <summary>
+        /// The number of files and folders the restore covers
+        /// </summary>
+        long FileCount { get; }
+        /// <summary>
+        /// The size of the files the restore covers
+        /// </summary>
+        long FileSize { get; }
+    }
+
     public interface IListAffectedResults : IBasicResults
     {
         IEnumerable<IListResultFileset> Filesets { get; }

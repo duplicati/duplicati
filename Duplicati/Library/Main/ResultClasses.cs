@@ -706,6 +706,22 @@ namespace Duplicati.Library.Main
         public override OperationMode MainOperation { get { return OperationMode.ListAffected; } }
     }
 
+    /// <summary>
+    /// A remote volume that a restore reads
+    /// </summary>
+    /// <param name="Name">The name of the remote volume</param>
+    /// <param name="Size">The size of the remote volume, or -1 if it is not known</param>
+    internal sealed record ListRestoreVolume(string Name, long Size) : IListRestoreVolume;
+
+    internal class ListRestoreVolumesResults : BasicResults, IListRestoreVolumesResults
+    {
+        public IEnumerable<IListRestoreVolume> Volumes { get; set; } = [];
+        public long FileCount { get; set; }
+        public long FileSize { get; set; }
+
+        public override OperationMode MainOperation { get { return OperationMode.ListRestoreVolumes; } }
+    }
+
     internal class DeleteResults : BasicResults, IDeleteResults
     {
         [System.Text.Json.Serialization.JsonIgnore]
