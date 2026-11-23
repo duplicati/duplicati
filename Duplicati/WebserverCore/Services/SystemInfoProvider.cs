@@ -155,6 +155,7 @@ public class SystemInfoProvider(IApplicationSettings applicationSettings, Connec
         McpServerExtension,
         "v2:backup:purge-files:suppress-compact",
         TemporaryBackupListExtension,
+        Endpoints.V2.TestEmail.ApiExtension,
 
         // "v1:subscribe:scheduler",
     ];

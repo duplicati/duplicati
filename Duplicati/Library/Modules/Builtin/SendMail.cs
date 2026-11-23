@@ -24,6 +24,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.ResultSerialization;
 using MailKit.Net.Smtp;
@@ -35,7 +37,7 @@ using Duplicati.Library.Logging;
 
 namespace Duplicati.Library.Modules.Builtin
 {
-    public class SendMail : ReportHelper
+    public class SendMail : ReportHelper, ITestMessageModule
     {
         /// <summary>
         /// The tag used for logging
@@ -267,6 +269,23 @@ namespace Duplicati.Library.Modules.Builtin
 
         #endregion
 
+        #region Implementation of ITestMessageModule
+
+        /// <inheritdoc/>
+        public Task SendTestMessageAsync(IReadOnlyDictionary<string, string?> options, CancellationToken cancellationToken)
+        {
+            var commandlineOptions = options
+                .Where(x => x.Value != null)
+                .ToDictionary(x => x.Key, x => x.Value!, StringComparer.OrdinalIgnoreCase);
+
+            if (!ConfigureModule(commandlineOptions))
+                throw new UserInformationException(Strings.SendMail.NoRecipientsSpecified(OPTION_RECIPIENT), "SendMailMissingRecipient");
+
+            return Task.Run(() => SendMessage(Strings.SendMail.TestMessageSubject, Strings.SendMail.TestMessageBody, cancellationToken), cancellationToken);
+        }
+
+        #endregion
+
         #region Implementation of IGenericCallbackModule
 
         /// <summary>
@@ -275,6 +294,15 @@ namespace Duplicati.Library.Modules.Builtin
         /// <param name="subject">The subject line.</param>
         /// <param name="body">The message body.</param>
         protected override void SendMessage(string subject, string body)
+            => SendMessage(subject, body, CancellationToken.None);
+
+        /// <summary>
+        /// Sends the email message
+        /// </summary>
+        /// <param name="subject">The subject line.</param>
+        /// <param name="body">The message body.</param>
+        /// <param name="cancellationToken">Stops the lookup and the server connections, so an unreachable server does not hold the caller</param>
+        private void SendMessage(string subject, string body, CancellationToken cancellationToken)
         {
             var message = new MimeMessage();
             MailboxAddress? mailbox;
@@ -309,7 +337,10 @@ namespace Duplicati.Library.Modules.Builtin
             if (string.IsNullOrEmpty(m_server))
             {
                 var dnsclient = new LookupClient();
-                var records = dnsclient.Query(toMailDomain, QueryType.MX).Answers.MxRecords();
+                var response = cancellationToken.CanBeCanceled
+                    ? dnsclient.QueryAsync(toMailDomain, QueryType.MX, cancellationToken: cancellationToken).GetAwaiter().GetResult()
+                    : dnsclient.Query(toMailDomain, QueryType.MX);
+                var records = response.Answers.MxRecords();
 
                 servers = records.OrderBy(record => record.Preference).Select(x => "smtp://" + x.Exchange).Distinct().ToList();
                 if (servers.Count == 0)
@@ -328,6 +359,7 @@ namespace Duplicati.Library.Modules.Builtin
 
             foreach (var server in servers)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (lastEx != null)
                     Logging.Log.WriteWarningMessage(LOGTAG, "SendMailFailedWillRetry", lastEx, Strings.SendMail.SendMailFailedRetryError(lastServer, lastEx.Message, server));
 
@@ -355,13 +387,13 @@ namespace Duplicati.Library.Modules.Builtin
                                 if (uri.Scheme.ToLowerInvariant() == "tls")
                                     uri = new System.Uri("smtp://" + uri.Host + ":" + (uri.Port <= 0 ? 587 : uri.Port) + "/?starttls=always");
 
-                                client.Connect(uri);
+                                client.Connect(uri, cancellationToken);
 
                                 if (!string.IsNullOrEmpty(m_username) && !string.IsNullOrEmpty(m_password))
-                                    client.Authenticate(m_username, m_password);
+                                    client.Authenticate(m_username, m_password, cancellationToken);
 
-                                client.Send(message);
-                                client.Disconnect(true);
+                                client.Send(message, cancellationToken);
+                                client.Disconnect(true, cancellationToken);
                             }
                         }
                         finally
@@ -375,6 +407,11 @@ namespace Duplicati.Library.Modules.Builtin
                     lastEx = null;
                     Logging.Log.WriteInformationMessage(LOGTAG, "SendMailComplete", Strings.SendMail.SendMailSuccess(server));
                     break;
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    // A cancelled send does not try the next server
+                    throw;
                 }
                 catch (Exception ex)
                 {
