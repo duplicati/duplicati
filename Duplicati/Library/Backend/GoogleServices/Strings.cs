@@ -41,6 +41,8 @@ namespace Duplicati.Library.Backend.Strings
         public static string ServiceAccountJsonDescriptionLong { get { return LC.L(@"String with JSON credentials for a Google Cloud service account. When set, AuthID is not required."); } }
         public static string ServiceAccountFileDescriptionShort { get { return LC.L(@"Service account JSON"); } }
         public static string ServiceAccountFileDescriptionLong { get { return LC.L(@"Path to a file with JSON credentials for a Google Cloud service account. When set, AuthID is not required."); } }
+        public static string AccessTokenDescriptionShort { get { return LC.L(@"OAuth access token"); } }
+        public static string AccessTokenDescriptionLong { get { return LC.L(@"An OAuth access token for Google Cloud Storage that was obtained elsewhere. The token is used as it is and is not renewed, so the backend stops working when the token expires. When set, AuthID and the service account options are not used."); } }
         public static string RetentionPolicyModeDescriptionShort { get { return LC.L(@"Specify retention policy mode"); } }
         public static string RetentionPolicyModeDescriptionLong { get { return LC.L(@"This option specifies the retention policy mode to use when setting object lock. Possible values are 'Locked' and 'Unlocked'."); } }
     }
