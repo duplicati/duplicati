@@ -61,7 +61,8 @@ namespace Duplicati.WebserverCore.Endpoints.V2
             var item = new ConnectionString
             {
                 Name = input.Name,
-                Description = input.Description,
+                // The UI leaves the description out as null, and the column does not allow it
+                Description = input.Description ?? string.Empty,
                 BaseUrl = input.BaseUrl
             };
 
@@ -76,7 +77,7 @@ namespace Duplicati.WebserverCore.Endpoints.V2
                 throw new NotFoundException("Connection string not found");
 
             item.Name = input.Name;
-            item.Description = input.Description;
+            item.Description = input.Description ?? string.Empty;
 
             if (input.BaseUrl.Contains(Connection.PASSWORD_PLACEHOLDER))
             {
