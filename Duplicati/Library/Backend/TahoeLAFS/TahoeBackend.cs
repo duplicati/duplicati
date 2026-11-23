@@ -232,10 +232,38 @@ public class TahoeBackend : IStreamingBackend, IRenameEnabledBackend
 
             resp.EnsureSuccessStatusCode();
         }
+        // Tahoe-LAFS answers 404 "No such child" both for a file that is not there and for a missing folder,
+        // so the folder tells them apart. A missing file lets the caller check that the file is gone.
         catch (HttpRequestException wex)
             when (wex.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.NotFound)
         {
+            if (wex.StatusCode is HttpStatusCode.NotFound && await FolderExistsAsync(cancelToken).ConfigureAwait(false))
+                throw new FileMissingException(wex.Message, wex);
+
             throw new FolderMissingException(Strings.TahoeBackend.MissingFolderError(_url, wex.Message), wex);
+        }
+    }
+
+    /// <summary>
+    /// Checks that the folder of the backend can be listed
+    /// </summary>
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns><c>true</c> if the folder exists</returns>
+    private async Task<bool> FolderExistsAsync(CancellationToken cancelToken)
+    {
+        try
+        {
+            using var resp = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken,
+                innerCancelToken =>
+                {
+                    using var request = CreateRequest(string.Empty, "t=json", HttpMethod.Get);
+                    return GetHttpClient().SendAsync(request, innerCancelToken);
+                }).ConfigureAwait(false);
+            return resp.IsSuccessStatusCode;
+        }
+        catch (Exception) when (!cancelToken.IsCancellationRequested)
+        {
+            return false;
         }
     }
 
