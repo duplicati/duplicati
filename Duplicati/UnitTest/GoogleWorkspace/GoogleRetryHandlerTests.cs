@@ -391,6 +391,16 @@ public class GoogleRetryHandlerTests
     }
 
     [Test]
+    public void IsExportSizeLimitExceeded_RecognisesTheDriveReason()
+    {
+        Assert.IsTrue(GoogleServiceErrors.IsExportSizeLimitExceeded(DriveError(HttpStatusCode.Forbidden, "exportSizeLimitExceeded", "This file is too large to be exported.")));
+        Assert.IsTrue(GoogleServiceErrors.IsExportSizeLimitExceeded(DriveError(HttpStatusCode.Forbidden, null, "This file is too large to be exported. (reason: exportSizeLimitExceeded)")));
+
+        Assert.IsFalse(GoogleServiceErrors.IsExportSizeLimitExceeded(DriveError(HttpStatusCode.Forbidden, "cannotDownloadFile", "The user does not have permission to download this file.")));
+        Assert.IsFalse(GoogleServiceErrors.IsExportSizeLimitExceeded(DriveError(HttpStatusCode.BadRequest, "exportSizeLimitExceeded", "mismatched status")));
+    }
+
+    [Test]
     public void AsRevisionRefusal_SkipsTheRevisionAsInformation()
     {
         var refused = DriveError(HttpStatusCode.Forbidden, "cannotDownloadRevision", "This revision cannot be downloaded by the authenticated user.");
@@ -411,9 +421,17 @@ public class GoogleRetryHandlerTests
     {
         var refused = DriveError(HttpStatusCode.Forbidden, "cannotDownloadRevision", "This revision cannot be downloaded by the authenticated user.");
         var denied = GoogleServiceErrors.AsContentRefusal(refused, "revision r1 of file A");
-        Assert.IsInstanceOf<UnauthorizedAccessException>(denied);
+        Assert.IsInstanceOf<Duplicati.Library.Interface.SourceEntryAccessDeniedException>(denied, "The engine classifies it as permission denied, with the reason");
         Assert.AreSame(refused, denied.InnerException, "The Google error stays attached for the verbose log");
         StringAssert.Contains("revision r1 of file A", denied.Message);
+        StringAssert.StartsWith("cannotDownloadRevision", ((Duplicati.Library.Interface.SourceEntryAccessDeniedException)denied).Reason);
+
+        // The reason found only in the message of a media endpoint's error is carried as well
+        var wrapped = DriveError(HttpStatusCode.Forbidden, null, "The user does not have permission to download this file. (reason: cannotDownloadFile)");
+        var wrappedDenied = (Duplicati.Library.Interface.SourceEntryAccessDeniedException)GoogleServiceErrors.AsContentRefusal(wrapped, "the content of file A");
+        StringAssert.StartsWith("cannotDownloadFile", wrappedDenied.Reason);
+        StringAssert.Contains("viewer or commenter", wrappedDenied.Reason);
+        Assert.IsFalse(Duplicati.Library.Utility.SensitiveDataFilter.LooksLikePath(wrappedDenied.Reason), "The reason is not redacted as a path in reports");
 
         var gone = DriveError(HttpStatusCode.NotFound, "notFound", "Revision not found: r1");
         var notFound = GoogleServiceErrors.AsContentRefusal(gone, "revision r1 of file A");

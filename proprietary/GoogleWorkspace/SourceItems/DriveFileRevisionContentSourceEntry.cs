@@ -53,7 +53,7 @@ internal class DriveFileRevisionContentSourceEntry(SourceProvider provider, stri
             if (revision.ExportLinks == null || !revision.ExportLinks.TryGetValue(exportMimeType, out var exportUrl))
                 throw new NotSupportedException($"Cannot export revision {revision.Id} for mimeType {file.MimeType}");
 
-            return GoogleDownloads.OpenMediaAsync(driveService.HttpClient, exportUrl, null, provider.ApiHelper.Timeouts.ReadWriteTimeout, $"revision {revision.Id}", cancellationToken);
+            return GoogleDownloads.OpenMediaAsync(driveService, exportUrl, null, provider.ApiHelper.Timeouts.ReadWriteTimeout, $"revision {revision.Id}", cancellationToken);
         }
 
         // Binary content is read straight from the connection, whatever its size

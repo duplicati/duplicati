@@ -48,6 +48,15 @@ internal static class GoogleServiceErrors
     };
 
     /// <summary>
+    /// The reasons Drive attaches to a 403 that refuses an export through <c>Files.Export</c>
+    /// for its size.
+    /// </summary>
+    private static readonly HashSet<string> EXPORT_SIZE_LIMIT_REASONS = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "exportSizeLimitExceeded"
+    };
+
+    /// <summary>
     /// The reasons Google attaches to a rate limit that refills within a minute.
     /// </summary>
     private static readonly HashSet<string> RATE_LIMIT_REASONS = new(StringComparer.OrdinalIgnoreCase)
@@ -165,18 +174,56 @@ internal static class GoogleServiceErrors
     /// <param name="ex">The exception thrown by the download</param>
     /// <returns><c>true</c> if the user is not allowed the content</returns>
     public static bool IsContentNotDownloadable(Exception ex)
+        => FindForbiddenReason(ex, CONTENT_NOT_DOWNLOADABLE_REASONS) != null;
+
+    /// <summary>
+    /// Whether an export was refused because the exported document would be larger than
+    /// <c>Files.Export</c> hands out: Drive answers 403 with the reason
+    /// <c>exportSizeLimitExceeded</c>. The export links Drive lists for the file do not
+    /// have that limit.
+    /// </summary>
+    /// <param name="ex">The exception thrown by the export</param>
+    /// <returns><c>true</c> if the export is too large for <c>Files.Export</c></returns>
+    public static bool IsExportSizeLimitExceeded(Exception ex)
+        => FindForbiddenReason(ex, EXPORT_SIZE_LIMIT_REASONS) != null;
+
+    /// <summary>
+    /// Finds which of the given reasons a 403 from Google carries, read from the structured
+    /// errors, from the raw body, and from the message, which is where the media endpoints'
+    /// array-wrapped error document ends up.
+    /// </summary>
+    /// <param name="ex">The exception thrown by the request</param>
+    /// <param name="candidates">The reasons to look for</param>
+    /// <returns>The reason found, as spelled in <paramref name="candidates"/>, or <c>null</c> if the exception is not a 403 with one of them</returns>
+    private static string? FindForbiddenReason(Exception ex, HashSet<string> candidates)
     {
         if (ex is not GoogleApiException { HttpStatusCode: HttpStatusCode.Forbidden } gex)
-            return false;
+            return null;
 
         var reasons = (gex.Error?.Errors ?? []).Select(e => e.Reason ?? "")
             .Concat(ParseErrorBody(gex.Error?.ErrorResponseContent).Reasons);
-        if (reasons.Any(CONTENT_NOT_DOWNLOADABLE_REASONS.Contains))
-            return true;
+        foreach (var reason in reasons)
+            if (candidates.TryGetValue(reason, out var known))
+                return known;
 
         var message = gex.Message ?? "";
-        return CONTENT_NOT_DOWNLOADABLE_REASONS.Any(r => message.Contains(r, StringComparison.OrdinalIgnoreCase));
+        return candidates.FirstOrDefault(r => message.Contains(r, StringComparison.OrdinalIgnoreCase));
     }
+
+    /// <summary>
+    /// Describes why Drive refused content, in words that tell the user what must change for
+    /// the content to be backed up
+    /// </summary>
+    /// <param name="reason">The reason Drive gave, one of <see cref="CONTENT_NOT_DOWNLOADABLE_REASONS"/></param>
+    /// <returns>The description, which starts with the reason Drive gave</returns>
+    private static string DescribeRefusal(string reason)
+        => reason switch
+        {
+            "cannotDownloadFile" => Strings.CannotDownloadFileReason(reason),
+            "cannotDownloadAbusiveFile" => Strings.CannotDownloadAbusiveFileReason(reason),
+            "cannotDownloadRevision" => Strings.CannotDownloadRevisionReason(reason),
+            _ => reason
+        };
 
     /// <summary>
     /// Whether a download was refused because Google no longer has the content: a media
@@ -192,7 +239,8 @@ internal static class GoogleServiceErrors
     /// Turns a refusal to hand out content into the exception the backup engine already
     /// classifies, so the warning names the cause in one line instead of printing Google's
     /// error document, and the detail goes to the verbose log. A refusal for a user who is
-    /// not allowed the content becomes an <see cref="UnauthorizedAccessException"/>; content
+    /// not allowed the content becomes a <see cref="SourceEntryAccessDeniedException"/>, which
+    /// carries the reason Drive gave into the warning; content
     /// Google no longer has becomes a <see cref="FileNotFoundException"/>. Any other failure
     /// is returned as it is.
     /// </summary>
@@ -201,10 +249,11 @@ internal static class GoogleServiceErrors
     /// <returns>The exception to throw in place of <paramref name="ex"/></returns>
     public static Exception AsContentRefusal(Exception ex, string description)
     {
-        if (IsContentNotDownloadable(ex))
+        var refusal = FindForbiddenReason(ex, CONTENT_NOT_DOWNLOADABLE_REASONS);
+        if (refusal != null)
         {
             Log.WriteVerboseMessage(LOGTAG, "ContentNotDownloadable", ex, Strings.ContentNotDownloadable(description, ex.Message));
-            return new UnauthorizedAccessException(Strings.ContentNotDownloadable(description, ex.Message), ex);
+            return new SourceEntryAccessDeniedException(Strings.ContentNotDownloadable(description, ex.Message), DescribeRefusal(refusal), ex);
         }
 
         if (IsContentGone(ex))

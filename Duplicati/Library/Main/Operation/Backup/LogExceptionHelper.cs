@@ -72,6 +72,10 @@ public static class LogExceptionHelper
             Log.WriteInformationMessage(logtag, "SourceEntrySkipped", null, "Skipping path {0}: {1}", path, ex.Message);
         else if (ex.IsPathNotFoundException())
             Log.WriteWarningMessage(logtag, "PathNotFound", null, "Excluding path due to path not found: {0}", path);
+        // The provider knows why the service refused the entry, and the reason tells the user
+        // what must change for it to be backed up
+        else if (ex is SourceEntryAccessDeniedException denied)
+            Log.WriteWarningMessage(logtag, "PermissionDenied", null, "Excluding path due to permission denied: {0} (reason: {1})", path, denied.Reason);
         // A placeholder from a sync tool (OneDrive, Dropbox, Google Drive, ...) or a file moved to
         // tiered storage opens fine, but the read fails with an unhelpful error such as
         // ERROR_INVALID_FUNCTION when the provider cannot fetch the content. The error code alone
