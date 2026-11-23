@@ -50,10 +50,10 @@ public class WithPerItemTimeoutTests : BasicSetupHelper
         }
     }
 
-    private static async Task<List<int>> ReadAsync(IAsyncEnumerable<int> source, TimeSpan perItemWork, CancellationToken ct = default)
+    private static async Task<List<int>> ReadAsync(IAsyncEnumerable<int> source, TimeSpan timeout, TimeSpan perItemWork, CancellationToken ct)
     {
         var result = new List<int>();
-        await foreach (var item in Utility.WithPerItemTimeout(source, Timeout, ct).ConfigureAwait(false))
+        await foreach (var item in Utility.WithPerItemTimeout(source, timeout, ct).ConfigureAwait(false))
         {
             result.Add(item);
             await Task.Delay(perItemWork, CancellationToken.None).ConfigureAwait(false);
@@ -65,7 +65,7 @@ public class WithPerItemTimeoutTests : BasicSetupHelper
     [Category("Utility")]
     public void TimeSpentOnAnItemDoesNotCount()
     {
-        var items = ReadAsync(Items(3, TimeSpan.Zero), TimeSpan.FromSeconds(1)).Result;
+        var items = ReadAsync(Items(3, TimeSpan.Zero), Timeout, TimeSpan.FromSeconds(1), CancellationToken.None).Result;
         Assert.That(items, Is.EqualTo(new[] { 0, 1, 2 }));
     }
 
@@ -73,14 +73,15 @@ public class WithPerItemTimeoutTests : BasicSetupHelper
     [Category("Utility")]
     public void SlowSourceTimesOut()
     {
-        Assert.ThrowsAsync<TimeoutException>(() => ReadAsync(Items(3, TimeSpan.FromSeconds(30)), TimeSpan.Zero));
+        Assert.ThrowsAsync<TimeoutException>(() => ReadAsync(Items(3, TimeSpan.FromSeconds(30)), Timeout, TimeSpan.Zero, CancellationToken.None));
     }
 
     [Test]
     [Category("Utility")]
     public void CallerCancellationIsNotATimeout()
     {
+        // The timeout is far away, so a stalled machine cannot let it pass before the cancellation is seen
         using var caller = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
-        Assert.CatchAsync<OperationCanceledException>(() => ReadAsync(Items(3, TimeSpan.FromSeconds(30)), TimeSpan.Zero, caller.Token));
+        Assert.CatchAsync<OperationCanceledException>(() => ReadAsync(Items(3, TimeSpan.FromSeconds(120)), TimeSpan.FromSeconds(60), TimeSpan.Zero, caller.Token));
     }
 }
