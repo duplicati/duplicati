@@ -888,6 +888,32 @@ namespace Duplicati.UnitTest
             Assert.DoesNotThrow(() => handler.GetType().GetMethod("RecordSyncOperation", BINDING_FLAGS).Invoke(handler, [0]));
         }
 
+        /// <summary>
+        /// Without a local database there is no record of an earlier synchronization, as for the first one,
+        /// so the modes that read the records synchronize instead of failing to open a database
+        /// </summary>
+        [Test]
+        [Category("RemoteSync")]
+        [TestCase(@"""mode"": ""interval"", ""interval"": ""1h""")]
+        [TestCase(@"""mode"": ""counting"", ""count"": 2")]
+        public void TestShouldTriggerSync_MissingDbPath_Triggers(string mode)
+        {
+            var options = new Dictionary<string, string>
+            {
+                ["remote-sync-json-config"] = $@"{{""destinations"": [
+                    {{""url"": ""file://{dest1}"", {mode}}}
+                ]}}"
+                // No dbpath
+            };
+
+            var handler = new RemoteSynchronizationHandler($"file://{source}", new Options(options), new BackupResults());
+
+            var destinations = handler.GetType().GetField("m_destinations", BINDING_FLAGS).GetValue(handler) as List<RemoteSyncDestinationConfig>;
+            var shouldTrigger = (bool)handler.GetType().GetMethod("ShouldTriggerSync", BINDING_FLAGS).Invoke(handler, [0, destinations[0]]);
+
+            Assert.IsTrue(shouldTrigger);
+        }
+
         [Test]
         [Category("RemoteSync")]
         public void TestConfigure_DefaultMode()
