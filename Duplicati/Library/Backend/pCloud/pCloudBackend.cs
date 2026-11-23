@@ -20,6 +20,7 @@
 // DEALINGS IN THE SOFTWARE.
 
 using Duplicati.Library.Interface;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
@@ -97,6 +98,13 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
     /// requests
     /// </summary>
     private ulong? _CachedFolderID;
+
+    /// <summary>
+    /// The file IDs that uploads returned, by file name. A folder listing right after
+    /// an upload does not always show the new file yet, so a file uploaded through this
+    /// instance is found by the ID the upload returned instead of by a listing.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, ulong> _UploadedFileIds = new();
 
     /// <summary>
     /// Path separators (both Windows \ and unix /) to be used in path manipulation
@@ -340,6 +348,11 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
 
         if (uploadResponse.result != 0)
             throw new Exception(Strings.pCloudBackend.FailedWithUnexpectedErrorCode("upload", uploadResponse.result));
+
+        if (uploadResponse.fileids is [var fileId])
+            _UploadedFileIds[remotename] = fileId;
+        else
+            _UploadedFileIds.TryRemove(remotename, out _);
     }
 
     /// <summary>
@@ -441,6 +454,26 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
     /// <exception cref="FileMissingException">FileMissingException when file is not found</exception>
     /// <exception cref="Exception">Exceptions arising from either code execution or business logic when return code from pcloud indicates an error.</exception>
     public async Task DeleteAsync(string remotename, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await DeleteFileAsync(remotename, cancellationToken).ConfigureAwait(false);
+            _UploadedFileIds.TryRemove(remotename, out _);
+        }
+        catch (FileMissingException)
+        {
+            _UploadedFileIds.TryRemove(remotename, out _);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Deletes a remote file by its file ID
+    /// </summary>
+    /// <param name="remotename">filename to be deleted on the remote</param>
+    /// <param name="cancellationToken">CancellationToken that is combined with internal timeout token</param>
+    /// <exception cref="FileMissingException">FileMissingException when file is not found</exception>
+    private async Task DeleteFileAsync(string remotename, CancellationToken cancellationToken)
     {
         using var request = CreateRequest($"/deletefile?fileid={await GetFileId(remotename, cancellationToken).ConfigureAwait(false)}", HttpMethod.Get);
 
@@ -552,6 +585,9 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
     /// <exception cref="FileMissingException"></exception>
     private async Task<ulong> GetFileId(string name, CancellationToken cancellationToken)
     {
+        if (_UploadedFileIds.TryGetValue(name, out var uploadedId))
+            return uploadedId;
+
         _CachedFolderID ??= await GetFolderId(cancellationToken).ConfigureAwait(false);
 
         var result = await ListWithMetadata((ulong)_CachedFolderID, cancellationToken).ConfigureAwait(false);
@@ -635,5 +671,11 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
                 throw new Exception(message);
             throw new Exception(Strings.pCloudBackend.FailedWithUnexpectedErrorCode("rename", renameResponse.result));
         }
+
+        // The file keeps its ID when it is renamed
+        if (_UploadedFileIds.TryRemove(oldname, out var renamedId))
+            _UploadedFileIds[newname] = renamedId;
+        else
+            _UploadedFileIds.TryRemove(newname, out _);
     }
 }
