@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.Versioning;
 using NUnit.Framework;
 
 #nullable enable
@@ -35,6 +36,7 @@ namespace Duplicati.UnitTest;
 /// stand-ins for the LVM tools on the path.
 /// </summary>
 [TestFixture]
+[SupportedOSPlatform("linux")]
 public class LvmScriptExitCodeTests
 {
     private string m_folder = null!;
