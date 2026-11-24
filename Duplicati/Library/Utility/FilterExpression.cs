@@ -460,15 +460,55 @@ namespace Duplicati.Library.Utility
                 return false;
             }
 
-            if (m_filters != null && m_filters.Any(x => x.Matches(path)))
+            if (m_filters != null)
             {
-                match = this;
-                result = this.Result;
-                return true;
+                for (var i = 0; i < m_filters.Count; i++)
+                {
+                    if (m_filters[i].Matches(path))
+                    {
+                        match = GetEntryFilter(i);
+                        result = this.Result;
+                        return true;
+                    }
+                }
             }
 
             match = null;
             return false;
+        }
+
+        /// <summary>
+        /// The filters made of one entry each, so a match can name the entry that matched;
+        /// built when they are first needed
+        /// </summary>
+        private IFilter?[]? m_entryFilters;
+
+        /// <summary>
+        /// Gets a filter that holds only the entry at <paramref name="index"/>
+        /// </summary>
+        /// <param name="index">The index of the entry in <see cref="m_filters"/></param>
+        /// <returns>The filter with the one entry</returns>
+        private IFilter GetEntryFilter(int index)
+        {
+            if (m_filters!.Count == 1)
+                return this;
+
+            var filters = m_entryFilters ??= new IFilter?[m_filters.Count];
+            return filters[index] ??= new FilterExpression(m_filters[index], this.Result, this.CaseSensitive);
+        }
+
+        /// <summary>
+        /// Creates a filter from one entry of another filter, which keeps its compiled expression
+        /// </summary>
+        /// <param name="entry">The entry</param>
+        /// <param name="result">Return value of <see cref="Matches(string,out bool,out IFilter)"/> in case of match</param>
+        /// <param name="caseSensitive">A value indicating if the filter tells paths apart by their casing</param>
+        private FilterExpression(FilterEntry entry, bool result, bool caseSensitive)
+        {
+            this.Result = result;
+            this.CaseSensitive = caseSensitive;
+            m_filters = [entry];
+            this.Type = entry.Type;
         }
 
         /// <inheritdoc />

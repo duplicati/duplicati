@@ -519,5 +519,31 @@ namespace Duplicati.UnitTest
                 new FilterExpression("*", false));
             Assert.IsTrue(FilterExpression.IsExcludeAllBeforeIncludes(filter));
         }
+
+        [Test]
+        [Category("Filter")]
+        public void TheMatchNamesOnlyTheFilterThatMatched()
+        {
+            // The log line "Excluding path due to filter" showed every filter of the run,
+            // not the one that matched (#1910)
+            var filter = new FilterExpression(new[] { "*.jpg", "*.mp4", "*/tmp/" }, false);
+
+            Assert.IsTrue(filter.Matches("/x/a.mp4", out var result, out var match));
+            Assert.IsFalse(result);
+            Assert.AreEqual("(*.mp4)", match.ToString());
+
+            // The filter that is named works like the entry it stands for
+            Assert.IsTrue(match.Matches("/x/b.mp4", out var again, out var same));
+            Assert.IsFalse(again);
+            Assert.AreSame(match, same);
+            Assert.IsFalse(match.Matches("/x/a.jpg", out _, out _));
+
+            // The same entry is named the same way the next time
+            Assert.IsTrue(filter.Matches("/y/c.mp4", out _, out var next));
+            Assert.AreSame(match, next);
+
+            Assert.IsTrue(filter.Matches("/x/tmp/", out _, out var folder));
+            Assert.AreEqual("(*/tmp/)", folder.ToString());
+        }
     }
 }
