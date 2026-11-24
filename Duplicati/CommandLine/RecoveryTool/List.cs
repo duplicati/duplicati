@@ -78,9 +78,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                     if (f.Type != Duplicati.Library.Main.FilelistEntryType.File)
                         continue;
 
-                    bool result;
-                    bool match = filter.Matches(f.Path, out result, out _);
-                    if (!match || result)
+                    // The static Matches excludes the files that no rule matches when there are only include rules
+                    if (Library.Utility.FilterExpression.Matches(filter, f.Path, out _))
                         yield return f;
                 }
         }
