@@ -166,10 +166,8 @@ namespace Duplicati.UnitTest
                 DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
             var after = DateTime.Now;
 
-            // The backup is named "<prefix> <database name> <timestamp>.sqlite". Match on
-            // the database name so the test does not depend on the prefix, which is a
-            // localized string internal to Duplicati.Library.SQLiteHelper.
-            var backups = Directory.GetFiles(folder, "* " + name + " *.sqlite");
+            // The backup is named "backup <database name> <timestamp>.sqlite"
+            var backups = Directory.GetFiles(folder, "backup " + name + " *.sqlite");
             Assert.AreEqual(1, backups.Length, "The upgrade should have created exactly one backup file.");
 
             try
@@ -186,6 +184,76 @@ namespace Duplicati.UnitTest
             finally
             {
                 File.Delete(backups[0]);
+            }
+        }
+
+        /// <summary>
+        /// Every upgrade kept a copy of the database, and none was ever deleted, so the copies
+        /// piled up beside the databases (#4950). An upgrade now keeps only its own copy. The
+        /// copies of earlier upgrades are deleted, also those named with a translated prefix,
+        /// but files that only look alike are kept.
+        /// </summary>
+        [Test]
+        public async Task UpgradeDatabase_DeletesTheCopiesOfEarlierUpgradesAsync()
+        {
+            using var dbfile = new TempFile();
+            await RewindToPreviousVersionAsync(dbfile);
+
+            var folder = Path.GetDirectoryName(Path.GetFullPath(dbfile))!;
+            var name = Path.GetFileNameWithoutExtension(dbfile);
+            var earlier = new[] { $"backup {name} 20190101000000.sqlite", $"バックアップ {name} 20230303084222.sqlite", $"Sicherung {name} 20250606113333.sqlite" }
+                .Select(x => Path.Combine(folder, x)).ToArray();
+            // The last one is a copy that another process upgrading at the same time may still use
+            var unrelated = new[] { $"backup {name}X 20190101000000.sqlite", $"backup other {name} 20190101000000.sqlite", $"notes {name} 20190101000000.sqlite", $"backup {name} 2019.sqlite", $"backup {name} 20190101000000.txt", $"backup {name} {DateTime.Now.AddSeconds(-20):yyyyMMddHHmmss}.sqlite" }
+                .Select(x => Path.Combine(folder, x)).ToArray();
+            foreach (var file in earlier.Concat(unrelated))
+                File.WriteAllText(file, "");
+
+            try
+            {
+                using (var db = await SQLiteLoader.LoadConnectionAsync(dbfile))
+                    DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
+
+                Assert.That(earlier.Where(File.Exists), Is.Empty, "The copies of earlier upgrades should be deleted");
+                Assert.That(unrelated.Where(x => !File.Exists(x)), Is.Empty, "Files that are not copies of this database should be kept");
+                var copies = Directory.GetFiles(folder, "backup " + name + " *.sqlite")
+                    .Where(x => System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(x), @" [0-9]{14}\.sqlite$"))
+                    .Except(unrelated);
+                Assert.AreEqual(1, copies.Count(), "The copy of this upgrade should be kept");
+            }
+            finally
+            {
+                SqliteConnection.ClearAllPools();
+                DeleteUpgradeBackups(dbfile);
+                foreach (var file in unrelated)
+                    File.Delete(file);
+            }
+        }
+
+        /// <summary>
+        /// A database that needs no upgrade gets no new copy, so the copy of its last upgrade
+        /// must be kept.
+        /// </summary>
+        [Test]
+        public async Task UpgradeDatabase_WithoutAnUpgrade_KeepsTheCopiesAsync()
+        {
+            using var dbfile = new TempFile();
+            using (var db = await SQLiteLoader.LoadConnectionAsync(dbfile))
+                DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
+
+            var copy = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(dbfile))!, $"backup {Path.GetFileNameWithoutExtension(dbfile)} 20190101000000.sqlite");
+            File.WriteAllText(copy, "");
+            try
+            {
+                using (var db = await SQLiteLoader.LoadConnectionAsync(dbfile))
+                    DatabaseUpgrader.UpgradeDatabase(db, dbfile, typeof(DatabaseSchemaMarker));
+
+                Assert.IsTrue(File.Exists(copy), "The copy of the last upgrade should be kept");
+            }
+            finally
+            {
+                SqliteConnection.ClearAllPools();
+                File.Delete(copy);
             }
         }
 
