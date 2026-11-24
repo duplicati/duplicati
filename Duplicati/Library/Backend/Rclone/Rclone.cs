@@ -51,6 +51,11 @@ namespace Duplicati.Library.Backend
         private const string RCLONE_ERROR_DIRECTORY_NOT_FOUND = "directory not found";
         private const string RCLONE_ERROR_CONFIG_NOT_FOUND = "didn't find section in config file";
 
+        /// <summary>
+        /// How long to wait for the rest of the output after rclone has ended
+        /// </summary>
+        private static readonly TimeSpan OutputEndWait = TimeSpan.FromSeconds(10);
+
         private readonly string local_repo;
         private readonly string remote_repo;
         private readonly string remote_path;
@@ -186,6 +191,19 @@ namespace Duplicati.Library.Backend
                     killed = true;
                     process.Kill();
                     process.WaitForExit();
+                }
+            }
+
+            // The process can end before its output is read to the end, so wait for the rest of it.
+            // The wait is bounded, as a process that rclone left behind can hold the output open
+            if (!killed)
+            {
+                try
+                {
+                    await process.WaitForExitAsync(cancelToken).WaitAsync(OutputEndWait, cancelToken).ConfigureAwait(false);
+                }
+                catch (TimeoutException)
+                {
                 }
             }
 
