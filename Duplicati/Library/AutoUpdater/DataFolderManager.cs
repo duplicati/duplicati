@@ -24,6 +24,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Security.Principal;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Utility;
@@ -327,7 +328,7 @@ public static class DataFolderManager
                 $"or run with --{Util.AllowInsecureDatafolderOption} to bypass this check if you understand the risks.",
                 "InsecureDataFolderPermissions");
 
-        var configuretoolname = PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.ConfigureTool);
+        var command = GetSecureDataFolderCommand(dataFolder, IsRunningAsLocalSystem());
 
         // Tailor the guidance based on whether the folder pre-existed. A pre-existing folder
         // that is not canonical is either an attacker-created folder (squatting) or one whose
@@ -337,8 +338,8 @@ public static class DataFolderManager
             ? "This folder already existed before Duplicati started and does not have the expected restricted permissions, " +
               "which can mean it was created by another (possibly malicious) user and may contain a malicious database or configuration. " +
               "Duplicati does not automatically adopt an existing folder's permissions. Verify the folder was created by Duplicati " +
-              $"(not an attacker), then restrict its permissions using the '{configuretoolname} secure-datafolder' command (or manually). "
-            : $"Restrict the permissions on the folder using the '{configuretoolname} secure-datafolder' command (or manually). ";
+              $"(not an attacker), then restrict its permissions using the {command} (or manually). "
+            : $"Restrict the permissions on the folder using the {command} (or manually). ";
 
         throw new UserInformationException(
             $"The data folder '{dataFolder}' does not have secure permissions ({detail}). " +
@@ -347,6 +348,39 @@ public static class DataFolderManager
             guidance +
             $"Alternatively, run with --{Util.AllowInsecureDatafolderOption} to bypass this check if you understand the risks.",
             "InsecureDataFolderPermissions");
+    }
+
+    /// <summary>
+    /// Gets the command that restricts the permissions on the data folder, for use in a message.
+    ///
+    /// The command grants rights to the user that runs it and uses the data folder of that user.
+    /// The Windows service runs as SYSTEM, which accepts neither, so its command needs the folder
+    /// and the option that leaves out the user (#7987).
+    /// </summary>
+    /// <param name="dataFolder">The data folder path.</param>
+    /// <param name="asLocalSystem">Whether the data folder is used by the SYSTEM account.</param>
+    /// <returns>The description of the command.</returns>
+    internal static string GetSecureDataFolderCommand(string dataFolder, bool asLocalSystem)
+    {
+        var configuretoolname = PackageHelper.GetExecutableName(PackageHelper.NamedExecutable.ConfigureTool);
+
+        // A trailing separator would escape the closing quote on the commandline
+        return asLocalSystem
+            ? $"'{configuretoolname} secure-datafolder --datafolder \"{Path.TrimEndingDirectorySeparator(dataFolder)}\" --for-service' command from an elevated command prompt"
+            : $"'{configuretoolname} secure-datafolder' command";
+    }
+
+    /// <summary>
+    /// Checks if the process runs as the SYSTEM account, as the Windows service does.
+    /// </summary>
+    /// <returns><c>true</c> if the process runs as SYSTEM; otherwise <c>false</c>.</returns>
+    private static bool IsRunningAsLocalSystem()
+    {
+        if (!OperatingSystem.IsWindows())
+            return false;
+
+        using var identity = WindowsIdentity.GetCurrent();
+        return identity.IsSystem;
     }
 
     /// <summary>

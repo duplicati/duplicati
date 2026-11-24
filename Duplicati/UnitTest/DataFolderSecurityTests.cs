@@ -296,6 +296,27 @@ namespace Duplicati.UnitTest
             Assert.AreEqual("InsecureDataFolderPermissions", ex!.HelpID);
         }
 
+        /// <summary>
+        /// The Windows service runs as SYSTEM and rejects a rule for the user that runs the command,
+        /// so the plain command, which adds one, does not help it (#7987)
+        /// </summary>
+        [TestCase("")]
+        [TestCase("/")]
+        [Category("DataFolderSecurity")]
+        public void SecureCommandForTheServiceNamesTheFolderAndLeavesOutTheUser(string ending)
+        {
+            var dir = NewChild("service folder");
+
+            var command = DataFolderManager.GetSecureDataFolderCommand(dir + ending.Replace('/', Path.DirectorySeparatorChar), asLocalSystem: true);
+
+            NUnit.Framework.Assert.That(command, Does.Contain($"secure-datafolder --datafolder \"{dir}\" --for-service'"));
+        }
+
+        [Test]
+        [Category("DataFolderSecurity")]
+        public void SecureCommandForAUserIsThePlainCommand()
+            => NUnit.Framework.Assert.That(DataFolderManager.GetSecureDataFolderCommand(NewChild("user folder"), asLocalSystem: false), Does.EndWith("secure-datafolder' command"));
+
         [Test]
         [Category("DataFolderSecurity")]
         public void PrepareSecureDataFolder_ExistingInsecureFolder_IsAcceptedWhenOptedIn()
