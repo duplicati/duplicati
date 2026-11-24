@@ -170,6 +170,32 @@ public class UnfreezeTests : BasicSetupHelper
         Assert.That(res.Volumes.All(x => !x.Requested && x.State == ArchiveRestoreState.Archived), Is.True);
     }
 
+    /// <summary>
+    /// With remote-filename-suffix the backend is wrapped, and the volumes are asked for under their names on the remote
+    /// </summary>
+    [Test]
+    [Category("Targeted")]
+    public async Task AVolumeIsAskedForWithTheRemoteFilenameSuffixAsync()
+    {
+        const string suffix = ".bin";
+        var options = new Dictionary<string, string>(Options) { ["remote-filename-suffix"] = suffix };
+        CreateSourceData("first", 1);
+        using (var c = new Controller("file://" + TARGETFOLDER, options, null))
+            TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
+
+        foreach (var name in Directory.EnumerateFiles(TARGETFOLDER).Select(x => Path.GetFileName(x)!))
+        {
+            Assert.That(name, Does.EndWith(suffix));
+            ArchiveFolderBackend.States[name] = ArchiveRestoreState.Archived;
+        }
+
+        using var archive = new Controller(ArchiveTarget, options, null);
+        var res = await archive.UnfreezeAsync([FirstFolder]);
+        Assert.That(res.Volumes, Is.Not.Empty);
+        Assert.That(ArchiveFolderBackend.Requests, Is.EquivalentTo(res.Volumes.Select(x => x.Name + suffix)));
+        Assert.That(res.Volumes.All(x => x.Requested && x.State == ArchiveRestoreState.RestoreInProgress), Is.True);
+    }
+
     [Test]
     [Category("Targeted")]
     public async Task ADestinationWithoutArchiveStorageIsReportedAsync()
