@@ -1,4 +1,4 @@
-# shellcheck shell=sh
+# shellcheck shell=bash
 # Create file to prevent file RO image
 rm rw.*.template.dmg
 touch template.dmg
@@ -23,12 +23,12 @@ rm template.dmg
 rm -rf scaffold
 
 NAME=(rw.*.template.dmg)
-if [[ "$NAME" == "rw.*.template.dmg" ]]; then
+if [[ "${NAME[0]}" == "rw.*.template.dmg" ]]; then
     echo "No matching file found"
-elif [[ "$NAME" == *' '* ]]; then
+elif [[ ${#NAME[@]} -gt 1 ]]; then
     echo "Error: More than one file matched"
 else
-    mv "$NAME" template.dmg
+    mv "${NAME[0]}" template.dmg
     bzip2 -z -9 template.dmg
     mv template.dmg.bz2 ../template.dmg.bz2    
 fi

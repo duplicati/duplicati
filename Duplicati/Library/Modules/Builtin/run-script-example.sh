@@ -1,4 +1,6 @@
 #!/bin/bash
+# Duplicati sets the DUPLICATI__ variables in the environment
+# shellcheck disable=SC2154
 
 ###############################################################################
 # How to run scripts before or after backups
@@ -155,7 +157,10 @@
 # We read a few variables first.
 EVENTNAME=$DUPLICATI__EVENTNAME
 OPERATIONNAME=$DUPLICATI__OPERATIONNAME
+# The example does not use these two, they show what else is available
+# shellcheck disable=SC2034
 REMOTEURL=$DUPLICATI__REMOTEURL
+# shellcheck disable=SC2034
 LOCALPATH=$DUPLICATI__LOCALPATH
 
 # Basic setup, we use the same file for both before and after,

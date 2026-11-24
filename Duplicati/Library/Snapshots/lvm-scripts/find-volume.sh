@@ -22,7 +22,7 @@ NAME=$1
 VOLUME=`df -P "$NAME" | tail -1 | awk '{ print $1}'`
 if [ "$?" -ne 0 ] || [ -z "$VOLUME" ]
 then
-	[[ "$?" -ne 0 ]] && EXIT_CODE=$? || EXIT_CODE=-1
+	EXIT_CODE=-1
 	echo "Error: unable to determine device for $NAME"
 	exit $EXIT_CODE
 fi
@@ -30,7 +30,7 @@ fi
 MOUNTPOINT=`df -P "$NAME" | tail -1 | awk '{ print $NF}'`
 if [ "$?" -ne 0 ] || [ -z "$MOUNTPOINT" ]
 then
-	[[ "$?" -ne 0 ]] && EXIT_CODE=$? || EXIT_CODE=-1
+	EXIT_CODE=-1
 	echo "Error: unable to determine mount point for $NAME"
 	exit $EXIT_CODE
 fi
@@ -41,9 +41,9 @@ fi
 
 function get_lvmid {
 	LVMID=`lvs "$1" --options vg_name,lv_name --noheadings 2>/dev/null | tail -1 | awk '{ print $1 "/" $2}'`
-	if [ "$?" -ne 0 ] 
+	EXIT_CODE=$?
+	if [ "$EXIT_CODE" -ne 0 ]
 	then
-		EXIT_CODE=$?
 		echo "Error: Unable to determine volume group (VG) for mapped volume $VOLUME"
 		exit $EXIT_CODE
 	fi

@@ -284,7 +284,7 @@ stop_daemon() {
         echo "Stopping $QPKG_NAME (pid=$PID) ..."
         kill "$PID" 2>/dev/null || true
         # Give it a few seconds to exit gracefully
-        for i in 1 2 3 4 5 6 7 8 9 10; do
+        for _ in 1 2 3 4 5 6 7 8 9 10; do
             if ! kill -0 "$PID" 2>/dev/null; then
                 break
             fi
