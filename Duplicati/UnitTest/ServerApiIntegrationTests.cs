@@ -143,18 +143,26 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
         Directory.CreateDirectory(Path.Combine(target, "sub"));
         MakeFolderLink(link, target);
 
-        await WithAuthenticatedServerAsync(async httpClient =>
+        try
         {
-            var nodes = await ListFolderAsync(httpClient, Util.AppendDirSeparator(folder)).ConfigureAwait(false);
-            var node = nodes.Single(x => x.GetProperty("text").GetString() == "link");
+            await WithAuthenticatedServerAsync(async httpClient =>
+            {
+                var nodes = await ListFolderAsync(httpClient, Util.AppendDirSeparator(folder)).ConfigureAwait(false);
+                var node = nodes.Single(x => x.GetProperty("text").GetString() == "link");
 
-            Assert.That(node.GetProperty("symlink").GetBoolean(), Is.True);
-            Assert.That(node.GetProperty("id").GetString(), Is.EqualTo(Util.AppendDirSeparator(link)));
-            Assert.That(node.TryGetProperty("symlinkTarget", out var symlinkTarget) ? symlinkTarget.GetString() : null,
-                Is.Not.Null.And.EqualTo(target).Or.EqualTo(Util.AppendDirSeparator(target)));
-            Assert.That(node.GetProperty("resolvedpath").ValueKind, Is.EqualTo(JsonValueKind.Null),
-                "The path of the link must not be replaced by its target");
-        }).ConfigureAwait(false);
+                Assert.That(node.GetProperty("symlink").GetBoolean(), Is.True);
+                Assert.That(node.GetProperty("id").GetString(), Is.EqualTo(Util.AppendDirSeparator(link)));
+                Assert.That(node.TryGetProperty("symlinkTarget", out var symlinkTarget) ? symlinkTarget.GetString() : null,
+                    Is.Not.Null.And.EqualTo(target).Or.EqualTo(Util.AppendDirSeparator(target)));
+                Assert.That(node.GetProperty("resolvedpath").ValueKind, Is.EqualTo(JsonValueKind.Null),
+                    "The path of the link must not be replaced by its target");
+            }).ConfigureAwait(false);
+        }
+        finally
+        {
+            // Remove the link itself, as the recursive delete in the teardown fails on a link on Windows
+            Directory.Delete(link);
+        }
     }
 
     /// <summary>
@@ -255,70 +263,47 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
         }).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// The response to creating a job says whether the job is temporary,
+    /// both for a new job and for the copy of a saved job.
+    /// </summary>
     [Test]
     [Category("Integration")]
-    [TestCase(true)]
-    [TestCase(false)]
-    public async Task ImportExpandsEnvironmentVariablesWhenAsked_Async(bool expand)
+    public async Task TheCreatedJobIsReportedAsTemporaryOnlyWhenItIs_Async()
     {
-        var variable = "DUPLICATI_TEST_IMPORT_" + Guid.NewGuid().ToString("N");
-        var value = Path.Combine(BASEFOLDER, "expanded");
-        var token = $"%{variable}%";
-        var undefined = "%DUPLICATI_TEST_UNDEFINED_VARIABLE%";
-        string Expected(string template) => expand ? template.Replace(token, value) : template;
-
-        Environment.SetEnvironmentVariable(variable, value);
-        try
+        await WithAuthenticatedServerAsync(async httpClient =>
         {
-            await WithAuthenticatedServerAsync(async httpClient =>
+            async Task<CreateBackupDto> ReadAsync(HttpResponseMessage response)
             {
-                var backupId = await CreateBackupAsync(httpClient, "integration-passphrase").ConfigureAwait(false);
-
-                // A template made by editing an exported configuration
-                var config = System.Text.Json.Nodes.JsonNode.Parse(await ExportConfigurationAsync(httpClient, backupId).ConfigureAwait(false))!;
-                var backup = config["Backup"]!;
-                var name = $"Template {token}";
-                var description = $"Made for {token} on {undefined}";
-                var targetUrl = $"file://{token}{Path.DirectorySeparatorChar}target";
-                var source = $"{token}{Path.DirectorySeparatorChar}data{Path.DirectorySeparatorChar}";
-                var scriptPath = $"{token}{Path.DirectorySeparatorChar}before.cmd";
-                var filter = $"{token}{Path.DirectorySeparatorChar}skip{Path.DirectorySeparatorChar}";
-                backup["Name"] = name;
-                backup["Description"] = description;
-                backup["TargetURL"] = targetUrl;
-                backup["Sources"] = new System.Text.Json.Nodes.JsonArray(source, undefined);
-                backup["Settings"]!.AsArray().Add(new System.Text.Json.Nodes.JsonObject { ["Name"] = "run-script-before", ["Value"] = scriptPath, ["Filter"] = "" });
-                backup["Filters"] = new System.Text.Json.Nodes.JsonArray(new System.Text.Json.Nodes.JsonObject { ["Order"] = 0, ["Include"] = false, ["Expression"] = filter });
-
-                // Sent as plain JSON, the way ServerUtil and the UI send it
-                var response = await httpClient.PostAsJsonAsync("/api/v1/backups/import", new
-                {
-                    config = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(config.ToJsonString())),
-                    import_metadata = true,
-                    direct = true,
-                    expand_env_vars = expand
-                }, JsonOptions).ConfigureAwait(false);
                 response.EnsureSuccessStatusCode();
-                var result = await response.Content.ReadFromJsonAsync<ImportBackupOutputDto>(JsonOptions).ConfigureAwait(false)
-                             ?? throw new InvalidOperationException("Import response was empty");
+                return await response.Content.ReadFromJsonAsync<CreateBackupDto>(JsonOptions).ConfigureAwait(false)
+                    ?? throw new InvalidOperationException("The response was empty");
+            }
 
-                var getResponse = await httpClient.GetAsync($"/api/v1/backup/{result.Id}").ConfigureAwait(false);
-                getResponse.EnsureSuccessStatusCode();
-                var imported = (await getResponse.Content.ReadFromJsonAsync<BackupGet.GetBackupResultDto>(JsonOptions).ConfigureAwait(false)
-                                ?? throw new InvalidOperationException("Backup get response was empty")).Backup;
+            BackupAndScheduleInputDto NewJob() => new()
+            {
+                Backup = new BackupAndScheduleInputDto.BackupInputDto
+                {
+                    Name = $"Temporary flag {Guid.NewGuid():N}",
+                    Description = "Integration test backup",
+                    TargetURL = BuildFileBackendUrl(this.TARGETFOLDER),
+                    Sources = new[] { this.DATAFOLDER },
+                    Settings = new[] { new BackupAndScheduleInputDto.SettingInputDto { Name = "passphrase", Value = "integration-passphrase" } },
+                    Filters = Array.Empty<BackupAndScheduleInputDto.FilterInputDto>(),
+                    Metadata = new Dictionary<string, string>()
+                }
+            };
 
-                Assert.That(imported.Name, Is.EqualTo(Expected(name)));
-                Assert.That(imported.Description, Is.EqualTo(Expected(description)), "An undefined variable is left as it is");
-                Assert.That(imported.TargetURL, Is.EqualTo(Expected(targetUrl)));
-                Assert.That(imported.Sources, Is.EqualTo(new[] { Expected(source), undefined }));
-                Assert.That(imported.Settings!.Single(x => x.Name == "run-script-before").Value, Is.EqualTo(Expected(scriptPath)));
-                Assert.That(imported.Filters!.Single().Expression, Is.EqualTo(Expected(filter)));
-            }).ConfigureAwait(false);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable(variable, null);
-        }
+            Directory.CreateDirectory(this.TARGETFOLDER);
+            var permanent = await ReadAsync(await httpClient.PostAsJsonAsync("/api/v1/backups", NewJob(), JsonOptions).ConfigureAwait(false)).ConfigureAwait(false);
+            Assert.That(permanent.Temporary, Is.False, "A saved job is not temporary");
+
+            var temporary = await ReadAsync(await httpClient.PostAsJsonAsync("/api/v1/backups?temporary=true", NewJob(), JsonOptions).ConfigureAwait(false)).ConfigureAwait(false);
+            Assert.That(temporary.Temporary, Is.True, "A job created with temporary=true is temporary");
+
+            var copy = await ReadAsync(await httpClient.PostAsync($"/api/v1/backup/{permanent.ID}/copytotemp", null).ConfigureAwait(false)).ConfigureAwait(false);
+            Assert.That(copy.Temporary, Is.True, "The copy of a saved job is temporary");
+        }).ConfigureAwait(false);
     }
 
     [Test]

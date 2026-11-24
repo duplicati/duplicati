@@ -89,6 +89,8 @@ public class LocalRestoreDownloaderTests : BasicSetupHelper
         var restoreOptions = new Dictionary<string, string>(this.TestOptions)
         {
             ["restore-path"] = this.RESTOREFOLDER,
+            // Stable does not allow the volume size to differ from the one the backup was made with
+            ["dblock-size"] = "100kb",
             ["blocksize"] = "4kb",
             ["log-file"] = logFile,
             ["log-file-log-level"] = "Verbose",

@@ -123,8 +123,16 @@ public class SuspendResumeStateTests : BasicSetupHelper
         var previousDataFolderEnv = Environment.GetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME);
         Environment.SetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME, dataFolder);
 
+        // Debug builds default to portable mode, which keeps the data next to the test assembly
+        // and wins over the data folder variable, so the server would use a database shared with
+        // other tests, and fail to start if one of them left it encrypted
+        var portableModeEnvName = $"{AutoUpdateSettings.AppName}__{DataFolderManager.PORTABLE_MODE_OPTION.Replace('-', '_')}".ToUpperInvariant();
+        var previousPortableModeEnv = Environment.GetEnvironmentVariable(portableModeEnvName);
+        Environment.SetEnvironmentVariable(portableModeEnvName, "false");
+
         var applicationSettings = new ApplicationSettings();
         Task<int>? serverTask = null;
+        Duplicati.Server.Database.Connection? serverConnection = null;
         var started = false;
         try
         {
@@ -155,14 +163,17 @@ public class SuspendResumeStateTests : BasicSetupHelper
             if (!ServerProgram.ServerStartedEvent.WaitOne(TimeSpan.FromSeconds(60)))
                 Assert.Fail("Server did not start");
 
+            // The server does not close its database when it stops, so the test closes it
+            // to be able to remove the data folder
+            serverConnection = (Duplicati.Server.Database.Connection?)ServerProgram.DuplicatiWebserver.Provider.GetService(typeof(Duplicati.Server.Database.Connection));
+
             using var client = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{ServerProgram.DuplicatiWebserver.Port}") };
             var login = await client.PostAsJsonAsync("/api/v1/auth/login", new { password = "suspend-resume-test", rememberMe = true });
             login.EnsureSuccessStatusCode();
             using var loginDoc = JsonDocument.Parse(await login.Content.ReadAsStringAsync());
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginDoc.RootElement.GetProperty("AccessToken").GetString());
 
-            // Debug builds keep the server data next to the test assembly, shared with other tests,
-            // so start from the running state and leave it running
+            // Start from the running state, and leave it running
             if (resumeAtStart)
                 (await client.PostAsync("/api/v1/serverstate/resume", null)).EnsureSuccessStatusCode();
             started = true;
@@ -176,6 +187,9 @@ public class SuspendResumeStateTests : BasicSetupHelper
             if (serverTask != null)
                 try { await serverTask.WaitAsync(TimeSpan.FromSeconds(30)); } catch { }
             Environment.SetEnvironmentVariable(DataFolderManager.DATAFOLDER_ENV_NAME, previousDataFolderEnv);
+            Environment.SetEnvironmentVariable(portableModeEnvName, previousPortableModeEnv);
+            serverConnection?.Dispose();
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
             ServerProgram.ServerStartedEvent.Reset();
         }
     }
