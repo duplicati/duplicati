@@ -15,9 +15,9 @@ TMPDIR=$3
 # Get the reported mount point for the temp folder
 #
 VOLUME=`df -P "$TMPDIR" | tail -1 | awk '{ print $1}'`
-if [ "$?" -ne 0 ]
+EXIT_CODE=$?
+if [ "$EXIT_CODE" -ne 0 ]
 then
-	EXIT_CODE=$?
 	echo "Error: unable to determine mount point for $TMPDIR"
 	exit $EXIT_CODE
 fi
@@ -26,17 +26,17 @@ fi
 # Get the LVMID for the temp folder
 #
 LVMID=`lvs "$VOLUME" --options vg_name,lv_name --noheadings | tail -1 | awk '{ print $1 "/" $2}'`
-if [ "$?" -ne 0 ]
+EXIT_CODE=$?
+if [ "$EXIT_CODE" -ne 0 ]
 then
-	EXIT_CODE=$?
 	echo "Error: unable to determine LVM id for $VOLUME"
 	exit $EXIT_CODE
 fi
 
 LVM_ORIGIN=`lvs "$LVMID" --noheadings --options origin | tail -1 | awk '{print $LF}'`
-if [ "$?" -ne 0 ]
+EXIT_CODE=$?
+if [ "$EXIT_CODE" -ne 0 ]
 then
-	EXIT_CODE=$?
 	echo "Error: unable to determine LVM origin for $LVMID"
 	exit $EXIT_CODE
 fi
@@ -57,7 +57,7 @@ then
 
 	umount -f "$TMPDIR"
 	EXIT_CODE=$?
-	if [ "$?" -ne 0 ]
+	if [ "$EXIT_CODE" -ne 0 ]
 	then
 			echo "Error: umount -f \"$TMPDIR\" failed twice!"
 			exit $EXIT_CODE
@@ -65,17 +65,17 @@ then
 fi
 
 lvremove --force "$LVMID"
-if [ "$?" -ne 0 ]
+EXIT_CODE=$?
+if [ "$EXIT_CODE" -ne 0 ]
 then
-	EXIT_CODE=$?
 	echo "Error: lvremove failed: lvremove --force \"$LVMID\""
 	exit $EXIT_CODE
 fi
 
 rmdir "$TMPDIR"
-if [ "$?" -ne 0 ]
+EXIT_CODE=$?
+if [ "$EXIT_CODE" -ne 0 ]
 then
-	EXIT_CODE=$?
 	echo "Error: rmdir \"$TMPDIR\" failed!"
 	exit $EXIT_CODE
 fi

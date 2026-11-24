@@ -29,9 +29,9 @@ MAX_FREE_BLOCKS=1000
 # Get the number of free blocks on the volume
 #
 FREEBLOCKS=`lvs "$DEVICE" --noheadings --options vg_free_count | tail -1 | awk '{printf $NF}'`
-if [ "$?" -ne 0 ]
+EXIT_CODE=$?
+if [ "$EXIT_CODE" -ne 0 ]
 then
-	EXIT_CODE=$?
 	echo "Error: lvs failed to find free space: lvs \"$DEVICE\" --noheadings --options vg_free_count"
 	exit $EXIT_CODE
 fi
@@ -63,9 +63,9 @@ then
 fi
 
 LV_GROUP=`lvs "$DEVICE" --noheadings --options vg_name | tail -1 | awk '{printf $NF}'`
-if [ "$?" -ne 0 ]
+EXIT_CODE=$?
+if [ "$EXIT_CODE" -ne 0 ]
 then
-	EXIT_CODE=$?
 	echo "Error: lvs failed to read VG: lvs \"$DEVICE\" --noheadings --options vg_name"
 	exit $EXIT_CODE
 fi
@@ -75,9 +75,9 @@ fi
 # Create the logical volume snapsnot
 #
 lvcreate --extents $FREEBLOCKS --snapshot --name "$NAME" "$DEVICE"
-if [ "$?" -ne 0 ]
+EXIT_CODE=$?
+if [ "$EXIT_CODE" -ne 0 ]
 then
-	EXIT_CODE=$?
 	echo "Error: lvcreate failed: lvcreate --extents $FREEBLOCKS --snapshot --name \"$NAME\" \"$DEVICE\""
 	exit $EXIT_CODE
 fi
@@ -94,21 +94,20 @@ fi
 
 if [ "$?" -ne 0 ] || [ -z "$LV_SNAPSHOT" ] || [ ! -e "$LV_SNAPSHOT" ]
 then
-	EXIT_CODE=$?
 	echo "Error: Unable to determine LV path for volume $LV_GROUP/$NAME"
 	
 	#We have created the volume, so remove it before exit
 	lvremove --force "$LV_GROUP/$NAME"
-	exit $EXIT_CODE
+	exit 255
 fi
 
 #
 # Create a mount point
 #
 mkdir "$TMPDIR"
-if [ "$?" -ne 0 ]
+EXIT_CODE=$?
+if [ "$EXIT_CODE" -ne 0 ]
 then
-	EXIT_CODE=$?
 	echo "Error: mkdir \"$TMPDIR\" failed!"
 	
 	#We have created the volume, so remove it before exit
@@ -133,9 +132,9 @@ fi
 # Mount the snapshot on the mount point
 #
 mount -o "$MOUNT_OPTIONS" "$LV_SNAPSHOT" "$TMPDIR"
-if [ "$?" -ne 0 ]
+EXIT_CODE=$?
+if [ "$EXIT_CODE" -ne 0 ]
 then
-	EXIT_CODE=$?
 	echo "Error: mount -o \"$MOUNTOPTIONS\" \"$LV_SNAPSHOT\" \"$TMPDIR\" failed!"
 
 	#We have created the volume, so remove it before exit
