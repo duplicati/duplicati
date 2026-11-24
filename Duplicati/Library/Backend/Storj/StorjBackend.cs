@@ -69,6 +69,33 @@ namespace Duplicati.Library.Backend.Storj
             { "Europe", "eu1.storj.io:7777" },
         };
 
+        /// <summary>
+        /// The node IDs of the known satellites. The bundled uplink library can only look up the
+        /// node ID of the old tardigrade.io names, and an API key cannot be used without it.
+        /// </summary>
+        private static readonly Dictionary<string, string> KNOWN_SATELLITE_NODE_IDS = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase){
+            { "us1.storj.io", "12EayRS2V1kEsWESU9QMRseFhdxYxKicsiFmxrsLZHeLUtdps3S" },
+            { "ap1.storj.io", "121RTSDpyNZVcEU84Ticf2L1ntiuUimbWgfATz21tuvgk3vzoA6" },
+            { "eu1.storj.io", "12L9ZFwhzVpuEKMUNUqkaTLGzwY9G24tbiigLiXpmZWKwmcNDDs" },
+        };
+
+        /// <summary>
+        /// Adds the node ID to the address of a known satellite that has none
+        /// </summary>
+        /// <param name="satellite">The satellite address, as host:port or nodeid@host:port</param>
+        /// <returns>The address with the node ID, or the address as it was given</returns>
+        internal static string ResolveSatelliteAddress(string satellite)
+        {
+            if (satellite.Contains('@'))
+                return satellite;
+
+            var separator = satellite.LastIndexOf(':');
+            var host = separator < 0 ? satellite : satellite.Substring(0, separator);
+            return KNOWN_SATELLITE_NODE_IDS.TryGetValue(host.Trim(), out var nodeId)
+                ? nodeId + "@" + satellite.Trim()
+                : satellite;
+        }
+
         public static readonly Dictionary<string, string?> KNOWN_AUTHENTICATION_METHODS = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase){
             { "API key", "API key" },
             { "Access grant", "Access grant" },
@@ -118,7 +145,7 @@ namespace Duplicati.Library.Backend.Storj
                 _api_key = options.GetValueOrDefault(STORJ_API_KEY);
                 _secret = options.GetValueOrDefault(STORJ_SECRET);
 
-                _access = new Access(_satellite, _api_key, _secret, new Config() { UserAgent = STORJ_PARTNER_ID });
+                _access = new Access(ResolveSatelliteAddress(_satellite), _api_key, _secret, new Config() { UserAgent = STORJ_PARTNER_ID });
             }
 
             _bucketService = new BucketService(_access);
