@@ -43,6 +43,11 @@ public static class WixV4Sources
     private static readonly XNamespace Ns = "http://wixtoolset.org/schemas/v4/wxs";
 
     /// <summary>
+    /// The number of <c>wix convert</c> runs after which there must be nothing left to convert
+    /// </summary>
+    private const int MaxConvertRuns = 5;
+
+    /// <summary>
     /// The prefix given to a dialog in the sources that has the same name as a WixUI dialog
     /// </summary>
     private const string DialogPrefix = "Duplicati";
@@ -94,9 +99,20 @@ public static class WixV4Sources
         var convertFiles = sources.Concat(Directory.GetFiles(targetFolder, "*.wxi")).ToArray();
 
         // The exit code of "wix convert" is the number of changes it made, so it is not an
-        // error code. A second run must find nothing to convert.
-        await ProcessHelper.Execute([wixCommand, "convert", .. convertFiles], workingDirectory: targetFolder, codeIsError: _ => false);
-        await ProcessHelper.Execute([wixCommand, "convert", .. convertFiles], workingDirectory: targetFolder);
+        // error code. A run converts only one of several Condition elements in a Feature, so
+        // it is repeated until it finds nothing to convert.
+        for (var run = 1; ; run++)
+        {
+            var lastRun = run == MaxConvertRuns;
+            var changes = 0;
+            await ProcessHelper.Execute([wixCommand, "convert", .. convertFiles], workingDirectory: targetFolder, codeIsError: code =>
+            {
+                changes = code;
+                return lastRun && code != 0;
+            });
+            if (changes == 0)
+                break;
+        }
 
         var documents = sources.ToDictionary(x => x, x => XDocument.Load(x, LoadOptions.PreserveWhitespace));
         foreach (var doc in documents.Values)
