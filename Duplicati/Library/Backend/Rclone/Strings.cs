@@ -35,5 +35,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string RcloneOptionRcloneShort { get { return LC.L(@"Rclone options"); } }
         public static string RcloneExecutableLong { get { return LC.L(@"Full path to the rclone executable. Only needed if it's not in your path."); } }
         public static string RcloneExecutableShort { get { return LC.L(@"Rclone executable"); } }
+        public static string RcloneConfigPasswordLong { get { return LC.L(@"The password of an encrypted rclone configuration. It is passed to rclone in the RCLONE_CONFIG_PASS environment variable."); } }
+        public static string RcloneConfigPasswordShort { get { return LC.L(@"Rclone configuration password"); } }
     }
 }
