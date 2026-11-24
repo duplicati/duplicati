@@ -140,6 +140,14 @@
 
       <!-- Resolves [SourceDir] into PRELOAD_SOURCE -->
       <Custom Action="SetPreloadSource" After="CostFinalize">INSTALL_PRELOAD="true" AND NOT Installed</Custom>
+
+      <!-- Set the recovery actions of the service: restart it 60 seconds after
+           a failure, at most twice a day. The MsiServiceConfigFailureActions
+           table cannot be used, because Windows Installer fails to apply a
+           restart action from it (Error 1939) and rolls the install back (#7987).
+           Runs after InstallServices (5800) and before StartServices (5900). -->
+      <Custom Action="SetServiceRecoveryTool" Sequence="5859">(NOT Installed OR REINSTALL) AND NOT REMOVE~="ALL"</Custom>
+      <Custom Action="SetServiceRecovery" Sequence="5860">(NOT Installed OR REINSTALL) AND NOT REMOVE~="ALL"</Custom>
     </InstallExecuteSequence>
 
     <InstallUISequence>
@@ -161,6 +169,22 @@
               Value="[SourceDir]"
               Execute="immediate"
               Return="check" />
+
+    <!-- wixl does not support the Directory attribute of a custom action, so
+         the path of sc.exe is in a property. A failure to set the recovery
+         actions does not fail the install. -->
+    <CustomAction Id="SetServiceRecoveryTool"
+              Property="ServiceRecoveryTool"
+              Value="[SystemFolder]sc.exe"
+              Execute="immediate"
+              Return="check" />
+
+    <CustomAction Id="SetServiceRecovery"
+              Property="ServiceRecoveryTool"
+              ExeCommand="failure Duplicati.Agent reset= 86400 actions= restart/60000/restart/60000//0"
+              Execute="deferred"
+              Impersonate="no"
+              Return="ignore" />
 
     <CustomAction Id="SetInstallLocationFromPrevious"
               Property="INSTALLLOCATION"
