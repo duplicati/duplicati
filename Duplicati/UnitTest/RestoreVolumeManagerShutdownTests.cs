@@ -58,6 +58,13 @@ public class RestoreVolumeManagerShutdownTests
         // The second volume is requested, and nothing takes its download, so the manager waits there
         await channels.VolumeRequest.WriteAsync(new BlockRequest(2, 0, "b", 10, 2, BlockRequestType.Download)).WaitAsync(Timeout);
 
+        // The write returning does not mean the manager has chosen the request yet: the channel
+        // completes the read on the thread pool, so the manager may still be choosing between its
+        // two reads. A volume handed over in that window can be chosen first, and the manager then
+        // waits forever to hand it to a decompressor that is not there. So the handover waits until
+        // the manager is waiting to write the download request.
+        await WaitForWaitingWriterAsync(channels.DownloadRequest).WaitAsync(Timeout);
+
         // The first volume is handed over while the manager waits for the download
         var file = new TempFile();
         var volume = new VolumeWrapper(file, null!);
@@ -74,5 +81,68 @@ public class RestoreVolumeManagerShutdownTests
         }
 
         Assert.That(File.Exists(file), Is.False, "The decrypted volume that was handed over was left behind");
+    }
+
+    /// <summary>
+    /// Waits until a writer is waiting on the channel, without taking what it writes.
+    /// </summary>
+    /// <param name="channel">The channel to watch.</param>
+    private static async Task WaitForWaitingWriterAsync<T>(IChannel<T> channel)
+    {
+        while (true)
+        {
+            var probe = new WaitingWriterProbe();
+            try
+            {
+                await channel.ReadAsync(probe).ConfigureAwait(false);
+            }
+            catch (Exception) when (probe.WriterWasWaiting || probe.IsExpired)
+            {
+            }
+
+            if (probe.WriterWasWaiting)
+                return;
+            await Task.Delay(10).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// An offer for a read that never takes a value. The channel only asks the offer when a writer is
+    /// waiting, and the read ends at once either way: declined when a writer is waiting, and expired
+    /// when none is.
+    /// </summary>
+    private sealed class WaitingWriterProbe : IExpiringOffer
+    {
+        /// <summary>
+        /// Whether the channel has looked for a waiting writer and found none.
+        /// </summary>
+        private bool probeComplete;
+
+        /// <summary>
+        /// Whether a writer was waiting when the read was made.
+        /// </summary>
+        public bool WriterWasWaiting { get; private set; }
+
+        /// <inheritdoc />
+        public DateTime Expires => DateTime.MinValue;
+
+        /// <inheritdoc />
+        public bool IsExpired => probeComplete;
+
+        /// <inheritdoc />
+        public Task<bool> OfferAsync(object caller)
+        {
+            WriterWasWaiting = true;
+            return Task.FromResult(false);
+        }
+
+        /// <inheritdoc />
+        public Task CommitAsync(object caller) => Task.CompletedTask;
+
+        /// <inheritdoc />
+        public Task WithdrawAsync(object caller) => Task.CompletedTask;
+
+        /// <inheritdoc />
+        public void ProbeComplete() => probeComplete = true;
     }
 }
