@@ -970,6 +970,111 @@ namespace Duplicati.UnitTest
         }
 
         [Test]
+        [Category("Targeted"), Category("Bug"), Category("Non-critical")]
+        public async Task Issue5035PurgedBlocklistIsWrittenAgainAsync()
+        {
+            // A failed upload of a block volume makes the next backup remove the volume from the database.
+            // This also removes the blocklist hashes of the files that had blocks in it, but a blocklist
+            // that is stored as a block in another volume stays in the Block table.
+            // When the file is backed up again, the blocklist is a known block, so it is not uploaded again,
+            // and the blocklist must still be written to an index file, or recreate has to download block volumes
+            var testopts = new Dictionary<string, string>(TestOptions)
+            {
+                ["no-encryption"] = "true"
+            };
+
+            var target = "file://" + TARGETFOLDER;
+            var filename = Path.Combine(DATAFOLDER, "file");
+            var blockfile = Path.Combine(DATAFOLDER, "block");
+
+            var block1 = new byte[10 * 1024];
+            block1.AsSpan().Fill(1);
+            var block2 = new byte[10 * 1024];
+            block2.AsSpan().Fill(2);
+
+            using var blockhasher = Library.Utility.HashFactory.CreateHasher(new Options(testopts).BlockHashAlgorithm);
+            var hash1 = blockhasher.ComputeHash(block1, 0, block1.Length);
+            var hash2 = blockhasher.ComputeHash(block2, 0, block2.Length);
+            var blocklist = hash1.Concat(hash2).ToArray();
+            var blocklistHash = Convert.ToBase64String(blockhasher.ComputeHash(blocklist, 0, blocklist.Length));
+
+            async Task<T> ScalarAsync<T>(string sql)
+            {
+                using var con = new SqliteConnection($"Data source={DBFILE};Pooling=false");
+                await con.OpenAsync();
+                using var cmd = con.CreateCommand();
+                cmd.CommandText = sql;
+                return (T)await cmd.ExecuteScalarAsync();
+            }
+
+            // Store the blocklist as a block in its own volume, by backing it up as a file
+            TestUtils.WriteFile(blockfile, blocklist);
+            using (var c = new Library.Main.Controller(target, testopts, null))
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
+
+            var blocklistVolumeId = await ScalarAsync<long>($@"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = '{blocklistHash}'");
+
+            // Back up the file that uses the blocklist, its data blocks go into a new volume
+            TestUtils.WriteFile(filename, block1.Concat(block2).ToArray());
+            using (var c = new Library.Main.Controller(target, testopts, null))
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
+
+            // Make it look like the upload of the data block volume and its index file failed
+            var dataBlockHash = Convert.ToBase64String(hash1);
+            var dataVolume = await ScalarAsync<string>($@"
+                SELECT ""Remotevolume"".""Name""
+                FROM ""Block""
+                INNER JOIN ""Remotevolume"" ON ""Remotevolume"".""ID"" = ""Block"".""VolumeID""
+                WHERE ""Block"".""Hash"" = '{dataBlockHash}'");
+            var indexVolume = await ScalarAsync<string>($@"
+                SELECT ""I"".""Name""
+                FROM ""IndexBlockLink""
+                INNER JOIN ""Remotevolume"" ""B"" ON ""B"".""ID"" = ""IndexBlockLink"".""BlockVolumeID""
+                INNER JOIN ""Remotevolume"" ""I"" ON ""I"".""ID"" = ""IndexBlockLink"".""IndexVolumeID""
+                WHERE ""B"".""Name"" = '{dataVolume}'");
+            Assert.That(dataVolume, Is.Not.Null, "Data block volume not found");
+            Assert.That(indexVolume, Is.Not.Null, "Index volume for the data block volume not found");
+
+            {
+                using var con = new SqliteConnection($"Data source={DBFILE};Pooling=false");
+                await con.OpenAsync();
+                using var cmd = con.CreateCommand();
+                cmd.CommandText = $@"UPDATE ""Remotevolume"" SET ""State"" = 'Uploading' WHERE ""Name"" IN ('{dataVolume}', '{indexVolume}')";
+                Assert.That(await cmd.ExecuteNonQueryAsync(), Is.EqualTo(2));
+
+                // An interrupted backup sets this flag, which allows the next backup to clean up the volumes
+                cmd.CommandText = @"INSERT INTO ""Configuration"" (""Key"", ""Value"") VALUES ('terminated-with-active-uploads', 'true')";
+                Assert.That(await cmd.ExecuteNonQueryAsync(), Is.EqualTo(1));
+            }
+            File.Delete(Path.Combine(TARGETFOLDER, dataVolume));
+            File.Delete(Path.Combine(TARGETFOLDER, indexVolume));
+
+            // The next backup removes the missing volumes, and with them the blocklist hash of the file,
+            // then backs the file up again
+            using (var c = new Library.Main.Controller(target, testopts, null))
+            {
+                var backupResults = await c.BackupAsync([DATAFOLDER]);
+                TestUtils.AssertResults(backupResults);
+                Assert.That(backupResults.Messages.Any(v => v.Contains("Scheduling missing file for deletion") && v.Contains(dataVolume)),
+                    "The missing data block volume was not removed");
+            }
+
+            // The blocklist must still be the block from the first backup, otherwise the test does not hit the issue
+            Assert.That(await ScalarAsync<long>($@"SELECT ""VolumeID"" FROM ""Block"" WHERE ""Hash"" = '{blocklistHash}'"), Is.EqualTo(blocklistVolumeId),
+                "The blocklist was stored again as a new block");
+
+            // Recreate database must not download block volumes to find the blocklist
+            File.Delete(DBFILE);
+            using (var c = new Library.Main.Controller(target, testopts, null))
+            {
+                var repairResults = await c.RepairAsync();
+                TestUtils.AssertResults(repairResults);
+                Assert.IsNull(repairResults.Messages.FirstOrDefault(v => v.Contains("ProcessingRequiredBlocklistVolumes")),
+                    "Blocklist download pass was required");
+            }
+        }
+
+        [Test]
         public async Task Issue6817DollarSignNumberInFilenameBreaksRegexAsync()
         {
             var filename = "~$1234567891011121314151617181920.txt";
