@@ -116,6 +116,10 @@ namespace Duplicati.Library.Utility
             if (string.IsNullOrEmpty(datestring))
                 return offset;
 
+            // ParseTimeSpan trims each part of an interval, so an option value with
+            // surrounding whitespace reaches this method and has to be read the same way
+            datestring = datestring.Trim();
+
             if (offset.Kind == DateTimeKind.Unspecified)
                 offset = new DateTime(offset.Ticks, DateTimeKind.Local);
 
@@ -183,6 +187,8 @@ namespace Duplicati.Library.Utility
         {
             if (string.IsNullOrEmpty(datestring))
                 return rawoffset;
+
+            datestring = datestring.Trim();
 
             var result = new DateTimeOffset(rawoffset.Kind == DateTimeKind.Local ? rawoffset.ToUniversalTime() : rawoffset, TimeSpan.Zero);
 

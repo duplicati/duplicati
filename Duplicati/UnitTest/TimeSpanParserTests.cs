@@ -288,4 +288,29 @@ public class TimeparserTests : BasicSetupHelper
         Assert.IsTrue(tz.IsAmbiguousTime(resultLocal) || !tz.IsInvalidTime(resultLocal),
             $"Returned an invalid or ambiguous local time incorrectly: {resultLocal}");
     }
+
+    [Category("Utility")]
+    [TestCase(" 7D")]
+    [TestCase("7D ")]
+    [TestCase(" 7D ")]
+    [TestCase("\t7D\t")]
+    public void TestParseTimeInterval_SurroundingWhitespace(string input)
+    {
+        var baseTime = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Local);
+
+        // ParseTimeSpan reads the value, so ParseTimeInterval has to reach the same point in time
+        Assert.AreEqual(baseTime - Timeparser.ParseTimeSpan(input), Timeparser.ParseTimeInterval(input, baseTime, true));
+    }
+
+    [Category("Utility")]
+    [TestCase(" 1D")]
+    [TestCase("1D ")]
+    [TestCase(" 1D ")]
+    public void TestDSTAwareParseTimeInterval_SurroundingWhitespace(string input)
+    {
+        var tz = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+        var start = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        Assert.AreEqual(Timeparser.DSTAwareParseTimeInterval("1D", start, tz), Timeparser.DSTAwareParseTimeInterval(input, start, tz));
+    }
 }
