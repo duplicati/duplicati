@@ -162,8 +162,8 @@ namespace Duplicati.Library.Main.Operation
 
                 using (var tmpfile = await backendManager.GetAsync(firstEntry.File.Name, null, firstEntry.File.Size, allowParityRepair: true, cancellationToken).ConfigureAwait(false))
                 {
-                    VolumeReaderBase.UpdateOptionsFromManifest(RestoreHandler.GetCompressionModule(firstEntry.File.Name), tmpfile, m_options);
-                    using (var rd = new FilesetVolumeReader(RestoreHandler.GetCompressionModule(firstEntry.File.Name), tmpfile, m_options))
+                    VolumeReaderBase.UpdateOptionsFromManifest(RestoreHandler.GetCompressionModule(firstEntry.File.Name), tmpfile, m_options, firstEntry.File.Name);
+                    using (var rd = new FilesetVolumeReader(RestoreHandler.GetCompressionModule(firstEntry.File.Name), tmpfile, m_options, firstEntry.File.Name))
                         if (simpleList)
                         {
                             m_result.SetResult(
@@ -201,7 +201,7 @@ namespace Duplicati.Library.Main.Operation
                 {
                     var flentry = filteredListMap[name];
                     using (tmpfile)
-                    using (var rd = new FilesetVolumeReader(flentry.CompressionModule, tmpfile, m_options))
+                    using (var rd = new FilesetVolumeReader(flentry.CompressionModule, tmpfile, m_options, name))
                     {
                         if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                             return;
@@ -268,7 +268,7 @@ namespace Duplicati.Library.Main.Operation
                 using (file)
                 {
                     var ent = map[name];
-                    var filesetData = VolumeReaderBase.GetFilesetData(ent.Value.CompressionModule, file, options);
+                    var filesetData = VolumeReaderBase.GetFilesetData(ent.Value.CompressionModule, file, options, name);
                     list.Add(new ListResultFileset(ent.Key, filesetData.IsFullBackup ? BackupType.FULL_BACKUP : BackupType.PARTIAL_BACKUP, ent.Value.Time.ToLocalTime(), -1, -1));
                 }
             }

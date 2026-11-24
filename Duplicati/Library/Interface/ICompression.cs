@@ -131,6 +131,12 @@ namespace Duplicati.Library.Interface
     public interface ICompression : IDynamicModule, IDisposable, IArchiveReader, IArchiveWriter
     {
         /// <summary>
+        /// The internal option that tells a module the name of the archive it reads, for log messages.
+        /// The module itself only gets a stream, usually of a temporary file. Not set by the user.
+        /// </summary>
+        const string ARCHIVE_NAME_OPTION = "internal-archive-name";
+
+        /// <summary>
         /// The total size of the archive.
         /// </summary>
         long Size { get; }

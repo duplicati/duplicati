@@ -445,8 +445,8 @@ namespace Duplicati.Library.Main.Volumes
             m_hashsize = hashsize;
         }
 
-        public IndexVolumeReader(string compressor, string file, Options options, long hashsize)
-            : base(compressor, file, options)
+        public IndexVolumeReader(string compressor, string file, Options options, long hashsize, string remoteName = null)
+            : base(compressor, file, options, remoteName)
         {
             m_hashsize = hashsize;
         }

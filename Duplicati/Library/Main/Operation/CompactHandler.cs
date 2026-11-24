@@ -236,7 +236,7 @@ namespace Duplicati.Library.Main.Operation
                                     .ConfigureAwait(false);
 
                                 var inst = VolumeBase.ParseFilename(entry.Name);
-                                using (var f = new BlockVolumeReader(inst.CompressionModule, tmpfile, m_options))
+                                using (var f = new BlockVolumeReader(inst.CompressionModule, tmpfile, m_options, entry.Name))
                                 {
                                     foreach (var e in f.Blocks)
                                     {

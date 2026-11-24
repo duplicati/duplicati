@@ -331,7 +331,7 @@ namespace Duplicati.Library.Main.Operation
                         var parsed = VolumeBase.ParseFilename(name);
 
                         using var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read);
-                        using var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions);
+                        using var compressor = DynamicLoader.CompressionLoader.GetReader(parsed.CompressionModule, stream, m_options.RawOptions, name);
                         if (compressor == null)
                             throw new UserInformationException(Strings.Common.CompressionModuleNotLoaded(parsed.CompressionModule, name), "FailedToLoadCompressionModule");
 
@@ -475,7 +475,7 @@ namespace Duplicati.Library.Main.Operation
                                         .UpdateRemoteVolumeAsync(name, RemoteVolumeState.Verified, size, hash, m_result.TaskControl.ProgressToken)
                                         .ConfigureAwait(false);
 
-                                using (var svr = new IndexVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options, hashsize))
+                                using (var svr = new IndexVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options, hashsize, name))
                                 {
                                     foreach (var a in svr.Volumes)
                                     {
@@ -636,7 +636,7 @@ namespace Duplicati.Library.Main.Operation
                         try
                         {
                             using (tmpfile)
-                            using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options))
+                            using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options, name))
                             {
                                 if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                                 {
@@ -939,7 +939,7 @@ namespace Duplicati.Library.Main.Operation
 
                     try
                     {
-                        using var reader = new BlockVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options);
+                        using var reader = new BlockVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options, name);
 
                         foreach (var bref in blocksForVolume)
                         {

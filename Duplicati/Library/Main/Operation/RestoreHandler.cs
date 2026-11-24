@@ -1300,7 +1300,7 @@ namespace Duplicati.Library.Main.Operation
                         }
 
                         using (tmpfile)
-                        using (var blocks = new BlockVolumeReader(GetCompressionModule(name), tmpfile, m_options))
+                        using (var blocks = new BlockVolumeReader(GetCompressionModule(name), tmpfile, m_options, name))
                             await PatchWithBlocklistAsync(database, blocks, m_options, m_result, m_blockbuffer, metadatastorage, restoreDestination, cancellationToken)
                                 .ConfigureAwait(false);
                     }

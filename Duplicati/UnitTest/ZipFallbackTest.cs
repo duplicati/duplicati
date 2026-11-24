@@ -162,6 +162,55 @@ namespace Duplicati.UnitTest
 
         }
 
+        /// <summary>
+        /// Changes the number of entries in an archive, which the built-in library then refuses
+        /// </summary>
+        private static void WriteWrongEntryCount(byte[] bytes)
+        {
+            var eocd = bytes.Length - 22;
+            Assert.AreEqual(0x06054b50, BitConverter.ToInt32(bytes, eocd), "The archive should end with the end of central directory record");
+            // The entries on this disk and in total
+            BitConverter.GetBytes((short)1).CopyTo(bytes, eocd + 8);
+            BitConverter.GetBytes((short)1).CopyTo(bytes, eocd + 10);
+        }
+
+        [Test]
+        [Category("Targeted")]
+        [TestCase("dlist")]
+        [TestCase("dindex")]
+        [TestCase("dblock")]
+        public async Task TheWarningNamesTheRemoteFileAsync(string type)
+        {
+            var testopts = TestOptions;
+            testopts["no-encryption"] = "true";
+            testopts.Remove("passphrase");
+            testopts["blocksize"] = "50kb";
+
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), new byte[1024 * 1024]);
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
+
+            await DeleteDatabaseWithRetryAsync(DBFILE);
+
+            // Without the index files, the recreate reads the block files
+            if (type == "dblock")
+                foreach (var file in Directory.GetFiles(TARGETFOLDER, "*.dindex.zip"))
+                    File.Delete(file);
+
+            var path = Directory.GetFiles(TARGETFOLDER, $"*.{type}.zip").Single();
+            var bytes = File.ReadAllBytes(path);
+            WriteWrongEntryCount(bytes);
+            File.WriteAllBytes(path, bytes);
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var r = await c.RepairAsync();
+                Assert.AreEqual(0, r.Errors.Count());
+                var warning = r.Warnings.First(x => x.Contains("SharpCompress"));
+                Assert.That(warning, Does.Contain(Path.GetFileName(path)));
+            }
+        }
+
         [Test]
         [Category("Targeted")]
         public void AnArchiveTheBuiltInLibraryRefusesIsReadWithAWarningThatSaysSo()
@@ -178,11 +227,7 @@ namespace Duplicati.UnitTest
             }
 
             var bytes = archive.ToArray();
-            var eocd = bytes.Length - 22;
-            Assert.AreEqual(0x06054b50, BitConverter.ToInt32(bytes, eocd), "The archive should end with the end of central directory record");
-            // The entries on this disk and in total
-            BitConverter.GetBytes((short)1).CopyTo(bytes, eocd + 8);
-            BitConverter.GetBytes((short)1).CopyTo(bytes, eocd + 10);
+            WriteWrongEntryCount(bytes);
 
             var messages = new System.Collections.Concurrent.ConcurrentQueue<Library.Logging.LogEntry>();
             string[] files;
