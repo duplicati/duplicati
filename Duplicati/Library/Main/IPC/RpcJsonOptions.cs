@@ -140,6 +140,8 @@ public class ResultsDtoConverterFactory : JsonConverterFactory
         [typeof(ITestFilterResults)] = (typeof(TestFilterResultsDto), typeof(TestFilterResultsWrapper)),
         [typeof(IListChangesResults)] = (typeof(ListChangesResultsDto), typeof(ListChangesResultsWrapper)),
         [typeof(IListAffectedResults)] = (typeof(ListAffectedResultsDto), typeof(ListAffectedResultsWrapper)),
+        [typeof(IListRestoreVolumesResults)] = (typeof(ListRestoreVolumesResultsDto), typeof(ListRestoreVolumesResultsWrapper)),
+        [typeof(IUnfreezeResults)] = (typeof(UnfreezeResultsDto), typeof(UnfreezeResultsWrapper)),
         [typeof(IRestoreControlFilesResults)] = (typeof(RestoreControlFilesResultsDto), typeof(RestoreControlFilesResultsWrapper)),
     };
 

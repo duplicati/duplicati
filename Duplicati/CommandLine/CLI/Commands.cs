@@ -252,6 +252,132 @@ namespace Duplicati.CommandLine
         }
 
         /// <summary>
+        /// Lists the remote volumes a restore of the selected files reads, so files kept in
+        /// archive storage can be brought back before the restore is run
+        /// </summary>
+        public static int ListRestoreVolumes(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args.Count < 1)
+                return PrintWrongNumberOfArguments(outwriter, args, 1);
+
+            var backend = args[0];
+            args.RemoveAt(0);
+
+            // The same selection as the restore command makes
+            args = SuffixArgsWithAsterisk(PrefixArgsWithAsterisk(args)).ToList();
+
+            options.TryGetValue("dbpath", out var dbpath);
+            if (string.IsNullOrEmpty(dbpath))
+            {
+                dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(backend, new Library.Main.Options(options), false, true, false);
+                if (dbpath != null)
+                    options["dbpath"] = dbpath;
+            }
+
+            // Only the local database is read, so there is nothing to decrypt
+            if (!string.IsNullOrEmpty(dbpath) && System.IO.File.Exists(dbpath) && !options.ContainsKey("no-encryption"))
+            {
+                options.TryGetValue("passphrase", out var passphrase);
+                if (string.IsNullOrEmpty(passphrase))
+                    options["no-encryption"] = "true";
+            }
+
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Library.Main.Controller(backend, options, console))
+            {
+                setup(i);
+                var res = i.ListRestoreVolumesAsync(args.ToArray(), filter).Await();
+                var volumes = res.Volumes.ToList();
+
+                if (res.FileCount == 0)
+                {
+                    outwriter.WriteLine("No files match the selection");
+                    return 0;
+                }
+
+                var knownSizes = volumes.Where(x => x.Size >= 0).Sum(x => x.Size);
+                outwriter.WriteLine("Restoring {0} file(s) ({1}) reads {2} remote volume(s) ({3}):",
+                    res.FileCount,
+                    Library.Utility.Utility.FormatSizeString(res.FileSize),
+                    volumes.Count,
+                    Library.Utility.Utility.FormatSizeString(knownSizes));
+                foreach (var volume in volumes)
+                    outwriter.WriteLine(volume.Size < 0 ? volume.Name : $"{volume.Name}\t{Library.Utility.Utility.FormatSizeString(volume.Size)}");
+
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Asks the destination to bring back the remote volumes a restore of the selected files
+        /// reads, when they are in archive storage
+        /// </summary>
+        public static int Unfreeze(TextWriter outwriter, Action<Duplicati.Library.Main.Controller> setup, List<string> args, Dictionary<string, string> options, Library.Utility.IFilter filter)
+        {
+            if (args.Count < 1)
+                return PrintWrongNumberOfArguments(outwriter, args, 1);
+
+            var backend = args[0];
+            args.RemoveAt(0);
+
+            // The same selection as the restore command makes
+            args = SuffixArgsWithAsterisk(PrefixArgsWithAsterisk(args)).ToList();
+
+            options.TryGetValue("dbpath", out var dbpath);
+            if (string.IsNullOrEmpty(dbpath))
+            {
+                dbpath = Library.Main.CLIDatabaseLocator.GetDatabasePathForCLI(backend, new Library.Main.Options(options), false, true, false);
+                if (dbpath != null)
+                    options["dbpath"] = dbpath;
+            }
+
+            // The remote volumes are not read, so there is nothing to decrypt
+            if (!string.IsNullOrEmpty(dbpath) && System.IO.File.Exists(dbpath) && !options.ContainsKey("no-encryption"))
+            {
+                options.TryGetValue("passphrase", out var passphrase);
+                if (string.IsNullOrEmpty(passphrase))
+                    options["no-encryption"] = "true";
+            }
+
+            using (var console = new ConsoleOutput(outwriter, options))
+            using (var i = new Library.Main.Controller(backend, options, console))
+            {
+                setup(i);
+                var res = i.UnfreezeAsync(args.ToArray(), filter).Await();
+                var volumes = res.Volumes.ToList();
+
+                if (res.FileCount == 0)
+                {
+                    outwriter.WriteLine("No files match the selection");
+                    return 0;
+                }
+
+                foreach (var volume in volumes)
+                {
+                    var state = volume.Requested
+                        ? "asked to be brought back"
+                        : volume.State switch
+                        {
+                            Library.Interface.ArchiveRestoreState.Available => "available",
+                            Library.Interface.ArchiveRestoreState.RestoreInProgress => "being brought back",
+                            _ => "archived"
+                        };
+                    outwriter.WriteLine("{0}\t{1}\t{2}", volume.Name, volume.Size < 0 ? "" : Library.Utility.Utility.FormatSizeString(volume.Size), state);
+                }
+
+                var available = volumes.Count(x => x.State == Library.Interface.ArchiveRestoreState.Available);
+                outwriter.WriteLine();
+                outwriter.WriteLine("{0} of {1} remote volume(s) can be read now, {2} were asked to be brought back.", available, volumes.Count, volumes.Count(x => x.Requested));
+                if (available == volumes.Count)
+                    outwriter.WriteLine("The restore can be run now.");
+                else
+                    outwriter.WriteLine("Run this command again to see the progress, and run the restore once all are available.");
+
+                return available == volumes.Count ? 0 : 2;
+            }
+        }
+
+        /// <summary>
         /// For bare file names with no wildcards, replace argument with
         /// the equivalent of prefixing with "*/" so we search all folders.
         /// </summary>

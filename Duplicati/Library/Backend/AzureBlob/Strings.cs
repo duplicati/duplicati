@@ -39,6 +39,10 @@ internal static class AzureBlobBackend
     public static string NoAccessKeyOrSasToken => LC.L(@"No Azure access key or SAS token given");
     public static string AccessTierDescriptionShort => LC.L(@"Specify the access tier");
     public static string AccessTierDescriptionLong => LC.L(@"Use this option to specify the access tier. If this option is not used, the server will choose a default access tier.");
+    public static string RehydrateTierDescriptionShort => LC.L(@"The tier archived blobs are brought back to");
+    public static string RehydrateTierDescriptionLong => LC.L(@"When the unfreeze command brings blobs back from the archive tier, they are moved to this tier. Blobs in the hot tier cost more to keep, and less to read.");
+    public static string RehydratePriorityDescriptionShort => LC.L(@"The priority for bringing archived blobs back");
+    public static string RehydratePriorityDescriptionLong => LC.L(@"The rehydration priority the unfreeze command asks for. Standard can take up to 15 hours, High is faster for blobs under 10 GB and costs more.");
     public static string ArchiveClassesDescriptionShort => LC.L(@"The storage classes that are considered archive classes");
     public static string ArchiveClassesDescriptionLong => LC.L(@"Use this option to specify what storage classes are considered archive storage classes. With this option it is possible to allow lifecycle policies to move data to cheaper storage classes and prevent Duplicati from accessing archived data.");
     public static string InternalRetriesDescriptionShort => LC.L(@"The number of retries for Azure operations");

@@ -48,7 +48,8 @@ public sealed class RemoteFilenameSuffixBackend :
     IFolderDeleteEnabledBackend,
     IFileInfoEnabledBackend,
     IModificationTimeEnabledBackend,
-    ILinkEnabledBackend
+    ILinkEnabledBackend,
+    IArchiveRestoreEnabledBackend
 {
     /// <summary>
     /// The option that sets the suffix
@@ -234,6 +235,14 @@ public sealed class RemoteFilenameSuffixBackend :
     /// <inheritdoc/>
     public Task CreateHardLinkAsync(string existingName, string targetName, CancellationToken cancellationToken)
         => Inner<ILinkEnabledBackend>().CreateHardLinkAsync(ToRemote(existingName), ToRemote(targetName), cancellationToken);
+
+    /// <inheritdoc/>
+    public Task<ArchiveRestoreState> GetArchiveRestoreStateAsync(string remotename, CancellationToken cancellationToken)
+        => Inner<IArchiveRestoreEnabledBackend>().GetArchiveRestoreStateAsync(ToRemote(remotename), cancellationToken);
+
+    /// <inheritdoc/>
+    public Task RequestArchiveRestoreAsync(string remotename, CancellationToken cancellationToken)
+        => Inner<IArchiveRestoreEnabledBackend>().RequestArchiveRestoreAsync(ToRemote(remotename), cancellationToken);
 
     /// <inheritdoc/>
     public void Dispose() => m_backend.Dispose();

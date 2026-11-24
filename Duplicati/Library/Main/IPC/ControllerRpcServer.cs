@@ -281,6 +281,14 @@ public class ControllerRpcServer : IController, IDisposable
         => Controller.ListAffectedAsync(args, null);
 
     /// <inheritdoc />
+    public Task<IListRestoreVolumesResults> ListRestoreVolumesAsync(string[]? paths, IFilter? filter = null)
+        => Controller.ListRestoreVolumesAsync(paths, filter);
+
+    /// <inheritdoc />
+    public Task<IUnfreezeResults> UnfreezeAsync(string[]? paths, IFilter? filter = null)
+        => Controller.UnfreezeAsync(paths, filter);
+
+    /// <inheritdoc />
     public Task<IRestoreControlFilesResults> RestoreControlFilesAsync(IEnumerable<string>? files = null, IFilter? filter = null)
         => Controller.RestoreControlFilesAsync(files, filter);
 

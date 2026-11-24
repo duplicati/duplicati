@@ -572,6 +572,24 @@ namespace Duplicati.Library.Main
         }
 
         /// <inheritdoc />
+        public async Task<IListRestoreVolumesResults> ListRestoreVolumesAsync(string[] paths, IFilter filter = null)
+        {
+            return await RunActionAsync(new ListRestoreVolumesResults(), null, filter, new { paths }, static config =>
+                new Operation.ListRestoreVolumesHandler(config.Options, config.Result)
+                    .RunAsync(config.Context.paths, config.Filter)
+            ).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc />
+        public async Task<IUnfreezeResults> UnfreezeAsync(string[] paths, IFilter filter = null)
+        {
+            return await RunActionAsync(new UnfreezeResults(), null, filter, new { paths }, static config =>
+                new Operation.UnfreezeHandler(config.Options, config.Result)
+                    .RunAsync(config.BackendUrl, config.Context.paths, config.Filter)
+            ).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc />
         public async Task<ITestResults> TestAsync(long samples = 1)
         {
             if (!m_options.RawOptions.ContainsKey("full-remote-verification"))

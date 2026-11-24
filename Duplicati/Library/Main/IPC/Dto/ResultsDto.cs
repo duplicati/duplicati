@@ -1462,6 +1462,84 @@ public class ListResultRemoteLogDto
 /// DTO for list result remote volume
 /// </summary>
 [Serializable]
+/// <summary>
+/// DTO for the remote volumes a restore reads
+/// </summary>
+public class ListRestoreVolumesResultsDto : BasicResultsDto
+{
+    public List<ListRestoreVolumeDto> Volumes { get; set; } = new();
+    public long FileCount { get; set; }
+    public long FileSize { get; set; }
+
+    public static ListRestoreVolumesResultsDto FromResults(IListRestoreVolumesResults results)
+    {
+        if (results == null) return null;
+        return new ListRestoreVolumesResultsDto
+        {
+            BeginTime = results.BeginTime,
+            EndTime = results.EndTime,
+            Duration = results.Duration,
+            Errors = results.Errors?.ToList() ?? new List<string>(),
+            Warnings = results.Warnings?.ToList() ?? new List<string>(),
+            Messages = results.Messages?.ToList() ?? new List<string>(),
+            ParsedResult = results.ParsedResult,
+            Interrupted = results.Interrupted,
+            Volumes = results.Volumes?.Select(v => new ListRestoreVolumeDto { Name = v.Name, Size = v.Size }).ToList() ?? new List<ListRestoreVolumeDto>(),
+            FileCount = results.FileCount,
+            FileSize = results.FileSize
+        };
+    }
+}
+
+/// <summary>
+/// DTO for a remote volume a restore reads
+/// </summary>
+public class ListRestoreVolumeDto
+{
+    public string Name { get; set; }
+    public long Size { get; set; }
+}
+
+/// <summary>
+/// DTO for the remote volumes a restore reads, and whether they can be read
+/// </summary>
+public class UnfreezeResultsDto : BasicResultsDto
+{
+    public List<UnfreezeVolumeDto> Volumes { get; set; } = new();
+    public long FileCount { get; set; }
+    public long FileSize { get; set; }
+
+    public static UnfreezeResultsDto FromResults(IUnfreezeResults results)
+    {
+        if (results == null) return null;
+        return new UnfreezeResultsDto
+        {
+            BeginTime = results.BeginTime,
+            EndTime = results.EndTime,
+            Duration = results.Duration,
+            Errors = results.Errors?.ToList() ?? new List<string>(),
+            Warnings = results.Warnings?.ToList() ?? new List<string>(),
+            Messages = results.Messages?.ToList() ?? new List<string>(),
+            ParsedResult = results.ParsedResult,
+            Interrupted = results.Interrupted,
+            Volumes = results.Volumes?.Select(v => new UnfreezeVolumeDto { Name = v.Name, Size = v.Size, State = v.State, Requested = v.Requested }).ToList() ?? new List<UnfreezeVolumeDto>(),
+            FileCount = results.FileCount,
+            FileSize = results.FileSize
+        };
+    }
+}
+
+/// <summary>
+/// DTO for a remote volume a restore reads, and whether it can be read
+/// </summary>
+public class UnfreezeVolumeDto
+{
+    public string Name { get; set; }
+    public long Size { get; set; }
+    public ArchiveRestoreState State { get; set; }
+    public bool Requested { get; set; }
+}
+
 public class ListResultRemoteVolumeDto
 {
     public string Name { get; set; }

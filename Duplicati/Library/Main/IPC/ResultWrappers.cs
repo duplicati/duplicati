@@ -756,6 +756,38 @@ public class ListAffectedResultsWrapper : BasicResultsWrapper, IListAffectedResu
 }
 
 /// <summary>
+/// Wrapper for the remote volumes a restore reads
+/// </summary>
+public class ListRestoreVolumesResultsWrapper : BasicResultsWrapper, IListRestoreVolumesResults
+{
+    public ListRestoreVolumesResultsWrapper(ListRestoreVolumesResultsDto dto) : base(dto) { }
+
+    protected new ListRestoreVolumesResultsDto _dto => (ListRestoreVolumesResultsDto)base._dto;
+
+    public IEnumerable<IListRestoreVolume> Volumes => _dto.Volumes.Select(v => new ListRestoreVolumeWrapper(v.Name, v.Size));
+    public long FileCount => _dto.FileCount;
+    public long FileSize => _dto.FileSize;
+
+    private sealed record ListRestoreVolumeWrapper(string Name, long Size) : IListRestoreVolume;
+}
+
+/// <summary>
+/// Wrapper for the remote volumes a restore reads, and whether they can be read
+/// </summary>
+public class UnfreezeResultsWrapper : BasicResultsWrapper, IUnfreezeResults
+{
+    public UnfreezeResultsWrapper(UnfreezeResultsDto dto) : base(dto) { }
+
+    protected new UnfreezeResultsDto _dto => (UnfreezeResultsDto)base._dto;
+
+    public IEnumerable<IUnfreezeVolume> Volumes => _dto.Volumes.Select(v => new UnfreezeVolumeWrapper(v.Name, v.Size, v.State, v.Requested));
+    public long FileCount => _dto.FileCount;
+    public long FileSize => _dto.FileSize;
+
+    private sealed record UnfreezeVolumeWrapper(string Name, long Size, ArchiveRestoreState State, bool Requested) : IUnfreezeVolume;
+}
+
+/// <summary>
 /// Wrapper for list result remote log
 /// </summary>
 public class ListResultRemoteLogWrapper : IListResultRemoteLog

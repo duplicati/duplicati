@@ -14,7 +14,7 @@ See %CLI_EXE% help <topic> for more information.
   General: example, changelog
   Commands: backup, sync, find, restore, restore-test, delete, compact, test, compare, purge, vacuum
   Searching: list-filesets, list-folder-contents, list-file-versions, search-files
-  Repair: repair, affected, list-broken-files, purge-broken-files
+  Repair: repair, affected, list-broken-files, purge-broken-files, list-restore-volumes, unfreeze
   Locking: set-locks, read-lock-info
   Versions: set-version-label
   Debug: debug, logging, create-report, test-filters, system-info, send-mail
@@ -420,6 +420,21 @@ Usage: %CLI_EXE% test-filters <source-path> [<options>]
 Usage: %CLI_EXE% affected <storage-URL> <remote-filename> [<remote-filenames>] [<options>]
 
   Returns a report explaining what backup sets and files are affected by a remote file. You can use this option to see what source files are affected if one or more remote files are damaged or deleted. Notes that this command requires a local database to be present, if the database is not found automatically, you can set --dbpath to point to the database to use.
+
+# =============================================================================
+> duplicati.commandline.exe help list-restore-volumes
+
+Usage: %CLI_EXE% list-restore-volumes <storage-URL> ["<filename>"] [<options>]
+
+  Lists the remote volumes that a restore of the given files reads, with their sizes. Nothing is downloaded and the destination is not contacted. Use it before a restore from storage that keeps files in an archive tier, such as Amazon S3 Glacier or the Azure archive tier: bring these volumes back first, then run the restore. The files are selected as for the restore command, with filenames, --version, --time and filters. The list assumes that nothing can be taken from files that are already at the restore location, so a restore may read fewer volumes. This command requires a local database; if it is not found automatically, set --dbpath to point to it.
+
+# =============================================================================
+> duplicati.commandline.exe help unfreeze
+
+Usage: %CLI_EXE% unfreeze <storage-URL> ["<filename>"] [<options>]
+
+  Asks the destination to bring back the remote volumes that a restore of the given files reads, when they are in archive storage, such as Amazon S3 Glacier Flexible Retrieval, S3 Glacier Deep Archive or the Azure archive tier. Bringing them back can take hours, so the command returns once it has asked. Run it again to see the progress, and run the restore once all volumes are available; until then the command ends with a warning. The files are selected as for the restore command, with filenames, --version, --time and filters. Use --dry-run to see the state of the volumes without asking for anything.
+  S3 (with --s3-client=aws) keeps the copy for --s3-archive-restore-days and uses --s3-archive-restore-tier. Azure moves the blobs to --azure-rehydrate-tier with --azure-rehydrate-priority. Other destinations are not supported; use list-restore-volumes to list the files and bring them back with the tools of the storage provider. This command requires a local database; if it is not found automatically, set --dbpath to point to it.
 
 # =============================================================================
 > duplicati.commandline.exe help vacuum
