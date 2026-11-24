@@ -304,14 +304,6 @@
                    from InstallTables.sql instead. -->
 <?if $(var.BuildEnv) = "Windows" ?>
               <ServiceConfig DelayedAutoStart="yes" FailureActionsWhen="failedToStopOrReturnedError" OnInstall="yes" OnReinstall="yes" />
-              <!-- Restart the service 60 seconds after a failure, at most twice a
-                   day, as the FailureActionsFlagSvc and RestartSvcOnFailure rows
-                   of InstallTables.sql do for wixl builds -->
-              <ServiceConfigFailureActions OnInstall="yes" OnReinstall="yes" ResetPeriod="86400">
-                <Failure Action="restartService" Delay="60000" />
-                <Failure Action="restartService" Delay="60000" />
-                <Failure Action="none" Delay="0" />
-              </ServiceConfigFailureActions>
 <?endif?>
             </ServiceInstall>
 
@@ -533,6 +525,14 @@
       <Custom Action="WriteUpgradeSentinel" After="FindRelatedProducts">PREVIOUSVERSIONSINSTALLED AND PREVIOUS_SERVICE_CERTS_INSTALLED="1" AND NOT (INSTALL_TLS_CERTS="1" AND (INSTALLASSERVICE="true" OR LAUNCH_AS_SERVICE="1")) AND NOSCRIPT &lt;&gt; "true"</Custom>
       <Custom Action="ClearUpgradeSentinel" After="RemoveExistingProducts">PREVIOUSVERSIONSINSTALLED AND NOSCRIPT &lt;&gt; "true"</Custom>
 
+      <!-- Set the recovery actions of the service: restart it 60 seconds after
+           a failure, at most twice a day. The MsiServiceConfigFailureActions
+           table cannot be used, because Windows Installer fails to apply a
+           restart action from it (Error 1939) and rolls the install back (#7987).
+           Runs after InstallServices (5800) and before StartServices (5900). -->
+      <Custom Action="SetServiceRecoveryTool" Sequence="5859">(&amp;DuplicatiServiceFeature=3 OR (REINSTALL AND !DuplicatiServiceFeature=3 AND NOT &amp;DuplicatiServiceFeature=2)) AND NOT REMOVE~="ALL"</Custom>
+      <Custom Action="SetServiceRecovery" Sequence="5860">(&amp;DuplicatiServiceFeature=3 OR (REINSTALL AND !DuplicatiServiceFeature=3 AND NOT &amp;DuplicatiServiceFeature=2)) AND NOT REMOVE~="ALL"</Custom>
+
 <?if $(var.BuildEnv) = "Windows" ?>
       <!-- The same positions and conditions as the rows wixl builds get from
            InstallTables.sql; see the comments there. -->
@@ -630,6 +630,22 @@
               Value="1"
               Execute="immediate"
               Return="check" />
+
+    <!-- wixl does not support the Directory attribute of a custom action, so
+         the path of sc.exe is in a property. A failure to set the recovery
+         actions does not fail the install. -->
+    <CustomAction Id="SetServiceRecoveryTool"
+              Property="ServiceRecoveryTool"
+              Value="[SystemFolder]sc.exe"
+              Execute="immediate"
+              Return="check" />
+
+    <CustomAction Id="SetServiceRecovery"
+              Property="ServiceRecoveryTool"
+              ExeCommand="failure Duplicati reset= 86400 actions= restart/60000/restart/60000//0"
+              Execute="deferred"
+              Impersonate="no"
+              Return="ignore" />
 
     <CustomAction Id="SetInstallLocationFromPrevious"
               Property="INSTALLLOCATION"

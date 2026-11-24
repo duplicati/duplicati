@@ -89,9 +89,10 @@ CREATE TABLE `MsiServiceConfig` (`MsiServiceConfig` CHAR(72) NOT NULL, `Name` CH
 INSERT INTO `MsiServiceConfig` (`MsiServiceConfig`, `Name`, `Event`, `ConfigType`, `Argument`, `Component_`) VALUES ('DelayStartSvc', 'Duplicati', 5, 3, '1', 'DuplicatiWindowsServiceComponent')
 
 -- ---------------------------------------------------------------------------
--- Service recovery: restart the service 60 seconds after a failure, at most
--- twice a day, then leave it stopped. WiX has the <ServiceConfigFailureActions>
--- element for this; wixl 0.106 does not.
+-- Service recovery: the SetServiceRecovery custom action in the WXS sets the
+-- recovery actions with sc.exe. They are not authored in the
+-- MsiServiceConfigFailureActions table, because Windows Installer fails to apply
+-- a restart action from it (Error 1939) and rolls the install back (#7987).
 --
 -- The service reports the exit code 1067 when the server ends on its own
 -- with an error (for example when it crashes while starting), and does not
@@ -101,15 +102,9 @@ INSERT INTO `MsiServiceConfig` (`MsiServiceConfig`, `Name`, `Event`, `ConfigType
 -- stop, and the exit the server makes for an update, report exit code 0.
 --
 --   Event        - 5 = msidbServiceConfigEventInstall (1) | ...Reinstall (4).
---   ResetPeriod  - 86400 seconds: the failure count is reset after a day
---                  without failures.
---   Actions      - SC_ACTION_RESTART (1), SC_ACTION_RESTART, SC_ACTION_NONE (0).
---   DelayActions - the delays in milliseconds, one per action.
--- Both rows are processed by MsiConfigureServices, scheduled below.
+-- The row is processed by MsiConfigureServices, scheduled below.
 -- ---------------------------------------------------------------------------
 INSERT INTO `MsiServiceConfig` (`MsiServiceConfig`, `Name`, `Event`, `ConfigType`, `Argument`, `Component_`) VALUES ('FailureActionsFlagSvc', 'Duplicati', 5, 4, '1', 'DuplicatiWindowsServiceComponent')
-CREATE TABLE `MsiServiceConfigFailureActions` (`MsiServiceConfigFailureActions` CHAR(72) NOT NULL, `Name` CHAR(255) NOT NULL, `Event` INT NOT NULL, `ResetPeriod` LONG, `RebootMessage` CHAR(255), `Command` CHAR(255), `Actions` CHAR(255), `DelayActions` CHAR(255), `Component_` CHAR(72) NOT NULL PRIMARY KEY `MsiServiceConfigFailureActions`)
-INSERT INTO `MsiServiceConfigFailureActions` (`MsiServiceConfigFailureActions`, `Name`, `Event`, `ResetPeriod`, `Actions`, `DelayActions`, `Component_`) VALUES ('RestartSvcOnFailure', 'Duplicati', 5, 86400, '1[~]1[~]0', '60000[~]60000[~]0', 'DuplicatiWindowsServiceComponent')
 
 -- ---------------------------------------------------------------------------
 -- InstallExecuteSequence: schedule the standard MsiConfigureServices action so
