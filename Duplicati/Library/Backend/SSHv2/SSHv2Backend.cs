@@ -367,19 +367,23 @@ namespace Duplicati.Library.Backend
                 try
                 {
                     await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, ct => con.ConnectAsync(ct)).ConfigureAwait(false);
+
+                    if (m_useRelativePath && (string.IsNullOrWhiteSpace(con.WorkingDirectory) || !con.WorkingDirectory.StartsWith("/")))
+                        throw new UserInformationException("Server does not report absolute initial directory, please switch to absolute paths", "RelativePathNotSupported");
+                    m_initialDirectory = con.WorkingDirectory;
+
+                    return m_con = con;
                 }
                 catch (Exception ex) when (i < hosts.Length - 1 && !cancelToken.IsCancellationRequested && IsConnectFailure(ex))
                 {
                     Log.WriteInformationMessage(LOGTAG, "ConnectToAddressFailed", "Could not connect to {0} at {1}, trying the next address: {2}", m_server, hosts[i], ex.Message);
                     con.Dispose();
-                    continue;
                 }
-
-                if (m_useRelativePath && (string.IsNullOrWhiteSpace(con.WorkingDirectory) || !con.WorkingDirectory.StartsWith("/")))
-                    throw new UserInformationException("Server does not report absolute initial directory, please switch to absolute paths", "RelativePathNotSupported");
-                m_initialDirectory = con.WorkingDirectory;
-
-                return m_con = con;
+                catch
+                {
+                    con.Dispose();
+                    throw;
+                }
             }
         }
 
