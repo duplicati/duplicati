@@ -291,6 +291,26 @@ public class GPGEncryptionTests
     }
 
     /// <summary>
+    /// gpg writes its messages in the language of the system, so a failed decryption is not always
+    /// reported as "decryption failed:". The exit code tells the failure in every language (#6607).
+    /// </summary>
+    [Test]
+    public void DecryptReportsLocalizedGpgFailure()
+    {
+        var gpg = CreateGpg(CreateFakeGpg(new FakeGpg
+        {
+            ErrorMessage = "gpg: dechiffrement echoue: Pas de cle secrete",
+            ExitCode = 2
+        }));
+        var data = RandomData(1024);
+
+        using var output = new MemoryStream();
+        var ex = Assert.Throws<CryptographicException>(() => gpg.Decrypt(new MemoryStream(data), output));
+
+        Assert.That(ex!.Message, Does.Contain("dechiffrement echoue"));
+    }
+
+    /// <summary>
     /// When the output cannot be written, the error reaches the caller and gpg, which nobody reads from any more, is stopped
     /// </summary>
     [Test]
