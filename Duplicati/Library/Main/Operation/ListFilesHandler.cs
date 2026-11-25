@@ -240,7 +240,7 @@ namespace Duplicati.Library.Main.Operation
         {
             var parsedlist = (from n in rawlist
                               let p = Volumes.VolumeBase.ParseFilename(n)
-                              where p != null && p.FileType == RemoteVolumeType.Files
+                              where p != null && !p.IsParity && p.FileType == RemoteVolumeType.Files
                               orderby p.Time descending
                               select p).ToArray();
             return RestoreHandler.FilterNumberedFilelist(parsedlist, options.Time, options.Version).ToList();

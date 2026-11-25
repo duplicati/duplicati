@@ -193,12 +193,16 @@ namespace Duplicati.Library.Main.Operation
             var rawlist = await backendManager.ListAsync(null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
             //First step is to examine the remote storage to see what
-            // kind of data we can find
+            // kind of data we can find.
+            // Parity files parse as the data volume they belong to, but are not volumes
+            // themselves, and are not tracked in the database.
             var remotefiles =
             (from x in rawlist
              let n = VolumeBase.ParseFilename(x)
              where
                  n != null
+                     &&
+                 !n.IsParity
                      &&
                  n.Prefix == m_options.Prefix
              select n).ToArray(); //ToArray() ensures that we do not remote-request it multiple times
@@ -214,6 +218,8 @@ namespace Duplicati.Library.Main.Operation
                  let n = VolumeBase.ParseFilename(x)
                  where
                      n != null
+                         &&
+                     !n.IsParity
                  select n.Prefix).ToArray();
 
                     var types = tmp.Distinct().ToArray();
