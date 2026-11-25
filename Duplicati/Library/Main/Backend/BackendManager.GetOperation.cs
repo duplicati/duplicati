@@ -118,7 +118,7 @@ partial class BackendManager
                         }
 
                         if (sizeMismatch)
-                            throw new Exception(Strings.Controller.DownloadedFileSizeError(RemoteFilename, dataSizeDownloaded, Size));
+                            throw new HashMismatchException(Strings.Controller.DownloadedFileSizeError(RemoteFilename, dataSizeDownloaded, Size));
 
                         if (hashMismatch)
                             throw new HashMismatchException(Strings.Controller.HashMismatchError(RemoteFilename, Hash, fileHash));
