@@ -871,6 +871,36 @@ namespace Duplicati.Library.Main.Database.Local
                 .ExecuteScalarInt64PerformanceSensitiveAsync(m_logQueries, token)
                 .ConfigureAwait(false);
 
+            try
+            {
+                await AddBlocksetEntriesAsync(blocksetid, filehash, size, blocksize, hashes, blocklistHashes, token).ConfigureAwait(false);
+            }
+            catch
+            {
+                // The transaction is shared with the other files, so the next commit would keep a
+                // blockset without its blocks, and every later backup and repair would stop at it
+                await RemoveUnfinishedBlocksetAsync(blocksetid).ConfigureAwait(false);
+                throw;
+            }
+
+            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
+
+            return (true, blocksetid);
+        }
+
+        /// <summary>
+        /// Adds the blocklist hashes and the blocks of a blockset that has just been added.
+        /// </summary>
+        /// <param name="blocksetid">The ID of the blockset.</param>
+        /// <param name="filehash">The hash of the blockset.</param>
+        /// <param name="size">The size of the blockset.</param>
+        /// <param name="blocksize">The size of the blocks in the blockset.</param>
+        /// <param name="hashes">The list of hashes.</param>
+        /// <param name="blocklistHashes">The list of hashes for the blocklist, or null if no blocklist is used.</param>
+        /// <param name="token">The cancellation token to monitor for cancellation requests.</param>
+        /// <returns>A task that completes when the rows are added.</returns>
+        private async Task AddBlocksetEntriesAsync(long blocksetid, string filehash, long size, int blocksize, IEnumerable<string> hashes, IEnumerable<string> blocklistHashes, CancellationToken token)
+        {
             long ix = 0;
             if (blocklistHashes != null)
             {
@@ -943,10 +973,32 @@ namespace Duplicati.Library.Main.Database.Local
                 ix++;
                 remainsize -= blocksize;
             }
+        }
 
-            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
-
-            return (true, blocksetid);
+        /// <summary>
+        /// Removes a blockset that could not be added in full, with the rows that were added for it.
+        /// </summary>
+        /// <param name="blocksetid">The ID of the blockset.</param>
+        /// <returns>A task that completes when the rows are removed.</returns>
+        private async Task RemoveUnfinishedBlocksetAsync(long blocksetid)
+        {
+            try
+            {
+                // Not cancelled, as the failure can be a cancellation
+                await using var cmd = m_connection.CreateCommand(m_rtr);
+                foreach (var (table, column) in new[] { ("BlocksetEntry", "BlocksetID"), ("BlocklistHash", "BlocksetID"), ("Blockset", "ID") })
+                    await cmd.SetCommandAndParameters($@"
+                        DELETE FROM ""{table}""
+                        WHERE ""{column}"" = @BlocksetId
+                    ")
+                        .SetParameterValue("@BlocksetId", blocksetid)
+                        .ExecuteNonQueryAsync(true, CancellationToken.None)
+                        .ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "UnfinishedBlocksetNotRemoved", ex, "Failed to remove the blockset {0} that could not be added: {1}", blocksetid, ex.Message);
+            }
         }
 
         /// <summary>
