@@ -313,4 +313,37 @@ public class TimeparserTests : BasicSetupHelper
 
         Assert.AreEqual(Timeparser.DSTAwareParseTimeInterval("1D", start, tz), Timeparser.DSTAwareParseTimeInterval(input, start, tz));
     }
+
+    [Category("Utility")]
+    [TestCase("1D 12h")]
+    [TestCase("1 D")]
+    [TestCase("1D\t12h")]
+    public void TestParseTimeInterval_WhitespaceInsideValue(string input)
+    {
+        var baseTime = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Local);
+
+        Assert.AreEqual(baseTime - Timeparser.ParseTimeSpan(input), Timeparser.ParseTimeInterval(input, baseTime, true));
+    }
+
+    [Category("Utility")]
+    [TestCase("1 D", "1D")]
+    [TestCase("1D 12h", "1D12h")]
+    public void TestDSTAwareParseTimeInterval_WhitespaceInsideValue(string input, string equivalent)
+    {
+        var tz = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
+        var start = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        Assert.AreEqual(Timeparser.DSTAwareParseTimeInterval(equivalent, start, tz), Timeparser.DSTAwareParseTimeInterval(input, start, tz));
+    }
+
+    [Category("Utility")]
+    [TestCase("1 2 D")]
+    [TestCase("7 D 7")]
+    [TestCase("1D 12x")]
+    [TestCase("1D 2h 3")]
+    public void TestParseTimeInterval_InvalidInput_Throws(string input)
+    {
+        // Whitespace is allowed between the parts, the parts themselves still are not free text
+        Assert.Throws<Exception>(() => Timeparser.ParseTimeInterval(input, new DateTime(2023, 1, 1), true));
+    }
 }
