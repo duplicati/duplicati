@@ -850,14 +850,11 @@ namespace Duplicati.Library.Modules.Builtin
 
             m_parsedresultlevel = level.ToString();
 
-            if (isKnownOperation && operation == OperationMode.Backup)
+            if (!m_levels.Any(x => string.Equals(x, "all", StringComparison.OrdinalIgnoreCase)))
             {
-                if (!m_levels.Any(x => string.Equals(x, "all", StringComparison.OrdinalIgnoreCase)))
-                {
-                    //Check if this level should send mail
-                    if (!m_levels.Any(x => string.Equals(x, level.ToString(), StringComparison.OrdinalIgnoreCase)))
-                        return;
-                }
+                //Check if this level should send a report
+                if (!m_levels.Any(x => string.Equals(x, level.ToString(), StringComparison.OrdinalIgnoreCase)))
+                    return;
             }
 
             try

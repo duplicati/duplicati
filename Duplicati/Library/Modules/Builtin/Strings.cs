@@ -108,7 +108,7 @@ Mail Sender <sender>
 Mail Sender <sender@example.com>"); } }
         public static string OptionSenderShort { get { return LC.L(@"Email sender"); } }
         public static string OptionSendlevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"".
-You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send an email.", success, warning, error, fatal, all); }
+You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause every reported operation to send an email.", success, warning, error, fatal, all); }
         public static string OptionSendlevelShort { get { return LC.L(@"The messages to send"); } }
         public static string OptionServerLong { get { return LC.L(@"Use this option to set a URL for the SMTP server, e.g. smtp://example.com:25. Multiple servers can be supplied in a prioritized list, separated with semicolon. If a server fails, the next server in the list is tried, until the message has been sent.
 If no server is supplied, a DNS lookup is performed to find the first recipient's MX record, and all SMTP servers are tried in their priority order until the message is sent.
@@ -151,7 +151,7 @@ All command line options are also reported within %value%, e.g. %volsize%. Any u
         public static string SendxmpppasswordLong { get { return LC.L(@"Use this option to set a password for the account that will send the message."); } }
         public static string SendxmpppasswordShort { get { return LC.L(@"The XMPP password"); } }
         public static string SendxmpplevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"".
-You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
+You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause every reported operation to send a message.", success, warning, error, fatal, all); }
         public static string SendxmpplevelShort { get { return LC.L(@"The messages to send"); } }
         public static string SendxmppanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a backup operation. Use this option to send messages for all operations."); } }
         public static string SendxmppanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
@@ -194,7 +194,7 @@ All command line options are also reported within %value%, e.g. %volsize%. Any u
         public static string SendTelegramTopicShort => LC.L(@"The Telegram topic ID");
         public static string SendTelegramTopicLong => LC.L(@"Topic ID for the Topic in the telegram group. For more information on Telegram setup, refer to documentation.");
         public static string SendTelegramlevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"".
-You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
+You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause every reported operation to send a message.", success, warning, error, fatal, all); }
         public static string SendTelegramLevelShort => LC.L(@"The messages to send");
         public static string SendTelegramManyOperationLong => LC.L(@"By default, messages will only be sent after a backup operation. Use this option to send messages for all operations.");
         public static string SendTelegramManyOperationShort => LC.L(@"Send messages for all operations");
@@ -229,7 +229,7 @@ All command line options are also reported within %value%, e.g. %volsize%. Any u
         public static string SendhttpheadersShort { get { return LC.L(@"Extra headers for the message sent"); } }
         public static string InvalidHeaders(string option, string reason) { return LC.L(@"The value of --{0} was ignored: {1}", option, reason); }
         public static string SendhttplevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"".
-You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
+You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause every reported operation to send a message.", success, warning, error, fatal, all); }
         public static string SendhttplevelShort { get { return LC.L(@"The messages to send"); } }
         public static string SendhttpanyoperationLong { get { return LC.L(@"By default, messages will only be sent after a backup operation. Use this option to send messages for all operations."); } }
         public static string SendhttpanyoperationShort { get { return LC.L(@"Send messages for all operations"); } }
