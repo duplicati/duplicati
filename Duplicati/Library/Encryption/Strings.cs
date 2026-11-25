@@ -46,10 +46,12 @@ namespace Duplicati.Library.Encryption.Strings
     {
         public static string Description { get { return LC.L(@"The GPG encryption module uses the GNU Privacy Guard program to encrypt and decrypt files. It requires that the gpg executable is available on the system. On Windows it is assumed that this is in the default installation folder under program files, under Linux and OSX it is assumed that the program is available via the PATH environment variable. It is possible to supply the path to GPG using the option --{0}.", "gpg-program-path"); } }
         public static string DisplayName { get { return LC.L(@"GNU Privacy Guard, external"); } }
-        public static string GpgencryptiondecryptionswitchesLong { get { return LC.L(@"Use this switch to specify any extra options to GPG. You cannot specify the --passphrase-fd option here. The --decrypt option is always specified."); } }
+        public static string GpgencryptiondecryptionswitchesLong { get { return LC.L(@"Use this switch to specify any extra options to GPG. You cannot specify the --passphrase-fd option here. The --decrypt option is always specified. Use --pinentry-mode loopback to unlock a private key with the passphrase of the backup."); } }
         public static string GpgencryptiondecryptionswitchesShort { get { return LC.L(@"Extra GPG commandline options for decryption"); } }
         public static string GpgencryptionencryptionswitchesLong { get { return LC.L(@"Use this switch to specify any extra options to GPG. You cannot specify the --passphrase-fd option here. The --encrypt option is always specified."); } }
         public static string GpgencryptionencryptionswitchesShort { get { return LC.L(@"Extra GPG commandline options for encryption"); } }
+        public static string PinentryHint(string message, string decryptionswitchesoption) { return LC.L(@"{0}
+GPG could not ask for the passphrase of the private key. If that is also the passphrase of the backup, set --{1} to ""--pinentry-mode loopback"", so GPG uses it.", message, decryptionswitchesoption); }
         public static string GPGExecuteError(string program, string args, string message) { return LC.L(@"Failed to execute GPG with ""{0} {1}"": {2}", program, args, message); }
         public static string GpgprogrampathLong { get { return LC.L(@"The path to the GNU Privacy Guard program. If not supplied, Duplicati will search for ""gpg2"" and ""gpg"" on the system."); } }
         public static string GpgprogrampathShort { get { return LC.L(@"The path to GnuPG"); } }
@@ -61,7 +63,7 @@ namespace Duplicati.Library.Encryption.Strings
         public static string GpgencryptionencryptioncommandShort { get { return LC.L(@"The GPG encryption command"); } }
         public static string GpgencryptioncipheralgoLong(string gpgoption, string switchesoption) { return LC.L(@"Use this option to choose the cipher GPG encrypts with, by passing {0} to GPG. If not set, GPG uses its own default. Decryption does not need it, as GPG reads the cipher from the file. A {0} given in --{1} takes precedence.", gpgoption, switchesoption); }
         public static string GpgencryptioncipheralgoShort { get { return LC.L(@"The GPG cipher algorithm"); } }
-        public static string GpgencryptionrecipientLong(string recipientoption, string encryptcommand, string commandoption) { return LC.L(@"Use this option to encrypt to the public key of this user ID, key ID or fingerprint, by passing {0} and {1} to GPG instead of encrypting with the passphrase. The key must be in the GPG keyring and trusted. Only the private key can decrypt the files, and the passphrase is then used to unlock it. A command given in --{2} takes precedence over {1}.", recipientoption, encryptcommand, commandoption); }
+        public static string GpgencryptionrecipientLong(string recipientoption, string encryptcommand, string commandoption, string decryptionswitchesoption) { return LC.L(@"Use this option to encrypt to the public key of this user ID, key ID or fingerprint, by passing {0} and {1} to GPG instead of encrypting with the passphrase. The key must be in the GPG keyring and trusted. Only the private key can decrypt the files. GPG asks its agent to unlock it, or uses the passphrase if --{3} has --pinentry-mode loopback. A command given in --{2} takes precedence over {1}.", recipientoption, encryptcommand, commandoption, decryptionswitchesoption); }
         public static string GpgencryptionrecipientShort { get { return LC.L(@"The GPG recipient to encrypt to"); } }
     }
     internal static class GPGStreamWrapper

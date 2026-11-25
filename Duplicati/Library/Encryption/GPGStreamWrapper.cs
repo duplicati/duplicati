@@ -115,7 +115,7 @@ namespace Duplicati.Library.Encryption
             // The messages of GPG are translated, but a failed decryption always exits with a code other than 0.
             // A GPG that was stopped because the copy failed exits that way too, and then the copy error is reported
             if (errmsg.Contains("decryption failed:") || (m_decrypting && failure == null && m_p.ExitCode != 0))
-                throw new System.Security.Cryptography.CryptographicException(Strings.GPGStreamWrapper.DecryptionError(errmsg));
+                throw new System.Security.Cryptography.CryptographicException(Strings.GPGStreamWrapper.DecryptionError(GPGEncryption.AddPinentryHint(errmsg)));
 
             if (failure != null)
                 ExceptionDispatchInfo.Capture(failure).Throw();
