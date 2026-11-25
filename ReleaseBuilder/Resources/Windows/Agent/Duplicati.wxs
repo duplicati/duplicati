@@ -166,6 +166,23 @@
       <Custom Action="SetServiceRecoveryTool" Sequence="5859">(NOT Installed OR REINSTALL) AND NOT REMOVE~="ALL"</Custom>
       <Custom Action="SetServiceRecovery" Sequence="5860">(NOT Installed OR REINSTALL) AND NOT REMOVE~="ALL"</Custom>
 
+      <!-- Register the signature catalog (Duplicati.cat), which lists the
+           third-party libraries that their publishers do not sign, so Smart
+           App Control and App Control for Business do not block them.
+           Registered right after InstallFiles (4000), before the service is
+           started, and unregistered before RemoveFiles (3500) removes the
+           catalog. Each has a rollback action that undoes it if the install
+           fails later. A failure does not fail the install, as Windows only
+           needs the catalog when App Control is on. -->
+      <Custom Action="SetRegisterSignatureCatalog" Sequence="1510">1</Custom>
+      <Custom Action="SetRegisterSignatureCatalogRollback" Sequence="1511">1</Custom>
+      <Custom Action="SetUnregisterSignatureCatalog" Sequence="1512">1</Custom>
+      <Custom Action="SetUnregisterSignatureCatalogRollback" Sequence="1513">1</Custom>
+      <Custom Action="UnregisterSignatureCatalogRollback" Sequence="3449">REMOVE~="ALL"</Custom>
+      <Custom Action="UnregisterSignatureCatalog" Sequence="3450">REMOVE~="ALL"</Custom>
+      <Custom Action="RegisterSignatureCatalogRollback" Sequence="4009">NOT Installed AND NOT REMOVE~="ALL"</Custom>
+      <Custom Action="RegisterSignatureCatalog" Sequence="4010">NOT REMOVE~="ALL"</Custom>
+
 <?if $(var.BuildEnv) = "Windows" ?>
       <!-- The same positions and conditions as the rows wixl builds get from
            InstallTables.sql; see the comments there. -->
@@ -216,6 +233,65 @@
               Value="[PREVIOUS_INSTALLLOCATION]"
               Execute="immediate"
               Return="check" />
+
+    <!-- Duplicati.WindowsService.exe registers the signature catalog that is
+         next to it. It runs through SilentRun.js, as the console window of a
+         command started directly would flash on screen. Each deferred and
+         rollback action reads its command from the property with its own
+         name, set by the immediate action before it. -->
+    <Binary Id="SilentRunScript" SourceFile="SilentRun.js" />
+
+    <CustomAction Id="SetRegisterSignatureCatalog"
+              Property="RegisterSignatureCatalog"
+              Value="&quot;[INSTALLLOCATION]Duplicati.WindowsService.exe&quot; register-catalog"
+              Execute="immediate"
+              Return="check" />
+
+    <CustomAction Id="SetRegisterSignatureCatalogRollback"
+              Property="RegisterSignatureCatalogRollback"
+              Value="&quot;[INSTALLLOCATION]Duplicati.WindowsService.exe&quot; unregister-catalog"
+              Execute="immediate"
+              Return="check" />
+
+    <CustomAction Id="SetUnregisterSignatureCatalog"
+              Property="UnregisterSignatureCatalog"
+              Value="&quot;[INSTALLLOCATION]Duplicati.WindowsService.exe&quot; unregister-catalog"
+              Execute="immediate"
+              Return="check" />
+
+    <CustomAction Id="SetUnregisterSignatureCatalogRollback"
+              Property="UnregisterSignatureCatalogRollback"
+              Value="&quot;[INSTALLLOCATION]Duplicati.WindowsService.exe&quot; register-catalog"
+              Execute="immediate"
+              Return="check" />
+
+    <CustomAction Id="RegisterSignatureCatalog"
+              BinaryKey="SilentRunScript"
+              JScriptCall="RunAppHidden"
+              Execute="deferred"
+              Impersonate="no"
+              Return="ignore" />
+
+    <CustomAction Id="RegisterSignatureCatalogRollback"
+              BinaryKey="SilentRunScript"
+              JScriptCall="RunAppHidden"
+              Execute="rollback"
+              Impersonate="no"
+              Return="ignore" />
+
+    <CustomAction Id="UnregisterSignatureCatalog"
+              BinaryKey="SilentRunScript"
+              JScriptCall="RunAppHidden"
+              Execute="deferred"
+              Impersonate="no"
+              Return="ignore" />
+
+    <CustomAction Id="UnregisterSignatureCatalogRollback"
+              BinaryKey="SilentRunScript"
+              JScriptCall="RunAppHidden"
+              Execute="rollback"
+              Impersonate="no"
+              Return="ignore" />
   </Product>
 
   <!--

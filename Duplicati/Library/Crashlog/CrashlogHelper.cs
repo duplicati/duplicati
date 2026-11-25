@@ -155,8 +155,50 @@ public static class CrashlogHelper
     /// Logs the exception to a file
     /// </summary>
     /// <param name="ex">The exception to log</param>
-    public static void LogCrashException(Exception ex)
+    /// <summary>
+    /// Explains a crash caused by Windows blocking a library because of Smart App
+    /// Control or App Control for Business, and how to fix it
+    /// </summary>
+    /// <param name="ex">The exception that caused the crash</param>
+    /// <returns>The explanation, or <c>null</c> if the crash has another cause</returns>
+    public static string? GetCodeIntegrityHint(Exception ex)
     {
+        try
+        {
+            return OperatingSystem.IsWindows()
+                ? CodeIntegrityHint.Create(ex, AppContext.BaseDirectory)
+                : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Writes the exception to the console and the crash log. When the crash is
+    /// caused by Windows blocking a library, the explanation comes first, and is
+    /// also shown in a message box if there is no console to show it.
+    /// </summary>
+    /// <param name="ex">The exception that caused the crash</param>
+    /// <returns><c>true</c> if the explanation was shown in a message box</returns>
+    public static bool LogCrashException(Exception ex)
+    {
+        var hint = GetCodeIntegrityHint(ex);
+        var shown = false;
+
+        if (hint != null)
+        {
+            try
+            {
+                Console.Error.WriteLine(hint);
+                Console.Error.WriteLine();
+            }
+            catch
+            {
+            }
+        }
+
         try
         {
             Console.WriteLine("Crash! {0}{1}", Environment.NewLine, ex);
@@ -167,7 +209,9 @@ public static class CrashlogHelper
 
         try
         {
-            File.WriteAllText(GetLogFilePath(), ex.ToString());
+            File.WriteAllText(GetLogFilePath(), hint == null
+                ? ex.ToString()
+                : hint + Environment.NewLine + Environment.NewLine + ex);
         }
         catch (Exception writeex)
         {
@@ -179,5 +223,18 @@ public static class CrashlogHelper
             {
             }
         }
+
+        if (hint != null && OperatingSystem.IsWindows())
+        {
+            try
+            {
+                shown = CodeIntegrityHint.ShowIfNoConsole(hint);
+            }
+            catch
+            {
+            }
+        }
+
+        return shown;
     }
 }

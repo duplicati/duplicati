@@ -35,8 +35,10 @@ namespace Duplicati.WindowsService
         /// The commands that only change the registry or the service, so they do not use the preload
         /// settings. The installer runs some of them as SYSTEM, and secure-datafolder is the way to fix a
         /// data folder that the preload check refuses, so they must work without the preload settings.
+        /// The catalog commands only change the system catalog database, and run before the
+        /// catalog is registered, so they must not load anything that the catalog covers.
         /// </summary>
-        private static readonly string[] CommandsWithoutPreload = ["set-init-password", "lock-service-key", "secure-datafolder"];
+        private static readonly string[] CommandsWithoutPreload = ["set-init-password", "lock-service-key", "secure-datafolder", "register-catalog", "unregister-catalog"];
 
         /// <summary>
         /// The other commands, which are run from a console rather than by the service manager
@@ -73,6 +75,8 @@ namespace Duplicati.WindowsService
             var set_init_password = args != null && args.Any(x => string.Equals("set-init-password", x, StringComparison.OrdinalIgnoreCase));
             var lock_key = args != null && args.Any(x => string.Equals("lock-service-key", x, StringComparison.OrdinalIgnoreCase));
             var secure_datafolder = args != null && args.Any(x => string.Equals("secure-datafolder", x, StringComparison.OrdinalIgnoreCase));
+            var register_catalog = args != null && args.Any(x => string.Equals("register-catalog", x, StringComparison.OrdinalIgnoreCase));
+            var unregister_catalog = args != null && args.Any(x => string.Equals("unregister-catalog", x, StringComparison.OrdinalIgnoreCase));
             var help = args != null && HelpOptionExtensions.IsArgumentAnyHelpString(args);
 
             if (help)
@@ -93,6 +97,8 @@ namespace Duplicati.WindowsService
                 Console.WriteLine("  set-init-password:\r\n    Sets the initial API password (if not already set), then restarts the service");
                 Console.WriteLine("  lock-service-key:\r\n    Recreates the hardened Duplicati service registry key");
                 Console.WriteLine("  secure-datafolder:\r\n    Restricts the permissions on the data folder to SYSTEM and Administrators only, then restarts the service");
+                Console.WriteLine("  register-catalog:\r\n    Registers the signature catalog for the unsigned third-party libraries with Windows");
+                Console.WriteLine("  unregister-catalog:\r\n    Removes the registration of the signature catalog");
                 Console.WriteLine();
                 Console.WriteLine("It is possible to pass arguments to Duplicati.Server.exe, simply add them to the commandline:");
                 Console.WriteLine("  Duplicati.WindowsService.exe install --webservice-interface=loopback --log-retention=3M");
@@ -205,6 +211,14 @@ namespace Duplicati.WindowsService
                         return 1;
                     }
                 }
+            }
+            else if (register_catalog)
+            {
+                return SignatureCatalog.Register(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+            }
+            else if (unregister_catalog)
+            {
+                return SignatureCatalog.Unregister(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
             }
             else if (set_init_password)
             {
