@@ -1,3 +1,247 @@
+2026-11-25 - 2.4.1.1_stable_2026-11-25
+==========
+# About this release
+
+This release builds on version 2.4.1.0 with a large number of bug fixes, focused on restores, repair and recreate, SMB, and Microsoft 365 and Google Workspace backups. It also adds a few new options, listed below.
+
+The local database format is not changed by this release, so it is possible to go back to 2.4.1.0 without downgrading the databases.
+
+## Microsoft 365 and Google Workspace
+
+Google Workspace backups now export Drive files that are too large for the regular export API through their export links. Reading from Google Workspace has been made more robust. Two new opt-in options change the paths of a backup and may affect existing filters, so they are off by default:
+
+- `--google-use-user-ids-in-paths` uses the internal user id in the paths instead of the primary email, so the paths stay valid and unique.
+- `--google-use-ou-paths` shows the organizational units (OUs) under Users and Shared Drives, so users and drives can be selected or excluded by OU. Changing it makes the next backup list everything in full.
+
+Microsoft 365 backups now send at most 4 requests at once to a mailbox and share a throttling backoff between them, to avoid being rate limited. Restores into a document library and the chat API parameters have been fixed, along with other robustness fixes.
+
+## SMB
+
+The SMB backend has several fixes for operations that could fail silently or hide the real error:
+
+- A failed open, delete or rename is now reported instead of failing later or not at all, and the file handle is closed.
+- Chunk writes use `--read-write-timeout`, now 30 seconds by default instead of 5 seconds.
+- Reading a source over SMB no longer times out while the upload to a slower destination catches up.
+- A call that times out drops the connection, and the transport option is matched in every culture.
+
+## New options and features
+
+- S3: `--s3-assume-role-arn` lets the backend assume an IAM role through STS, with `--s3-assume-role-session-name`, `--s3-assume-role-external-id` and `--s3-sts-endpoint`.
+- WebDAV: `--webdav-client-certificate` and `--webdav-client-certificate-password` present a TLS client certificate to servers that require one.
+- Mail reports now accept the same certificate options as HTTP reports, such as accepting a certificate whose revocation status cannot be checked.
+- Report templates can use `%BeginTime%`, `%EndTime%` and `%Duration%`.
+- On Windows, `.ps1` scripts given to the `run-script-*` options are run with Windows PowerShell.
+- `--force-locale` sets the locale of the server and tray icon, for Windows where the locale environment variables are not read.
+- Azure Blob Storage now uses the path of the url as a prefix, instead of always storing in the root of the container.
+- Blomp Cloud Storage has been added to the OpenStack and S3 provider lists, and Dosya and more S3 host suffixes are recognized.
+- Compact now reports its progress.
+- The system info reports the install and data folders, whether the server database is encrypted, and where preload settings are read from.
+- The server reports the result of an update check, so the UI can show when the check failed.
+
+## Web UI
+
+The web UI has been updated with new features and many fixes:
+
+- A new page compares two versions of a backup, and a run in the log can be compared with the previous version.
+- Restores can search for files across all versions, show the number of files in each version, and group files that were backed up individually. Saved destinations can be picked for a direct restore from backup files.
+- The home page can run all backups at once, shows when the last run of a backup failed, and shows the progress of a compact.
+- Alerts and notifications have "Dismiss all" buttons.
+- Logs can be downloaded, and older entries of a job log can be browsed.
+- The settings page can upload an HTTPS certificate, show whether the server database is encrypted and where preload settings are read from, and set a default theme for the server. A theme toggle has been added to the sidebar.
+- An optional sign-out after a period of inactivity.
+- The file tree marks folders with excluded subpaths, shows the targets of links and shortcuts, and supports Shift-click range selection and keyboard navigation. An inclusion filter builder has been added.
+- Creating a backup offers an existing local database for the destination, asks for confirmation before saving a remote backup without encryption, and asks to approve an unknown SSH host key before browsing.
+- Deleting a backup keeps a local database that a command-line job also uses.
+- The result of a manual update check and the changelog of an available update are shown.
+- A "Report an issue" link has been added.
+
+Fixes include keeping a backup encrypted when only a passphrase is set, honoring the encryption options of a file export, keeping unchanged destination url values while editing, bracketing IPv6 addresses in destination urls, and better keyboard focus and accessibility throughout.
+
+## Changed behavior
+
+- A backup to a local folder now uploads one volume at a time, and a restore from a local folder reads one volume at a time, as these are often external disks. Setting `--asynchronous-upload-limit` or `--restore-volume-downloaders` uses the given value as before.
+- `--asynchronous-upload-limit=0` now means no limit.
+- A backup now stops when a source folder cannot be read, and a backup that is stopped before it processes any files does not create a version.
+- A restore that could not restore some files now exits with an error code.
+- Changing the password now invalidates all existing logins.
+- Expected refresh failures and API answers are no longer logged as errors.
+
+## Fixes
+
+Restores have fixes for memory use with many small files, the restore cache, running out of open files, files with a block that cannot be read, symbolic links and their owners, and restoring with a partially recreated database or while a backup is uploading.
+
+Repair and recreate have fixes for missing filesets, index files of removed volumes, duplicate blocks, a local database that cannot be opened, and dry runs, and repair now shows the versions found at the destination.
+
+Scheduling has fixes for daylight saving time, including with excluded days, and a queued run is skipped when its schedule is removed. Task times are reported in UTC.
+
+Backends report their timestamps in UTC, and remote synchronization now compares times correctly. Timeouts have been fixed for Azure Blob, Storj, SFTP listings and calls that ignore their timeout.
+
+Telegram reports are sent in the body of a request and split correctly. macOS Photos backups no longer grow in memory, and APFS snapshots are found by date. Errors from files stored only in the cloud (OneDrive, Dropbox, Google Drive and others) are now explained.
+
+The Windows installers set the recovery actions of the service with `sc.exe`, keep the service configuration on a repair, and no longer crash on the preload check. RPM executables are labeled for SELinux.
+
+SQLite has been updated to 3.54.1.
+
+## Detailed list of changes:
+
+- Support "too large" files in Google Workspace
+- Avoid not-open files with SMB
+- Set the recovery actions of the Windows service with sc.exe
+- Bump ngclient to 0.0.251 (from 0.0.244)
+- Let a dry-run repair recreate a missing database
+- Show the versions at the destination after a repair
+- Send Telegram reports in the body of a POST
+- Process only the new blocklists after each block volume in a recreate
+- Report a temporary job as temporary when it is created
+- Do not split a character between two Telegram message parts
+- Stamp the start and finish times of a task in UTC
+- Read the block count of a restore under its lock
+- Report the result of an update check
+- Add paused-until indicator
+- Find created APFS snapshot by date instead of last listed snapshot
+- Dispose the decrypted volumes a stopped restore was handed
+- Report progress while compacting
+- Report database encryption and preload settings paths in system info
+- Add a Google Drive example to the CLI example help
+- Add a client certificate option to the WebDAV backend
+- Match the SMB transport option in every culture
+- Keep each part of a split Telegram report within the message limit
+- Run .ps1 scripts through Windows PowerShell
+- Avoid loading Mono.Unix on Windows
+- Fix wrong change count
+- Drop the unused indexes of the restore file list
+- Read each restored block into a buffer that fits it
+- Answer a job update with an empty target with 400 instead of 500
+- Read locked source files through a snapshot when repairing dblocks
+- Keep a job's fields that an update leaves out
+- Fix crash on log message
+- Add BeginTime, EndTime and Duration report template keys
+- Upload an unchanged full backup that follows a partial backup
+- Keep a job's operation type when it is saved without one
+- Respect uncompressed restore paths in restore tests
+- List the secure MSI properties in wixl builds
+- Resume a Google upload of a stream that cannot seek
+- Report a missing FTP folder when the listing is refused with another code
+- Keep the tray icon host URL in step with TLS on an upgrade or a change
+- Store the task config of a backup that uses the default encryption module
+- Set the MSI service config again on a repair
+- Keep --no-hosted-server on the shortcuts when the installer repairs
+- Let the immediate tasks of a backup database take turns
+- Add OU option for Google Workspace
+- Upload one volume at a time to a local folder by default
+- Check the total of a Drime listing window only without a date filter
+- Let the S3 backend assume a role through STS
+- Read a local folder with one volume downloader by default in restore
+- Make room in the restore cache before a volume is downloaded
+- Stable ids for Google Workspace
+- Report install and data folder in systeminfo
+- Add Blomp Cloud Storage to the OpenStack and S3 provider lists
+- Restore with a temporary database when the local one was partially recreated
+- List the folders of a backup made on another operating system
+- Add M365 mailbox gate
+- Keep the files of the interrupted backup in a synthetic dlist
+- Report the target of a listed link in its own field
+- Report a folder that may not be listed as forbidden in the folder picker
+- Add Dosya to list of known host suffixes
+- Keep the listing error when closing the SMB folder fails
+- Fix SMB client timeout
+- Expand list of known S3 host suffixes
+- M365 robustness fixes
+- Drop the connection when an SMB or MEGA call times out
+- Say when the sample count of the test command is not a number
+- Say what to do with a 7z volume instead of only failing to load it
+- Look up replaced duplicate blocks by key during compact
+- Jottacloud allocate upload support
+- Wait for the file counter's listing when the backup is done
+- Let a raw disk finish its read before it is disposed
+- Look up existing blockset entries by key during recreate
+- Count the total of a full first page of folder and file version listings
+- Let remote synchronization use backends that cannot stream
+- Report a crashed in-process server as a failed Windows service
+- Delete an index file whose block volume is gone after recreate
+- Let repair reach a local database it cannot open
+- Send the user and password of an HTTP report URL as Basic authentication
+- Leave the log file of the backup out of the backup
+- Fix M365 restore into library
+- Let --asynchronous-upload-limit=0 mean no limit
+- Stop logging expected refresh failures and API answers as errors
+- List again before reporting a just uploaded file as missing
+- Fail a Minio upload that the server refuses
+- Accept a Drime folder listed ahead of older files
+- Return the version time and the total of the first page from search
+- Let a Drime upload check names while other uploads add files
+- Check for a running server before opening the server database
+- Report failed Storj downloads as errors
+- Upload replacement dlists one at a time in repair
+- Say when usn-policy falls back to a folder scan
+- Warn when the USN journal is too small to reach the previous backup
+- Keep same-name files when recompress reuploads
+- Fix RecoveryTool recompress help and stale symlink metadata comment
+- Stop waiting for async calls that ignore the WithTimeout token
+- Fix memory growth when backing up macOS Photos
+- Skip a queued scheduled run when its schedule was removed
+- Await the SFTP rename
+- Let compact clean up after an operation stopped mid-upload
+- Do not retry a dlist upload under a name that is taken
+- Check a folder link against the restore folder from its parent
+- Give the retention policy intervals the same time tolerance as keep-time
+- Keep restoring when the system runs out of open files
+- List the files of one version even when all-versions is set
+- Keep the timestamps when the permissions of a file cannot be read
+- Add certificate options to the mail report
+- Reset authentication after password change
+- Bump SQLite to 3.54.1
+- Add 429 support for Jottacloud
+- Index the temporary table when carrying files over by a predicate
+- Restore without a database even if a backup uploads meanwhile
+- Label the rpm executables as binaries for SELinux
+- Restore the owner of symlinks with --restore-permissions alone
+- Reject a data folder that is a symbolic link with a clear message
+- Report the kind of each tree node
+- Wait long enough for the backend queue runner to stop
+- Restore from the backup when the original file cannot be read
+- Do not let the preload check crash the service installer
+- Do not recreate a synchronization destination that disappears
+- Count restored symbolic links in RestoredSymlinks
+- Do not recreate a destination folder that disappears during an operation
+- List BouncyCastle in the third-party licenses
+- Stop a restore of many small files from keeping memory for every block
+- Drop the duplicate block records of volumes that are cleaned up
+- Keep purge-broken-files from breaking the database on a timestamp clash
+- Fix DST aware with excluded days
+- Fix DST time drifts
+- Anchor timestamps for backends
+- Improve Google Workspace reads
+- Improve progress for delta-walk
+- Improve Google Workspace reader
+- Do not remove data when restoring a symbolic link
+- Fix a startup race when reading the machine id
+- Validate the server certificate in the XMPP report
+- Report entry assembly in backup report
+- Fix M365 Chat API parameters
+- Improve Duplicati Backend error codes
+- Fixed an issue with search and IPC
+- Resolve legacy time zone names that are not installed
+- Let the test operation check a block volume without blocks
+- Match the --restore-symlink-metadata help to what is restored
+- Close the SMB file handle when get, delete or rename fails
+- Added support for forcing locale
+- Improve timeout in SMB backend
+- Do not list a placeholder version after a dlist upload is retried
+- Restore the other files when a block cannot be read from its volume
+- Stop the backup when a source folder cannot be read
+- Apply the list timeout to SFTP listings
+- Create no version when a backup is stopped before it processes files
+- Fix synchronous timeout
+- Azure Blob stream timeout fix
+- Explain errors from files that are not stored locally
+- Time out Storj transfers that stop moving
+- Fix SMB silent failure issues
+- Say that the restore stopped because of a failed priority file
+- Record the fileset time in every dlist file
+- Support path in Azure Blob Storage
+- Fix --prefix with path separator
+
 2026-10-29 - 2.4.1.0_stable_2026-10-29
 ==========
 # About this release
