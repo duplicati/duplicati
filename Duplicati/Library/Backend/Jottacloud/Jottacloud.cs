@@ -181,7 +181,10 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
             throw new ArgumentOutOfRangeException(nameof(chunksize), $"The chunk size cannot be less than {Utility.Utility.FormatSizeString(1024)}, nor larger than {Utility.Utility.FormatSizeString(int.MaxValue)}");
 
         m_chunksize = chunksize;
-        m_legacyUpload = Utility.Utility.ParseBoolOption(options, JFS_LEGACY_UPLOAD);
+        // Manual patch for stable: Don't auto-enable this
+        m_legacyUpload = true;
+        if (options.ContainsKey(JFS_LEGACY_UPLOAD))
+            m_legacyUpload = Utility.Utility.ParseBoolOption(options, JFS_LEGACY_UPLOAD);
         m_timeouts = TimeoutOptionsHelper.Parse(options);
     }
 
