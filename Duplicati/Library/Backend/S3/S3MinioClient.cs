@@ -27,6 +27,7 @@ using Duplicati.Library.Utility;
 using Duplicati.Library.Utility.Options;
 using Minio;
 using Minio.DataModel.Args;
+using Minio.DataModel.Encryption;
 using Minio.DataModel.ObjectLock;
 using Minio.Exceptions;
 using Duplicati.StreamUtil;
@@ -50,6 +51,31 @@ namespace Duplicati.Library.Backend
         /// The headers that request server-side encryption of a written object, empty for none
         /// </summary>
         private readonly Dictionary<string, string> m_encryptionHeaders = new();
+        /// <summary>
+        /// Adds the storage class to an upload, or null for none
+        /// </summary>
+        private readonly StorageClassHeader? m_storageClassHeader;
+
+        /// <summary>
+        /// Sets the storage class of an upload. <see cref="PutObjectArgs.WithHeaders"/> in Minio 6.0.0
+        /// turns every header it does not know, <c>x-amz-storage-class</c> included, into user
+        /// metadata (<c>x-amz-meta-x-amz-storage-class</c>), and the arguments have no storage class
+        /// of their own. The server-side encryption object is the one way to put a header on the
+        /// upload as it is: the client adds what <see cref="Marshal"/> writes to the single
+        /// upload and to the start of a multipart upload unchanged (#4803).
+        /// </summary>
+        /// <param name="storageClass">The storage class</param>
+        private sealed class StorageClassHeader(string storageClass) : IServerSideEncryption
+        {
+            /// <summary>
+            /// The client only looks at the type to treat customer keys (SSE-C) differently,
+            /// so a type other than that leaves the upload as it is
+            /// </summary>
+            public EncryptionType GetEncryptionType() => EncryptionType.SSE_S3;
+
+            public void Marshal(IDictionary<string, string> headers)
+                => headers["x-amz-storage-class"] = storageClass;
+        }
 
         public S3MinioClient(string awsID, string awsKey, string? locationConstraint,
             string servername, string? storageClass, bool useSSL, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options, string lockMode, string? authenticationRegion)
@@ -67,6 +93,9 @@ namespace Duplicati.Library.Backend
                 m_encryptionHeaders["x-amz-server-side-encryption"] = sseMethod;
             if (sseKmsKeyId != null)
                 m_encryptionHeaders["x-amz-server-side-encryption-aws-kms-key-id"] = sseKmsKeyId;
+
+            if (!string.IsNullOrWhiteSpace(storageClass))
+                m_storageClassHeader = new StorageClassHeader(storageClass);
 
             var clientBuilder = new MinioClient()
                 .WithEndpoint(servername)
@@ -302,7 +331,8 @@ namespace Duplicati.Library.Backend
                     .WithStreamData(t)
                     .WithObjectSize(t.Length)
                     .WithContentType("application/octet-stream")
-                    .WithHeaders(m_encryptionHeaders),
+                    .WithHeaders(m_encryptionHeaders)
+                    .WithServerSideEncryption(m_storageClassHeader),
                     cancellationToken: cancelToken);
             }
             catch (MinioException e)
