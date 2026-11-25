@@ -179,11 +179,14 @@ partial class RestoreProvider
             // POST /drives/{drive-id}/items/{parent-id}/children
             var url = $"{baseUrl}/v1.0/drives/{drive}/items/{parent}/children";
 
-            var body = new
+            // Graph requires the instance annotation property name exactly; an anonymous
+            // type member named @microsoft_graph_conflictBehavior serializes without the
+            // "@" and with underscores, which Graph does not recognize.
+            var body = new Dictionary<string, object>
             {
-                name = name,
-                folder = new { },
-                @microsoft_graph_conflictBehavior = "rename"
+                ["name"] = name,
+                ["folder"] = new { },
+                ["@microsoft.graph.conflictBehavior"] = "rename"
             };
 
             async Task<HttpRequestMessage> requestFactory(CancellationToken rct)
@@ -268,12 +271,15 @@ partial class RestoreProvider
             // POST /drives/{drive-id}/items/{parent-id}:/{filename}:/createUploadSession
             var createSessionUrl = $"{baseUrl}/v1.0/drives/{drive}/items/{folder}:/{name}:/createUploadSession";
 
-            var sessionBody = new
+            // The body is a driveItemUploadableProperties, which Graph deserializes strictly:
+            // an unknown property gives "Invalid request" (HTTP 400). The annotation name must
+            // be exact, and the name is the plain file name, not the URL-escaped one.
+            var sessionBody = new Dictionary<string, object>
             {
-                item = new
+                ["item"] = new Dictionary<string, object>
                 {
-                    @microsoft_graph_conflictBehavior = "rename",
-                    name = name
+                    ["@microsoft.graph.conflictBehavior"] = "rename",
+                    ["name"] = fileName
                 }
             };
 
