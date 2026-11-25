@@ -448,6 +448,9 @@ namespace Duplicati.Library.Main.Database.Local
                     .ToListAsync(cancellationToken: token)
                     .ConfigureAwait(false);
 
+                // The newest fileset where only folders were found
+                long? foldersOnlyFilesetId = null;
+
                 while (filesetIds.Count > 0)
                 {
                     var filesetId = filesetIds[0];
@@ -757,6 +760,34 @@ namespace Duplicati.Library.Main.Database.Local
                             return new Tuple<long, long>(filecount, filesize);
                         }
                     }
+
+                    // Symlinks and folders have no blockset, so they are not in the count above
+                    cmd.SetCommandAndParameters($@"
+                        SELECT
+                            COUNT(*),
+                            SUM(""BlocksetID"" = @SymlinkBlocksetId)
+                        FROM ""{m_tempfiletable}""
+                    ")
+                        .SetParameterValue("@SymlinkBlocksetId", SYMLINK_BLOCKSET_ID);
+                    var entrycount = 0L;
+                    var symlinkcount = 0L;
+                    await using (var rd = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false))
+                        if (await rd.ReadAsync(token).ConfigureAwait(false))
+                        {
+                            entrycount = rd.ConvertValueToInt64(0, 0);
+                            symlinkcount = rd.ConvertValueToInt64(1, 0);
+                        }
+
+                    if (symlinkcount > 0)
+                        break;
+
+                    // An older fileset can have files in the folders, but if
+                    // none has, the folders are restored from the newest one
+                    if (entrycount > 0)
+                        foldersOnlyFilesetId ??= filesetId;
+
+                    if (filesetIds.Count == 0 && foldersOnlyFilesetId.HasValue && foldersOnlyFilesetId.Value != filesetId)
+                        filesetIds.Add(foldersOnlyFilesetId.Value);
                 }
 
                 await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
