@@ -112,7 +112,7 @@ namespace Duplicati.Library.Main.Operation
 
                 var parsedlist = (await backendManager.ListAsync(null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     .Select(n => Volumes.VolumeBase.ParseFilename(n))
-                    .Where(p => p != null && p.FileType == RemoteVolumeType.Files)
+                    .Where(p => p != null && !p.IsParity && p.FileType == RemoteVolumeType.Files)
                     .OrderByDescending(p => p.Time)
                     .ToArray();
 
