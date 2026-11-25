@@ -300,11 +300,11 @@ namespace Duplicati.Library.Backend
             await SetWorkingDirectory(con, cancelToken).ConfigureAwait(false);
             try
             {
-                using var ts = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
-                await Task.Factory.FromAsync(
-                    (cb, state) => con.BeginUploadFile(ts, remotename, cb, state, _ => cancelToken.ThrowIfCancellationRequested()),
-                    con.EndUploadFile,
-                    null);
+                await Utility.Utility.WithUploadTimeout(stream, m_timeouts.ReadWriteTimeout, cancelToken, (ts, ct) =>
+                    WaitForTransferAsync(con, Task.Factory.FromAsync(
+                        (cb, state) => con.BeginUploadFile(ts, remotename, cb, state, _ => ct.ThrowIfCancellationRequested()),
+                        con.EndUploadFile,
+                        null), ct)).ConfigureAwait(false);
             }
             catch (SftpPathNotFoundException ex)
             {
@@ -319,11 +319,20 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                using var ts = stream.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
-                await Task.Factory.FromAsync(
-                    (cb, state) => con.BeginDownloadFile(remotename, ts, cb, state, _ => cancelToken.ThrowIfCancellationRequested()),
-                    con.EndDownloadFile,
-                    null).ConfigureAwait(false);
+                using var ts = (TimeoutObservingStream)stream.ObserveWriteTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancelToken, ts.TimeoutToken);
+                var ct = cts.Token;
+                try
+                {
+                    await WaitForTransferAsync(con, Task.Factory.FromAsync(
+                        (cb, state) => con.BeginDownloadFile(remotename, ts, cb, state, _ => ct.ThrowIfCancellationRequested()),
+                        con.EndDownloadFile,
+                        null), ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException ex) when (!cancelToken.IsCancellationRequested)
+                {
+                    throw new TimeoutException(null, ex);
+                }
             }
             catch (SftpPathNotFoundException ex)
             {
@@ -345,6 +354,37 @@ namespace Duplicati.Library.Backend
         #endregion
 
         #region Implementation
+
+        /// <summary>
+        /// Waits for a transfer, until it is cancelled. SSH.NET takes no token for a transfer, and waits without
+        /// a limit for the server, so a transfer that is cancelled is left behind together with its connection.
+        /// </summary>
+        /// <param name="con">The connection the transfer uses</param>
+        /// <param name="transfer">The running transfer</param>
+        /// <param name="cancelToken">The token that cancels the transfer</param>
+        /// <returns>An awaitable task</returns>
+        internal async Task WaitForTransferAsync(SftpClient con, Task transfer, CancellationToken cancelToken)
+        {
+            try
+            {
+                await transfer.WaitAsync(cancelToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancelToken.IsCancellationRequested && !transfer.IsCompleted)
+            {
+                if (ReferenceEquals(m_con, con))
+                    m_con = null;
+
+                // Closing the connection ends the transfer, but can itself wait for a server that does not answer
+                _ = transfer.ContinueWith(t => _ = t.Exception, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+                _ = Task.Run(() =>
+                {
+                    try { con.Dispose(); }
+                    catch (Exception ex) { Log.WriteVerboseMessage(LOGTAG, "CloseStalledConnectionFailed", ex, "Failed to close a connection that does not respond: {0}", ex.Message); }
+                }, CancellationToken.None);
+
+                throw;
+            }
+        }
 
         internal async Task<SftpClient> CreateConnection(CancellationToken cancelToken)
         {
