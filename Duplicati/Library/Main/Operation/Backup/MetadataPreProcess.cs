@@ -241,6 +241,12 @@ namespace Duplicati.Library.Main.Operation.Backup
                 }
             }
 
+            // An app execution alias has nothing to store, and opening it fails
+            if (OperatingSystem.IsWindows() && (attributes & FileAttributes.ReparsePoint) != 0 && new Duplicati.Library.Common.IO.SystemIOWindows().IsAppExecutionAlias(entry.Path))
+            {
+                Logging.Log.WriteVerboseMessage(FILELOGTAG, "IgnoreAppExecutionAlias", "Ignoring app execution alias {0}", entry.Path);
+                return false;
+            }
 
             if ((attributes & FileAttributes.Directory) == FileAttributes.Directory)
             {

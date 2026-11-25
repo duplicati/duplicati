@@ -225,6 +225,10 @@ namespace Duplicati.Library.Common.IO
             /// The reparse tag of a junction, which is also that of a mounted volume
             /// </summary>
             public const uint IO_REPARSE_TAG_MOUNT_POINT = 0xA0000003;
+            /// <summary>
+            /// The reparse tag of an app execution alias
+            /// </summary>
+            public const uint IO_REPARSE_TAG_APPEXECLINK = 0x8000001B;
 
             /// <summary>
             /// The WIN32_FIND_DATA structure, which carries the reparse tag in dwReserved0
@@ -926,6 +930,24 @@ namespace Duplicati.Library.Common.IO
         /// <param name="path">The path to check, with or without a trailing separator</param>
         /// <returns><c>true</c> if the path is a junction; <c>false</c> if it is not, or cannot be read.</returns>
         public bool IsJunction(string path)
+            => HasReparseTag(path, Win32API.IO_REPARSE_TAG_MOUNT_POINT);
+
+        /// <summary>
+        /// Reports whether the path is an app execution alias, which starts an app from the Microsoft Store.
+        /// It looks like an empty file, but cannot be opened, and Windows makes it when the app is installed.
+        /// </summary>
+        /// <param name="path">The path to check</param>
+        /// <returns><c>true</c> if the path is an app execution alias; <c>false</c> if it is not, or cannot be read.</returns>
+        public bool IsAppExecutionAlias(string path)
+            => HasReparseTag(path, Win32API.IO_REPARSE_TAG_APPEXECLINK);
+
+        /// <summary>
+        /// Reports whether the path is a reparse point of a given kind
+        /// </summary>
+        /// <param name="path">The path to check, with or without a trailing separator</param>
+        /// <param name="tag">The reparse tag to check for</param>
+        /// <returns><c>true</c> if the path is a reparse point with the tag; <c>false</c> if it is not, or cannot be read.</returns>
+        private static bool HasReparseTag(string path, uint tag)
         {
             var handle = Win32API.FindFirstFileW(AddExtendedDevicePathPrefix(path.TrimEnd(Path.DirectorySeparatorChar)), out var data);
             if (handle == new IntPtr(-1))
@@ -933,7 +955,7 @@ namespace Duplicati.Library.Common.IO
             Win32API.FindClose(handle);
 
             return (data.dwFileAttributes & (uint)FileAttributes.ReparsePoint) != 0
-                && data.dwReserved0 == Win32API.IO_REPARSE_TAG_MOUNT_POINT;
+                && data.dwReserved0 == tag;
         }
 
         /// <summary>
