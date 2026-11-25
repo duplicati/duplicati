@@ -46,6 +46,7 @@ namespace Duplicati.UnitTest
         {
             public const string OPTION_ANY_OPERATION = "test-any-operation";
             public const string OPTION_OPERATIONS = "test-operations";
+            public const string OPTION_LEVEL = "test-level";
 
             public readonly List<(string Subject, string Body)> Sent = new();
 
@@ -57,7 +58,7 @@ namespace Duplicati.UnitTest
 
             protected override string SubjectOptionName => "test-subject";
             protected override string BodyOptionName => "test-body";
-            protected override string ActionLevelOptionName => "test-level";
+            protected override string ActionLevelOptionName => OPTION_LEVEL;
             protected override string ActionOnAnyOperationOptionName => OPTION_ANY_OPERATION;
             protected override string ActionOnOperationsOptionName => OPTION_OPERATIONS;
             protected override string LogLevelOptionName => "test-log-level";
@@ -167,6 +168,42 @@ namespace Duplicati.UnitTest
             {
                 [RecordingReportModule.OPTION_ANY_OPERATION] = "true"
             }));
+        }
+
+        [Test]
+        public void LevelFilterAppliesToNonBackupOperations()
+        {
+            // The simulated failure reports as Fatal
+            var errorOnly = new Dictionary<string, string>
+            {
+                [RecordingReportModule.OPTION_OPERATIONS] = "Sync,Backup",
+                [RecordingReportModule.OPTION_LEVEL] = "Success,Warning"
+            };
+
+            Assert.IsFalse(SendsReportFor("Backup", errorOnly));
+            Assert.IsFalse(SendsReportFor("Sync", errorOnly));
+
+            var fatal = new Dictionary<string, string>
+            {
+                [RecordingReportModule.OPTION_OPERATIONS] = "Sync,Backup",
+                [RecordingReportModule.OPTION_LEVEL] = "Error,Fatal"
+            };
+
+            Assert.IsTrue(SendsReportFor("Backup", fatal));
+            Assert.IsTrue(SendsReportFor("Sync", fatal));
+        }
+
+        [Test]
+        public void LevelFilterAppliesWithAnyOperation()
+        {
+            var options = new Dictionary<string, string>
+            {
+                [RecordingReportModule.OPTION_ANY_OPERATION] = "true",
+                [RecordingReportModule.OPTION_LEVEL] = "Success"
+            };
+
+            Assert.IsFalse(SendsReportFor("Restore", options));
+            Assert.IsFalse(SendsReportFor("CustomOperation", options));
         }
 
         [Test]
