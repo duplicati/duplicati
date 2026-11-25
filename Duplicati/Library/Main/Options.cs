@@ -696,6 +696,7 @@ namespace Duplicati.Library.Main
             new CommandLineArgument("restore-file-processors", CommandLineArgument.ArgumentType.Integer, Strings.Options.RestoreFileprocessorsShort, Strings.Options.RestoreFileprocessorsLong, DEFAULT_RESTORE_FILE_PROCESSORS.ToString()),
             new CommandLineArgument("restore-all-files", CommandLineArgument.ArgumentType.Enumeration, Strings.Options.RestoreAllFilesShort, Strings.Options.RestoreAllFilesLong("restore-path"), nameof(RestoreAllFilesMode.False), null, Enum.GetNames(typeof(RestoreAllFilesMode))),
             new CommandLineArgument("restore-legacy", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreLegacyShort, Strings.Options.RestoreLegacyLong, "false"),
+            new CommandLineArgument("disable-fast-direct-restore", CommandLineArgument.ArgumentType.Boolean, Strings.Options.DisableFastDirectRestoreShort, Strings.Options.DisableFastDirectRestoreLong, "false"),
             new CommandLineArgument("restore-files-modified-after", CommandLineArgument.ArgumentType.DateTime, Strings.Options.RestoreFilesModifiedAfterShort, Strings.Options.RestoreFilesModifiedAfterLong),
             new CommandLineArgument("restore-preallocate-size", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestorePreallocateSizeShort, Strings.Options.RestorePreallocateSizeLong, "false"),
             new CommandLineArgument("restore-temp-tables-on-disk", CommandLineArgument.ArgumentType.Boolean, Strings.Options.RestoreTempTablesOnDiskShort, Strings.Options.RestoreTempTablesOnDiskLong, "false"),
@@ -2275,6 +2276,12 @@ namespace Duplicati.Library.Main
         /// Gets whether to use the legacy restore method
         /// </summary>
         public bool RestoreLegacy => GetBool("restore-legacy");
+
+        /// <summary>
+        /// Gets whether a restore without a local database builds its temporary database
+        /// with a recreate, instead of with only the blocks of the files being restored
+        /// </summary>
+        public bool DisableFastDirectRestore => GetBool("disable-fast-direct-restore");
 
         /// <summary>
         /// Gets whether a restore keeps its temporary tables in a file instead of in memory

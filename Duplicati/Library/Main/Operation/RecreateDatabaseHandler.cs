@@ -190,44 +190,7 @@ namespace Duplicati.Library.Main.Operation
                 expRecreateDb = true;
             }
 
-            var rawlist = await backendManager.ListAsync(null, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
-
-            //First step is to examine the remote storage to see what
-            // kind of data we can find
-            var remotefiles =
-            (from x in rawlist
-             let n = VolumeBase.ParseFilename(x)
-             where
-                 n != null
-                     &&
-                 n.Prefix == m_options.Prefix
-             select n).ToArray(); //ToArray() ensures that we do not remote-request it multiple times
-
-            if (remotefiles.Length == 0)
-            {
-                if (!rawlist.Any())
-                    throw new UserInformationException("No files were found at the remote location, perhaps the target url is incorrect?", "EmptyRemoteLocation");
-                else
-                {
-                    var tmp =
-                (from x in rawlist
-                 let n = VolumeBase.ParseFilename(x)
-                 where
-                     n != null
-                 select n.Prefix).ToArray();
-
-                    var types = tmp.Distinct().ToArray();
-                    if (tmp.Length == 0)
-                        throw new UserInformationException(string.Format("Found {0} files at the remote storage, but none that could be parsed", rawlist.Count()), "EmptyRemoteLocation");
-                    else if (types.Length == 1)
-                        throw new UserInformationException(string.Format("Found {0} parse-able files with the prefix {1}, did you forget to set the backup prefix?", tmp.Length, types[0]), "EmptyRemoteLocationWithPrefix");
-                    else
-                        throw new UserInformationException(string.Format("Found {0} parse-able files (of {1} files) with different prefixes: {2}, did you forget to set the backup prefix?", tmp.Length, rawlist.Count(), string.Join(", ", types)), "EmptyRemoteLocationWithPrefix");
-                }
-            }
-
-            if (string.IsNullOrWhiteSpace(m_options.Passphrase) && remotefiles.Any(x => !string.IsNullOrWhiteSpace(x.EncryptionModule)))
-                throw new UserInformationException("The remote files are encrypted, but no passphrase was provided", "MissingPassphrase");
+            var remotefiles = await ListRemoteVolumesAsync(backendManager, m_options, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
 
             //Then we select the filelist we should work with,
             // and create the filelist table to fit
@@ -801,6 +764,57 @@ namespace Duplicati.Library.Main.Operation
             }
 
             m_result.EndTime = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Lists the remote volumes that belong to the backup, and checks that they can be worked with.
+        /// </summary>
+        /// <param name="backendManager">The backend manager to list the remote files with.</param>
+        /// <param name="options">The options with the prefix and passphrase.</param>
+        /// <param name="cancellationToken">The cancellation token to monitor for cancellation requests.</param>
+        /// <returns>The parsed remote volumes with the prefix of the backup.</returns>
+        internal static async Task<IParsedVolume[]> ListRemoteVolumesAsync(IBackendManager backendManager, Options options, CancellationToken cancellationToken)
+        {
+            var rawlist = await backendManager.ListAsync(null, cancellationToken).ConfigureAwait(false);
+
+            //First step is to examine the remote storage to see what
+            // kind of data we can find
+            var remotefiles =
+            (from x in rawlist
+             let n = VolumeBase.ParseFilename(x)
+             where
+                 n != null
+                     &&
+                 n.Prefix == options.Prefix
+             select n).ToArray(); //ToArray() ensures that we do not remote-request it multiple times
+
+            if (remotefiles.Length == 0)
+            {
+                if (!rawlist.Any())
+                    throw new UserInformationException("No files were found at the remote location, perhaps the target url is incorrect?", "EmptyRemoteLocation");
+                else
+                {
+                    var tmp =
+                (from x in rawlist
+                 let n = VolumeBase.ParseFilename(x)
+                 where
+                     n != null
+                 select n.Prefix).ToArray();
+
+                    var types = tmp.Distinct().ToArray();
+                    if (tmp.Length == 0)
+                        throw new UserInformationException(string.Format("Found {0} files at the remote storage, but none that could be parsed", rawlist.Count()), "EmptyRemoteLocation");
+                    else if (types.Length == 1)
+                        throw new UserInformationException(string.Format("Found {0} parse-able files with the prefix {1}, did you forget to set the backup prefix?", tmp.Length, types[0]), "EmptyRemoteLocationWithPrefix");
+                    else
+                        throw new UserInformationException(string.Format("Found {0} parse-able files (of {1} files) with different prefixes: {2}, did you forget to set the backup prefix?", tmp.Length, rawlist.Count(), string.Join(", ", types)), "EmptyRemoteLocationWithPrefix");
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(options.Passphrase) && remotefiles.Any(x => !string.IsNullOrWhiteSpace(x.EncryptionModule)))
+                throw new UserInformationException("The remote files are encrypted, but no passphrase was provided", "MissingPassphrase");
+
+            return remotefiles;
         }
 
         /// <summary>
