@@ -710,10 +710,45 @@ namespace Duplicati.Library.Backend
         {
             await Utility.Utility.WithTimeout(m_timeouts.ShortTimeout, cancelToken, async ct =>
             {
-                using var request = CreateRequest(string.Empty, new HttpMethod("MKCOL"));
-                using var response = await GetHttpClient().SendAsync(request, ct).ConfigureAwait(false);
+                using var response = await CreateFolderWithParentsAsync(m_baseUri, ct).ConfigureAwait(false);
                 response.EnsureSuccessStatusCode();
             }).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Creates a folder. The server answers with a conflict when the parent folder
+        /// does not exist, and that is then created first.
+        /// </summary>
+        /// <param name="folder">The url of the folder, ending with a slash</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>The response for the folder</returns>
+        private async Task<HttpResponseMessage> CreateFolderWithParentsAsync(System.Uri folder, CancellationToken cancelToken)
+        {
+            var response = await SendMkcolAsync(folder, cancelToken).ConfigureAwait(false);
+
+            var parent = new System.Uri(folder, "..");
+            if (response.StatusCode != HttpStatusCode.Conflict || parent.AbsolutePath.Length < 2 || parent == folder)
+                return response;
+
+            using (var parentResponse = await CreateFolderWithParentsAsync(parent, cancelToken).ConfigureAwait(false))
+                if (!parentResponse.IsSuccessStatusCode)
+                    return response;
+
+            response.Dispose();
+            return await SendMkcolAsync(folder, cancelToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Sends the request that creates a folder
+        /// </summary>
+        /// <param name="folder">The url of the folder</param>
+        /// <param name="cancelToken">The cancellation token</param>
+        /// <returns>The response</returns>
+        private async Task<HttpResponseMessage> SendMkcolAsync(System.Uri folder, CancellationToken cancelToken)
+        {
+            using var request = CreateRequest(string.Empty, new HttpMethod("MKCOL"));
+            request.RequestUri = folder;
+            return await GetHttpClient().SendAsync(request, cancelToken).ConfigureAwait(false);
         }
 
         #endregion
