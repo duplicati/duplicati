@@ -417,8 +417,8 @@ namespace Duplicati.Library.Main.Volumes
         {
         }
 
-        public FilesetVolumeReader(string compressor, string file, Options options)
-            : base(compressor, file, options)
+        public FilesetVolumeReader(string compressor, string file, Options options, string remoteName = null)
+            : base(compressor, file, options, remoteName)
         {
         }
 

@@ -161,5 +161,86 @@ namespace Duplicati.UnitTest
             }
 
         }
+
+        /// <summary>
+        /// Changes the number of entries in an archive, which the built-in library then refuses
+        /// </summary>
+        private static void WriteWrongEntryCount(byte[] bytes)
+        {
+            var eocd = bytes.Length - 22;
+            Assert.AreEqual(0x06054b50, BitConverter.ToInt32(bytes, eocd), "The archive should end with the end of central directory record");
+            // The entries on this disk and in total
+            BitConverter.GetBytes((short)1).CopyTo(bytes, eocd + 8);
+            BitConverter.GetBytes((short)1).CopyTo(bytes, eocd + 10);
+        }
+
+        [Test]
+        [Category("Targeted")]
+        [TestCase("dlist")]
+        [TestCase("dindex")]
+        [TestCase("dblock")]
+        public async Task TheWarningNamesTheRemoteFileAsync(string type)
+        {
+            var testopts = TestOptions;
+            testopts["no-encryption"] = "true";
+            testopts.Remove("passphrase");
+            testopts["blocksize"] = "50kb";
+
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "a"), new byte[1024 * 1024]);
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+                TestUtils.AssertResults(await c.BackupAsync(new string[] { DATAFOLDER }));
+
+            await DeleteDatabaseWithRetryAsync(DBFILE);
+
+            // Without the index files, the recreate reads the block files
+            if (type == "dblock")
+                foreach (var file in Directory.GetFiles(TARGETFOLDER, "*.dindex.zip"))
+                    File.Delete(file);
+
+            var path = Directory.GetFiles(TARGETFOLDER, $"*.{type}.zip").Single();
+            var bytes = File.ReadAllBytes(path);
+            WriteWrongEntryCount(bytes);
+            File.WriteAllBytes(path, bytes);
+
+            using (var c = new Library.Main.Controller("file://" + TARGETFOLDER, testopts, null))
+            {
+                var r = await c.RepairAsync();
+                Assert.AreEqual(0, r.Errors.Count());
+                var warning = r.Warnings.First(x => x.Contains("SharpCompress"));
+                Assert.That(warning, Does.Contain(Path.GetFileName(path)));
+            }
+        }
+
+        [Test]
+        [Category("Targeted")]
+        public void AnArchiveTheBuiltInLibraryRefusesIsReadWithAWarningThatSaysSo()
+        {
+            // #6251: archives written by older versions can carry a wrong entry count in the
+            // end of central directory record. The built-in library refuses them, SharpCompress
+            // reads them, and the warning said "Failed to create built-in ZIP archive"
+            using var archive = new MemoryStream();
+            using (var zip = new System.IO.Compression.ZipArchive(archive, System.IO.Compression.ZipArchiveMode.Create, true))
+            {
+                foreach (var name in new[] { "a.txt", "b.txt" })
+                    using (var writer = new StreamWriter(zip.CreateEntry(name).Open()))
+                        writer.Write("data of " + name);
+            }
+
+            var bytes = archive.ToArray();
+            WriteWrongEntryCount(bytes);
+
+            var messages = new System.Collections.Concurrent.ConcurrentQueue<Library.Logging.LogEntry>();
+            string[] files;
+            using (Library.Logging.Log.StartIsolatingScope(true))
+            using (Library.Logging.Log.StartScope(messages.Enqueue))
+            using (var stream = new MemoryStream(bytes))
+            using (var reader = new Library.Compression.ZipCompression.FileArchiveZip(stream, Library.Interface.ArchiveMode.Read, new System.Collections.Generic.Dictionary<string, string>()))
+                files = reader.ListFiles(null);
+
+            Assert.That(files, Is.EquivalentTo(new[] { "a.txt", "b.txt" }), "SharpCompress should read the archive");
+            var warning = messages.Single(x => x.Id == "system-io-compression-error");
+            Assert.That(warning.FormattedMessage, Does.Not.Contain("create"), "Only reading falls back, so the warning should not talk about creating the archive");
+            Assert.That(warning.FormattedMessage, Does.Contain("SharpCompress"));
+        }
     }
 }

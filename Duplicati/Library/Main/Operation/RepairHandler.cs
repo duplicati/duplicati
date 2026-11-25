@@ -412,7 +412,7 @@ namespace Duplicati.Library.Main.Operation
                                 {
                                     (var tf, var hash, var size) = await backendManager.GetWithInfoAsync(n.File.Name, null, n.File.Size, allowParityRepair: true, cancellationToken).ConfigureAwait(false);
                                     using (tf)
-                                    using (var ifr = new IndexVolumeReader(n.CompressionModule, tf, m_options, m_options.BlockhashSize))
+                                    using (var ifr = new IndexVolumeReader(n.CompressionModule, tf, m_options, m_options.BlockhashSize, n.File.Name))
                                     {
                                         foreach (var rv in ifr.Volumes)
                                         {
@@ -564,7 +564,7 @@ namespace Duplicati.Library.Main.Operation
                         using var tmpfile = await backendManager.GetAsync(remoteVolume.Name, remoteVolume.Hash, remoteVolume.Size, allowParityRepair: true, cancellationToken).ConfigureAwait(false);
                         var parsed = VolumeBase.ParseFilename(remoteVolume.Name);
                         using var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read);
-                        using var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions);
+                        using var compressor = DynamicLoader.CompressionLoader.GetReader(parsed.CompressionModule, stream, m_options.RawOptions, remoteVolume.Name);
                         await using var recreatedb = await LocalRecreateDatabase.CreateAsync(db, m_options, null, cancellationToken).ConfigureAwait(false);
                         if (compressor == null)
                             throw new UserInformationException(Strings.Common.CompressionModuleNotLoaded(parsed.CompressionModule, remoteVolume.Name), "FailedToLoadCompressionModule");
@@ -1504,7 +1504,7 @@ namespace Duplicati.Library.Main.Operation
                     {
                         var buffer = new byte[m_options.Blocksize];
                         using (tmpfile)
-                        using (var f = new BlockVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options))
+                        using (var f = new BlockVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options, name))
                             foreach (var b in f.Blocks)
                                 if (await mbl.SetBlockRestoredAsync(b.Key, b.Value, pendingVolume.VolumeID, cancellationToken).ConfigureAwait(false))
                                     if (f.ReadBlock(b.Key, buffer) == b.Value)
@@ -1612,7 +1612,7 @@ namespace Duplicati.Library.Main.Operation
                 var parsed = VolumeBase.ParseFilename(volume.Name);
                 using var tmpfile = await backendManager.GetAsync(volume.Name, volume.Hash, volume.Size, allowParityRepair: true, CancellationToken.None).ConfigureAwait(false);
                 using var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read);
-                using var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions);
+                using var compressor = DynamicLoader.CompressionLoader.GetReader(parsed.CompressionModule, stream, m_options.RawOptions, volume.Name);
                 if (compressor == null)
                     throw new UserInformationException(Strings.Common.CompressionModuleNotLoaded(parsed.CompressionModule, volume.Name), "FailedToLoadCompressionModule");
 
