@@ -70,17 +70,36 @@ public class JottacloudAuthHelper : OAuthHelperHttpClient, IDisposable
     public string Username { get; private set; }
 
     /// <summary>
-    /// Marks a response that tells the client to slow down with a <see cref="TooManyRequestException"/>
+    /// The longest error body that is read to explain a failed request
+    /// </summary>
+    private const int MAX_ERROR_BODY_LENGTH = 16 * 1024;
+
+    /// <summary>
+    /// How long to wait for the error body of a failed request
+    /// </summary>
+    private static readonly TimeSpan ERROR_BODY_TIMEOUT = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// Adds the explanation from the Jottacloud error body to the message of a failed request.
+    /// A response that tells the client to slow down gets a <see cref="TooManyRequestException"/>
     /// as the inner exception, so the wait the server asks for can be respected. Jottacloud answers
     /// with 429 when the number of requests is limited; a 503 counts when it says how long to wait.
     /// </summary>
     /// <inheritdoc/>
-    public override Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage? responseContext, CancellationToken cancellationToken)
+    public override async Task AttemptParseAndThrowExceptionAsync(Exception ex, HttpResponseMessage? responseContext, CancellationToken cancellationToken)
     {
-        if (ex is HttpRequestException hex && responseContext != null && IsRateLimited(responseContext))
-            throw new HttpRequestException(hex.HttpRequestError, hex.Message, new TooManyRequestException(responseContext.Headers.RetryAfter!), responseContext.StatusCode);
+        if (ex is not HttpRequestException hex || responseContext == null)
+            return;
 
-        return Task.CompletedTask;
+        var rateLimited = IsRateLimited(responseContext);
+        var error = await JottacloudError.TryReadAsync(responseContext, MAX_ERROR_BODY_LENGTH, ERROR_BODY_TIMEOUT, cancellationToken).ConfigureAwait(false);
+        var description = JottacloudError.Describe(error, responseContext.StatusCode, responseContext.RequestMessage?.RequestUri);
+        if (description == null && !rateLimited)
+            return;
+
+        var message = description == null ? hex.Message : $"{hex.Message} {Strings.Jottacloud.ErrorResponse(description)}";
+        var inner = rateLimited ? new TooManyRequestException(responseContext.Headers.RetryAfter!) : hex.InnerException;
+        throw new HttpRequestException(hex.HttpRequestError, message, inner, responseContext.StatusCode);
     }
 
     /// <summary>
