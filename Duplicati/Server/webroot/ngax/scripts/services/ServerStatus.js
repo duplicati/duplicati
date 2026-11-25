@@ -36,6 +36,7 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
     function reloadTexts() {
         self.progress_state_text = {
             'Backup_Begin': gettextCatalog.getString('Starting backup …'),
+            'Backup_VerifyDatabase': gettextCatalog.getString('Verifying local database …'),
             'Backup_PreBackupVerify': gettextCatalog.getString('Verifying backend data …'),
             'Backup_PostBackupTest': gettextCatalog.getString('Verifying remote data …'),
             'Backup_PreviousBackupFinalize': gettextCatalog.getString('Completing previous backup …'),
