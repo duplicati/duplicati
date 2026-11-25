@@ -269,19 +269,57 @@ namespace Duplicati.Library.Main.Operation
                     var filelistfilter = GetNumberedFilelistFilterDelegate(time, versions);
                     db = await LocalRestoreDatabase.CreateAsync(tmpdb, null, m_result.TaskControl.ProgressToken, m_options.RestoreTempTablesOnDisk)
                         .ConfigureAwait(false);
-                    m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
-                    using (new Logging.Timer(LOGTAG, "RecreateTempDbForRestore", "Recreate temporary database for restore"))
-                        await new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
-                            .DoRunAsync(backendManager, db, false, filter, filelistfilter, null)
-                            .ConfigureAwait(false);
+
+                    // The database is built with only what the restore reads, unless that is turned off.
+                    // The legacy restore patches files from the block volumes the recreate downloads,
+                    // so it needs the recreate
+                    var directRestore = false;
+                    if (!m_options.DisableFastDirectRestore && !m_options.RestoreLegacy)
+                    {
+                        Restore.DirectRestoreDatabaseBuilder.Outcome outcome;
+                        using (new Logging.Timer(LOGTAG, "BuildTempDbForDirectRestore", "Build temporary database for direct restore"))
+                            outcome = await new Restore.DirectRestoreDatabaseBuilder(m_options, m_result)
+                                .RunAsync(backendManager, db, filter, time, versions)
+                                .ConfigureAwait(false);
+
+                        if (outcome == Restore.DirectRestoreDatabaseBuilder.Outcome.Stopped)
+                        {
+                            // The database is not complete, so there is nothing to restore from
+                            Logging.Log.WriteInformationMessage(LOGTAG, "RestoreStopped", "Restore stopped on request after restoring {0} files", m_result.RestoredFiles);
+                            m_result.EndTime = DateTime.UtcNow;
+                            return;
+                        }
+
+                        directRestore = outcome == Restore.DirectRestoreDatabaseBuilder.Outcome.Completed;
+                        if (!directRestore)
+                        {
+                            // The remote files could not be used, so the recreate starts from an empty database
+                            await db.DisposeAsync().ConfigureAwait(false);
+                            db = null;
+                            tmpdb.Dispose();
+                            tmpdb = new TempFile();
+                            db = await LocalRestoreDatabase.CreateAsync(tmpdb, null, m_result.TaskControl.ProgressToken, m_options.RestoreTempTablesOnDisk)
+                                .ConfigureAwait(false);
+                        }
+                    }
+
+                    if (!directRestore)
+                    {
+                        m_result.RecreateDatabaseResults = new RecreateDatabaseResults(m_result);
+                        using (new Logging.Timer(LOGTAG, "RecreateTempDbForRestore", "Recreate temporary database for restore"))
+                            await new RecreateDatabaseHandler(m_options, (RecreateDatabaseResults)m_result.RecreateDatabaseResults)
+                                .DoRunAsync(backendManager, db, false, filter, filelistfilter, null)
+                                .ConfigureAwait(false);
+                    }
 
                     if (!m_options.SkipMetadata)
                         await ApplyStoredMetadataAsync(m_options, new RestoreHandlerMetadataStorage(), restoreDestination, false, m_result, m_result.TaskControl.ProgressToken);
 
                     //If we have --version set, we need to adjust, as the db has only the required versions
                     //TODO: Bit of a hack to set options that way
+                    // The direct restore database has only the newest of the selected versions
                     if (versions != null && versions.Length > 0)
-                        m_options.RawOptions["version"] = string.Join(",", Enumerable.Range(0, versions.Length).Select(x => x.ToString()));
+                        m_options.RawOptions["version"] = string.Join(",", Enumerable.Range(0, directRestore ? 1 : versions.Length).Select(x => x.ToString()));
                 }
 
                 // Resolve the backup version index (0 = newest) and timestamp (UTC) for the

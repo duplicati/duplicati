@@ -1737,6 +1737,68 @@ namespace Duplicati.Library.Main.Database.Local
 
         }
 
+        /// <summary>
+        /// Lists the blocklist hashes recorded for the blocksets, with the length of the blockset each belongs to.
+        /// </summary>
+        /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>The blockset ID, the index of the blocklist in the blockset, the blocklist hash and the blockset length.</returns>
+        public async IAsyncEnumerable<(long BlocksetID, long Index, string Hash, long Length)> GetBlocklistHashesWithLengthAsync([EnumeratorCancellation] CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand(@"
+                SELECT
+                    ""BH"".""BlocksetID"",
+                    ""BH"".""Index"",
+                    ""BH"".""Hash"",
+                    ""BS"".""Length""
+                FROM ""BlocklistHash"" ""BH""
+                JOIN ""Blockset"" ""BS""
+                    ON ""BS"".""ID"" = ""BH"".""BlocksetID""
+            ")
+                .SetTransaction(m_rtr);
+
+            await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
+                yield return (
+                    reader.ConvertValueToInt64(0),
+                    reader.ConvertValueToInt64(1),
+                    reader.ConvertValueToString(2) ?? "",
+                    reader.ConvertValueToInt64(3)
+                );
+        }
+
+        /// <summary>
+        /// Lists the blocksets that consist of a single block, as recorded with <see cref="AddSmallBlocksetLinkAsync"/>.
+        /// </summary>
+        /// <param name="blocksize">The size of a full block; larger blocksets are not single-block blocksets.</param>
+        /// <param name="token">A cancellation token to observe while waiting for the task to complete.</param>
+        /// <returns>The blockset ID, and the hash and size of its only block.</returns>
+        public async IAsyncEnumerable<(long BlocksetID, string BlockHash, long BlockSize)> GetSmallBlocksetLinksAsync(long blocksize, [EnumeratorCancellation] CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand($@"
+                SELECT
+                    ""BS"".""ID"",
+                    ""TS"".""BlockHash"",
+                    ""TS"".""BlockSize""
+                FROM ""{m_tempsmalllist}"" ""TS""
+                JOIN ""Blockset"" ""BS""
+                    ON (
+                        ""BS"".""FullHash"" = ""TS"".""FileHash""
+                        AND ""BS"".""Length"" = ""TS"".""BlockSize""
+                        AND ""BS"".""Length"" <= @Blocksize
+                    )
+            ")
+                .SetTransaction(m_rtr)
+                .SetParameterValue("@Blocksize", blocksize);
+
+            await using var reader = await cmd.ExecuteReaderAsync(writeLog: false, token).ConfigureAwait(false);
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
+                yield return (
+                    reader.ConvertValueToInt64(0),
+                    reader.ConvertValueToString(1) ?? "",
+                    reader.ConvertValueToInt64(2)
+                );
+        }
+
         public async override ValueTask DisposeAsync()
         {
             await using (var cmd = m_connection.CreateCommand(m_rtr))
