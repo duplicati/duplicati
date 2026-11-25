@@ -117,7 +117,7 @@ namespace Duplicati.CommandLine.RecoveryTool
             return (
                 from v in Directory.EnumerateFiles(folder)
                 let p = Library.Main.Volumes.VolumeBase.ParseFilename(Path.GetFileName(v))
-                where p != null && p.FileType == Duplicati.Library.Main.RemoteVolumeType.Files
+                where p != null && !p.IsParity && p.FileType == Duplicati.Library.Main.RemoteVolumeType.Files
                 orderby p.Time descending
                 select new KeyValuePair<DateTime, string>(p.Time, v)).ToArray();
 

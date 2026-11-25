@@ -85,7 +85,7 @@ namespace Duplicati.CommandLine.RecoveryTool
                 var remotefiles =
                     (from x in rawlist
                      let n = VolumeBase.ParseFilename(x)
-                     where n != null && n.Prefix == m_Options.Prefix
+                     where n != null && !n.IsParity && n.Prefix == m_Options.Prefix
                      select n).ToArray(); //ToArray() ensures that we do not remote-request it multiple times
 
                 if (remotefiles.Length == 0)
