@@ -191,7 +191,7 @@ namespace Duplicati.Library.Compression.ZipCompression
         {
             get
             {
-                // Various compression methods to use
+                // The compression methods that can be written to a zip archive
                 var methods = new[]
                 {
                     CompressionType.None.ToString(),
@@ -199,9 +199,6 @@ namespace Duplicati.Library.Compression.ZipCompression
                     CompressionType.BZip2.ToString(),
                     CompressionType.LZMA.ToString(),
                     CompressionType.PPMd.ToString(),
-                    CompressionType.GZip.ToString(),
-                    CompressionType.Xz.ToString(),
-                    CompressionType.Deflate64.ToString(),
                     CompressionType.ZStandard.ToString()
                 };
 
