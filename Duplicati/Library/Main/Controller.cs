@@ -211,8 +211,14 @@ namespace Duplicati.Library.Main
             SourceProviderFactory.EnableMetadataStorageIfRequiredBySources(inputsources, m_options.RawOptions);
             SourceProviderFactory.EnableCaseSensitiveFiltersIfRequiredBySources(inputsources, m_options.RawOptions);
 
-            return await RunActionAsync(new BackupResults(), inputsources, inputFilter, new { lastRestoreTest = m_lastRestoreTest, changeListProvider = ChangeListProvider }, static async config =>
+            // Fit the volumes the backup keeps at once to the temporary folder; the upload limit is
+            // read when the backend manager is made, so this has to happen before the action starts
+            var temporarySpaceMessages = Operation.Backup.TemporarySpaceLimiter.Apply(m_options, m_backendUrl);
+
+            return await RunActionAsync(new BackupResults(), inputsources, inputFilter, new { lastRestoreTest = m_lastRestoreTest, changeListProvider = ChangeListProvider, temporarySpaceMessages }, static async config =>
             {
+                Operation.Backup.TemporarySpaceLimiter.Log(config.Context.temporarySpaceMessages);
+
                 var missingSources = new List<string>();
                 var (expandedSources, filter) = ExpandInputSources(config.Paths, config.Filter, config.Options, missingSources);
                 using (var h = new Operation.BackupHandler(config.Options, config.Result, config.Context.changeListProvider))
