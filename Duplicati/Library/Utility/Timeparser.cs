@@ -91,7 +91,7 @@ namespace Duplicati.Library.Utility
         /// <summary>
         /// Matches a time interval string
         /// </summary>
-        private static readonly Regex _timeIntervalRegex = new Regex(@"^(\d+[smhDWMY])+$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static readonly Regex _timeIntervalRegex = new Regex(@"^\s*(\d+\s*[smhDWMY]\s*)+$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         /// <summary>
         /// Parses a time interval string and returns a DateTime object
@@ -115,6 +115,12 @@ namespace Duplicati.Library.Utility
         {
             if (string.IsNullOrEmpty(datestring))
                 return offset;
+
+            // ParseTimeSpan trims each part of an interval, so an option value with
+            // surrounding whitespace reaches this method and has to be read the same way.
+            // The interval regex allows the whitespace, but TryDeserializeDateTime below
+            // is a TryParseExact and rejects a serialized date that still carries it
+            datestring = datestring.Trim();
 
             if (offset.Kind == DateTimeKind.Unspecified)
                 offset = new DateTime(offset.Ticks, DateTimeKind.Local);
@@ -183,6 +189,8 @@ namespace Duplicati.Library.Utility
         {
             if (string.IsNullOrEmpty(datestring))
                 return rawoffset;
+
+            datestring = datestring.Trim();
 
             var result = new DateTimeOffset(rawoffset.Kind == DateTimeKind.Local ? rawoffset.ToUniversalTime() : rawoffset, TimeSpan.Zero);
 
