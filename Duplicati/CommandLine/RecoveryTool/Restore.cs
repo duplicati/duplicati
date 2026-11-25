@@ -84,7 +84,7 @@ namespace Duplicati.CommandLine.RecoveryTool
             options = parsedoptions.RawOptions;
             options.TryGetValue("blocksize", out var blocksize_str);
             options.TryGetValue("block-hash-algorithm", out var blockhash_str);
-            options.TryGetValue("block-hash-algorithm", out var filehash_str);
+            options.TryGetValue("file-hash-algorithm", out var filehash_str);
             var offset = 0L;
             if (options.TryGetValue("offset", out var offset_str))
                 offset = long.Parse(offset_str);
@@ -194,7 +194,8 @@ namespace Duplicati.CommandLine.RecoveryTool
                                         if (blocklistHashes == null)
                                         {
                                             if (f.Size > 0)
-                                                lookup.WriteHash(sw, f.Hash, buffer);
+                                                // The block has a hash of its own, which is only the hash of the file if the algorithm is the same
+                                                lookup.WriteHash(sw, string.IsNullOrWhiteSpace(f.Blockhash) ? f.Hash : f.Blockhash, buffer);
                                         }
                                         else
                                         {
@@ -409,7 +410,8 @@ namespace Duplicati.CommandLine.RecoveryTool
             private readonly List<string> m_lookup = new List<string>();
             private readonly List<long> m_offsets = new List<long>();
             private readonly Dictionary<string, string> m_indexMap;
-            private readonly byte[] m_linebuf = new byte[128];
+            // A line has the hash of a block and the name of its volume
+            private readonly byte[] m_linebuf = new byte[1024];
             private readonly byte[] m_newline = Environment.NewLine.Select(x => (byte)x).ToArray();
 
             public HashLookupHelper(string indexfile, CompressedFileMRUCache cache, int blocksize, int hashsize, bool useIndexMap)
