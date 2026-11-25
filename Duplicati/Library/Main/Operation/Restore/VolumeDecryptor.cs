@@ -82,7 +82,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         // TODO These two steps could be moved to another process to allow even more parallelism.
                         sw_bvr?.Start();
-                        var bvr = new BlockVolumeReader(options.CompressionModule, tmpfile, options);
+                        var bvr = new BlockVolumeReader(options.CompressionModule, tmpfile, options, volume_name);
                         sw_bvr?.Stop();
                         sw_vw?.Start();
                         var volume_wrapper = new VolumeWrapper(tmpfile, bvr);

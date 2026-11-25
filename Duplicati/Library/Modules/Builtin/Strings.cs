@@ -225,6 +225,9 @@ All command line options are also reported within %value%, e.g. %volsize%. Any u
         public static string SendhttpmessageparameternameShort { get { return LC.L(@"The name of the parameter to send the message as"); } }
         public static string SendhttpextraparametersLong { get { return LC.L(@"Use this option to set extra parameters for the message body. This parameter can either be a querystring (e.g. 'parameter1=value1&parameter2=value2') or a JSON key/value object."); } }
         public static string SendhttpextraparametersShort { get { return LC.L(@"Extra parameters for the message sent"); } }
+        public static string SendhttpheadersLong { get { return LC.L(@"Use this option to send extra headers with the HTTP report, for example an API key the receiving service asks for. Write the headers as a JSON object that maps each header name to its value, for example the name ""X-Api-Key"" to the value ""abc123"". A header given here replaces the one the report would set otherwise, such as the authentication from the URL."); } }
+        public static string SendhttpheadersShort { get { return LC.L(@"Extra headers for the message sent"); } }
+        public static string InvalidHeaders(string option, string reason) { return LC.L(@"The value of --{0} was ignored: {1}", option, reason); }
         public static string SendhttplevelLong(string success, string warning, string error, string fatal, string all) { return LC.L(@"You can specify one of ""{0}"", ""{1}"", ""{2}"", ""{3}"".
 You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The special value ""{4}"" is a shorthand for ""{0},{1},{2},{3}"" and will cause all backup operations to send a message.", success, warning, error, fatal, all); }
         public static string SendhttplevelShort { get { return LC.L(@"The messages to send"); } }

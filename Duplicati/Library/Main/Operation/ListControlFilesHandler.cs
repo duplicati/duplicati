@@ -67,7 +67,7 @@ namespace Duplicati.Library.Main.Operation
 
                         var files = new List<Library.Interface.IListResultFile>();
                         using (var tmpfile = await backendManager.GetAsync(file.Name, entry.Hash, entry.Size < 0 ? file.Size : entry.Size, allowParityRepair: true, cancellationToken).ConfigureAwait(false))
-                        using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options))
+                        using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, m_options, file.Name))
                             foreach (var cf in tmp.ControlFiles)
                                 if (Library.Utility.FilterExpression.Matches(filter, cf.Key))
                                     files.Add(new ListResultFile(cf.Key, null));

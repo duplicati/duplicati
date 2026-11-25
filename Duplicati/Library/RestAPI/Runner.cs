@@ -1236,6 +1236,12 @@ namespace Duplicati.Server
                                 using (var tf = new Library.Utility.TempFile())
                                 {
                                     var r = await controller.CreateLogDatabaseAsync(tf).ConfigureAwait(false);
+
+                                    // A run-script-before script can stop the operation, and then
+                                    // no report was made, so there is nothing to offer for download
+                                    if (string.IsNullOrEmpty(r.TargetPath))
+                                        return r;
+
                                     var tempid = databaseConnection.RegisterTempFile("create-bug-report", r.TargetPath, DateTime.Now.AddDays(3));
 
                                     if (string.Equals(tf, r.TargetPath, Utility.ClientFilenameStringComparison))

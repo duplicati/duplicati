@@ -161,13 +161,15 @@ namespace Duplicati.Library.Backend.AliyunOSS
                 var bucketName = _ossOptions.BucketName;
                 var objectName = $"{_ossOptions.Path.TrimPath()}/{remotename}".TrimPath();
 
+                // The call blocks, so it is given no result: that runs it on the thread pool, where
+                // the timeout can give up waiting for it. Returning a task would run it here.
                 await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, ct =>
                 {
                     var res = client.DeleteObject(bucketName, objectName);
-                    if (res?.HttpStatusCode != HttpStatusCode.OK)
-                        Logging.Log.WriteInformationMessage(LOGTAG, "Delete", "Delete object failed. it may have been deleted");
-                    return Task.CompletedTask;
-                });
+                    // OSS answers a delete with 204, also for an object that is not there
+                    if (res?.HttpStatusCode is not (HttpStatusCode.OK or HttpStatusCode.NoContent))
+                        Logging.Log.WriteInformationMessage(LOGTAG, "Delete", "Delete object answered {0}, it may have been deleted", res?.HttpStatusCode);
+                }).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -225,9 +227,10 @@ namespace Duplicati.Library.Backend.AliyunOSS
 
             try
             {
+                // The callback is what completes the task, so it has to be passed on
                 var obj = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancelToken, async ct
                     => await Task.Factory.FromAsync(
-                        (cb, state) => client.BeginGetObject(bucketName, objectName, null, null),
+                        (cb, state) => client.BeginGetObject(bucketName, objectName, cb, state),
                         client.EndGetObject,
                         null).ConfigureAwait(false)
                     ).ConfigureAwait(false);

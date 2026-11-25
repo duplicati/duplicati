@@ -286,7 +286,7 @@ namespace Duplicati.Library.Main.Operation
                     // with correct file hashes and blocklist hashes
                     await using (var fl = await db.CreateFilelistAsync(vol.Name, cancellationToken).ConfigureAwait(false))
                     {
-                        using (var rd = new Volumes.FilesetVolumeReader(parsedInfo.CompressionModule, tf, options))
+                        using (var rd = new Volumes.FilesetVolumeReader(parsedInfo.CompressionModule, tf, options, vol.Name))
                             foreach (var f in rd.Files)
                                 await fl
                                     .AddAsync(f.Path, f.Size, f.Hash, f.Metasize, f.Metahash, f.BlocklistHashes, f.Type, f.Time, cancellationToken)
@@ -300,7 +300,7 @@ namespace Duplicati.Library.Main.Operation
                     var combined = new List<KeyValuePair<Duplicati.Library.Interface.TestEntryStatus, string>>();
 
                     //Compare with db and see that all hashes and volumes are listed
-                    using (var rd = new Volumes.IndexVolumeReader(parsedInfo.CompressionModule, tf, options, hashsize))
+                    using (var rd = new Volumes.IndexVolumeReader(parsedInfo.CompressionModule, tf, options, hashsize, vol.Name))
                     {
                         foreach (var v in rd.Volumes)
                         {
@@ -361,7 +361,7 @@ namespace Duplicati.Library.Main.Operation
                 case RemoteVolumeType.Blocks:
                     using (var blockhasher = HashFactory.CreateHasher(options.BlockHashAlgorithm))
                     await using (var bl = await db.CreateBlocklistAsync(vol.Name, cancellationToken).ConfigureAwait(false))
-                    using (var rd = new Volumes.BlockVolumeReader(parsedInfo.CompressionModule, tf, options))
+                    using (var rd = new Volumes.BlockVolumeReader(parsedInfo.CompressionModule, tf, options, vol.Name))
                     {
                         //Verify that all blocks are in the file
                         foreach (var b in rd.Blocks)

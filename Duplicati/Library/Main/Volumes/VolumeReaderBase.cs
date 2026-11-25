@@ -40,9 +40,9 @@ namespace Duplicati.Library.Main.Volumes
         protected ICompression m_compression;
         protected Stream m_stream;
 
-        private static ICompression LoadCompressor(string compressor, Stream stream, Options options)
+        private static ICompression LoadCompressor(string compressor, Stream stream, Options options, string remoteName)
         {
-            var tmp = DynamicLoader.CompressionLoader.GetModule(compressor, stream, Interface.ArchiveMode.Read, options.RawOptions);
+            var tmp = DynamicLoader.CompressionLoader.GetReader(compressor, stream, options.RawOptions, remoteName);
             if (tmp == null)
             {
                 var name = "[stream]";
@@ -58,16 +58,16 @@ namespace Duplicati.Library.Main.Volumes
             return tmp;
         }
 
-        private static ICompression LoadCompressor(string compressor, string file, Options options, out Stream stream)
+        private static ICompression LoadCompressor(string compressor, string file, Options options, string remoteName, out Stream stream)
         {
             stream = new System.IO.FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read);
-            return LoadCompressor(compressor, stream, options);
+            return LoadCompressor(compressor, stream, options, remoteName);
         }
 
-        protected VolumeReaderBase(string compressor, string file, Options options)
+        protected VolumeReaderBase(string compressor, string file, Options options, string remoteName)
             : base(options)
         {
-            m_compression = LoadCompressor(compressor, file, options, out m_stream);
+            m_compression = LoadCompressor(compressor, file, options, remoteName, out m_stream);
 
             ReadFileset();
 
@@ -120,10 +120,10 @@ namespace Duplicati.Library.Main.Volumes
             }
         }
 
-        public static FilesetData GetFilesetData(string compressor, string file, Options options)
+        public static FilesetData GetFilesetData(string compressor, string file, Options options, string remoteName = null)
         {
             using (var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (var c = LoadCompressor(compressor, stream, options))
+            using (var c = LoadCompressor(compressor, stream, options, remoteName))
                 return GetFilesetData(c, options);
         }
 
@@ -199,10 +199,11 @@ namespace Duplicati.Library.Main.Volumes
         /// <param name="compressor">The compressor to use</param>
         /// <param name="file">The file to read the manifest from</param>
         /// <param name="options">The options to update</param>
-        public static void UpdateOptionsFromManifest(string compressor, string file, Options options)
+        /// <param name="remoteName">The name of the volume at the destination, for log messages</param>
+        public static void UpdateOptionsFromManifest(string compressor, string file, Options options, string remoteName = null)
         {
             using (var stream = new System.IO.FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
-            using (var c = LoadCompressor(compressor, stream, options))
+            using (var c = LoadCompressor(compressor, stream, options, remoteName))
                 UpdateOptionsFromManifest(c, options);
 
         }

@@ -1375,6 +1375,40 @@ public partial class ServerApiIntegrationTests : BasicSetupHelper
     }
 
     /// <summary>
+    /// A run-script-before script that exits with 1 stops the operation it runs for, and
+    /// that includes creating a bug report. The report is not made then, so there is no
+    /// file to register for download. Registering the missing path failed the task with
+    /// "NOT NULL constraint failed: TempFile.Path" (#4798).
+    /// </summary>
+    [Test]
+    [Category("Integration")]
+    public async Task BugReportStoppedByTheRunScriptDoesNotFail_Async()
+    {
+        File.WriteAllText(Path.Combine(this.DATAFOLDER, "sample.txt"), "Sample content");
+
+        var script = Path.Combine(this.DATAFOLDER, OperatingSystem.IsWindows() ? "stop.bat" : "stop.sh");
+        if (OperatingSystem.IsWindows())
+            File.WriteAllText(script, "@exit /b 1\r\n");
+        else
+        {
+            File.WriteAllText(script, "#!/bin/sh\nexit 1\n");
+            File.SetUnixFileMode(script, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+
+        await WithAuthenticatedServerAsync(async httpClient =>
+        {
+            var backupId = await CreateBackupAsync(httpClient, "integration-passphrase",
+                extraSettings: [new BackupAndScheduleInputDto.SettingInputDto { Name = "--run-script-before", Value = script }]).ConfigureAwait(false);
+
+            await RunTaskAndWaitAsync(httpClient, $"/api/v1/backup/{backupId}/createreport").ConfigureAwait(false);
+
+            var notifications = await httpClient.GetFromJsonAsync<List<NotificationDto>>("/api/v1/notifications", JsonOptions).ConfigureAwait(false);
+            Assert.That(notifications!.Select(x => x.Title), Has.None.EqualTo("Bugreport ready"),
+                "A bug report that was not made must not be offered for download");
+        }).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// A restore that could not restore a file finishes without throwing and reports the
     /// failure as an error in its results. The task state has to carry an error message then,
     /// as that is what the web UI uses to tell a failed restore from a successful one

@@ -154,6 +154,22 @@ namespace Duplicati.Library.DynamicLoader
         {
             return _compressionLoader.GetModule(fileextension, stream, mode, options);
         }
+
+        /// <summary>
+        /// Instanciates a specific compression module for reading, given the file extension and options
+        /// </summary>
+        /// <param name="fileextension">The file extension to create the instance for</param>
+        /// <param name="stream">The stream of the file used to decompress contents</param>
+        /// <param name="options">The options to pass to the instance constructor</param>
+        /// <param name="archiveName">The name to use for the archive in log messages, or null if it is not known</param>
+        /// <returns>The instanciated compression module or null if the file extension is not supported</returns>
+        public static ICompression GetReader(string fileextension, Stream stream, Dictionary<string, string> options, string archiveName)
+        {
+            if (!string.IsNullOrWhiteSpace(archiveName))
+                options = new Dictionary<string, string>(options, options.Comparer) { [ICompression.ARCHIVE_NAME_OPTION] = archiveName };
+
+            return _compressionLoader.GetModule(fileextension, stream, ArchiveMode.Read, options);
+        }
         #endregion
 
         /// <summary>

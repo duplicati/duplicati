@@ -48,8 +48,18 @@ namespace Duplicati.Library.Backend
         /// The environment variable rclone reads the password of an encrypted configuration from
         /// </summary>
         internal const string RCLONE_CONFIG_PASS = "RCLONE_CONFIG_PASS";
+
+        /// <summary>
+        /// How long to wait for rclone to end after it is stopped
+        /// </summary>
+        private static readonly TimeSpan ProcessExitWait = TimeSpan.FromSeconds(10);
         private const string RCLONE_ERROR_DIRECTORY_NOT_FOUND = "directory not found";
         private const string RCLONE_ERROR_CONFIG_NOT_FOUND = "didn't find section in config file";
+
+        /// <summary>
+        /// How long to wait for the rest of the output after rclone has ended
+        /// </summary>
+        private static readonly TimeSpan OutputEndWait = TimeSpan.FromSeconds(10);
 
         private readonly string local_repo;
         private readonly string remote_repo;
@@ -184,8 +194,24 @@ namespace Duplicati.Library.Backend
                 if (cancelToken.IsCancellationRequested || timer.IsCompleted)
                 {
                     killed = true;
-                    process.Kill();
-                    process.WaitForExit();
+                    // Stop anything rclone started as well: a process that is left holds the output
+                    // pipes open, and waiting for the output to end then never returns. The wait is
+                    // also bounded, as the output is not needed once the call is given up
+                    process.Kill(entireProcessTree: true);
+                    process.WaitForExit(ProcessExitWait);
+                }
+            }
+
+            // The process can end before its output is read to the end, so wait for the rest of it.
+            // The wait is bounded, as a process that rclone left behind can hold the output open
+            if (!killed)
+            {
+                try
+                {
+                    await process.WaitForExitAsync(cancelToken).WaitAsync(OutputEndWait, cancelToken).ConfigureAwait(false);
+                }
+                catch (TimeoutException)
+                {
                 }
             }
 

@@ -294,7 +294,7 @@ namespace Duplicati.Library.Main.Operation
                         var parsed = VolumeBase.ParseFilename(name);
 
                         using var stream = new FileStream(tmpfile, FileMode.Open, FileAccess.Read, FileShare.Read);
-                        using var compressor = DynamicLoader.CompressionLoader.GetModule(parsed.CompressionModule, stream, ArchiveMode.Read, m_options.RawOptions);
+                        using var compressor = DynamicLoader.CompressionLoader.GetReader(parsed.CompressionModule, stream, m_options.RawOptions, name);
                         if (compressor == null)
                             throw new UserInformationException(Strings.Common.CompressionModuleNotLoaded(parsed.CompressionModule, name), "FailedToLoadCompressionModule");
 
@@ -438,7 +438,7 @@ namespace Duplicati.Library.Main.Operation
                                         .UpdateRemoteVolumeAsync(name, RemoteVolumeState.Verified, size, hash, m_result.TaskControl.ProgressToken)
                                         .ConfigureAwait(false);
 
-                                using (var svr = new IndexVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options, hashsize))
+                                using (var svr = new IndexVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options, hashsize, name))
                                 {
                                     foreach (var a in svr.Volumes)
                                     {
@@ -599,7 +599,7 @@ namespace Duplicati.Library.Main.Operation
                         try
                         {
                             using (tmpfile)
-                            using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options))
+                            using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options, name))
                             {
                                 if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                                 {
@@ -778,12 +778,16 @@ namespace Duplicati.Library.Main.Operation
             var rawlist = await backendManager.ListAsync(null, cancellationToken).ConfigureAwait(false);
 
             //First step is to examine the remote storage to see what
-            // kind of data we can find
+            // kind of data we can find.
+            // Parity files parse as the data volume they belong to, but are not volumes
+            // themselves, and are not tracked in the database.
             var remotefiles =
             (from x in rawlist
              let n = VolumeBase.ParseFilename(x)
              where
                  n != null
+                     &&
+                 !n.IsParity
                      &&
                  n.Prefix == options.Prefix
              select n).ToArray(); //ToArray() ensures that we do not remote-request it multiple times
@@ -799,6 +803,8 @@ namespace Duplicati.Library.Main.Operation
                  let n = VolumeBase.ParseFilename(x)
                  where
                      n != null
+                         &&
+                     !n.IsParity
                  select n.Prefix).ToArray();
 
                     var types = tmp.Distinct().ToArray();
@@ -953,7 +959,7 @@ namespace Duplicati.Library.Main.Operation
 
                     try
                     {
-                        using var reader = new BlockVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options);
+                        using var reader = new BlockVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options, name);
 
                         foreach (var bref in blocksForVolume)
                         {

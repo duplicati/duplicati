@@ -929,6 +929,9 @@ namespace Duplicati.CommandLine
                             case Duplicati.Library.Main.OperationPhase.Backup_Finalize:
                                 periodicOutput.SetFinished();
                                 break;
+                            case Duplicati.Library.Main.OperationPhase.Backup_VerifyDatabase:
+                                output.MessageEvent("Checking local database ...");
+                                break;
                             case Duplicati.Library.Main.OperationPhase.Backup_PreBackupVerify:
                                 output.MessageEvent("Checking remote backup ...");
                                 break;

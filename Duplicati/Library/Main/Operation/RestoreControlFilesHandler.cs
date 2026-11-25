@@ -86,7 +86,7 @@ namespace Duplicati.Library.Main.Operation
                         readopts.RawOptions["dont-read-manifests"] = "true";
 
                         using (var tmpfile = await backendManager.GetAsync(file.Name, entry.Hash, entry.Size < 0 ? file.Size : entry.Size, allowParityRepair: true, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
-                        using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, readopts))
+                        using (var tmp = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(file.Name), tmpfile, readopts, file.Name))
                             foreach (var cf in tmp.ControlFiles)
                                 if (FilterExpression.Matches(filter, cf.Key))
                                 {

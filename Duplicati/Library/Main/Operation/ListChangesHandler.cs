@@ -112,7 +112,7 @@ namespace Duplicati.Library.Main.Operation
 
                 var parsedlist = (await backendManager.ListAsync(null, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     .Select(n => Volumes.VolumeBase.ParseFilename(n))
-                    .Where(p => p != null && p.FileType == RemoteVolumeType.Files)
+                    .Where(p => p != null && !p.IsParity && p.FileType == RemoteVolumeType.Files)
                     .OrderByDescending(p => p.Time)
                     .ToArray();
 
@@ -147,7 +147,7 @@ namespace Duplicati.Library.Main.Operation
 
                 using (new Logging.Timer(LOGTAG, "InsertBaseFiles", "Inserting base files into database"))
                 using (var tmpfile = await backendManager.GetAsync(baseFile.File.Name, null, baseFile.File.Size, allowParityRepair: true, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
-                using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(baseFile.File.Name), tmpfile, m_options))
+                using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(baseFile.File.Name), tmpfile, m_options, baseFile.File.Name))
                     foreach (var f in rd.Files)
                         if (FilterExpression.Matches(filter, f.Path))
                             await storageKeeper
@@ -159,7 +159,7 @@ namespace Duplicati.Library.Main.Operation
 
                 using (new Logging.Timer(LOGTAG, "InsertCompareFiles", "Inserting compare files into database"))
                 using (var tmpfile = await backendManager.GetAsync(compareFile.File.Name, null, compareFile.File.Size, allowParityRepair: true, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
-                using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(compareFile.File.Name), tmpfile, m_options))
+                using (var rd = new Volumes.FilesetVolumeReader(RestoreHandler.GetCompressionModule(compareFile.File.Name), tmpfile, m_options, compareFile.File.Name))
                     foreach (var f in rd.Files)
                         if (FilterExpression.Matches(filter, f.Path))
                             await storageKeeper
