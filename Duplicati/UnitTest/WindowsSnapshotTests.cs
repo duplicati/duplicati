@@ -25,6 +25,8 @@ using Duplicati.Library.Interface;
 using Duplicati.Library.Snapshots;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using CollectionAssert = NUnit.Framework.Legacy.CollectionAssert;
+using StringAssert = NUnit.Framework.Legacy.StringAssert;
 
 #pragma warning disable CA1416
 
@@ -42,6 +44,8 @@ namespace Duplicati.UnitTest
         {
             public Exception DoSnapshotSetException { get; set; }
             public string SnapshotDeviceObject { get; set; } = @"\\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy1";
+            public bool FailWithNestedVolumes { get; set; }
+            public List<string> Volumes { get; } = [];
 
             public int BackupCompleteCalls { get; private set; }
             public int DeleteSnapshotCalls { get; private set; }
@@ -60,10 +64,17 @@ namespace Duplicati.UnitTest
             {
                 if (DoSnapshotSetException != null)
                     throw DoSnapshotSetException;
+                if (FailWithNestedVolumes && Volumes.Count > 1)
+                    throw new System.Runtime.InteropServices.COMException("0x8004232C", unchecked((int)0x8004232C));
             }
 
             public bool IsVolumeSupported(string drive) => true;
-            public Guid AddToSnapshotSet(string drive) => Guid.NewGuid();
+            public Guid AddToSnapshotSet(string drive)
+            {
+                Volumes.Add(drive);
+                return Guid.NewGuid();
+            }
+
             public void BackupComplete() => BackupCompleteCalls++;
             public void DeleteSnapshot(Guid shadowId, bool forceDelete) => DeleteSnapshotCalls++;
             public IEnumerable<WriterMetaData> ParseWriterMetaData(Guid[] writers) => [];
@@ -110,6 +121,63 @@ namespace Duplicati.UnitTest
             }
 
             Assert.AreEqual(1, providers[1].Provider.DisposeCalls);
+        }
+
+        /// <summary>
+        /// A mounted VHD cannot be in the same snapshot set as the volume the VHD file is on (#2655)
+        /// </summary>
+        [Test]
+        public void NestedVolumesGetASnapshotEach()
+        {
+            var providers = new List<FakeSnapshotProvider>();
+            ISnapshotProvider Factory(WindowsSnapshotProvider provider, TimeSpan timeout, Guid providerId)
+            {
+                var fake = new FakeSnapshotProvider { FailWithNestedVolumes = true, SnapshotDeviceObject = $@"\\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy{providers.Count}" };
+                providers.Add(fake);
+                return fake;
+            }
+
+            using (var snapshot = new WindowsSnapshot([@"C:\data\", @"V:\", @"c:\more\"], Array.Empty<string>(), new Dictionary<string, string>(), false, Factory))
+            {
+                Assert.AreEqual(3, providers.Count);
+                Assert.AreEqual(1, providers[0].DisposeCalls, "The snapshot that failed should be released");
+                CollectionAssert.AreEqual(new[] { @"C:\" }, providers[1].Volumes);
+                CollectionAssert.AreEqual(new[] { @"V:\" }, providers[2].Volumes);
+
+                foreach (var (path, number) in new[] { (@"C:\data\a.txt", 1), (@"V:\b.txt", 2), (@"c:\more\c.txt", 1) })
+                {
+                    var shadow = snapshot.ConvertToSnapshotPath(path);
+                    StringAssert.StartsWith($@"\\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy{number}\", shadow);
+                    Assert.IsTrue(string.Equals(path, snapshot.ConvertToLocalPath(shadow), StringComparison.OrdinalIgnoreCase));
+                }
+
+                Assert.AreEqual(0, providers[1].DisposeCalls + providers[2].DisposeCalls);
+            }
+
+            Assert.AreEqual(1, providers[1].DisposeCalls);
+            Assert.AreEqual(1, providers[2].DisposeCalls);
+        }
+
+        /// <summary>
+        /// The snapshots that were made are released when the one of another volume fails
+        /// </summary>
+        [Test]
+        public void AFailureForOneOfTheNestedVolumesReleasesTheOthers()
+        {
+            var providers = new List<FakeSnapshotProvider>();
+            ISnapshotProvider Factory(WindowsSnapshotProvider provider, TimeSpan timeout, Guid providerId)
+            {
+                var fake = new FakeSnapshotProvider { FailWithNestedVolumes = true, DoSnapshotSetException = providers.Count == 2 ? new InvalidOperationException("DoSnapshotSet failed") : null };
+                providers.Add(fake);
+                return fake;
+            }
+
+            Assert.Throws<InvalidOperationException>(() =>
+                new WindowsSnapshot([@"C:\data\", @"V:\"], Array.Empty<string>(), new Dictionary<string, string>(), false, Factory));
+
+            Assert.AreEqual(3, providers.Count);
+            foreach (var provider in providers)
+                Assert.AreEqual(1, provider.DisposeCalls);
         }
 
         /// <summary>

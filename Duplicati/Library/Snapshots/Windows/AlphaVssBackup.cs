@@ -42,9 +42,19 @@ internal class AlphaVssBackup : ISnapshotProvider
     private IVssBackupComponents _components;
 
     /// <summary>
+    /// The tag used for logging messages
+    /// </summary>
+    private static readonly string LOGTAG = Logging.Log.LogTagFromType<AlphaVssBackup>();
+
+    /// <summary>
     /// The VSS provider to use, or <see cref="Guid.Empty"/> for automatic selection
     /// </summary>
     private readonly Guid _providerId;
+
+    /// <summary>
+    /// Whether a snapshot set was started that is not created yet
+    /// </summary>
+    private bool _isCreatingSnapshotSet;
 
     /// <summary>
     /// Creates a new snapshot implementation
@@ -95,7 +105,10 @@ internal class AlphaVssBackup : ISnapshotProvider
 
     /// <inheritdoc/>
     public void StartSnapshotSet()
-        => _components.StartSnapshotSet();
+    {
+        _components.StartSnapshotSet();
+        _isCreatingSnapshotSet = true;
+    }
 
     /// <inheritdoc/>
     public void PrepareForBackup()
@@ -103,7 +116,10 @@ internal class AlphaVssBackup : ISnapshotProvider
 
     /// <inheritdoc/>
     public void DoSnapshotSet()
-        => _components.DoSnapshotSet();
+    {
+        _components.DoSnapshotSet();
+        _isCreatingSnapshotSet = false;
+    }
 
     /// <inheritdoc/>
     public bool IsVolumeSupported(string drive)
@@ -201,6 +217,22 @@ internal class AlphaVssBackup : ISnapshotProvider
     /// <inheritdoc/>
     public void Dispose()
     {
+        try
+        {
+            // A snapshot set that was started but not created stays in progress, and every
+            // other snapshot fails with VSS_E_SNAPSHOT_SET_IN_PROGRESS, until it is aborted
+            if (_isCreatingSnapshotSet)
+                _components?.AbortBackup();
+        }
+        catch (Exception ex)
+        {
+            Logging.Log.WriteVerboseMessage(LOGTAG, "VssAbortBackupFailed", ex, "Failed to abort the VSS backup");
+        }
+        finally
+        {
+            _isCreatingSnapshotSet = false;
+        }
+
         _components.Dispose();
     }
 }
