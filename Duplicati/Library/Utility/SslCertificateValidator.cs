@@ -102,11 +102,19 @@ public class SslCertificateValidator(bool acceptAll, string[]? validHashes, bool
             // (not confirmed revoked). Build the chain explicitly so we can replicate that
             // behavior and honor the ignoreRevocationFailure setting.
             //
-            // Note: ChainPolicy.TrustMode is left at its default (UseSystemDefault), which
-            // resolves intermediate/root trust through the OS trust store exactly as
-            // certificate.Verify() did, so the trust-root behaviour of the previous
-            // implementation is preserved.
+            // The chain is built from the policy of the chain the TLS stack built, which
+            // holds the intermediate certificates the server sent and the trust mode in use
+            // (the OS trust store, unless the caller set another one). The certificates of
+            // that chain are added too. Built from the leaf alone, a chain that only reaches
+            // a trusted root through a cross-signed intermediate sent by the server ends at
+            // an untrusted root instead, and a valid certificate is rejected.
             using var verifyChain = new X509Chain();
+            if (chain != null)
+            {
+                verifyChain.ChainPolicy = chain.ChainPolicy.Clone();
+                foreach (var element in chain.ChainElements)
+                    verifyChain.ChainPolicy.ExtraStore.Add(element.Certificate);
+            }
             // The primary mechanism for honoring ignoreRevocationFailure: skip the online
             // revocation fetch entirely so an unreachable OCSP/CRL endpoint cannot fail the
             // chain. The post-build soft-fail below is a safety net for platforms that

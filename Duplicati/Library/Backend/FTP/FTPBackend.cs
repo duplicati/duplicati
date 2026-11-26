@@ -877,8 +877,16 @@ namespace Duplicati.Library.Backend
         /// </summary>
         /// <param name="control">The FTP client.</param>
         /// <param name="e">The event arguments.</param>
-        private void HandleValidateCertificate(BaseFtpClient control, FtpSslValidationEventArgs e)
+        internal void HandleValidateCertificate(BaseFtpClient control, FtpSslValidationEventArgs e)
         {
+            // Without a certificate option, accept what the TLS stack accepted, as the HTTP backends do.
+            // A rejected certificate still goes to the validator, which reports it.
+            if (e.PolicyErrors == System.Net.Security.SslPolicyErrors.None && !_sslOptions.AcceptAllCertificates && _sslOptions.AcceptSpecificCertificateHashes.Length == 0 && !_sslOptions.IgnoreRevocationFailure)
+            {
+                e.Accept = true;
+                return;
+            }
+
             // Delegate to the cached shared validator which handles accept-all, specific hashes
             // and the ignore-revocation-failure option consistently across backends.
             try
