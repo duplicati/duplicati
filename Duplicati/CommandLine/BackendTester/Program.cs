@@ -393,63 +393,64 @@ namespace Duplicati.CommandLine.BackendTester
                     {
                         using (var cf = new Duplicati.Library.Utility.TempFile())
                         {
-                            Exception e = null;
-                            Console.Write($"{LogTimeStamp}Downloading file {i} ... ");
-
-                            var sw = Stopwatch.StartNew();
-                            var throttleManager = new ThrottleManager() { Limit = throttleDownload };
-
-                            try
+                            Exception DownloadFile()
                             {
-                                Retry(async () =>
+                                Exception e = null;
+                                Console.Write($"{LogTimeStamp}Downloading file {i} ... ");
+
+                                var sw = Stopwatch.StartNew();
+                                var throttleManager = new ThrottleManager() { Limit = throttleDownload };
+
+                                try
                                 {
-                                    if (backend.TryGetCapability<IStreamingBackend>(out var streamingBackend) && streamingBackend.SupportsStreaming && !disableStreaming)
+                                    Retry(async () =>
                                     {
-                                        using (var fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
-                                        using (var timeoutStream = new TimeoutObservingStream(fs) { WriteTimeout = readWriteTimeout })
-                                        using (var ts = new ThrottleEnabledStream(timeoutStream, throttleManager))
-                                        using (var nss = new NonSeekableStream(ts))
-                                            await streamingBackend.GetAsync(files[i].remotefilename, nss, timeoutStream.TimeoutToken);
-                                    }
-                                    else
-                                        await backend.GetAsync(files[i].remotefilename, cf, CancellationToken.None);
-                                }, retries).Await();
+                                        if (backend.TryGetCapability<IStreamingBackend>(out var streamingBackend) && streamingBackend.SupportsStreaming && !disableStreaming)
+                                        {
+                                            using (var fs = new System.IO.FileStream(cf, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                                            using (var timeoutStream = new TimeoutObservingStream(fs) { WriteTimeout = readWriteTimeout })
+                                            using (var ts = new ThrottleEnabledStream(timeoutStream, throttleManager))
+                                            using (var nss = new NonSeekableStream(ts))
+                                                await streamingBackend.GetAsync(files[i].remotefilename, nss, timeoutStream.TimeoutToken);
+                                        }
+                                        else
+                                            await backend.GetAsync(files[i].remotefilename, cf, CancellationToken.None);
+                                    }, retries).Await();
 
-                                e = null;
-                            }
-                            catch (Exception ex)
-                            {
-                                e = ex;
-                            }
-
-                            sw.Stop();
-
-                            if (e != null)
-                            {
-                                failAfterFinished = true;
-                                Console.WriteLine($"{LogTimeStamp}failed\n*** Error: {e} after {sw.ElapsedMilliseconds} ms");
-                            }
-                            else
-                                Console.WriteLine($" done in {sw.ElapsedMilliseconds} ms (~{Utility.FormatSizeString(files[i].length / sw.Elapsed.TotalSeconds)}/s)");
-
-                            Console.Write($"{LogTimeStamp}Checking hash ... ");
-
-                            using (var fs = new System.IO.FileStream(cf, System.IO.FileMode.Open, System.IO.FileAccess.Read))
-                                if (Convert.ToBase64String(sha.ComputeHash(fs)) != Convert.ToBase64String(files[i].hash))
+                                    e = null;
+                                }
+                                catch (Exception ex)
                                 {
-                                    if (dummyFileHash != null && Convert.ToBase64String(sha.ComputeHash(fs)) == Convert.ToBase64String(dummyFileHash))
-                                    {
-                                        failAfterFinished = true;
-                                        Console.WriteLine($"{LogTimeStamp}failed\n*** Downloaded file was the dummy file");
-                                    }
-                                    else
-                                    {
-                                        failAfterFinished = true;
-                                        Console.WriteLine($"{LogTimeStamp}failed\n*** Downloaded file was corrupt");
-                                    }
+                                    e = ex;
+                                }
+
+                                sw.Stop();
+
+                                if (e != null)
+                                {
+                                    failAfterFinished = true;
+                                    Console.WriteLine($"{LogTimeStamp}failed\n*** Error: {e} after {sw.ElapsedMilliseconds} ms");
                                 }
                                 else
+                                    Console.WriteLine($" done in {sw.ElapsedMilliseconds} ms (~{Utility.FormatSizeString(files[i].length / sw.Elapsed.TotalSeconds)}/s)");
+
+                                return e;
+                            }
+
+                            switch (DownloadUntilNotDummyFile(DownloadFile, cf, sha, files[i].hash, dummyFileHash, verificationRetries))
+                            {
+                                case DownloadedContent.DummyFile:
+                                    failAfterFinished = true;
+                                    Console.WriteLine($"{LogTimeStamp}failed\n*** Downloaded file was the dummy file");
+                                    break;
+                                case DownloadedContent.Corrupt:
+                                    failAfterFinished = true;
+                                    Console.WriteLine($"{LogTimeStamp}failed\n*** Downloaded file was corrupt");
+                                    break;
+                                default:
                                     Console.WriteLine("done");
+                                    break;
+                            }
                         }
                     }
 
@@ -661,6 +662,69 @@ namespace Duplicati.CommandLine.BackendTester
                     Console.WriteLine($"{LogTimeStamp}File was already gone: {remotename}");
                 }
             }, retries);
+
+        /// <summary>
+        /// What a downloaded file holds, compared with the files that were uploaded under its name
+        /// </summary>
+        internal enum DownloadedContent
+        {
+            /// <summary>The file that was uploaded last</summary>
+            Expected,
+            /// <summary>The dummy file that the expected file replaced</summary>
+            DummyFile,
+            /// <summary>Neither of the uploaded files</summary>
+            Corrupt
+        }
+
+        /// <summary>
+        /// Tells which of the uploaded files a downloaded file is, by its hash
+        /// </summary>
+        /// <param name="filename">The downloaded file</param>
+        /// <param name="sha">The hash algorithm the uploaded files were hashed with</param>
+        /// <param name="expectedHash">The hash of the file that was uploaded last</param>
+        /// <param name="dummyFileHash">The hash of the dummy file it replaced, or null if there was none</param>
+        /// <returns>What the downloaded file holds</returns>
+        internal static DownloadedContent CompareDownloadedFile(string filename, System.Security.Cryptography.HashAlgorithm sha, byte[] expectedHash, byte[] dummyFileHash)
+        {
+            // The hash is computed once; the stream is at its end afterwards
+            byte[] hash;
+            using (var fs = new System.IO.FileStream(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read))
+                hash = sha.ComputeHash(fs);
+
+            if (hash.AsSpan().SequenceEqual(expectedHash))
+                return DownloadedContent.Expected;
+            if (dummyFileHash != null && hash.AsSpan().SequenceEqual(dummyFileHash))
+                return DownloadedContent.DummyFile;
+            return DownloadedContent.Corrupt;
+        }
+
+        /// <summary>
+        /// Downloads a file until it is no longer the dummy file it replaced, or the attempts run out.
+        /// A backend can serve the old content of an overwritten file for a while, so the dummy file
+        /// is downloaded again before that is treated as a problem. Any other content is reported at once.
+        /// </summary>
+        /// <param name="download">Downloads the file and returns the error it failed with, or null</param>
+        /// <param name="filename">The file the download writes to</param>
+        /// <param name="sha">The hash algorithm the uploaded files were hashed with</param>
+        /// <param name="expectedHash">The hash of the file that was uploaded last</param>
+        /// <param name="dummyFileHash">The hash of the dummy file it replaced, or null if there was none</param>
+        /// <param name="verificationRetries">The number of times to download the file again</param>
+        /// <returns>What the last download held</returns>
+        internal static DownloadedContent DownloadUntilNotDummyFile(Func<Exception> download, string filename, System.Security.Cryptography.HashAlgorithm sha, byte[] expectedHash, byte[] dummyFileHash, int verificationRetries)
+        {
+            for (var attempt = 0; ; attempt++)
+            {
+                var error = download();
+                Console.Write($"{LogTimeStamp}Checking hash ... ");
+                var content = CompareDownloadedFile(filename, sha, expectedHash, dummyFileHash);
+                if (content != DownloadedContent.DummyFile || error != null || attempt >= verificationRetries)
+                    return content;
+
+                var delay = Utility.GetRetryDelay(TimeSpan.FromSeconds(1), attempt + 1, true);
+                Console.WriteLine($"{LogTimeStamp}the dummy file was returned, downloading again in {delay.TotalMilliseconds} ms");
+                Thread.Sleep(delay);
+            }
+        }
 
         /// <summary>
         /// Reads the remote folder until it reports no files, or the attempts run out.
