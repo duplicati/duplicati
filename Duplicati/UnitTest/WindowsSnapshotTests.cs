@@ -127,6 +127,8 @@ namespace Duplicati.UnitTest
         /// A mounted VHD cannot be in the same snapshot set as the volume the VHD file is on (#2655)
         /// </summary>
         [Test]
+        // The volumes are told apart by their drive letters, which only Windows paths have
+        [Platform("Win")]
         public void NestedVolumesGetASnapshotEach()
         {
             var providers = new List<FakeSnapshotProvider>();
@@ -162,6 +164,8 @@ namespace Duplicati.UnitTest
         /// The snapshots that were made are released when the one of another volume fails
         /// </summary>
         [Test]
+        // The volumes are told apart by their drive letters, which only Windows paths have
+        [Platform("Win")]
         public void AFailureForOneOfTheNestedVolumesReleasesTheOthers()
         {
             var providers = new List<FakeSnapshotProvider>();
