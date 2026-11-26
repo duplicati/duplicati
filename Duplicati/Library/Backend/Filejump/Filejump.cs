@@ -274,20 +274,23 @@ namespace Duplicati.Library.Backend
             cache.TryGetValue(remotename, out var _);
             await DeleteAsync(remotename, token);
 
-            var content = new MultipartFormDataContent();
-            using var timeoutStream = stream.ObserveReadTimeout(m_timeoutOptions.ReadWriteTimeout, false, TimeoutMode.Gap);
-            var fileContent = new StreamContent(timeoutStream);
-            content.Add(fileContent, "file", remotename);
-            if (folderId.HasValue)
-                content.Add(new StringContent(folderId.Value.ToString()), "parentId");
+            var body = string.Empty;
+            await Utility.Utility.WithUploadTimeout(stream, m_timeoutOptions.ReadWriteTimeout, m_timeoutOptions.UploadCompletionTimeout, token, async (timeoutStream, ct) =>
+            {
+                var content = new MultipartFormDataContent();
+                var fileContent = new StreamContent(timeoutStream);
+                content.Add(fileContent, "file", remotename);
+                if (folderId.HasValue)
+                    content.Add(new StringContent(folderId.Value.ToString()), "parentId");
 
-            using var request = new HttpRequestMessage(HttpMethod.Post, "uploads") { Content = content };
-            request.Headers.Add("Accept", "application/json");
+                using var request = new HttpRequestMessage(HttpMethod.Post, "uploads") { Content = content };
+                request.Headers.Add("Accept", "application/json");
 
-            using var response = await client.SendAsync(request, token);
-            await EnsureSuccessStatusCode(response);
+                using var response = await client.SendAsync(request, ct);
+                await EnsureSuccessStatusCode(response);
 
-            var body = await response.Content.ReadAsStringAsync(token);
+                body = await response.Content.ReadAsStringAsync(ct);
+            });
             var result = JsonSerializer.Deserialize<FileEntryOuter>(body, m_jsonOptions);
             if (result == null || !string.Equals(result.Status, "success", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException($"Failed to upload file: {result?.Message}");

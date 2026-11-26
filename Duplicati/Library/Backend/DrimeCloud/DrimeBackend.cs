@@ -373,22 +373,27 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
         }
 
         // Fallback to form data for small files and streams where we can't read the length
-        var content = new MultipartFormDataContent();
-        using var fileContent = new StreamContent(stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap));
-        content.Add(fileContent, "file", remotename);
-        content.Add(new StringContent(_workspaceId.ToString()), "workspaceId");
-
-        if (folderId.HasValue)
-            content.Add(new StringContent(folderId.Value.ToString()), "parentId");
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, "uploads")
+        HttpResponseMessage? uploadResponse = null;
+        await Utility.Utility.WithUploadTimeout(stream, _timeouts.ReadWriteTimeout, _timeouts.UploadCompletionTimeout, cancelToken, async (timeoutStream, ct) =>
         {
-            Content = content
-        };
-        request.Headers.Add("Accept", "application/json");
+            var content = new MultipartFormDataContent();
+            using var fileContent = new StreamContent(timeoutStream);
+            content.Add(fileContent, "file", remotename);
+            content.Add(new StringContent(_workspaceId.ToString()), "workspaceId");
 
-        // No timeout here as the stream content has a timeout
-        var response = await client.SendAsync(request, cancelToken).ConfigureAwait(false);
+            if (folderId.HasValue)
+                content.Add(new StringContent(folderId.Value.ToString()), "parentId");
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, "uploads")
+            {
+                Content = content
+            };
+            request.Headers.Add("Accept", "application/json");
+
+            // The upload timeout guards the request, as the server may stop taking the content
+            uploadResponse = await client.SendAsync(request, ct).ConfigureAwait(false);
+        }).ConfigureAwait(false);
+        using var response = uploadResponse!;
 
         await EnsureSuccessStatusCodeAsync(response).ConfigureAwait(false);
 
