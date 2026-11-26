@@ -159,7 +159,7 @@ namespace Duplicati.CommandLine.BackendTester
             if (options.ContainsKey("failure-retries"))
                 retries = int.Parse(options["failure-retries"]);
 
-            var verificationRetries = 3;
+            var verificationRetries = DefaultVerificationRetries;
             if (options.ContainsKey("verification-retries"))
                 verificationRetries = int.Parse(options["verification-retries"]);
 
@@ -854,6 +854,13 @@ namespace Duplicati.CommandLine.BackendTester
 
         private static string LogTimeStamp => $"[{DateTime.Now:HH:mm:ss fff}] ";
 
+        /// <summary>
+        /// The default number of re-checks of the remote file listing. With the delay that doubles
+        /// from one second, five re-checks wait up to 31 seconds; three waited 7 seconds, which the
+        /// OpenStack Swift destination sometimes needs more than
+        /// </summary>
+        internal const int DefaultVerificationRetries = 5;
+
         public static IList<ICommandLineArgument> SupportedCommands => [
             new CommandLineArgument("reruns", CommandLineArgument.ArgumentType.Integer, "The number of test runs to perform", "A number that describes how many times the test is performed", "5"),
             new CommandLineArgument("tempdir", CommandLineArgument.ArgumentType.Path, "The path used to store temporary files", "The backend tester will use the system default temp path. You can set this option to choose another path."),
@@ -871,7 +878,7 @@ namespace Duplicati.CommandLine.BackendTester
             new CommandLineArgument("wait-after-upload", CommandLineArgument.ArgumentType.Timespan, "Wait after all uploads", "A value that indicates how long to wait after all files are uploaded, to account for the backends eventual consistency", "0s"),
             new CommandLineArgument("wait-after-delete", CommandLineArgument.ArgumentType.Timespan, "Wait after all deletes", "A value that indicates how long to wait after each delete operation, to account for the backends eventual consistency", "0s"),
             new CommandLineArgument("failure-retries", CommandLineArgument.ArgumentType.Integer, "The number of retries for each operation", "An integer that indicates how many times an operation should be retried before giving up", "0"),
-            new CommandLineArgument("verification-retries", CommandLineArgument.ArgumentType.Integer, "The number of re-checks of the remote file listing", "An integer that indicates how many times the remote file listing is re-checked before a mismatch is reported as a problem, to account for the backends eventual consistency", "3"),
+            new CommandLineArgument("verification-retries", CommandLineArgument.ArgumentType.Integer, "The number of re-checks of the remote file listing", "An integer that indicates how many times the remote file listing is re-checked before a mismatch is reported as a problem, to account for the backends eventual consistency", DefaultVerificationRetries.ToString(CultureInfo.InvariantCulture)),
         ];
     }
 }

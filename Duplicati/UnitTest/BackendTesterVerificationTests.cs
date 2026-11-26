@@ -163,5 +163,24 @@ namespace Duplicati.UnitTest
 
             Assert.IsEmpty(problems, "A rename that took effect must not report anything.");
         }
+
+        [Test]
+        public void TheListingIsReCheckedForHalfAMinuteByDefault()
+        {
+            // The live OpenStack Swift test has failed after the 7 seconds of three re-checks
+            var wait = Enumerable.Range(1, Program.DefaultVerificationRetries)
+                .Select(attempt => Duplicati.Library.Utility.Utility.GetRetryDelay(TimeSpan.FromSeconds(1), attempt, true))
+                .Aggregate(TimeSpan.Zero, (total, delay) => total + delay);
+
+            Assert.GreaterOrEqual(wait, TimeSpan.FromSeconds(30));
+        }
+
+        [Test]
+        public void TheHelpShowsTheDefaultThatIsUsed()
+        {
+            var argument = Program.SupportedCommands.Single(x => x.Name == "verification-retries");
+
+            Assert.AreEqual(Program.DefaultVerificationRetries.ToString(System.Globalization.CultureInfo.InvariantCulture), argument.DefaultValue);
+        }
     }
 }
