@@ -240,6 +240,16 @@ namespace Duplicati.Library.Backend
         private readonly bool m_recurseLists;
 
         /// <summary>
+        /// The log tag for messages from this backend
+        /// </summary>
+        private static readonly string LOGTAG = Logging.Log.LogTagFromType<S3>();
+
+        /// <summary>
+        /// Whether the warning about a folder path that starts with a separator was given
+        /// </summary>
+        private bool m_warnedOfLeadingSlash;
+
+        /// <summary>
         /// The UTC point in time to read the destination at, or <c>null</c> to read the current state
         /// </summary>
         private readonly DateTime? m_pointInTime;
@@ -410,9 +420,25 @@ namespace Duplicati.Library.Backend
 
         /// <inheritdoc/>
         public IAsyncEnumerable<IFileEntry> ListAsync(CancellationToken cancelToken)
-            => m_pointInTime.HasValue
+        {
+            WarnOfLeadingSlash();
+            return m_pointInTime.HasValue
                 ? ListAtPointInTimeAsync(m_prefix, cancelToken)
                 : Connection.ListBucketAsync(m_bucket, m_prefix, m_recurseLists, cancelToken);
+        }
+
+        /// <summary>
+        /// Warns, once for this backend, that a folder path starting with a separator gives object names that start with one,
+        /// which many S3 compatible servers refuse or store without it, so the uploads fail or the files are not listed
+        /// </summary>
+        private void WarnOfLeadingSlash()
+        {
+            if (m_warnedOfLeadingSlash || !m_prefix.StartsWith('/'))
+                return;
+
+            m_warnedOfLeadingSlash = true;
+            Logging.Log.WriteWarningMessage(LOGTAG, "LeadingSlashInFolder", null, Strings.S3Backend.LeadingSlashInFolderWarning(m_prefix));
+        }
 
         /// <summary>
         /// Lists the objects under a prefix as they were at the point in time, remembering the version of each
