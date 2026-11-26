@@ -341,7 +341,7 @@ namespace Duplicati.Library.Backend.GoogleDrive
                     teamDriveId = m_teamDriveID
                 };
 
-                var res = await GoogleCommon.ChunkedUploadWithResumeAsync<GoogleDriveFolderItem, GoogleDriveFolderItem>(m_oauth, item, url, stream, m_timeouts.ShortTimeout, m_timeouts.ReadWriteTimeout, cancelToken, isUpdate ? HttpMethod.Put : HttpMethod.Post).ConfigureAwait(false);
+                var res = await GoogleCommon.ChunkedUploadWithResumeAsync<GoogleDriveFolderItem, GoogleDriveFolderItem>(m_oauth, item, url, stream, m_timeouts.ShortTimeout, m_timeouts.ReadWriteTimeout, m_timeouts.UploadCompletionTimeout, cancelToken, isUpdate ? HttpMethod.Put : HttpMethod.Post).ConfigureAwait(false);
                 m_filecache[remotename] = [res];
             }
             catch

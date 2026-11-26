@@ -291,17 +291,18 @@ public class TahoeBackend : IStreamingBackend, IRenameEnabledBackend
     {
         try
         {
-            using var request = CreateRequest(remotename, string.Empty, HttpMethod.Put);
+            await Utility.Utility.WithUploadTimeout(stream, _timeouts.ReadWriteTimeout, _timeouts.UploadCompletionTimeout, cancelToken, async (timeoutStream, ct) =>
+            {
+                using var request = CreateRequest(remotename, string.Empty, HttpMethod.Put);
+                request.Content = new StreamContent(timeoutStream);
 
-            await using var timeoutStream = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
-            request.Content = new StreamContent(timeoutStream);
+                request.Content.Headers.Add("Content-Type", "application/binary");
+                request.Content.Headers.Add("Content-Length", stream.Length.ToString());
 
-            request.Content.Headers.Add("Content-Type", "application/binary");
-            request.Content.Headers.Add("Content-Length", timeoutStream.Length.ToString());
+                using var response = await GetHttpClient().UploadStream(request, ct).ConfigureAwait(false);
 
-            using var response = await GetHttpClient().UploadStream(request, cancelToken).ConfigureAwait(false);
-
-            response.EnsureSuccessStatusCode();
+                response.EnsureSuccessStatusCode();
+            }).ConfigureAwait(false);
         }
         catch (HttpRequestException wex)
             when (wex.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.NotFound)
