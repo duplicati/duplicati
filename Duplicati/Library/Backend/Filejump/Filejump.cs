@@ -266,7 +266,8 @@ namespace Duplicati.Library.Backend
         {
             var client = await GetClient(token);
             var folderId = await GetTargetPathIdAsync(m_path, token);
-            if (folderId == null && !string.IsNullOrWhiteSpace(m_path))
+            // The root of the drive has no folder id, and is written to without a parent
+            if (folderId == null && m_path != "/")
                 throw new FolderMissingException($"Folder not found: {m_path}");
 
             // Filejump does not support overwrite, so we need to delete the previous version if it exists
