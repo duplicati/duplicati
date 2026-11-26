@@ -34,7 +34,7 @@ namespace Duplicati.UnitTest;
 /// <summary>
 /// A repair of a database whose recreate was stopped partway failed with
 /// "Missing block for blocklisthash" (#3364). It now stops with a message
-/// that the earlier repair did not complete, and leaves the remote files alone
+/// that the earlier repair did not complete and how to go on, and leaves the remote files alone
 /// </summary>
 public class Issue3364 : BasicSetupHelper
 {
@@ -88,8 +88,16 @@ public class Issue3364 : BasicSetupHelper
         {
             var ex = Assert.CatchAsync<UserInformationException>(async () => await c.RepairAsync());
             Assert.That(ex!.HelpID, Is.EqualTo("DatabaseIsInRepairState"), ex.ToString());
+            Assert.That(ex.Message, Does.Contain("delete the local database and run the repair again"), "The message should say how to go on");
         }
 
         Assert.That(Directory.GetFiles(TARGETFOLDER), Is.EquivalentTo(remoteBefore), "The remote files should not change");
+
+        // What the message says to do works
+        File.Delete(DBFILE);
+        using (var c = new Controller("file://" + TARGETFOLDER, opts, null))
+            TestUtils.AssertResults(await c.RepairAsync());
+        using (var c = new Controller("file://" + TARGETFOLDER, opts, null))
+            TestUtils.AssertResults(await c.TestAsync(long.MaxValue));
     }
 }
