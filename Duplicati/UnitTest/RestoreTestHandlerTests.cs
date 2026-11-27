@@ -406,6 +406,37 @@ namespace Duplicati.UnitTest
             Assert.IsFalse(ScratchFolders().Any(), "The scratch folder with the restored files and the temporary database should be removed");
         }
 
+        /// <summary>
+        /// The restore puts the read-only attribute back on the restored files, and on Windows
+        /// that stopped the removal of the scratch folder with a warning (#8046)
+        /// </summary>
+        [Test]
+        [Category("RestoreTest")]
+        public async Task ReadOnlyFilesAreRemovedWithTheScratchFolderAsync([Values("RandomFiles", "Full")] string mode)
+        {
+            var files = CreateSourceFiles(6);
+            foreach (var file in files)
+                File.SetAttributes(file, File.GetAttributes(file) | FileAttributes.ReadOnly);
+            try
+            {
+                await RunBackupAsync();
+
+                var options = RestoreTestOptions(mode);
+                options["restore-test-sample-count"] = "100";
+                var results = await RunRestoreTestAsync(options);
+                Assert.AreEqual(ParsedResultType.Success, results.ParsedResult, string.Join(Environment.NewLine, results.Errors.Concat(results.Warnings)));
+                Assert.AreEqual(0, results.Warnings.Count(), string.Join(Environment.NewLine, results.Warnings));
+                Assert.IsFalse(ScratchFolders().Any(), "The scratch folder with the read-only restored files should be removed");
+            }
+            finally
+            {
+                foreach (var file in files)
+                    File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
+                foreach (var file in Directory.Exists(SCRATCHFOLDER) ? Directory.GetFiles(SCRATCHFOLDER, "*", SearchOption.AllDirectories) : [])
+                    File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
+            }
+        }
+
         [Test]
         [Category("RestoreTest")]
         public async Task DownloadBudgetProducesBudgetExceededResultAsync()
