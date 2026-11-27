@@ -712,6 +712,82 @@ public class GoogleDeltaTests
         Assert.That(handler.CountRequests("/feeds/download/"), Is.EqualTo(0));
     }
 
+    private static ChatAttachmentSourceEntry DriveChatAttachment(SourceProvider provider, string fileId)
+        => new ChatAttachmentSourceEntry(provider, D(UserPath, "UserChat", "DIRECT_MESSAGE", "s1", "m1"), new Google.Apis.HangoutsChat.v1.Data.Attachment
+        {
+            Name = "spaces/s1/messages/m1/attachments/a1",
+            DriveDataRef = new Google.Apis.HangoutsChat.v1.Data.DriveDataRef { DriveFileId = fileId }
+        }, provider.ApiHelper.GetChatService(USER), provider.ApiHelper.GetDriveService(USER));
+
+    [Test]
+    [Category("GoogleWorkspace")]
+    public async Task ChatAttachmentThatIsADocsEditorsFileIsExportedAsync()
+    {
+        // A Docs Editors file shared in a chat has no binary content: asking for it with
+        // alt=media is refused with fileNotDownloadable, so it is exported instead
+        var handler = new FakeGoogleHandler()
+            .Sequence("/files/D/export", () => new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(Encoding.UTF8.GetBytes("exported document")) })
+            .Json("/files/D?", "{\"mimeType\":\"application/vnd.google-apps.document\"}");
+        var provider = CreateProvider(handler, new Dictionary<string, string>());
+
+        using (var stream = await DriveChatAttachment(provider, "D").OpenRead(CancellationToken.None))
+        using (var reader = new StreamReader(stream))
+            Assert.That(await reader.ReadToEndAsync(), Is.EqualTo("exported document"));
+
+        Assert.That(handler.Requests.Single(x => x.Contains("/files/D?", StringComparison.Ordinal)), Does.Contain("fields=mimeType,size").And.Contain("supportsAllDrives=true"));
+        Assert.That(handler.Requests.Single(x => x.Contains("/files/D/export", StringComparison.Ordinal)), Does.Contain($"mimeType={DOCX_MIME}"));
+        Assert.That(handler.CountRequests("alt=media"), Is.EqualTo(0));
+    }
+
+    [Test]
+    [Category("GoogleWorkspace")]
+    public async Task ChatAttachmentTooLargeForExportIsExportedThroughItsLinkAsync()
+    {
+        var exportUrl = "https://docs.google.com/feeds/download/documents/export/Export?id=D&exportFormat=docx";
+        var handler = new FakeGoogleHandler()
+            .Sequence("/files/D/export", () => GoogleWorkspaceTestSupport.GoogleError(HttpStatusCode.Forbidden, "exportSizeLimitExceeded", "This file is too large to be exported."))
+            .Json("fields=exportLinks", $"{{\"exportLinks\":{{\"{DOCX_MIME}\":\"{exportUrl}\"}}}}")
+            .Json("/files/D?", "{\"mimeType\":\"application/vnd.google-apps.document\"}")
+            .Sequence("/feeds/download/", () => new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(Encoding.UTF8.GetBytes("large document")) });
+        var provider = CreateProvider(handler, new Dictionary<string, string>());
+
+        using (var stream = await DriveChatAttachment(provider, "D").OpenRead(CancellationToken.None))
+        using (var reader = new StreamReader(stream))
+            Assert.That(await reader.ReadToEndAsync(), Is.EqualTo("large document"));
+
+        Assert.That(handler.CountRequests("/feeds/download/"), Is.EqualTo(1));
+    }
+
+    [Test]
+    [Category("GoogleWorkspace")]
+    public async Task ChatAttachmentWithBinaryContentIsDownloadedAsync()
+    {
+        var handler = new FakeGoogleHandler()
+            .Sequence("alt=media", () => new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(Encoding.UTF8.GetBytes("binary")) })
+            .Json("/files/B?", "{\"mimeType\":\"application/pdf\",\"size\":\"6\"}");
+        var provider = CreateProvider(handler, new Dictionary<string, string>());
+
+        using (var stream = await DriveChatAttachment(provider, "B").OpenRead(CancellationToken.None))
+        using (var reader = new StreamReader(stream))
+            Assert.That(await reader.ReadToEndAsync(), Is.EqualTo("binary"));
+
+        Assert.That(handler.Requests.Single(x => x.Contains("alt=media", StringComparison.Ordinal)), Does.Contain("/files/B?").And.Contain("supportsAllDrives=true"));
+        Assert.That(handler.CountRequests("/export"), Is.EqualTo(0));
+    }
+
+    [Test]
+    [Category("GoogleWorkspace")]
+    public void ChatAttachmentRefusedToTheAccountIsAPermissionDenied()
+    {
+        var handler = new FakeGoogleHandler()
+            .Sequence("alt=media", () => GoogleWorkspaceTestSupport.GoogleError(HttpStatusCode.Forbidden, "cannotDownloadFile", "The user does not have permission to download this file."))
+            .Json("/files/B?", "{\"mimeType\":\"application/pdf\",\"size\":\"6\"}");
+        var provider = CreateProvider(handler, new Dictionary<string, string>());
+
+        var ex = Assert.ThrowsAsync<SourceEntryAccessDeniedException>(() => DriveChatAttachment(provider, "B").OpenRead(CancellationToken.None));
+        Assert.That(ex!.Reason, Does.StartWith("cannotDownloadFile"), "The reason Drive gave reaches the warning");
+    }
+
     [Test]
     [Category("GoogleWorkspace")]
     public async Task DriveFileTheAccountMayNotDownloadHasNoContentAsync()
