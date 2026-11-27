@@ -145,7 +145,7 @@ auth-password=$name. The names are replaced with the values from the provider.
         public static string ParseArgumentsOnlyDescription => LC.L("Only parse the arguments and then exit");
         public static string ProgressDescription => LC.L("Print progress to STDOUT");
         public static string SecretProviderDescription => LC.L("The url of the secret provider to read secrets from, e.g. env:// or wincred://. A query parameter of a backend string, or the value of an option, that is the name of a secret is replaced with the secret [default: \"\"]");
-        public static string SecretProviderPatternDescription => LC.L("The pattern that marks a value as the name of a secret, e.g. $ for $name or ${} for ${name} [default: $]");
+        public static string SecretProviderPatternDescription => LC.L("The pattern that marks a value as the name of a secret, e.g. $ for $name or ${{}} for ${{name}} [default: $]");
         public static string SecretProviderCacheDescription => LC.L("How the secrets are cached for when the provider cannot be reached: None, InMemory or Persistent [default: None]");
         public static string SrcOptionsDescription => LC.L("Options for the source backend. Each option is a key-value pair separated by an equals sign, e.g. --src-options key1=value1 key2=value2 [default: empty]");
         public static string RemovedOptionError(string option) => LC.L("The option {0} is no longer supported.", option);
