@@ -901,7 +901,9 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
 
     public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
     {
-        var destPath = "/" + m_path + newname;
+        // The destination must be the full JFS path, including the username, device and mount point
+        (var client, var _) = await GetClient(cancellationToken).ConfigureAwait(false);
+        var destPath = "/" + client.Username + "/" + m_device + "/" + m_mountPoint + "/" + m_path + newname;
         using var req = await CreateRequest(HttpMethod.Post, oldname, "mv=" + Utility.UrlEncoding.UrlEncode(destPath), false, cancellationToken).ConfigureAwait(false);
         using var response = await SendAsync(req, HttpCompletionOption.ResponseContentRead, m_timeouts.ShortTimeout, cancellationToken).ConfigureAwait(false);
 

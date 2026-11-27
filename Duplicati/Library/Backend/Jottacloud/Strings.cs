@@ -31,6 +31,11 @@ internal static class Jottacloud
     public static string NoPathError => LC.L(@"No path given. Files cannot be uploaded to the root folder");
     public static string IllegalMountPoint => LC.L(@"Illegal mount point given.");
     public static string FileUploadError => LC.L(@"Failed to upload file");
+    public static string ErrorResponse(string description) { return LC.L(@"Jottacloud reported: {0}", description); }
+    public static string CorruptUploadError => LC.L(@"The uploaded content did not match the size and MD5 hash that were sent when the upload was allocated.");
+    public static string IncompleteUploadError => LC.L(@"The upload server has no matching upload allocation.");
+    public static string UploadAllocationGoneError => LC.L(@"The upload allocation is no longer valid, because the file was completed by another upload.");
+    public static string TooManyRequestsError => LC.L(@"Jottacloud is limiting the number of requests for this account.");
     public static string DescriptionDeviceLong(string mountPointOption) { return LC.L(@"The backup device to use. Will be created if not already exists. You can manage your devices from the backup panel in the Jottacloud web interface. When you specify a custom device you should also specify the mount point to use on this device with the ""{0}"" option.", mountPointOption); }
     public static string DescriptionDeviceShort => LC.L(@"Supply the backup device to use");
     public static string DescriptionMountPointLong(string deviceOptionName) { return LC.L(@"The mount point to use on the server. The default is ""Archive"" for using the built-in archive mount point. Set this option to ""Sync"" to use the built-in synchronization mount point instead, or if you have specified a custom device with option ""{0}"" you are free to name the mount point as you like.", deviceOptionName); }
