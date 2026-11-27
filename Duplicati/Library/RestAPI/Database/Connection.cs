@@ -707,6 +707,8 @@ namespace Duplicati.Server.Database
                 return "TargetURL is password placeholder value";
             if (item.Settings != null && item.Settings.Any(x => IsPasswordPlaceholder(x.Value)))
                 return "Settings is password placeholder value";
+            if (item.AdditionalTargetURLs != null && item.AdditionalTargetURLs.Any(Backup.HasMaskedTargetOption))
+                return "Secondary destination option is password placeholder value";
 
             if (item.Sources == null || item.Sources.Any(x => string.IsNullOrWhiteSpace(x)) || item.Sources.Length == 0)
                 return "Invalid source list";
@@ -2027,7 +2029,7 @@ namespace Duplicati.Server.Database
         /// </summary>
         /// <param name="backupId">The backup ID</param>
         /// <returns>The list of additional target URLs</returns>
-        internal List<TargetUrlEntry> GetBackupTargetUrls(long backupId)
+        public List<TargetUrlEntry> GetBackupTargetUrls(long backupId)
         {
             lock (m_lock)
             {

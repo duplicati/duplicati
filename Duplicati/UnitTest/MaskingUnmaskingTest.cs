@@ -519,6 +519,78 @@ public class BackupConfigMaskingTests
         Assert.Throws<InvalidOperationException>(() => Server.QuerystringMasking.Unmask($"ssh://user:{placeholder}@host/path", "ssh://host/path"));
     }
 
+    private static Backup BackupWithTargetOptions(Dictionary<string, object> options) => new Backup
+    {
+        ID = "1",
+        Name = "Test",
+        Description = string.Empty,
+        Tags = Array.Empty<string>(),
+        TargetURL = "file:///primary",
+        AdditionalTargetURLs = [new TargetUrlEntry { TargetUrlKey = "second", TargetUrl = "file:///secondary", Options = options }],
+        Sources = Array.Empty<string>(),
+        Settings = Array.Empty<ISetting>(),
+        Filters = Array.Empty<IFilter>(),
+        Metadata = new Dictionary<string, string>()
+    };
+
+    private static Dictionary<string, object> StoredTargetOptions()
+        => System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(
+            """{"auth-password":"stored-secret","--passphrase":"stored-passphrase","auth-username":"user","number-of-retries":5}""");
+
+    [Test]
+    public void TheOptionsOfASecondaryDestinationDoNotShowTheirSecrets()
+    {
+        var stored = StoredTargetOptions();
+        var edited = BackupWithTargetOptions(stored);
+        edited.MaskSensitiveInformation();
+
+        var masked = edited.AdditionalTargetURLs.Single().Options;
+        Assert.That(masked["auth-password"], Is.EqualTo(Connection.PASSWORD_PLACEHOLDER));
+        Assert.That(masked["--passphrase"], Is.EqualTo(Connection.PASSWORD_PLACEHOLDER));
+        Assert.That(masked["auth-username"].ToString(), Is.EqualTo("user"));
+        Assert.That(masked["number-of-retries"].ToString(), Is.EqualTo("5"));
+        Assert.That(System.Text.Json.JsonSerializer.Serialize(masked), Does.Not.Contain("stored-"));
+
+        // The stored options are left as they are
+        Assert.That(stored["auth-password"].ToString(), Is.EqualTo("stored-secret"));
+    }
+
+    [Test]
+    public void SavingMaskedOptionsOfASecondaryDestinationKeepsTheStoredSecrets()
+    {
+        // The masked options come back from the client as JSON, with one of the secrets replaced
+        var edited = BackupWithTargetOptions(StoredTargetOptions());
+        edited.MaskSensitiveInformation();
+        var options = edited.AdditionalTargetURLs.Single().Options;
+        options["--passphrase"] = "new-passphrase";
+        edited.AdditionalTargetURLs.Single().Options =
+            System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(System.Text.Json.JsonSerializer.Serialize(options));
+
+        edited.UnmaskSensitiveInformation(BackupWithTargetOptions(StoredTargetOptions()), new Dictionary<long, string>());
+
+        var saved = edited.AdditionalTargetURLs.Single().Options;
+        Assert.That(saved["auth-password"].ToString(), Is.EqualTo("stored-secret"));
+        Assert.That(saved["--passphrase"].ToString(), Is.EqualTo("new-passphrase"));
+        Assert.That(saved["auth-username"].ToString(), Is.EqualTo("user"));
+        Assert.That(saved["number-of-retries"].ToString(), Is.EqualTo("5"));
+    }
+
+    [Test]
+    public void AMaskedOptionOfASecondaryDestinationWithoutAStoredSecretIsRejected()
+    {
+        var masked = new Dictionary<string, object> { ["auth-password"] = Connection.PASSWORD_PLACEHOLDER };
+
+        // The destination is stored without the option
+        Assert.Throws<InvalidOperationException>(() => BackupWithTargetOptions(new Dictionary<string, object>(masked))
+            .UnmaskSensitiveInformation(BackupWithTargetOptions(new Dictionary<string, object>()), new Dictionary<long, string>()));
+
+        // The destination is not stored
+        var previous = BackupWithTargetOptions(StoredTargetOptions());
+        ((TargetUrlEntry)previous.AdditionalTargetURLs.Single()).TargetUrlKey = "other";
+        Assert.Throws<InvalidOperationException>(() => BackupWithTargetOptions(new Dictionary<string, object>(masked))
+            .UnmaskSensitiveInformation(previous, new Dictionary<long, string>()));
+    }
+
     [Test]
     public void TheBackupConfigDoesNotShowAPasswordInTheUserInfo()
     {

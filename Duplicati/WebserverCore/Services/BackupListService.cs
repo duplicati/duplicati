@@ -437,7 +437,11 @@ public class BackupListService(Connection connection) : IBackupListService
 
         var all = backups.Select(n =>
         {
-            // Mask passwords in target URLs, sources and settings, same as the single-backup GET
+            // The list of jobs is read without the secondary destinations, which the restore page offers
+            if (!n.IsTemporary && long.TryParse(n.ID, out var backupId))
+                n.AdditionalTargetURLs = connection.GetBackupTargetUrls(backupId);
+
+            // Mask passwords in target URLs, their options, sources and settings, same as the single-backup GET
             n.MaskSensitiveInformation();
             return new
             {

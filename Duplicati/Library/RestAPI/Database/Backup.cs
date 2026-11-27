@@ -206,6 +206,62 @@ namespace Duplicati.Server.Database
             }
         }
 
+        /// <summary>
+        /// Reads the value of an option of a secondary destination as text
+        /// </summary>
+        /// <param name="value">The value, which is a string or the JSON it was read from</param>
+        /// <returns>The text, or null if the value is not a string</returns>
+        private static string TargetOptionText(object value)
+            => value switch
+            {
+                string text => text,
+                System.Text.Json.JsonElement { ValueKind: System.Text.Json.JsonValueKind.String } element => element.GetString(),
+                _ => null
+            };
+
+        /// <summary>
+        /// Checks if an option of a secondary destination holds the password placeholder
+        /// </summary>
+        /// <param name="target">The secondary destination</param>
+        /// <returns><c>true</c> if an option holds the placeholder; otherwise <c>false</c></returns>
+        internal static bool HasMaskedTargetOption(ITargetUrlEntry target)
+            => target?.Options != null && target.Options.Values.Any(x => Connection.IsPasswordPlaceholder(TargetOptionText(x)));
+
+        /// <summary>
+        /// Replaces the options of a secondary destination that hold a secret with the password placeholder
+        /// </summary>
+        /// <param name="options">The options of the destination</param>
+        /// <param name="protectedNames">The names of the options that hold a secret</param>
+        /// <returns>The options without the secrets</returns>
+        private static Dictionary<string, object> MaskTargetOptions(Dictionary<string, object> options, IReadOnlySet<string> protectedNames)
+            => options == null || !options.Keys.Any(protectedNames.Contains)
+                ? options
+                : options.ToDictionary(
+                    x => x.Key,
+                    x => protectedNames.Contains(x.Key) ? (object)Connection.PASSWORD_PLACEHOLDER : x.Value,
+                    options.Comparer);
+
+        /// <summary>
+        /// Puts the stored secrets back in the options of a secondary destination that hold the password placeholder
+        /// </summary>
+        /// <param name="target">The secondary destination</param>
+        /// <param name="previous">The stored destination with the same key, if there is one</param>
+        private static void UnmaskTargetOptions(ITargetUrlEntry target, ITargetUrlEntry previous)
+        {
+            if (!HasMaskedTargetOption(target))
+                return;
+
+            var prevOptions = new Dictionary<string, object>(previous?.Options ?? [], StringComparer.OrdinalIgnoreCase);
+            target.Options = target.Options.ToDictionary(
+                x => x.Key,
+                x => !Connection.IsPasswordPlaceholder(TargetOptionText(x.Value))
+                    ? x.Value
+                    : prevOptions.TryGetValue(x.Key, out var prevValue)
+                        ? prevValue
+                        : throw new InvalidOperationException($"Cannot unmask option '{x.Key}' of the target URL with key '{target.TargetUrlKey}' because it did not exist in the previous configuration."),
+                target.Options.Comparer);
+        }
+
         /// <inheritdoc/>
         public void MaskSensitiveInformation()
         {
@@ -217,7 +273,10 @@ namespace Duplicati.Server.Database
             if (AdditionalTargetURLs != null)
                 foreach (var target in AdditionalTargetURLs)
                     if (target != null)
+                    {
                         target.TargetUrl = QuerystringMasking.Mask(target.TargetUrl, protectedNames);
+                        target.Options = MaskTargetOptions(target.Options, protectedNames);
+                    }
 
             if (Settings != null)
                 foreach (var setting in Settings)
@@ -253,6 +312,9 @@ namespace Duplicati.Server.Database
 
                 foreach (var target in AdditionalTargetURLs)
                 {
+                    if (target != null)
+                        UnmaskTargetOptions(target, prevTargets.GetValueOrDefault(target.TargetUrlKey));
+
                     if (target != null && Connection.UrlContainsPasswordPlaceholder(target.TargetUrl))
                     {
                         if (prevTargets.TryGetValue(target.TargetUrlKey, out var prevValue))
