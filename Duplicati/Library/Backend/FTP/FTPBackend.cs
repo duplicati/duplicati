@@ -20,8 +20,10 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System.Net;
+using System.Net.Security;
 using System.Runtime.CompilerServices;
 using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using Duplicati.Library.Common.IO;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
@@ -423,6 +425,7 @@ namespace Duplicati.Library.Backend
                 SslProtocols = sslProtocols,
                 LogToConsole = _logToConsole,
                 ValidateAnyCertificate = _sslOptions.AcceptAllCertificates,
+                ValidateCertificateRevocation = !_sslOptions.AcceptAllCertificates && !_sslOptions.IgnoreRevocationFailure,
                 Noop = true
             };
 
@@ -873,17 +876,50 @@ namespace Duplicati.Library.Backend
         }
 
         /// <summary>
+        /// Gets the policy errors for a certificate validation event.
+        /// A custom TLS stream, such as Bouncy Castle, reports its errors as a message, which FluentFTP
+        /// turns into a name mismatch whatever the error was, so the errors are found from the chain
+        /// and the host name instead.
+        /// </summary>
+        /// <param name="e">The event arguments.</param>
+        /// <returns>The policy errors.</returns>
+        private SslPolicyErrors GetPolicyErrors(FtpSslValidationEventArgs e)
+        {
+            if (string.IsNullOrEmpty(e.PolicyErrorMessage))
+                return e.PolicyErrors;
+
+            // Without a chain error, the host name is the only other thing the stream checks
+            if (e.Chain == null || e.Chain.ChainStatus.All(x => x.Status == X509ChainStatusFlags.NoError))
+                return SslPolicyErrors.RemoteCertificateNameMismatch;
+
+            var errors = SslPolicyErrors.RemoteCertificateChainErrors;
+            if (e.Certificate is X509Certificate2 certificate && !ServerCertificateValidation.MatchesHost(certificate, _url.Host))
+                errors |= SslPolicyErrors.RemoteCertificateNameMismatch;
+
+            return errors;
+        }
+
+        /// <summary>
         /// Handle the certificate validation event.
         /// </summary>
         /// <param name="control">The FTP client.</param>
         /// <param name="e">The event arguments.</param>
-        private void HandleValidateCertificate(BaseFtpClient control, FtpSslValidationEventArgs e)
+        internal void HandleValidateCertificate(BaseFtpClient control, FtpSslValidationEventArgs e)
         {
+            // Without a certificate option, accept what the TLS stack accepted, which includes the revocation check.
+            // A rejected certificate still goes to the validator, which reports it.
+            var policyErrors = GetPolicyErrors(e);
+            if (policyErrors == SslPolicyErrors.None && !_sslOptions.AcceptAllCertificates && _sslOptions.AcceptSpecificCertificateHashes.Length == 0 && !_sslOptions.IgnoreRevocationFailure)
+            {
+                e.Accept = true;
+                return;
+            }
+
             // Delegate to the cached shared validator which handles accept-all, specific hashes
             // and the ignore-revocation-failure option consistently across backends.
             try
             {
-                e.Accept = _sslValidator.ValidateServerCertificate(control, e.Certificate, e.Chain, e.PolicyErrors);
+                e.Accept = _sslValidator.ValidateServerCertificate(control, e.Certificate, e.Chain, policyErrors);
             }
             catch (SslCertificateValidator.InvalidCertificateException)
             {
