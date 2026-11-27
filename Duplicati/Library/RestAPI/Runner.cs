@@ -969,9 +969,50 @@ namespace Duplicati.Server
         public static Task<IBasicResults?> RunAsync(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IApplicationSettings applicationSettings, IChangeTrackingService? changeTracking, IQueuedTask data, bool fromQueue)
         {
             if (data is IRunnerData runnerData)
-                return RunInternalAsync(databaseConnection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, changeTracking, runnerData, fromQueue);
+                return RunAndReleaseMemoryAsync(databaseConnection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, changeTracking, runnerData, fromQueue);
 
             throw new ArgumentException("Invalid task type", nameof(data));
+        }
+
+        /// <summary>
+        /// Checks if an operation can leave a lot of memory behind when it finishes
+        /// </summary>
+        /// <param name="operation">The operation</param>
+        /// <returns><c>true</c> if the memory should be released afterwards</returns>
+        internal static bool ReleasesMemoryAfterwards(DuplicatiOperation operation)
+            => operation switch
+            {
+                DuplicatiOperation.BackupOrSync
+                    or DuplicatiOperation.Restore
+                    or DuplicatiOperation.Repair
+                    or DuplicatiOperation.RepairUpdate
+                    or DuplicatiOperation.Verify
+                    or DuplicatiOperation.Compact
+                    or DuplicatiOperation.Vacuum
+                    or DuplicatiOperation.RestoreTest
+                    or DuplicatiOperation.Remove
+                    or DuplicatiOperation.DeleteVersions
+                    or DuplicatiOperation.PurgeFiles
+                    or DuplicatiOperation.PurgeBrokenFiles
+                    or DuplicatiOperation.ListBrokenFiles
+                    or DuplicatiOperation.CreateReport => true,
+                _ => false
+            };
+
+        private static async Task<IBasicResults?> RunAndReleaseMemoryAsync(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IApplicationSettings applicationSettings, IChangeTrackingService? changeTracking, IRunnerData data, bool fromQueue)
+        {
+            try
+            {
+                return await RunInternalAsync(databaseConnection, eventPollNotify, notificationUpdateService, progressStateProviderService, applicationSettings, changeTracking, data, fromQueue).ConfigureAwait(false);
+            }
+            finally
+            {
+                // The garbage collector does not run while the server is idle, and the C library on
+                // Linux keeps the native memory it freed, so the memory of a large operation stays
+                // in use until the next one runs. The operation's own frame is gone at this point.
+                if (ReleasesMemoryAfterwards(data.Operation))
+                    Library.Utility.MemoryReleaser.ReleaseUnusedMemory();
+            }
         }
 
         private static async Task<IBasicResults?> RunInternalAsync(Connection databaseConnection, EventPollNotify eventPollNotify, INotificationUpdateService notificationUpdateService, IProgressStateProviderService progressStateProviderService, IApplicationSettings applicationSettings, IChangeTrackingService? changeTracking, IRunnerData data, bool fromQueue)
