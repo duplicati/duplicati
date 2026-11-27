@@ -437,6 +437,38 @@ namespace Duplicati.UnitTest
             }
         }
 
+        /// <summary>
+        /// The full restore test puts the read-only attribute back on the restored folders, and
+        /// outside Windows the files in such a folder cannot be deleted
+        /// </summary>
+        [Test]
+        [Category("RestoreTest")]
+        public async Task ReadOnlyFoldersAreRemovedWithTheScratchFolderAsync([Values("RandomFiles", "Full")] string mode)
+        {
+            CreateSourceFiles(6);
+            var folders = new[] { Path.Combine(DATAFOLDER, "sub", "deeper"), Path.Combine(DATAFOLDER, "sub") };
+            foreach (var folder in folders)
+                File.SetAttributes(folder, File.GetAttributes(folder) | FileAttributes.ReadOnly);
+            try
+            {
+                await RunBackupAsync();
+
+                var options = RestoreTestOptions(mode);
+                options["restore-test-sample-count"] = "100";
+                var results = await RunRestoreTestAsync(options);
+                Assert.AreEqual(ParsedResultType.Success, results.ParsedResult, string.Join(Environment.NewLine, results.Errors.Concat(results.Warnings)));
+                Assert.AreEqual(0, results.Warnings.Count(), string.Join(Environment.NewLine, results.Warnings));
+                Assert.IsFalse(ScratchFolders().Any(), "The scratch folder with the read-only restored folders should be removed");
+            }
+            finally
+            {
+                foreach (var folder in folders.Reverse())
+                    File.SetAttributes(folder, File.GetAttributes(folder) & ~FileAttributes.ReadOnly);
+                foreach (var folder in Directory.Exists(SCRATCHFOLDER) ? Directory.GetDirectories(SCRATCHFOLDER, "*", SearchOption.AllDirectories) : [])
+                    File.SetAttributes(folder, File.GetAttributes(folder) & ~FileAttributes.ReadOnly);
+            }
+        }
+
         [Test]
         [Category("RestoreTest")]
         public async Task DownloadBudgetProducesBudgetExceededResultAsync()

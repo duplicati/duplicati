@@ -499,16 +499,14 @@ namespace Duplicati.Library.Main.Operation
 
         /// <summary>
         /// Clears the read-only attribute on the files and folders in the scratch folder.
-        /// The restore applies the stored attributes, and on Windows a recursive delete stops
-        /// at the first restored file that is read-only. Links are left as they are, and the
-        /// folders they point to are not entered.
+        /// The restore applies the stored attributes, and a recursive delete stops at the first
+        /// restored entry it cannot remove: on Windows a read-only file, and elsewhere a file in
+        /// a folder without write permission. Links are left as they are, and the folders they
+        /// point to are not entered, so nothing outside the scratch folder is changed.
         /// </summary>
         /// <param name="root">The scratch folder</param>
         private static void ClearReadOnlyAttributes(string root)
         {
-            if (!OperatingSystem.IsWindows())
-                return;
-
             var pending = new Stack<DirectoryInfo>();
             pending.Push(new DirectoryInfo(root));
             while (pending.Count > 0)
