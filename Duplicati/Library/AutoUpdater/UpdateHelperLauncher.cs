@@ -243,13 +243,10 @@ public static class UpdateHelperLauncher
         return psi;
     }
 
-    private static UpdateJob CreateJob(UpdateLaunchRequest request, string helperDir)
+    internal static UpdateJob CreateJob(UpdateLaunchRequest request, string helperDir)
     {
         var host = request.Host;
-        var format = UpdateInstallSupport.GetFormat(request.PackageTypeId);
-        var terminateNames = host.Supervisor == SupervisorKind.WindowsService && format == "msi"
-            ? new[] { TrayIconProcessName }
-            : [];
+        var terminateNames = GetProcessNamesToTerminate(host, request.PackageTypeId);
 
         return new UpdateJob
         {
@@ -272,6 +269,28 @@ public static class UpdateHelperLauncher
             MarkerFolder = request.UpdatesFolder,
             PortableMode = request.PortableMode,
             InteractiveSession = host.InteractiveSession,
+        };
+    }
+
+    /// <summary>
+    /// Gets the processes the helper must close before installing. A server hosted by a Windows
+    /// service runs apart from the tray icon, and a running tray icon keeps the files of the
+    /// installation open: an MSI upgrade cannot replace them, and a zip install can only move
+    /// them aside, so the tray icon is closed for both. The agent has no tray icon.
+    /// </summary>
+    /// <param name="host">The host of the running server</param>
+    /// <param name="packageTypeId">The package type being installed</param>
+    /// <returns>The process names, without extension</returns>
+    internal static string[] GetProcessNamesToTerminate(HostEnvironment host, string packageTypeId)
+    {
+        if (host.Supervisor != SupervisorKind.WindowsService)
+            return [];
+
+        return UpdateInstallSupport.GetFormat(packageTypeId) switch
+        {
+            "msi" => [TrayIconProcessName],
+            "zip" when !string.Equals(host.Origin, HostEnvironment.AgentOrigin, StringComparison.OrdinalIgnoreCase) => [TrayIconProcessName],
+            _ => []
         };
     }
 
