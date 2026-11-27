@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Runtime;
 using System.Security.Cryptography;
 using Duplicati.Library.Compression.ZipCompression;
 using Duplicati.Library.Interface;
@@ -210,11 +211,22 @@ namespace Duplicati.UnitTest
             const int count = 50000;
             var path = WriteVolume(count, new Dictionary<string, string?>(), out _);
 
+            // On macOS, GC.GetTotalMemory(true) still counted the large temporary buffers the readers had
+            // dropped, about 80 bytes per entry, so the large object heap is compacted before each reading
+            static long Settled()
+            {
+                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+                GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
+                GC.WaitForPendingFinalizers();
+                GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true, true);
+                return GC.GetTotalMemory(false);
+            }
+
             static long Retained(Func<IDisposable> open, out IDisposable reader)
             {
-                var before = GC.GetTotalMemory(true);
+                var before = Settled();
                 reader = open();
-                return GC.GetTotalMemory(true) - before;
+                return Settled() - before;
             }
 
             var compactBytes = Retained(() => CentralDirectoryZipReader.TryOpen(path, new Dictionary<string, string?>())!, out var compact);
