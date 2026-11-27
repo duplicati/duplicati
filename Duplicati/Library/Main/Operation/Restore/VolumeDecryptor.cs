@@ -20,11 +20,13 @@
 // DEALINGS IN THE SOFTWARE.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CoCoL;
+using Duplicati.Library.Compression.ZipCompression;
 using Duplicati.Library.Main.Volumes;
 
 #nullable enable
@@ -82,7 +84,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
                         // TODO These two steps could be moved to another process to allow even more parallelism.
                         sw_bvr?.Start();
-                        var bvr = new BlockVolumeReader(options.CompressionModule, tmpfile, options, volume_name);
+                        var bvr = OpenBlockVolume(options, tmpfile, volume_name);
                         sw_bvr?.Stop();
                         sw_vw?.Start();
                         var volume_wrapper = new VolumeWrapper(tmpfile, bvr);
@@ -134,6 +136,43 @@ namespace Duplicati.Library.Main.Operation.Restore
                     throw;
                 }
             });
+        }
+
+        /// <summary>
+        /// Opens a decrypted block volume.
+        /// </summary>
+        /// <remarks>
+        /// A restore keeps every volume open while blocks in it are still needed, which is often
+        /// all of them until the end. The regular ZIP reader keeps about 500 bytes for every
+        /// block in a volume, so a ZIP volume is read with a compact index instead (#7538). The
+        /// regular reader is used for archives the compact one does not read, and when the user
+        /// chose the SharpCompress library.
+        /// </remarks>
+        /// <param name="options">The restore options.</param>
+        /// <param name="file">The decrypted volume.</param>
+        /// <param name="volume_name">The remote name of the volume, for log messages.</param>
+        /// <returns>The reader for the volume.</returns>
+        internal static BlockVolumeReader OpenBlockVolume(Options options, string file, string volume_name)
+        {
+            if (string.Equals(options.CompressionModule, "zip", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(options.RawOptions.GetValueOrDefault("zip-compression-library"), "SharpCompress", StringComparison.OrdinalIgnoreCase))
+            {
+                var compact = CentralDirectoryZipReader.TryOpen(file, options.RawOptions);
+                if (compact != null)
+                {
+                    try
+                    {
+                        return new BlockVolumeReader(compact, options, disposeCompression: true);
+                    }
+                    catch
+                    {
+                        compact.Dispose();
+                        throw;
+                    }
+                }
+            }
+
+            return new BlockVolumeReader(options.CompressionModule, file, options, volume_name);
         }
     }
 

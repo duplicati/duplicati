@@ -83,6 +83,18 @@ namespace Duplicati.Library.Main.Volumes
             ReadManifests(options);
         }
 
+        /// <summary>
+        /// Creates a reader for an archive that is already open.
+        /// </summary>
+        /// <param name="compression">The archive to read.</param>
+        /// <param name="options">The options.</param>
+        /// <param name="disposeCompression">True if the reader takes ownership of the archive and disposes it.</param>
+        protected VolumeReaderBase(ICompression compression, Options options, bool disposeCompression)
+            : this(compression, options)
+        {
+            m_disposeCompression = disposeCompression;
+        }
+
         private void ReadFileset()
         {
             using (var s = m_compression.OpenRead(FILESET_FILENAME))

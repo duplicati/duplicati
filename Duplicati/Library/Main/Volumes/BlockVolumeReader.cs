@@ -34,6 +34,17 @@ namespace Duplicati.Library.Main.Volumes
         {
         }
 
+        /// <summary>
+        /// Creates a reader for a block volume that is already open.
+        /// </summary>
+        /// <param name="compression">The archive to read.</param>
+        /// <param name="options">The options.</param>
+        /// <param name="disposeCompression">True if the reader takes ownership of the archive and disposes it.</param>
+        public BlockVolumeReader(ICompression compression, Options options, bool disposeCompression)
+            : base(compression, options, disposeCompression)
+        {
+        }
+
         public BlockVolumeReader(string compressor, string file, Options options, string remoteName = null)
             : base(compressor, file, options, remoteName)
         {
