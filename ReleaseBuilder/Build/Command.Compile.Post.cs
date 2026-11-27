@@ -48,6 +48,7 @@ public static partial class Command
             {
                 case OSType.Windows:
                     await SignWindowsExecutables(buildDir, rtcfg);
+                    await CreateSignatureCatalog(buildDir, rtcfg);
                     if (target.Interface == InterfaceType.GUI)
                         await CopyShellExtensionFiles(baseDir, buildDir);
                     break;
@@ -349,25 +350,92 @@ public static partial class Command
         }
 
         /// <summary>
-        /// Signs all .exe and .dll files with Authenticode
+        /// Our own assemblies whose names do not start with "Duplicati.".
+        /// They are built from this repository or come from packages published
+        /// by the Duplicati team, so they are signed like the Duplicati.* files.
+        /// Not all of them are part of every build.
+        /// </summary>
+        static readonly IReadOnlyList<string> OwnAssembliesWithoutPrefix = [
+            "SQLiteHelper.dll",          // Duplicati/Library/SQLiteHelper
+            "AutoTune.dll",              // Tools/AutoTune
+            "RemoteSynchronization.dll", // Tools/RemoteSynchronization
+            "TestDataGenerator.dll",     // Tools/TestDataGenerator
+            "StreamUtil.dll",            // Duplicati.StreamUtil package
+            "SharpAESCrypt.dll",         // SharpAESCrypt package
+            "CoCoL.dll",                 // CoCoL package
+            "RumpSharp.dll",             // RumpSharp package
+            "JsonSignature.dll",         // JsonSignature package
+        ];
+
+        /// <summary>
+        /// Checks if a file is a Windows executable or library
+        /// </summary>
+        /// <param name="file">The file to check</param>
+        /// <returns><c>true</c> if the file is a .dll or .exe file</returns>
+        static bool IsWindowsBinary(string file)
+            => file.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || file.EndsWith(".exe", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Signs our own .exe and .dll files with Authenticode
         /// </summary>
         /// <param name="buildDir">The folder to sign files in</param>
         /// <param name="rtcfg">The runtime config</param>
         /// <returns>An awaitable task</returns>
         static async Task SignWindowsExecutables(string buildDir, RuntimeConfig rtcfg)
         {
-            var cfg = rtcfg.Configuration;
             if (!rtcfg.UseAuthenticodeSigning)
                 return;
 
             var filenames = Directory.EnumerateFiles(buildDir, "Duplicati.*", SearchOption.TopDirectoryOnly)
-                .Where(x => x.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || x.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                .Where(IsWindowsBinary)
+                .Concat(OwnAssembliesWithoutPrefix.Select(x => Path.Combine(buildDir, x)).Where(File.Exists))
+                .Distinct()
                 .ToList();
 
             Console.WriteLine($"Performing Authenticode signing of {filenames.Count} files");
 
             foreach (var file in filenames)
                 await rtcfg.AuthenticodeSign(file);
+        }
+
+        /// <summary>
+        /// Creates and signs the signature catalog, which lists the .exe and .dll
+        /// files that are still unsigned after <see cref="SignWindowsExecutables"/>:
+        /// the third-party libraries that their publishers do not sign.
+        /// Once the catalog is registered, Windows code integrity treats these files
+        /// as signed by the catalog signer, so Smart App Control and App Control for
+        /// Business do not block them, while the files stay identical to the
+        /// published packages. The MSI registers the catalog during install; with a
+        /// ZIP package, it is registered with Duplicati.WindowsService.exe register-catalog.
+        /// </summary>
+        /// <param name="buildDir">The folder with the files to list</param>
+        /// <param name="rtcfg">The runtime config</param>
+        /// <returns>An awaitable task</returns>
+        static async Task CreateSignatureCatalog(string buildDir, RuntimeConfig rtcfg)
+        {
+            // An unsigned catalog has no effect
+            if (!rtcfg.UseAuthenticodeSigning)
+                return;
+
+            var members = new List<WindowsCatalog.Member>();
+            foreach (var file in Directory.EnumerateFiles(buildDir, "*", SearchOption.AllDirectories).Where(IsWindowsBinary).Order(StringComparer.Ordinal))
+            {
+                var data = await File.ReadAllBytesAsync(file);
+                if (!WindowsCatalog.HasEmbeddedSignature(data, file))
+                    members.Add(new WindowsCatalog.Member(Path.GetFileName(file), WindowsCatalog.ComputePeImageHash(data, file)));
+            }
+
+            if (members.Count == 0)
+            {
+                Console.WriteLine("All Windows binaries are signed, no signature catalog needed");
+                return;
+            }
+
+            Console.WriteLine($"Creating signature catalog for {members.Count} unsigned files");
+
+            var catalogFile = Path.Combine(buildDir, WindowsCatalog.CatalogFileName);
+            await File.WriteAllBytesAsync(catalogFile, WindowsCatalog.Create(members, DateTimeOffset.UtcNow, Guid.NewGuid()));
+            await rtcfg.AuthenticodeSign(catalogFile);
         }
 
         /// <summary>

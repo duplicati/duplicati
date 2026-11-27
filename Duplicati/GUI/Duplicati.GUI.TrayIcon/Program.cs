@@ -106,8 +106,11 @@ namespace Duplicati.GUI.TrayIcon
             }
             catch (Exception ex)
             {
-                Library.Crashlog.CrashlogHelper.LogCrashException(ex);
-                ErrorDialog.ShowErrorDialog(ex);
+                // When Windows blocked a library, the explanation is already shown in a
+                // message box; the error dialog would only repeat the exception, if the
+                // blocked library is not one it needs itself
+                if (!Library.Crashlog.CrashlogHelper.LogCrashException(ex))
+                    ErrorDialog.ShowErrorDialog(ex);
 
                 Environment.Exit(1);
                 return 1;
