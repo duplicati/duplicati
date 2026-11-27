@@ -274,7 +274,7 @@ namespace Duplicati.Library.Modules.Builtin
         protected bool TemplateIsHtml => m_templateIsHtml;
 
         /// <summary>
-        /// The body that is only the result, which a template picked with the body option is rendered into
+        /// The body that is only the result, which a template file given as body is rendered into
         /// </summary>
         private const string RESULT_ONLY_BODY = "%RESULT%";
 
