@@ -77,6 +77,84 @@ namespace Duplicati.Library.Backend
                 => headers["x-amz-storage-class"] = storageClass;
         }
 
+        /// <summary>
+        /// The timeout Minio 6.0.0 gives the HTTP client it makes when it is not given one
+        /// </summary>
+        private static readonly TimeSpan MinioDefaultHttpTimeout = TimeSpan.FromMinutes(30);
+
+        /// <summary>
+        /// The most of an error answer that is kept in the error message
+        /// </summary>
+        private const int MaxErrorAnswerLength = 200;
+
+        /// <summary>
+        /// Minio 6.0.0 reads the body of an error answer as an S3 error document, and fails with
+        /// "Object reference not set to an instance of an object." when it is something else, such as
+        /// the HTML page a proxy answers with when an upload is too large (#3471). The body of such an
+        /// answer is replaced with an error document that holds the status and the start of the answer,
+        /// so the error tells what the server said. An answer without a body is left alone, Minio reads
+        /// its status.
+        /// </summary>
+        internal sealed class ErrorAnswerHandler(HttpMessageHandler innerHandler) : DelegatingHandler(innerHandler)
+        {
+            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode || response.Content.Headers.ContentLength == 0)
+                    return response;
+
+                var text = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                if (string.IsNullOrWhiteSpace(text) || IsErrorDocument(text))
+                {
+                    // The body was read, so it is put back for Minio to read
+                    response.Content = CopyContent(response.Content, text);
+                    return response;
+                }
+
+                var answer = System.Text.RegularExpressions.Regex.Replace(text, "<[^>]*>", " ");
+                answer = System.Text.RegularExpressions.Regex.Replace(answer, @"\s+", " ").Trim();
+                if (answer.Length > MaxErrorAnswerLength)
+                    answer = answer[..MaxErrorAnswerLength] + "...";
+
+                var document = new System.Xml.Linq.XElement("Error",
+                    new System.Xml.Linq.XElement("Code", response.StatusCode.ToString()),
+                    new System.Xml.Linq.XElement("Message", $"The server answered {(int)response.StatusCode} {response.StatusCode}: {answer}"));
+                response.Content = CopyContent(response.Content, document.ToString(), "application/xml");
+                return response;
+            }
+
+            /// <summary>
+            /// Tells whether the text is an S3 error document
+            /// </summary>
+            private static bool IsErrorDocument(string text)
+            {
+                try
+                {
+                    return System.Xml.Linq.XDocument.Parse(text).Root?.Name.LocalName == "Error";
+                }
+                catch (System.Xml.XmlException)
+                {
+                    return false;
+                }
+            }
+
+            /// <summary>
+            /// Makes a body with the given text and the headers of the old body
+            /// </summary>
+            private static StringContent CopyContent(HttpContent old, string text, string? mediaType = null)
+            {
+                var content = new StringContent(text, System.Text.Encoding.UTF8);
+                content.Headers.Clear();
+                foreach (var header in old.Headers)
+                    if (!string.Equals(header.Key, "Content-Length", StringComparison.OrdinalIgnoreCase))
+                        content.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                if (mediaType != null)
+                    content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(mediaType);
+                old.Dispose();
+                return content;
+            }
+        }
+
         public S3MinioClient(string awsID, string awsKey, string? locationConstraint,
             string servername, string? storageClass, bool useSSL, TimeoutOptionsHelper.Timeouts timeouts, Dictionary<string, string?> options, string lockMode, string? authenticationRegion)
         {
@@ -100,7 +178,8 @@ namespace Duplicati.Library.Backend
             var clientBuilder = new MinioClient()
                 .WithEndpoint(servername)
                 .WithCredentials(awsID, awsKey)
-                .WithSSL(useSSL);
+                .WithSSL(useSSL)
+                .WithHttpClient(new HttpClient(new ErrorAnswerHandler(new HttpClientHandler())) { Timeout = MinioDefaultHttpTimeout }, true);
 
             var authRegion = string.IsNullOrWhiteSpace(authenticationRegion) ? locationConstraint : authenticationRegion;
             if (!string.IsNullOrWhiteSpace(authRegion))
