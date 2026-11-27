@@ -81,6 +81,10 @@ public class SendTelegramMessage : ReportHelper
     /// </summary>
     private const string OPTION_RESULT_FORMAT = "send-telegram-result-output-format";
     /// <summary>
+    /// Option used to pick the bundled template that renders the result
+    /// </summary>
+    private const string OPTION_RESULT_TEMPLATE = "send-telegram-result-template";
+    /// <summary>
     /// Option used to specify extra parameters
     /// </summary>
     private const string OPTION_EXTRA_PARAMETERS = "send-telegram-extra-parameters";
@@ -152,7 +156,7 @@ public class SendTelegramMessage : ReportHelper
     public override IList<ICommandLineArgument> SupportedCommands =>
     [
         new CommandLineArgument(OPTION_CHANNEL, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramChannelShort, Strings.SendTelegramMessage.SendTelegramChannelLong),
-        new CommandLineArgument(OPTION_MESSAGE, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramMessageShort, Strings.SendTelegramMessage.SendTelegramMessageLong, DEFAULT_BODY),
+        new CommandLineArgument(OPTION_MESSAGE, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramMessageShort, WithTemplateDescription(Strings.SendTelegramMessage.SendTelegramMessageLong), DEFAULT_BODY),
         new CommandLineArgument(OPTION_EXTRA_PARAMETERS, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramExtraParametersShort, Strings.SendTelegramMessage.SendTelegramExtraParametersLong),
         new CommandLineArgument(OPTION_BOTID, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramBotIdShort, Strings.SendTelegramMessage.SendTelegramBotIdLong),
         new CommandLineArgument(OPTION_APIKEY, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramApiKeyShort, Strings.SendTelegramMessage.SendTelegramApiKeyLong),
@@ -163,6 +167,7 @@ public class SendTelegramMessage : ReportHelper
         new CommandLineArgument(OPTION_LOG_FILTER, CommandLineArgument.ArgumentType.String, Strings.ReportHelper.OptionLogfilterShort, Strings.ReportHelper.OptionLogfilterLong),
         new CommandLineArgument(OPTION_MAX_LOG_LINES, CommandLineArgument.ArgumentType.Integer, Strings.ReportHelper.OptionmaxloglinesShort, Strings.ReportHelper.OptionmaxloglinesLong, DEFAULT_LOGLINES.ToString()),
         new CommandLineArgument(OPTION_RESULT_FORMAT, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.ResultFormatShort, Strings.ReportHelper.ResultFormatLong(Enum.GetNames(typeof(ResultExportFormat))), DEFAULT_EXPORT_FORMAT.ToString(), null, Enum.GetNames(typeof(ResultExportFormat))),
+        ResultTemplateArgument,
         new CommandLineArgument(OPTION_TOPICID, CommandLineArgument.ArgumentType.String, Strings.SendTelegramMessage.SendTelegramTopicShort, Strings.SendTelegramMessage.SendTelegramTopicLong),
     ];
 
@@ -175,6 +180,7 @@ public class SendTelegramMessage : ReportHelper
     protected override string LogFilterOptionName => OPTION_LOG_FILTER;
     protected override string LogLinesOptionName => OPTION_MAX_LOG_LINES;
     protected override string ResultFormatOptionName => OPTION_RESULT_FORMAT;
+    protected override string ResultTemplateOptionName => OPTION_RESULT_TEMPLATE;
     protected override string ExtraDataOptionName => OPTION_EXTRA_PARAMETERS;
 
     /// <summary>
