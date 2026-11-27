@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Duplicati.Library.Interface;
@@ -412,10 +413,11 @@ namespace Duplicati.Library.Main.Operation
 
                     progress = 0;
 
-                    await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(indexfiles, allowParityRepair: true, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                    await foreach (var (download, name) in DownloadOverlappedAsync(backendManager, indexfiles, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     {
                         try
                         {
+                            var (tmpfile, hash, size) = await download.ConfigureAwait(false);
                             if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
                             {
                                 await backendManager.WaitForEmptyAsync(restoredb, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
@@ -518,7 +520,7 @@ namespace Duplicati.Library.Main.Operation
                         {
                             //Not fatal
                             Logging.Log.WriteErrorMessage(LOGTAG, "IndexFileProcessingFailed", ex, "Failed to process index file: {0}", name);
-                            if (ex.IsAbortException())
+                            if (ex.IsAbortException() || !CanContinueWithout(download))
                             {
                                 m_result.EndTime = DateTime.UtcNow;
                                 // Implicit rollback
@@ -594,10 +596,11 @@ namespace Duplicati.Library.Main.Operation
                     }
 
                     progress = 0;
-                    await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(lst, allowParityRepair: true, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
+                    await foreach (var (download, name) in DownloadOverlappedAsync(backendManager, lst, m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                     {
                         try
                         {
+                            var (tmpfile, hash, size) = await download.ConfigureAwait(false);
                             using (tmpfile)
                             using (var rd = new BlockVolumeReader(RestoreHandler.GetCompressionModule(name), tmpfile, m_options, name))
                             {
@@ -676,7 +679,7 @@ namespace Duplicati.Library.Main.Operation
                         catch (Exception ex)
                         {
                             Logging.Log.WriteWarningMessage(LOGTAG, "FailedRebuildingWithFile", ex, "Failed to use information from {0} to rebuild database: {1}", name, ex.Message);
-                            if (m_options.UnittestMode)
+                            if (m_options.UnittestMode || !CanContinueWithout(download))
                             {
                                 // Implicit rollback
                                 await restoredb.Transaction
@@ -824,6 +827,59 @@ namespace Duplicati.Library.Main.Operation
         }
 
         /// <summary>
+        /// Downloads volumes one at a time, and starts on the next one while a volume is processed.
+        /// Each download is returned as a task, so that one that fails does not end the sequence.
+        /// </summary>
+        /// <param name="backendManager">The backend manager to use for downloading files.</param>
+        /// <param name="volumes">The volumes to download.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The completed downloads and the names of the volumes.</returns>
+        private static async IAsyncEnumerable<(Task<(TempFile File, string Hash, long Size)> Download, string Name)> DownloadOverlappedAsync(IBackendManager backendManager, IReadOnlyList<IRemoteVolume> volumes, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            Task<(TempFile File, string Hash, long Size)> Start(int index)
+                => index < volumes.Count
+                    ? backendManager.GetWithInfoAsync(volumes[index].Name, volumes[index].Hash, volumes[index].Size, allowParityRepair: true, cancellationToken)
+                    : null;
+
+            var next = Start(0);
+            try
+            {
+                for (var i = 0; i < volumes.Count; i++)
+                {
+                    var current = next;
+                    next = null;
+
+                    // Only one download at a time
+                    await Task.WhenAny(current).ConfigureAwait(false);
+                    next = Start(i + 1);
+                    yield return (current, volumes[i].Name);
+                }
+            }
+            finally
+            {
+                // Nothing uses a download that was started for the next volume when the processing stops
+                if (next != null)
+                    _ = next.ContinueWith(t =>
+                    {
+                        if (t.IsCompletedSuccessfully)
+                            t.Result.File.Dispose();
+                        else
+                            _ = t.Exception;
+                    }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
+            }
+        }
+
+        /// <summary>
+        /// Tells whether the recreate can continue without a volume: it was downloaded, or it is damaged.
+        /// Other failures, such as a destination that does not answer, would also affect the next volumes.
+        /// </summary>
+        /// <param name="download">The completed download of the volume.</param>
+        /// <returns>True if the recreate can continue.</returns>
+        private static bool CanContinueWithout(Task<(TempFile File, string Hash, long Size)> download)
+            => !download.IsCanceled
+                && (!download.IsFaulted || download.Exception.InnerException is System.Security.Cryptography.CryptographicException);
+
+        /// <summary>
         /// The maximum time a fileset timestamp may be newer than the label timestamp
         /// and still be considered a match. Filelist timestamps can drift slightly
         /// when the remote filename is probed or recreated, so an exact match is
@@ -947,8 +1003,19 @@ namespace Duplicati.Library.Main.Operation
 
             // Download all required block volumes and extract metadata blocks.
             var volumesToDownload = volumeInfo.Values.Cast<IRemoteVolume>().ToList();
-            await foreach (var (tmpfile, hash, size, name) in backendManager.GetFilesOverlappedAsync(volumesToDownload, allowParityRepair: true, cancellationToken).ConfigureAwait(false))
+            await foreach (var (download, name) in DownloadOverlappedAsync(backendManager, volumesToDownload, cancellationToken).ConfigureAwait(false))
             {
+                try
+                {
+                    await download.ConfigureAwait(false);
+                }
+                catch (Exception ex) when (CanContinueWithout(download))
+                {
+                    Logging.Log.WriteWarningMessage(LOGTAG, "MetadataVolumeProcessingFailed", ex, "Failed to process block volume {0} for metadata content restore", name);
+                    continue;
+                }
+
+                var (tmpfile, _, _) = await download.ConfigureAwait(false);
                 using (tmpfile)
                 {
                     if (!await m_result.TaskControl.ProgressRendevouzAsync().ConfigureAwait(false))
