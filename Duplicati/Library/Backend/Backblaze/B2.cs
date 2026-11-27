@@ -30,6 +30,8 @@ using Duplicati.Library.Utility.Options;
 using FileEntry = Duplicati.Library.Common.IO.FileEntry;
 using Duplicati.StreamUtil;
 
+[assembly: InternalsVisibleTo("Duplicati.UnitTest")]
+
 namespace Duplicati.Library.Backend.Backblaze;
 
 /// <summary>
@@ -199,6 +201,17 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
     /// <param name="url">URL in Duplicati Uri format</param>
     /// <param name="options">options to be used in the backend</param>
     public B2(string url, Dictionary<string, string?> options)
+        : this(url, options, null)
+    {
+    }
+
+    /// <summary>
+    /// Constructor that sends the requests through the given handler, used by the tests
+    /// </summary>
+    /// <param name="url">URL in Duplicati Uri format</param>
+    /// <param name="options">options to be used in the backend</param>
+    /// <param name="handler">The handler to send the requests through, or null for the default client</param>
+    internal B2(string url, Dictionary<string, string?> options, HttpMessageHandler? handler)
     {
         var uri = new Utility.RelaxedUri(url);
 
@@ -237,7 +250,7 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
         // Parse lock mode option, default to Governance
         _lockMode = Library.Utility.Utility.ParseEnumOption(options, B2_LOCK_MODE_OPTION, DEFAULT_LOCK_MODE);
 
-        _httpClient = HttpClientHelper.CreateClient();
+        _httpClient = handler == null ? HttpClientHelper.CreateClient() : new HttpClient(handler);
         _httpClient.Timeout = Timeout.InfiniteTimeSpan;
 
         _timeouts = TimeoutOptionsHelper.Parse(options);
@@ -711,6 +724,18 @@ public class B2 : IStreamingBackend, ILockingBackend, IRenameEnabledBackend
     /// <exception cref="Exception"></exception>
     public async Task CreateFolderAsync(CancellationToken cancellationToken)
     {
+        // B2 has no folders, so a path in the bucket needs nothing created; only a missing bucket does.
+        // Creating a bucket that already exists fails with "Bucket name is already in use", which a sync
+        // job hit each time it made sure a folder existed on the destination.
+        try
+        {
+            await GetBucketAsync(cancellationToken).ConfigureAwait(false);
+            return;
+        }
+        catch (FolderMissingException)
+        {
+        }
+
         var config = await _b2AuthHelper.GetConfigAsync(cancellationToken);
         _bucket = await Utility.Utility.WithTimeout(_timeouts.ShortTimeout, cancellationToken, async ct
             => await _b2AuthHelper.PostAndGetJsonDataAsync<BucketEntity>(
