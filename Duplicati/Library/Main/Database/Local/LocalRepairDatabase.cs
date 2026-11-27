@@ -2058,6 +2058,78 @@ namespace Duplicati.Library.Main.Database.Local
         }
 
         /// <summary>
+        /// Removes the blocksets that have a length but no blocks, and that no file or metadata uses.
+        /// </summary>
+        /// <remarks>
+        /// Such a blockset is left when a file could not be added to the database, and the consistency
+        /// check then stops every backup. No file is lost by removing it, as no file uses it, and
+        /// <c>purge-broken-files</c> cannot remove it, as it only looks at files. A blockset without
+        /// blocks that a file or metadata uses is left for <c>purge-broken-files</c>, as the file
+        /// cannot be restored.
+        /// </remarks>
+        /// <param name="dryrun">If <c>true</c>, only report what would be removed.</param>
+        /// <param name="token">A cancellation token to cancel the operation.</param>
+        /// <returns>A task that when awaited returns the number of blocksets removed, or the number that would be removed in a dry-run.</returns>
+        public async Task<long> FixUnusedBlocksetsWithoutBlocksAsync(bool dryrun, CancellationToken token)
+        {
+            await using var cmd = m_connection.CreateCommand()
+                .SetTransaction(m_rtr);
+
+            const string unusedBlocksets = @"
+                SELECT ""ID""
+                FROM ""Blockset""
+                WHERE
+                    ""Length"" > 0
+                    AND ""ID"" NOT IN (
+                        SELECT ""BlocksetID""
+                        FROM ""BlocksetEntry""
+                    )
+                    AND ""ID"" NOT IN (
+                        SELECT ""BlocksetID""
+                        FROM ""FileLookup""
+                    )
+                    AND ""ID"" NOT IN (
+                        SELECT ""BlocksetID""
+                        FROM ""Metadataset""
+                    )
+            ";
+
+            var count = await cmd.ExecuteScalarInt64Async($@"
+                SELECT COUNT(*)
+                FROM ({unusedBlocksets})
+            ", 0, token)
+                .ConfigureAwait(false);
+
+            if (count <= 0)
+                return 0;
+
+            if (dryrun)
+            {
+                Logging.Log.WriteDryrunMessage(LOGTAG, "UnusedBlocksetsWithoutBlocks", "Would remove {0} blocksets that have no blocks and are not used by any file", count);
+                return count;
+            }
+
+            Logging.Log.WriteInformationMessage(LOGTAG, "UnusedBlocksetsWithoutBlocks", "Removing {0} blocksets that have no blocks and are not used by any file", count);
+
+            await cmd.ExecuteNonQueryAsync($@"
+                DELETE FROM ""BlocklistHash""
+                WHERE ""BlocksetID"" IN ({unusedBlocksets})
+            ", token)
+                .ConfigureAwait(false);
+
+            await cmd.ExecuteNonQueryAsync($@"
+                DELETE FROM ""Blockset""
+                WHERE ""ID"" IN ({unusedBlocksets})
+            ", token)
+                .ConfigureAwait(false);
+
+            await m_rtr.CommitAsync("FixUnusedBlocksetsWithoutBlocks", true, token)
+                .ConfigureAwait(false);
+
+            return count;
+        }
+
+        /// <summary>
         /// Reports blocksets whose recorded length does not match the summed size of the blocks they
         /// reference. These cannot be repaired locally, since there is no way to tell whether the length
         /// or the block mapping is the damaged part.

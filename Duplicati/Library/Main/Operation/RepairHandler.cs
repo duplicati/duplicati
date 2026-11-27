@@ -1666,6 +1666,9 @@ namespace Duplicati.Library.Main.Operation
             needsRepair |= await db
                 .FixEmptyBlocksetWithBlocksAsync(emptyFileHash, m_options.Dryrun, m_result.TaskControl.ProgressToken)
                 .ConfigureAwait(false) > 0;
+            needsRepair |= await db
+                .FixUnusedBlocksetsWithoutBlocksAsync(m_options.Dryrun, m_result.TaskControl.ProgressToken)
+                .ConfigureAwait(false) > 0;
 
             needsRepair |= await db.FixDuplicateMetahashAsync(m_options.Dryrun, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
             needsRepair |= await db.FixDuplicatePathsInFilesetsAsync(m_options.Dryrun, m_result.TaskControl.ProgressToken).ConfigureAwait(false);
