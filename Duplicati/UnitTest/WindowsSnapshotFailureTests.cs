@@ -58,6 +58,7 @@ public class WindowsSnapshotFailureTests : BasicSetupHelper
 
     [TestCase("Native")]
     [TestCase("Vanara")]
+    [TestCase("AlphaVSS")]
     [SupportedOSPlatform("windows")]
     public void ASnapshotAfterAFailedSnapshotWorks(string provider)
     {

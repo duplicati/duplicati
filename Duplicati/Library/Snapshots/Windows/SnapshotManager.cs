@@ -219,6 +219,14 @@ namespace Duplicati.Library.Snapshots.Windows
         }
 
         /// <summary>
+        /// Checks whether there is a snapshot of a volume
+        /// </summary>
+        /// <param name="root">The root of the volume</param>
+        /// <returns><c>true</c> if the volume is in the snapshot</returns>
+        public bool HasVolume(string root)
+            => _volumeMap.ContainsKey(root);
+
+        /// <summary>
         /// Checks if the volumes can be added and creates snapshots as needed
         /// </summary>
         /// <param name="sources">The sources to create snapshots for</param>

@@ -89,6 +89,11 @@ namespace Duplicati.Library.Snapshots
         private const int VSS_E_SNAPSHOT_SET_IN_PROGRESS = unchecked((int)0x80042316);
 
         /// <summary>
+        /// The VSS error for a volume in a file (a mounted VHD) that is in a snapshot set with the volume that holds the file
+        /// </summary>
+        private const int VSS_E_NESTED_VOLUME_LIMIT = unchecked((int)0x8004232C);
+
+        /// <summary>
         /// The time to wait before trying again, while another shadow copy is being created
         /// </summary>
         internal static TimeSpan SnapshotInProgressRetryDelay = TimeSpan.FromSeconds(10);
@@ -109,9 +114,9 @@ namespace Duplicati.Library.Snapshots
         private const string SYSTEM_VOLUME_INFORMATION_FOLDER = "System Volume Information";
 
         /// <summary>
-        /// The main reference to the backup controller
+        /// The main references to the backup controller, one for each snapshot set
         /// </summary>
-        private readonly SnapshotManager _snapshotManager;
+        private readonly List<SnapshotManager> _snapshotManagers = [];
 
         /// <summary>
         /// The source folders included in the snapshot, which are the entries that are enumerated
@@ -180,7 +185,22 @@ namespace Duplicati.Library.Snapshots
 
             try
             {
-                _snapshotManager = CreateSnapshotManager(provider, vssTimeout, providerId, useMapping, excludedWriters);
+                try
+                {
+                    _snapshotManagers.Add(CreateSnapshotManager(provider, vssTimeout, providerId, useMapping, excludedWriters, _snapshotPaths));
+                }
+                catch (Exception ex) when (HasVssError(ex, VSS_E_NESTED_VOLUME_LIMIT))
+                {
+                    var volumes = _snapshotPaths
+                        .GroupBy(x => IO_WIN.GetPathRoot(x), StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+                    if (volumes.Count < 2)
+                        throw;
+
+                    Logging.Log.WriteInformationMessage(LOGTAG, "VssNestedVolumes", "The volumes {0} cannot be in the same snapshot, making a snapshot for each of them", string.Join(", ", volumes.Select(x => x.Key)));
+                    foreach (var volume in volumes)
+                        _snapshotManagers.Add(CreateSnapshotManager(provider, vssTimeout, providerId, useMapping, excludedWriters, volume));
+                }
             }
             catch (Exception ex1)
             {
@@ -210,15 +230,16 @@ namespace Duplicati.Library.Snapshots
         /// <param name="providerId">The VSS provider to use, or an empty GUID for automatic selection</param>
         /// <param name="useMapping">Whether to map snapshot volumes to drive letters</param>
         /// <param name="excludedWriters">The VSS writers to exclude</param>
+        /// <param name="paths">The paths that decide which volumes are in the snapshot</param>
         /// <returns>The snapshot manager with an active snapshot</returns>
-        private SnapshotManager CreateSnapshotManager(WindowsSnapshotProvider provider, TimeSpan vssTimeout, Guid providerId, bool useMapping, Guid[] excludedWriters)
+        private SnapshotManager CreateSnapshotManager(WindowsSnapshotProvider provider, TimeSpan vssTimeout, Guid providerId, bool useMapping, Guid[] excludedWriters, IEnumerable<string> paths)
         {
             var started = DateTime.UtcNow;
             while (true)
             {
                 try
                 {
-                    return CreateSnapshotManagerWithFallback(provider, vssTimeout, providerId, useMapping, excludedWriters);
+                    return CreateSnapshotManagerWithFallback(provider, vssTimeout, providerId, useMapping, excludedWriters, paths);
                 }
                 catch (Exception ex) when (IsSnapshotSetInProgress(ex) && DateTime.UtcNow - started + SnapshotInProgressRetryDelay < vssTimeout)
                 {
@@ -236,7 +257,22 @@ namespace Duplicati.Library.Snapshots
         private static bool IsSnapshotSetInProgress(Exception ex)
         {
             for (var e = ex; e != null; e = e.InnerException)
-                if (e.HResult == VSS_E_SNAPSHOT_SET_IN_PROGRESS || e is Alphaleonis.Win32.Vss.VssSnapshotSetInProgressException)
+                if (e is Alphaleonis.Win32.Vss.VssSnapshotSetInProgressException)
+                    return true;
+
+            return HasVssError(ex, VSS_E_SNAPSHOT_SET_IN_PROGRESS);
+        }
+
+        /// <summary>
+        /// Checks whether an exception is for a given VSS error
+        /// </summary>
+        /// <param name="ex">The exception from the snapshot provider</param>
+        /// <param name="error">The VSS error</param>
+        /// <returns><c>true</c> if the exception is for the error</returns>
+        private static bool HasVssError(Exception ex, int error)
+        {
+            for (var e = ex; e != null; e = e.InnerException)
+                if (e.HResult == error)
                     return true;
 
             return false;
@@ -254,12 +290,13 @@ namespace Duplicati.Library.Snapshots
         /// <param name="providerId">The VSS provider to use, or an empty GUID for automatic selection</param>
         /// <param name="useMapping">Whether to map snapshot volumes to drive letters</param>
         /// <param name="excludedWriters">The VSS writers to exclude</param>
+        /// <param name="paths">The paths that decide which volumes are in the snapshot</param>
         /// <returns>The snapshot manager with an active snapshot</returns>
-        private SnapshotManager CreateSnapshotManagerWithFallback(WindowsSnapshotProvider provider, TimeSpan vssTimeout, Guid providerId, bool useMapping, Guid[] excludedWriters)
+        private SnapshotManager CreateSnapshotManagerWithFallback(WindowsSnapshotProvider provider, TimeSpan vssTimeout, Guid providerId, bool useMapping, Guid[] excludedWriters, IEnumerable<string> paths)
         {
             try
             {
-                return CreateSnapshotManagerCore(provider, vssTimeout, providerId, useMapping, excludedWriters);
+                return CreateSnapshotManagerCore(provider, vssTimeout, providerId, useMapping, excludedWriters, paths);
             }
             catch (UserInformationException ex) when (ex.HelpID == "SnapshotDeviceEmpty" && providerId == Guid.Empty)
             {
@@ -269,7 +306,7 @@ namespace Duplicati.Library.Snapshots
                 Logging.Log.WriteWarningMessage(LOGTAG, "VssRetryWithSystemProvider", null,
                     "The snapshot provider did not expose a usable snapshot device path; retrying with the Microsoft Software Shadow Copy provider. Set --vss-provider-id={0} to avoid this retry.", MS_SOFTWARE_PROVIDER_ID);
 
-                return CreateSnapshotManagerCore(provider, vssTimeout, MS_SOFTWARE_PROVIDER_ID, useMapping, excludedWriters);
+                return CreateSnapshotManagerCore(provider, vssTimeout, MS_SOFTWARE_PROVIDER_ID, useMapping, excludedWriters, paths);
             }
         }
 
@@ -281,15 +318,16 @@ namespace Duplicati.Library.Snapshots
         /// <param name="providerId">The VSS provider to use, or an empty GUID for automatic selection</param>
         /// <param name="useMapping">Whether to map snapshot volumes to drive letters</param>
         /// <param name="excludedWriters">The VSS writers to exclude</param>
+        /// <param name="paths">The paths that decide which volumes are in the snapshot</param>
         /// <returns>The snapshot manager with an active snapshot</returns>
-        private SnapshotManager CreateSnapshotManagerCore(WindowsSnapshotProvider provider, TimeSpan vssTimeout, Guid providerId, bool useMapping, Guid[] excludedWriters)
+        private SnapshotManager CreateSnapshotManagerCore(WindowsSnapshotProvider provider, TimeSpan vssTimeout, Guid providerId, bool useMapping, Guid[] excludedWriters, IEnumerable<string> paths)
         {
             var manager = new SnapshotManager(_providerFactory(provider, vssTimeout, providerId));
             try
             {
                 manager.SetupWriters(null, excludedWriters);
 
-                manager.InitShadowVolumes(_snapshotPaths);
+                manager.InitShadowVolumes(paths);
 
                 manager.MapVolumesToSnapShots();
 
@@ -527,7 +565,7 @@ namespace Duplicati.Library.Snapshots
             if (!Path.IsPathRooted(snapshotPath))
                 throw new InvalidOperationException();
 
-            foreach (var kvp in _snapshotManager.SnapshotDeviceAndVolumes)
+            foreach (var kvp in _snapshotManagers.SelectMany(x => x.SnapshotDeviceAndVolumes))
             {
                 if (snapshotPath.StartsWith(kvp.Key, Utility.Utility.ClientFilenameStringComparison))
                     return IO_WIN.PathCombine(kvp.Value, snapshotPath.Substring(kvp.Key.Length));
@@ -546,7 +584,8 @@ namespace Duplicati.Library.Snapshots
                 throw new InvalidOperationException();
 
             var root = IO_WIN.GetPathRoot(localPath);
-            var volumePath = _snapshotManager.GetVolumeFromCache(root);
+            var manager = _snapshotManagers.FirstOrDefault(x => x.HasVolume(root)) ?? throw new InvalidOperationException();
+            var volumePath = manager.GetVolumeFromCache(root);
 
             // Note that using a simple Path.Combine() for the following code
             // can result in invalid snapshot paths; e.g., if localPath is
@@ -581,7 +620,8 @@ namespace Duplicati.Library.Snapshots
         {
             if (disposing)
             {
-                _snapshotManager?.Dispose();
+                foreach (var manager in _snapshotManagers)
+                    manager.Dispose();
             }
 
             base.Dispose(disposing);
