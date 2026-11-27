@@ -217,7 +217,7 @@ namespace Duplicati.Library.Encryption
                     new CommandLineArgument(COMMANDLINE_OPTIONS_ENABLE_ARMOR, CommandLineArgument.ArgumentType.Boolean, Strings.GPGEncryption.GpgencryptionenablearmorShort, Strings.GPGEncryption.GpgencryptionenablearmorLong, "false"),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND , CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptionencryptioncommandShort, Strings.GPGEncryption.GpgencryptionencryptioncommandLong(GPG_ENCRYPTION_COMMAND, "--encrypt"), GPG_ENCRYPTION_COMMAND),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_DECRYPTION_COMMAND , CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptiondecryptioncommandShort, Strings.GPGEncryption.GpgencryptiondecryptioncommandLong, GPG_DECRYPTION_COMMAND),
-                    new CommandLineArgument(COMMANDLINE_OPTIONS_RECIPIENT, CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptionrecipientShort, Strings.GPGEncryption.GpgencryptionrecipientLong(GPG_RECIPIENT_OPTION, GPG_ASYMMETRIC_ENCRYPTION_COMMAND, COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND)),
+                    new CommandLineArgument(COMMANDLINE_OPTIONS_RECIPIENT, CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptionrecipientShort, Strings.GPGEncryption.GpgencryptionrecipientLong(GPG_RECIPIENT_OPTION, GPG_ASYMMETRIC_ENCRYPTION_COMMAND, COMMANDLINE_OPTIONS_ENCRYPTION_COMMAND, COMMANDLINE_OPTIONS_DECRYPTION_OPTIONS)),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_ENCRYPTION_OPTIONS , CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptionencryptionswitchesShort, Strings.GPGEncryption.GpgencryptionencryptionswitchesLong, GPG_ENCRYPTION_DEFAULT_OPTIONS),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_CIPHER_ALGO, CommandLineArgument.ArgumentType.Enumeration, Strings.GPGEncryption.GpgencryptioncipheralgoShort, Strings.GPGEncryption.GpgencryptioncipheralgoLong(GPG_CIPHER_ALGO_OPTION, COMMANDLINE_OPTIONS_ENCRYPTION_OPTIONS), null, null, GPG_CIPHER_ALGORITHMS),
                     new CommandLineArgument(COMMANDLINE_OPTIONS_DECRYPTION_OPTIONS, CommandLineArgument.ArgumentType.String, Strings.GPGEncryption.GpgencryptiondecryptionswitchesShort, Strings.GPGEncryption.GpgencryptiondecryptionswitchesLong, GPG_DECRYPTION_DEFAULT_OPTIONS),
@@ -272,7 +272,7 @@ namespace Duplicati.Library.Encryption
 
                 System.Threading.Thread.Sleep(1000);
                 if (p.HasExited)
-                    throw new Exception(stderr.GetAwaiter().GetResult());
+                    throw new Exception(encrypt ? stderr.GetAwaiter().GetResult() : AddPinentryHint(stderr.GetAwaiter().GetResult()));
             }
             catch (Exception ex)
             {
@@ -307,6 +307,23 @@ namespace Duplicati.Library.Encryption
 
             return new GPGStreamWrapper(p, copier, stderr, p.StandardOutput.BaseStream, true);
         }
+
+        /// <summary>
+        /// Matches the errors of a decryption where GPG had no way to ask for the passphrase of the private key,
+        /// because it runs in the background. The messages are translated, but these words are not.
+        /// </summary>
+        private static readonly System.Text.RegularExpressions.Regex PinentryError =
+            new(@"pinentry|\bioctl\b", System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        /// <summary>
+        /// Adds what to do to the error of a decryption, if GPG could not ask for the passphrase of the private key.
+        /// GPG is not told to use the passphrase of the backup without being asked to, as it can be the
+        /// wrong one, and a smart card locks itself after a few wrong ones.
+        /// </summary>
+        /// <param name="message">The error output of GPG</param>
+        /// <returns>The message to show</returns>
+        internal static string AddPinentryHint(string message)
+            => PinentryError.IsMatch(message) ? Strings.GPGEncryption.PinentryHint(message.TrimEnd(), COMMANDLINE_OPTIONS_DECRYPTION_OPTIONS) : message;
 
         /// <summary>
         /// Matches the value of a --passphrase switch, but not --passphrase-fd or --passphrase-file

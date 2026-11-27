@@ -313,6 +313,25 @@ public class GPGEncryptionTests
     /// <summary>
     /// When the output cannot be written, the error reaches the caller and gpg, which nobody reads from any more, is stopped
     /// </summary>
+    /// <summary>
+    /// GPG asks its agent for the passphrase of a private key, and the agent has no way to ask the user for it
+    /// when Duplicati runs in the background (#3716). The error says what to do, also when GPG stops at once.
+    /// </summary>
+    [Test]
+    [TestCase("gpg: public key decryption failed: No pinentry", true, true)]
+    [TestCase("gpg: public key decryption failed: No pinentry", false, true)]
+    [TestCase("gpg: Entschluesselung fehlgeschlagen: Kein Pinentry", true, true)]
+    [TestCase("gpg: public key decryption failed: Inappropriate ioctl for device", true, true)]
+    [TestCase("gpg: decryption failed: Bad session key", true, false)]
+    public void DecryptExplainsThatThePassphraseCannotBeAskedFor(string error, bool readInput, bool explained)
+    {
+        var gpg = CreateGpg(CreateFakeGpg(new FakeGpg { ErrorMessage = error, ExitCode = 2, ReadInput = readInput, DelayMilliseconds = readInput ? 1500 : 0 }));
+
+        var ex = Assert.Catch(() => gpg.Decrypt(new MemoryStream(new byte[1000]), new MemoryStream()));
+        Assert.That(ex!.Message, Does.Contain(error));
+        Assert.That(ex.Message.Contains("--pinentry-mode loopback"), Is.EqualTo(explained), ex.Message);
+    }
+
     [Test]
     public void EncryptReportsOutputFailureAndStopsGpg()
     {
