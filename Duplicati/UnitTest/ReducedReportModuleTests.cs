@@ -71,6 +71,7 @@ namespace Duplicati.UnitTest
             protected override string LogFilterOptionName => "test-log-filter";
             protected override string LogLinesOptionName => "test-max-log-lines";
             protected override string ResultFormatOptionName => "test-result-format";
+            protected override string ResultTemplateOptionName => "test-result-template";
             protected override string ExtraDataOptionName => "test-extra-parameters";
 
             protected override bool ConfigureModule(IDictionary<string, string> commandlineOptions) => true;

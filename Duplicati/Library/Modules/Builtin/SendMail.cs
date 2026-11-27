@@ -95,6 +95,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private const string OPTION_RESULT_FORMAT = "send-mail-result-output-format";
         /// <summary>
+        /// Option used to pick the bundled template that renders the result
+        /// </summary>
+        private const string OPTION_RESULT_TEMPLATE = "send-mail-result-template";
+        /// <summary>
         /// Option used to specify extra parameters
         /// </summary>
         private const string OPTION_EXTRA_PARAMETERS = "send-mail-extra-parameters";
@@ -203,7 +207,7 @@ namespace Duplicati.Library.Modules.Builtin
             new CommandLineArgument(OPTION_RECIPIENT, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionRecipientShort, Strings.SendMail.OptionRecipientLong),
             new CommandLineArgument(OPTION_SENDER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSenderShort, Strings.SendMail.OptionSenderLong, DEFAULT_SENDER),
             new CommandLineArgument(OPTION_SUBJECT, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionSubjectShort, Strings.SendMail.OptionSubjectLong(OPTION_BODY), DEFAULT_SUBJECT),
-            new CommandLineArgument(OPTION_BODY, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionBodyShort, Strings.SendMail.OptionBodyLong, DEFAULT_BODY),
+            new CommandLineArgument(OPTION_BODY, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionBodyShort, WithTemplateDescription(Strings.SendMail.OptionBodyLong), DEFAULT_BODY),
             new CommandLineArgument(OPTION_BODY_HTML, CommandLineArgument.ArgumentType.Boolean, Strings.SendMail.OptionBodyHtmlShort, Strings.SendMail.OptionBodyHtmlLong(OPTION_BODY), "false"),
             new CommandLineArgument(OPTION_SERVER, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionServerShort, Strings.SendMail.OptionServerLong),
             new CommandLineArgument(OPTION_USERNAME, CommandLineArgument.ArgumentType.String, Strings.SendMail.OptionUsernameShort, Strings.SendMail.OptionUsernameLong),
@@ -221,6 +225,7 @@ namespace Duplicati.Library.Modules.Builtin
             new CommandLineArgument(OPTION_MAX_LOG_LINES, CommandLineArgument.ArgumentType.Integer, Strings.ReportHelper.OptionmaxloglinesShort, Strings.ReportHelper.OptionmaxloglinesLong, DEFAULT_LOGLINES.ToString()),
 
             new CommandLineArgument(OPTION_RESULT_FORMAT, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.ResultFormatShort, Strings.ReportHelper.ResultFormatLong(Enum.GetNames(typeof(ResultExportFormat))), DEFAULT_EXPORT_FORMAT.ToString(), null, Enum.GetNames(typeof(ResultExportFormat))),
+            ResultTemplateArgument,
         ];
 
         protected override string SubjectOptionName => OPTION_SUBJECT;
@@ -232,6 +237,7 @@ namespace Duplicati.Library.Modules.Builtin
         protected override string LogFilterOptionName => OPTION_LOG_FILTER;
         protected override string LogLinesOptionName => OPTION_MAX_LOG_LINES;
         protected override string ResultFormatOptionName => OPTION_RESULT_FORMAT;
+        protected override string ResultTemplateOptionName => OPTION_RESULT_TEMPLATE;
         protected override string ExtraDataOptionName => OPTION_EXTRA_PARAMETERS;
 
         /// <summary>
@@ -331,7 +337,7 @@ namespace Duplicati.Library.Modules.Builtin
                 message.From.Add(mailbox);
 
             message.Subject = subject;
-            message.Body = new TextPart(m_bodyHtml ? "html" : "plain") { Text = body, ContentTransferEncoding = ContentEncoding.EightBit };
+            message.Body = new TextPart(m_bodyHtml || TemplateIsHtml ? "html" : "plain") { Text = body, ContentTransferEncoding = ContentEncoding.EightBit };
 
             List<string>? servers = null;
             if (string.IsNullOrEmpty(m_server))

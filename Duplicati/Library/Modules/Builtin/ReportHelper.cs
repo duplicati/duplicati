@@ -86,6 +86,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         protected abstract string ResultFormatOptionName { get; }
         /// <summary>
+        /// Name of the option used to pick the bundled template that renders the result
+        /// </summary>
+        protected abstract string ResultTemplateOptionName { get; }
+        /// <summary>
         /// Name of the option used to specify extra data to include in the report
         /// </summary>
         protected abstract string ExtraDataOptionName { get; }
@@ -225,6 +229,15 @@ namespace Duplicati.Library.Modules.Builtin
         private IResultFormatSerializer m_resultFormatSerializer;
 
         /// <summary>
+        /// The bundled template picked with the template option or the template file given as body, or <c>null</c> to use the default template
+        /// </summary>
+        private TemplateFormatSerializer m_templateSerializer;
+        /// <summary>
+        /// Whether the picked template renders HTML
+        /// </summary>
+        private bool m_templateIsHtml;
+
+        /// <summary>
         /// True if paths are allowed in log messages
         /// </summary>
         private bool m_allowPathsInLogMessages;
@@ -253,6 +266,99 @@ namespace Duplicati.Library.Modules.Builtin
         /// are then escaped.
         /// </summary>
         protected virtual bool BodyIsHtml => false;
+
+        /// <summary>
+        /// Whether the picked template renders HTML, which makes the message HTML.
+        /// Such a template has HTML encoded its own values.
+        /// </summary>
+        protected bool TemplateIsHtml => m_templateIsHtml;
+
+        /// <summary>
+        /// The body that is only the result, which a template picked with the body option is rendered into
+        /// </summary>
+        private const string RESULT_ONLY_BODY = "%RESULT%";
+
+        /// <summary>
+        /// The extension of a Handlebars template file
+        /// </summary>
+        private const string TEMPLATE_FILE_EXTENSION = ".hbs";
+
+        /// <summary>
+        /// Adds how a template file is given with the body option to the description of that option
+        /// </summary>
+        /// <param name="description">The description of the body option.</param>
+        /// <returns>The description, followed by the use of a template file.</returns>
+        protected string WithTemplateDescription(string description)
+            => description + Environment.NewLine + Environment.NewLine
+                + Strings.ReportHelper.TemplateBodyLong(ResultFormatOptionName, ResultExportFormat.Template.ToString(), TEMPLATE_FILE_EXTENSION, ResultTemplateOptionName);
+
+        /// <summary>
+        /// The argument for the option that picks the bundled template, with the bundled templates as its values
+        /// </summary>
+        protected ICommandLineArgument ResultTemplateArgument
+            => new CommandLineArgument(
+                ResultTemplateOptionName,
+                CommandLineArgument.ArgumentType.Enumeration,
+                Strings.ReportHelper.ResultTemplateShort,
+                Strings.ReportHelper.ResultTemplateLong(ResultFormatOptionName, ResultExportFormat.Template.ToString(), BodyOptionName, TEMPLATE_FILE_EXTENSION),
+                TemplateFormatSerializer.DefaultTemplateName,
+                null,
+                TemplateFormatSerializer.GetAvailableTemplates().ToArray());
+
+        /// <summary>
+        /// Picks the template for the Template format: the template file the body names, or else the
+        /// bundled template picked with the template option. Without either, the default template is used.
+        /// </summary>
+        private void SelectTemplate()
+        {
+            SelectTemplateFromBody();
+            if (m_templateSerializer != null)
+                return;
+
+            m_options.TryGetValue(ResultTemplateOptionName, out var name);
+            name = name?.Trim();
+            if (string.IsNullOrEmpty(name))
+                return;
+
+            var bundled = TemplateFormatSerializer.GetAvailableTemplates()
+                .FirstOrDefault(x => string.Equals(x, name, StringComparison.OrdinalIgnoreCase));
+            if (bundled == null)
+            {
+                Logging.Log.WriteWarningMessage(LOGTAG, "ReportTemplateUnknown", null, "The template \"{0}\" is not a bundled template, using the default template", name);
+                return;
+            }
+
+            m_templateSerializer = new TemplateFormatSerializer(bundled, true);
+            m_templateIsHtml = m_templateSerializer.IsHtml;
+        }
+
+        /// <summary>
+        /// Picks the template when the body is the path to a template file. The body then becomes the
+        /// rendered template only. Any other body, such as one with <c>%RESULT%</c>, is left as it is.
+        /// </summary>
+        private void SelectTemplateFromBody()
+        {
+            var name = m_body?.Trim();
+            if (string.IsNullOrEmpty(name) || name.IndexOfAny(['\r', '\n', '%']) >= 0)
+                return;
+
+            if (!name.EndsWith(TEMPLATE_FILE_EXTENSION, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            try
+            {
+                m_templateSerializer = TemplateFormatSerializer.FromFile(name);
+                m_templateIsHtml = m_templateSerializer.IsHtml;
+                m_body = RESULT_ONLY_BODY;
+            }
+            catch (Exception ex)
+            {
+                // The path of the file is not the report, and would be sent as it is
+                Logging.Log.WriteWarningMessage(LOGTAG, "ReportTemplateError", ex, "Unable to read the template file given as body, using the default template: {0}", ex.Message);
+                m_templateSerializer = null;
+                m_body = DEFAULT_BODY;
+            }
+        }
 
         /// <summary>
         /// Redacts the paths in a text put into a report, unless paths are allowed in log messages
@@ -352,6 +458,11 @@ namespace Duplicati.Library.Modules.Builtin
             else if (!Enum.TryParse(tmpResultFormat, true, out resultFormat))
                 resultFormat = DEFAULT_EXPORT_FORMAT;
 
+            m_templateSerializer = null;
+            m_templateIsHtml = false;
+            if (resultFormat == ResultExportFormat.Template)
+                SelectTemplate();
+
             m_resultFormatSerializer = GetSerializer(resultFormat);
 
             m_options.TryGetValue(LogLinesOptionName, out var loglinestr);
@@ -433,7 +544,9 @@ namespace Duplicati.Library.Modules.Builtin
         /// <returns>The serializer</returns>
         protected IResultFormatSerializer GetSerializer(ResultExportFormat format)
         {
-            var serializer = ResultFormatSerializerProvider.GetSerializer(format);
+            var serializer = format == ResultExportFormat.Template && m_templateSerializer != null
+                ? m_templateSerializer
+                : ResultFormatSerializerProvider.GetSerializer(format);
             return m_reducedReporting ? new ReducedResultFormatSerializer(serializer) : serializer;
         }
 
@@ -720,16 +833,30 @@ namespace Duplicati.Library.Modules.Builtin
                 // Each key is first replaced by a marker without '%', and the values are put in last,
                 // so a '%' in a value (a log line in the result, an option) is not expanded as a key
                 // by a later pass or removed as an unknown key
+                // A template that renders HTML makes the body HTML, as the body option of the module can
+                var htmlTemplate = resultFormatSerializer.Format == ResultExportFormat.Template && m_templateIsHtml;
+                var htmlBody = !subjectline && (BodyIsHtml || htmlTemplate);
+
                 var values = new List<string>();
+                string Store(string value)
+                {
+                    values.Add(value);
+                    return $"{VALUE_MARKER_START}{values.Count - 1}{VALUE_MARKER_END}";
+                }
+
                 string Mark(string value)
                 {
                     // Only the values are redacted: the text of the template is written by the user
                     value = RedactPathsUnlessAllowed(value ?? "");
-                    if (!subjectline && BodyIsHtml)
+                    if (htmlBody)
                         value = System.Net.WebUtility.HtmlEncode(value);
-                    values.Add(value);
-                    return $"{VALUE_MARKER_START}{values.Count - 1}{VALUE_MARKER_END}";
+                    return Store(value);
                 }
+
+                // A template that renders HTML has encoded its own values, and the slashes of its
+                // closing tags would be taken for paths, so the paths are found in the text it shows
+                string MarkHtml(string html)
+                    => Store(m_allowPathsInLogMessages ? html ?? "" : SensitiveDataFilter.RedactPathsInHtml(html ?? ""));
 
                 // Keys come from options and extra parameters, so they are matched literally
                 string Expand(string text, string key, Func<string> value)
@@ -752,7 +879,9 @@ namespace Duplicati.Library.Modules.Builtin
                     {
                         // Values go through an evaluator so a '$' in them is not read as a substitution
                         var serialized = resultFormatSerializer.Serialize(result, exception, LogLines, resultFormatSerializer.Format == ResultExportFormat.Template ? GetTemplateValues() : null);
-                        input = Expand(input, "RESULT", () => serialized);
+                        input = htmlTemplate
+                            ? Regex.Replace(input, "%RESULT%", _ => MarkHtml(serialized), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
+                            : Expand(input, "RESULT", () => serialized);
                     }
                 }
 
@@ -794,7 +923,7 @@ namespace Duplicati.Library.Modules.Builtin
 
                 // The slashes of the closing tags in an HTML body would be taken for paths, so the paths are
                 // detected in the text the body shows, and in its attributes and comments
-                if (!subjectline && BodyIsHtml)
+                if (htmlBody)
                     return m_allowPathsInLogMessages ? expanded : SensitiveDataFilter.RedactPathsInHtml(expanded);
 
                 return RedactPathsUnlessAllowed(expanded);

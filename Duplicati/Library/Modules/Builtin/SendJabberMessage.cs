@@ -76,6 +76,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// Option used to specify what format the result is sent in.
         /// </summary>
         private const string OPTION_RESULT_FORMAT = "send-xmpp-result-output-format";
+        /// <summary>
+        /// Option used to pick the bundled template that renders the result
+        /// </summary>
+        private const string OPTION_RESULT_TEMPLATE = "send-xmpp-result-template";
 
         /// <summary>
         /// Option used to set the log level
@@ -174,7 +178,7 @@ namespace Duplicati.Library.Modules.Builtin
         public override IList<ICommandLineArgument> SupportedCommands =>
         [
             new CommandLineArgument(OPTION_RECIPIENT, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmpptoShort, Strings.SendJabberMessage.SendxmpptoLong),
-            new CommandLineArgument(OPTION_MESSAGE, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmppmessageShort, Strings.SendJabberMessage.SendxmppmessageLong, DEFAULT_BODY),
+            new CommandLineArgument(OPTION_MESSAGE, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmppmessageShort, WithTemplateDescription(Strings.SendJabberMessage.SendxmppmessageLong), DEFAULT_BODY),
             new CommandLineArgument(OPTION_EXTRA_PARAMETERS, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmppextraparametersShort, Strings.SendJabberMessage.SendxmppextraparametersLong),
             new CommandLineArgument(OPTION_USERNAME, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmppusernameShort, Strings.SendJabberMessage.SendxmppusernameLong),
             new CommandLineArgument(OPTION_PASSWORD, CommandLineArgument.ArgumentType.String, Strings.SendJabberMessage.SendxmpppasswordShort, Strings.SendJabberMessage.SendxmpppasswordLong),
@@ -190,6 +194,7 @@ namespace Duplicati.Library.Modules.Builtin
             new CommandLineArgument(OPTION_MAX_LOG_LINES, CommandLineArgument.ArgumentType.Integer, Strings.ReportHelper.OptionmaxloglinesShort, Strings.ReportHelper.OptionmaxloglinesLong, DEFAULT_LOGLINES.ToString()),
 
             new CommandLineArgument(OPTION_RESULT_FORMAT, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.ResultFormatShort, Strings.ReportHelper.ResultFormatLong(Enum.GetNames(typeof(ResultExportFormat))), DEFAULT_EXPORT_FORMAT.ToString(), null, Enum.GetNames(typeof(ResultExportFormat))),
+            ResultTemplateArgument,
         ];
 
 
@@ -202,6 +207,7 @@ namespace Duplicati.Library.Modules.Builtin
         protected override string LogFilterOptionName => OPTION_LOG_FILTER;
         protected override string LogLinesOptionName => OPTION_MAX_LOG_LINES;
         protected override string ResultFormatOptionName => OPTION_RESULT_FORMAT;
+        protected override string ResultTemplateOptionName => OPTION_RESULT_TEMPLATE;
         protected override string ExtraDataOptionName => OPTION_EXTRA_PARAMETERS;
 
         /// <summary>
