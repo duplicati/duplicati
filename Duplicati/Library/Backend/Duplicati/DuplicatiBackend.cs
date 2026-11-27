@@ -33,7 +33,7 @@ using Duplicati.StreamUtil;
 
 namespace Duplicati.Library.Backend.Duplicati;
 
-public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, ILockingBackend
+public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBackend, IRenameEnabledBackend, ILockingBackend, IConditionalCapabilityBackend
 {
     /// <summary>
     /// The authentication API key option name
@@ -418,7 +418,17 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
                     PointInTimeOptionsHelper.ApplyTo(_pointInTime, options);
                     _timeouts.ApplyTo(options, overwrite: true);
 
-                    SetDirectBackend(CreateDirectBackend(creds.ConnectionString, scheme, options), creds.ConnectionString, options);
+                    var directBackend = CreateDirectBackend(creds.ConnectionString, scheme, options);
+
+                    // A backend that does not know the option would ignore it and serve the
+                    // current state, so one that cannot read older versions is refused
+                    if (_pointInTime.HasValue && !directBackend.SupportedCommands.Any(x => x.Name == PointInTimeOptionsHelper.PointInTimeOption))
+                    {
+                        directBackend.Dispose();
+                        throw new UserInformationException(Strings.DuplicatiBackend.ErrorPointInTimeNotAvailable, HELP_ID_POINT_IN_TIME_NOT_AVAILABLE);
+                    }
+
+                    SetDirectBackend(directBackend, creds.ConnectionString, options);
                 }
             }
             else if (creds != null &&
@@ -483,6 +493,34 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         {
             _credentialsLock.Release();
         }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether an optional backend interface is supported by the
+    /// storage in use. In direct mode renaming and object locking are done by the backend
+    /// the server names, so they are only supported when that backend supports them. The
+    /// storage server itself does both in gateway mode, and always answers for the quota.
+    /// </summary>
+    /// <remarks>
+    /// Which backend is used is only known once the server has been asked, so the first
+    /// check for renaming or locking requests the credentials.
+    /// </remarks>
+    /// <typeparam name="T">The optional backend interface</typeparam>
+    /// <returns><c>true</c> if calls through the interface are supported</returns>
+    public bool HasCapability<T>() where T : class, IBackend
+    {
+        if (this is not T)
+            return false;
+        if (typeof(T) != typeof(IRenameEnabledBackend) && typeof(T) != typeof(ILockingBackend))
+            return true;
+
+        // The instance created for dynamic loading has no server to ask
+        if (_client == null)
+            return true;
+
+        EnsureCredentialsAsync(CancellationToken.None).Await();
+        var directBackend = _directBackend;
+        return directBackend == null || directBackend.TryGetCapability<T>(out _);
     }
 
     /// <summary>

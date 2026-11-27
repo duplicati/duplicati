@@ -128,7 +128,7 @@ public class RemoteFilenameSuffixTests : BasicSetupHelper
     /// </summary>
     private static IEnumerable<Type> OptionalBackendInterfaces()
         => typeof(IBackend).Assembly.GetTypes()
-            .Where(t => t.IsInterface && t != typeof(IBackend) && t != typeof(IWrappingBackend) && typeof(IBackend).IsAssignableFrom(t));
+            .Where(t => t.IsInterface && t != typeof(IBackend) && t != typeof(IWrappingBackend) && t != typeof(IConditionalCapabilityBackend) && typeof(IBackend).IsAssignableFrom(t));
 
     [Test]
     public void TheWrapperImplementsEveryOptionalBackendInterface()
