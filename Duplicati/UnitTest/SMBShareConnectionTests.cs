@@ -84,7 +84,7 @@ public class SMBShareConnectionTests : BasicSetupHelper
         var store = (FileStore)(object)proxy;
         store.QueryStatus = NTStatus.STATUS_IO_TIMEOUT;
         var connection = new SMBShareConnection(new SMB2Client(), proxy, Parameters,
-            new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30)));
+            new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(10)));
 
         var ex = Assert.ThrowsAsync<UserInformationException>(() => connection.ListAsync("folder", CancellationToken.None));
         Assert.That(ex!.Message, Does.Contain(nameof(NTStatus.STATUS_IO_TIMEOUT)));

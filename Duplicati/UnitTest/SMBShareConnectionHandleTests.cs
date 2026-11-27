@@ -78,7 +78,7 @@ public class SMBShareConnectionHandleTests : BasicSetupHelper
         var proxy = DispatchProxy.Create<ISMBFileStore, FileStore>();
         var connection = new SMBShareConnection(new SMB2Client(), proxy,
             new SMBConnectionParameters("server", SMBTransportType.DirectTCPTransport, "share", "folder", null, null, null, null, null, false),
-            new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30)));
+            new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(10)));
         return (connection, (FileStore)(object)proxy);
     }
 

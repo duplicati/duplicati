@@ -49,6 +49,11 @@ public static class TimeoutOptionsHelper
     public const string DefaultReadWriteTimeout = "30s";
 
     /// <summary>
+    /// The timeout for an upload to complete after all data has been read from the source
+    /// </summary>
+    public const string DefaultUploadCompletionTimeout = "10m";
+
+    /// <summary>
     /// The name of the short timeout option, without a prefix
     /// </summary>
     public const string ShortTimeoutOption = "short-timeout";
@@ -60,6 +65,10 @@ public static class TimeoutOptionsHelper
     /// The name of the read-write timeout option, without a prefix
     /// </summary>
     public const string ReadWriteTimeoutOption = "read-write-timeout";
+    /// <summary>
+    /// The name of the upload completion timeout option, without a prefix
+    /// </summary>
+    public const string UploadCompletionTimeoutOption = "upload-completion-timeout";
 
     /// <summary>
     /// Gets the timeout options
@@ -70,7 +79,8 @@ public static class TimeoutOptionsHelper
     [
         new CommandLineArgument($"{prefix}{ShortTimeoutOption}", CommandLineArgument.ArgumentType.Timespan, Strings.TimeoutSettingsHelper.DescriptionShortTimeoutShort, Strings.TimeoutSettingsHelper.DescriptionShortTimeoutLong, DefaultShortOperationTimeout),
         new CommandLineArgument($"{prefix}{ListTimeoutOption}", CommandLineArgument.ArgumentType.Timespan, Strings.TimeoutSettingsHelper.DescriptionListTimeoutShort, Strings.TimeoutSettingsHelper.DescriptionListTimeoutLong, DefaultListOperationTimeout),
-        new CommandLineArgument($"{prefix}{ReadWriteTimeoutOption}", CommandLineArgument.ArgumentType.Timespan, Strings.TimeoutSettingsHelper.DescriptionReadWriteTimeoutShort, Strings.TimeoutSettingsHelper.DescriptionReadWriteTimeoutLong, DefaultReadWriteTimeout)
+        new CommandLineArgument($"{prefix}{ReadWriteTimeoutOption}", CommandLineArgument.ArgumentType.Timespan, Strings.TimeoutSettingsHelper.DescriptionReadWriteTimeoutShort, Strings.TimeoutSettingsHelper.DescriptionReadWriteTimeoutLong, DefaultReadWriteTimeout),
+        new CommandLineArgument($"{prefix}{UploadCompletionTimeoutOption}", CommandLineArgument.ArgumentType.Timespan, Strings.TimeoutSettingsHelper.DescriptionUploadCompletionTimeoutShort, Strings.TimeoutSettingsHelper.DescriptionUploadCompletionTimeoutLong, DefaultUploadCompletionTimeout)
     ];
 
     /// <summary>
@@ -83,7 +93,8 @@ public static class TimeoutOptionsHelper
         => new Timeouts(
             Utility.ParseTimespanOption(options, $"{prefix}{ShortTimeoutOption}", DefaultShortOperationTimeout),
             Utility.ParseTimespanOption(options, $"{prefix}{ListTimeoutOption}", DefaultListOperationTimeout),
-            Utility.ParseTimespanOption(options, $"{prefix}{ReadWriteTimeoutOption}", DefaultReadWriteTimeout)
+            Utility.ParseTimespanOption(options, $"{prefix}{ReadWriteTimeoutOption}", DefaultReadWriteTimeout),
+            Utility.ParseTimespanOption(options, $"{prefix}{UploadCompletionTimeoutOption}", DefaultUploadCompletionTimeout)
         );
 
     /// <summary>
@@ -92,7 +103,8 @@ public static class TimeoutOptionsHelper
     /// <param name="ShortTimeout">The timeout in seconds for short operations like delete and create folder</param>
     /// <param name="ListTimeout">The timeout in seconds for listing files and folders</param>
     /// <param name="ReadWriteTimeout">The timeout in seconds for read and write operations.</param>
-    public sealed record Timeouts(TimeSpan ShortTimeout, TimeSpan ListTimeout, TimeSpan ReadWriteTimeout)
+    /// <param name="UploadCompletionTimeout">The timeout for an upload to complete after all data has been read from the source.</param>
+    public sealed record Timeouts(TimeSpan ShortTimeout, TimeSpan ListTimeout, TimeSpan ReadWriteTimeout, TimeSpan UploadCompletionTimeout)
     {
         /// <summary>
         /// Applies the timeout configuration to a dictionary
@@ -101,11 +113,13 @@ public static class TimeoutOptionsHelper
         /// <param name="overwrite">Whether to overwrite existing values</param>
         public void ApplyTo(IDictionary<string, string?> target, bool overwrite = false, string? prefix = null)
         {
-            if (overwrite || !target.ContainsKey(ReadWriteTimeoutOption))
+            if (overwrite || !target.ContainsKey($"{prefix}{ReadWriteTimeoutOption}"))
                 target[$"{prefix}{ReadWriteTimeoutOption}"] = ((long)ReadWriteTimeout.TotalSeconds).ToString() + "s";
-            if (overwrite || !target.ContainsKey(ListTimeoutOption))
+            if (overwrite || !target.ContainsKey($"{prefix}{UploadCompletionTimeoutOption}"))
+                target[$"{prefix}{UploadCompletionTimeoutOption}"] = ((long)UploadCompletionTimeout.TotalSeconds).ToString() + "s";
+            if (overwrite || !target.ContainsKey($"{prefix}{ListTimeoutOption}"))
                 target[$"{prefix}{ListTimeoutOption}"] = ((long)ListTimeout.TotalSeconds).ToString() + "s";
-            if (overwrite || !target.ContainsKey(ShortTimeoutOption))
+            if (overwrite || !target.ContainsKey($"{prefix}{ShortTimeoutOption}"))
                 target[$"{prefix}{ShortTimeoutOption}"] = ((long)ShortTimeout.TotalSeconds).ToString() + "s";
         }
     }

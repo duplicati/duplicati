@@ -77,6 +77,8 @@ namespace Duplicati.Library.Utility.Strings
         public static string DescriptionListTimeoutShort { get { return LC.L(@"List operation timeout"); } }
         public static string DescriptionReadWriteTimeoutLong { get { return LC.L(@"The timeout in seconds for read and write operations. If no activity is detected in this interval, a timeout error is raised"); } }
         public static string DescriptionReadWriteTimeoutShort { get { return LC.L(@"Read/write operation timeout"); } }
+        public static string DescriptionUploadCompletionTimeoutLong { get { return LC.L(@"The timeout for an upload to complete after all data has been read from the source. In this phase the remaining data is being sent and the destination is storing it, and no activity can be observed. If the upload has not completed in this interval, a timeout error is raised. Set to 0 to wait without a limit"); } }
+        public static string DescriptionUploadCompletionTimeoutShort { get { return LC.L(@"Upload completion timeout"); } }
     }
     internal static class PointInTimeOptionsHelper
     {

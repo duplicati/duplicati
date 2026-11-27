@@ -124,7 +124,7 @@ public class Office365DeltaTests
         };
         configure?.Invoke(options);
 
-        var timeouts = new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+        var timeouts = new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(10));
         var api = Office365TestSupport.CreateApiHelper(handler, GRAPH, timeouts);
         var provider = new SourceProvider("office365://tenant", Mount, options, api);
         if (state != null)
@@ -235,7 +235,7 @@ public class Office365DeltaTests
                 "{\"id\":\"19:unknown@thread.v2\",\"chatType\":\"group\"}"));
 
         // The tenant is configured by its domain name, so its id comes from the token
-        var timeouts = new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+        var timeouts = new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(10));
         var authOptions = AuthOptionsHelper.ParseWithAlias(new Dictionary<string, string?>(), "test", "test", "test-user", "test-pass");
         var api = new APIHelper(new HttpClient(handler, disposeHandler: false), authOptions, "contoso.example", GRAPH, timeouts, null, null, "https://graph.microsoft.com/.default", FakeJwt($"{{\"tid\":\"{OwnTenant}\"}}"));
         var provider = new SourceProvider("office365://tenant", Mount, new Dictionary<string, string?>

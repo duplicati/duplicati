@@ -418,7 +418,7 @@ namespace Duplicati.Library.Backend.TencentCOS
             new CommandLineArgument(COS_BUCKET, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSBucketDescriptionShort, Strings.COSBackend.COSBucketDescriptionLong),
             new CommandLineArgument(COS_STORAGE_CLASS, CommandLineArgument.ArgumentType.String, Strings.COSBackend.COSStorageClassDescriptionShort, Strings.COSBackend.COSStorageClassDescriptionLong),
             .. TimeoutOptionsHelper.GetOptions()
-                .Where(x => x.Name != TimeoutOptionsHelper.ReadWriteTimeoutOption)
+                .Where(x => x.Name != TimeoutOptionsHelper.ReadWriteTimeoutOption && x.Name != TimeoutOptionsHelper.UploadCompletionTimeoutOption)
         ];
 
         public Task<string[]> GetDNSNamesAsync(CancellationToken cancelToken) => Task.FromResult(Array.Empty<string>());

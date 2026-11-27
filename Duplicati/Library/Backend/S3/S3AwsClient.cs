@@ -387,12 +387,10 @@ namespace Duplicati.Library.Backend
         /// <returns>>A task representing the asynchronous operation</returns>
         public virtual async Task AddFileStreamAsync(string bucketName, string keyName, Stream source, string md5, string sha256, long contentLength, CancellationToken cancelToken)
         {
-            using var ts = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
             var objectAddRequest = new PutObjectRequest
             {
                 BucketName = bucketName,
                 Key = keyName,
-                InputStream = ts,
                 UseChunkEncoding = m_useChunkEncoding,
                 MD5Digest = md5,
                 ChecksumAlgorithm = ChecksumAlgorithm.SHA256,
@@ -418,7 +416,11 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                await m_client.PutObjectAsync(objectAddRequest, cancelToken);
+                await Utility.Utility.WithUploadTimeout(source, m_timeouts.ReadWriteTimeout, m_timeouts.UploadCompletionTimeout, cancelToken, (ts, ct) =>
+                {
+                    objectAddRequest.InputStream = ts;
+                    return m_client.PutObjectAsync(objectAddRequest, ct);
+                }).ConfigureAwait(false);
             }
             catch (AmazonS3Exception s3Ex)
             {

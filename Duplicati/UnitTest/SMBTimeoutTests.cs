@@ -91,7 +91,7 @@ public class SMBTimeoutTests : BasicSetupHelper
     private static SMBShareConnection Connect(ISMBFileStore store)
         => new SMBShareConnection(new SMB2Client(), store,
             new SMBConnectionParameters("server", SMBTransportType.DirectTCPTransport, "share", "folder", null, null, null, null, null, false),
-            new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1)));
+            new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(10)));
 
     private static void AssertTimesOut(Task task)
     {

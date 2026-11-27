@@ -324,8 +324,7 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                using var t = source.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
-                await m_client.PutObjectAsync(new PutObjectArgs()
+                await Utility.Utility.WithUploadTimeout(source, m_timeouts.ReadWriteTimeout, m_timeouts.UploadCompletionTimeout, cancelToken, (t, ct) => m_client.PutObjectAsync(new PutObjectArgs()
                     .WithBucket(bucketName)
                     .WithObject(keyName)
                     .WithStreamData(t)
@@ -333,7 +332,7 @@ namespace Duplicati.Library.Backend
                     .WithContentType("application/octet-stream")
                     .WithHeaders(m_encryptionHeaders)
                     .WithServerSideEncryption(m_storageClassHeader),
-                    cancellationToken: cancelToken);
+                    cancellationToken: ct)).ConfigureAwait(false);
             }
             catch (MinioException e)
             {

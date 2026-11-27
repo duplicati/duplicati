@@ -93,7 +93,7 @@ public class S3MinioListTimeoutTests : BasicSetupHelper
 
         var port = ((IPEndPoint)listener.LocalEndpoint).Port;
         var client = new S3MinioClient("key", "secret", "us-east-1", $"127.0.0.1:{port}", null, false,
-            new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30)),
+            new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(10)),
             new Dictionary<string, string?>(), "", null);
         return client.ListBucketAsync("bucket", "folder", false, CancellationToken.None).ToListAsync().AsTask();
     }

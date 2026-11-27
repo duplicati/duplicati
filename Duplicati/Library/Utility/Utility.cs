@@ -2312,6 +2312,58 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
+        /// Performs an upload, and cancels it when it has not read from the source for the timeout.
+        /// The wrapped stream only reports the timeout on its next use, which never comes when the transfer does not move.
+        /// After the last byte has been read, the data can still be on its way, or the server can be storing it.
+        /// Nothing tells if that moves, so it gets the completion timeout instead.
+        /// </summary>
+        /// <param name="source">The stream to upload, which is not disposed</param>
+        /// <param name="timeout">The time the upload can go without reading from the source</param>
+        /// <param name="completionTimeout">The time the upload has to complete after the last byte has been read, where zero or less and infinite both mean no limit</param>
+        /// <param name="token">The cancellation token</param>
+        /// <param name="upload">The upload, which must use the given stream and stop on the given token</param>
+        /// <returns>The task</returns>
+        public static async Task WithUploadTimeout(Stream source, TimeSpan timeout, TimeSpan completionTimeout, CancellationToken token, Func<Stream, CancellationToken, Task> upload)
+        {
+            using var ts = (TimeoutObservingStream)source.ObserveReadTimeout(timeout, false, TimeoutMode.Gap);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+            using var registration = ts.TimeoutToken.Register(() =>
+            {
+                if (!IsReadToEnd(source))
+                    cts.Cancel();
+                else if (completionTimeout.Ticks > 0 && completionTimeout != Timeout.InfiniteTimeSpan)
+                    cts.CancelAfter(completionTimeout);
+            });
+
+            try
+            {
+                await upload(ts, cts.Token).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (cts.IsCancellationRequested && !token.IsCancellationRequested)
+            {
+                // However the upload reports that it was stopped, it was stopped by the timeout
+                throw new TimeoutException(null, ex);
+            }
+        }
+
+        /// <summary>
+        /// Tells whether all of a stream has been read
+        /// </summary>
+        /// <param name="stream">The stream to check</param>
+        /// <returns>True if the stream is at its end, or if that cannot be told</returns>
+        private static bool IsReadToEnd(Stream stream)
+        {
+            try
+            {
+                return !stream.CanSeek || stream.Position >= stream.Length;
+            }
+            catch (Exception ex) when (ex is ObjectDisposedException or NotSupportedException or IOException)
+            {
+                return true;
+            }
+        }
+
+        /// <summary>
         /// Wraps the stream in a timeout observing stream that counts both the time inside each write and the time between writes
         /// </summary>
         /// <param name="stream">The stream to wrap</param>
