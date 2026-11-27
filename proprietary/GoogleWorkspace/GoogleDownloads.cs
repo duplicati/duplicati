@@ -1,7 +1,9 @@
 // Copyright (c) 2026 Duplicati Inc. All rights reserved.
 
 using System.Net.Http.Headers;
+using Duplicati.Library.Logging;
 using Duplicati.Library.Utility;
+using Google.Apis.Drive.v3;
 using Google.Apis.Requests;
 
 namespace Duplicati.Proprietary.GoogleWorkspace;
@@ -13,6 +15,87 @@ namespace Duplicati.Proprietary.GoogleWorkspace;
 /// </summary>
 internal static class GoogleDownloads
 {
+    /// <summary>
+    /// The log tag for this class
+    /// </summary>
+    private static readonly string LOGTAG = Log.LogTagFromType(typeof(GoogleDownloads));
+
+    /// <summary>
+    /// Opens the content of a Drive file, whatever refers to it: a file in a drive or a
+    /// Chat attachment kept in Drive. A Docs Editors file has no binary content and is
+    /// exported; any other file is read straight from the connection, whatever its size.
+    /// </summary>
+    /// <param name="driveService">The Drive client of the user the file is read as</param>
+    /// <param name="fileId">The id of the file</param>
+    /// <param name="mimeType">The type Drive lists for the file, which tells a Docs Editors file apart</param>
+    /// <param name="size">The size Drive lists for the file, or <c>null</c> if it lists none</param>
+    /// <param name="readTimeout">How long a read may wait for bytes before the connection is taken as stalled and the download resumed</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The content</returns>
+    public static Task<Stream> OpenDriveFileAsync(DriveService driveService, string fileId, string? mimeType, long? size, TimeSpan readTimeout, CancellationToken cancellationToken)
+    {
+        // A Docs Editors file has no binary content; it is exported
+        if (GoogleMimeTypes.IsGoogleDoc(mimeType))
+            return ExportDriveFileAsync(driveService, fileId, mimeType!, readTimeout, cancellationToken);
+
+        // Binary content is read straight from the connection, whatever its size; the
+        // service's client carries the credentials and the retries of the request
+        var request = driveService.Files.Get(fileId);
+        request.SupportsAllDrives = true;
+        request.Alt = FilesResource.GetRequest.AltEnum.Media;
+        return OpenMediaAsync(request, size, readTimeout, $"file {fileId}", cancellationToken);
+    }
+
+    /// <summary>
+    /// Exports a Docs Editors file. <c>Files.Export</c> refuses an export larger than 10 MB,
+    /// so a file it refuses for its size is exported through the export link Drive hands out
+    /// for the file, which has no such limit. The size Drive lists for the file is its
+    /// storage footprint, not the size of the export, so no length is given
+    /// </summary>
+    /// <param name="driveService">The Drive client of the user the file is read as</param>
+    /// <param name="fileId">The id of the file</param>
+    /// <param name="mimeType">The type Drive lists for the file</param>
+    /// <param name="readTimeout">How long a read may wait for bytes before the connection is taken as stalled and the download resumed</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The exported content</returns>
+    private static async Task<Stream> ExportDriveFileAsync(DriveService driveService, string fileId, string mimeType, TimeSpan readTimeout, CancellationToken cancellationToken)
+    {
+        var exportMimeType = GoogleMimeTypes.GetExportMimeType(mimeType);
+        var request = driveService.Files.Export(fileId, exportMimeType);
+        try
+        {
+            return await OpenMediaAsync(request, null, readTimeout, $"file {fileId}", cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (GoogleServiceErrors.IsExportSizeLimitExceeded(ex))
+        {
+            var exportUrl = await GetDriveExportLinkAsync(driveService, fileId, exportMimeType, cancellationToken).ConfigureAwait(false);
+            if (exportUrl == null)
+                throw;
+
+            Log.WriteVerboseMessage(LOGTAG, "ExportThroughLink", null, Strings.ExportThroughLink(fileId));
+            return await OpenMediaAsync(driveService, exportUrl, null, readTimeout, $"file {fileId}", cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Reads the link Drive hands out for exporting a file to the given type. The links
+    /// are only asked for when needed, as the listing would otherwise carry a handful of
+    /// them for every Docs Editors file
+    /// </summary>
+    /// <param name="driveService">The Drive client of the user the file is read as</param>
+    /// <param name="fileId">The id of the file</param>
+    /// <param name="exportMimeType">The type to export to</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The link, or <c>null</c> if Drive has none for the type</returns>
+    private static async Task<string?> GetDriveExportLinkAsync(DriveService driveService, string fileId, string exportMimeType, CancellationToken cancellationToken)
+    {
+        var request = driveService.Files.Get(fileId);
+        request.SupportsAllDrives = true;
+        request.Fields = "exportLinks";
+        var links = (await request.ExecuteAsync(cancellationToken).ConfigureAwait(false)).ExportLinks;
+        return links != null && links.TryGetValue(exportMimeType, out var url) && !string.IsNullOrWhiteSpace(url) ? url : null;
+    }
+
     /// <summary>
     /// Opens the media a service request addresses, such as <c>Files.Get</c> with
     /// <c>alt=media</c> or <c>Files.Export</c>, as a stream read straight from the

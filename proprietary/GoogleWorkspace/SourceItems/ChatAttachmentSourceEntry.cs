@@ -26,14 +26,39 @@ internal class ChatAttachmentSourceEntry(SourceProvider provider, string parentP
 
         // An attachment stored in Drive is read through the Drive client
         if (attachment.DriveDataRef != null)
-        {
-            var request = driveService.Files.Get(attachment.DriveDataRef.DriveFileId);
-            request.SupportsAllDrives = true;
-            request.Alt = FilesResource.GetRequest.AltEnum.Media;
-            return GoogleDownloads.OpenMediaAsync(request, null, readTimeout, $"attachment {attachment.DriveDataRef.DriveFileId}", cancellationToken);
-        }
+            return OpenDriveFileAsync(attachment.DriveDataRef.DriveFileId, cancellationToken);
 
         throw new FileNotFoundException("Attachment contains no valid data reference.");
+    }
+
+    /// <summary>
+    /// Opens an attachment kept in Drive. The attachment only names the file, so the type
+    /// and size are asked for first: a Docs Editors file shared in a chat has no binary
+    /// content and is exported, like the same file in a drive. A file the user of the
+    /// backup is not handed, or that was removed since it was shared, is reported as what
+    /// it is
+    /// </summary>
+    /// <param name="fileId">The id of the Drive file</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The content</returns>
+    private async Task<Stream> OpenDriveFileAsync(string fileId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var request = driveService.Files.Get(fileId);
+            request.SupportsAllDrives = true;
+            request.Fields = "mimeType,size";
+            var file = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+
+            return await GoogleDownloads.OpenDriveFileAsync(driveService, fileId, file.MimeType, file.Size, provider.ApiHelper.Timeouts.ReadWriteTimeout, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            var refusal = GoogleServiceErrors.AsContentRefusal(ex, $"the content of attachment {fileId}");
+            if (ReferenceEquals(refusal, ex))
+                throw;
+            throw refusal;
+        }
     }
 
     public override Task<Dictionary<string, string?>> GetMinorMetadata(CancellationToken cancellationToken)
