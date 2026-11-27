@@ -246,7 +246,7 @@ namespace Duplicati.Library.Main.Operation
                     throw new UserInformationException("The database was only partially recreated. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsPartiallyRecreated");
 
                 if (await db.RepairInProgressAsync(cancellationToken).ConfigureAwait(false))
-                    throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss.", "DatabaseIsInRepairState");
+                    throw new UserInformationException("The database was attempted repaired, but the repair did not complete. This database may be incomplete and the repair process is not allowed to alter remote files as that could result in data loss. To continue, delete the local database and run the repair again, which recreates the database from the remote files.", "DatabaseIsInRepairState");
 
                 // Ensure the database is consistent before we start fixing the remote
                 await db
