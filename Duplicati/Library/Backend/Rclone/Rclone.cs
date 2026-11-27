@@ -340,7 +340,7 @@ namespace Duplicati.Library.Backend
             new CommandLineArgument(OPTION_RCLONE_EXECUTABLE, CommandLineArgument.ArgumentType.String, Strings.Rclone.RcloneExecutableShort, Strings.Rclone.RcloneExecutableLong, "rclone"),
             new CommandLineArgument(OPTION_CONFIG_PASSWORD, CommandLineArgument.ArgumentType.Password, Strings.Rclone.RcloneConfigPasswordShort, Strings.Rclone.RcloneConfigPasswordLong),
             .. TimeoutOptionsHelper.GetOptions()
-                .Where(x => x.Name != TimeoutOptionsHelper.ReadWriteTimeoutOption)
+                .Where(x => x.Name != TimeoutOptionsHelper.ReadWriteTimeoutOption && x.Name != TimeoutOptionsHelper.UploadCompletionTimeoutOption)
         ];
 
         public string Description => Strings.Rclone.Description;

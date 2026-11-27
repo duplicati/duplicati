@@ -2312,32 +2312,27 @@ namespace Duplicati.Library.Utility
         }
 
         /// <summary>
-        /// The time an upload has to finish after the last byte has been read from the source
-        /// </summary>
-        private static readonly TimeSpan UploadAnswerTimeout = TimeSpan.FromMinutes(10);
-
-        /// <summary>
         /// Performs an upload, and cancels it when it has not read from the source for the timeout.
         /// The wrapped stream only reports the timeout on its next use, which never comes when the transfer does not move.
         /// After the last byte has been read, the data can still be on its way, or the server can be storing it.
-        /// Nothing tells if that moves, so it gets a longer time.
+        /// Nothing tells if that moves, so it gets the completion timeout instead.
         /// </summary>
         /// <param name="source">The stream to upload, which is not disposed</param>
         /// <param name="timeout">The time the upload can go without reading from the source</param>
+        /// <param name="completionTimeout">The time the upload has to complete after the last byte has been read, where zero or less and infinite both mean no limit</param>
         /// <param name="token">The cancellation token</param>
         /// <param name="upload">The upload, which must use the given stream and stop on the given token</param>
-        /// <param name="answerTimeout">The time the upload has after the last byte has been read, or null for the default</param>
         /// <returns>The task</returns>
-        public static async Task WithUploadTimeout(Stream source, TimeSpan timeout, CancellationToken token, Func<Stream, CancellationToken, Task> upload, TimeSpan? answerTimeout = null)
+        public static async Task WithUploadTimeout(Stream source, TimeSpan timeout, TimeSpan completionTimeout, CancellationToken token, Func<Stream, CancellationToken, Task> upload)
         {
             using var ts = (TimeoutObservingStream)source.ObserveReadTimeout(timeout, false, TimeoutMode.Gap);
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
             using var registration = ts.TimeoutToken.Register(() =>
             {
-                if (IsReadToEnd(source))
-                    cts.CancelAfter(answerTimeout ?? UploadAnswerTimeout);
-                else
+                if (!IsReadToEnd(source))
                     cts.Cancel();
+                else if (completionTimeout.Ticks > 0 && completionTimeout != Timeout.InfiniteTimeSpan)
+                    cts.CancelAfter(completionTimeout);
             });
 
             try

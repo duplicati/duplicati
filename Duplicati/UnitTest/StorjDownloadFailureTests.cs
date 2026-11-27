@@ -92,7 +92,7 @@ public class StorjDownloadFailureTests
             ? Task.FromResult(download)
             : throw new NotSupportedException(m.Name));
         var timeout = TimeSpan.FromSeconds(30);
-        return new Storj(bucketService, objectService, new TimeoutOptionsHelper.Timeouts(timeout, timeout, timeout));
+        return new Storj(bucketService, objectService, new TimeoutOptionsHelper.Timeouts(timeout, timeout, timeout, TimeSpan.FromMinutes(10)));
     }
 
     /// <summary>

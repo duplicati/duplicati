@@ -119,7 +119,7 @@ public class Office365MailboxGateTests
         => new(HttpStatusCode.OK) { Content = new StringContent("{\"value\":1}", Encoding.UTF8, "application/json") };
 
     private static APIHelper CreateApi(HttpMessageHandler handler)
-        => Office365TestSupport.CreateApiHelper(handler, GRAPH, new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30)));
+        => Office365TestSupport.CreateApiHelper(handler, GRAPH, new TimeoutOptionsHelper.Timeouts(TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30), TimeSpan.FromMinutes(10)));
 
     private static Task<HttpResponseMessage> SendAsync(APIHelper api, string url, CancellationToken cancellationToken = default)
         => api.SendWithRetryAsync(_ => Task.FromResult(new HttpRequestMessage(HttpMethod.Get, url)), HttpCompletionOption.ResponseHeadersRead, null, null, cancellationToken);

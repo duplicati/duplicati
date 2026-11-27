@@ -300,7 +300,7 @@ namespace Duplicati.Library.Backend
             await SetWorkingDirectory(con, cancelToken).ConfigureAwait(false);
             try
             {
-                await Utility.Utility.WithUploadTimeout(stream, m_timeouts.ReadWriteTimeout, cancelToken, (ts, ct) =>
+                await Utility.Utility.WithUploadTimeout(stream, m_timeouts.ReadWriteTimeout, m_timeouts.UploadCompletionTimeout, cancelToken, (ts, ct) =>
                     WaitForTransferAsync(con, Task.Factory.FromAsync(
                         (cb, state) => con.BeginUploadFile(ts, remotename, cb, state, _ => ct.ThrowIfCancellationRequested()),
                         con.EndUploadFile,

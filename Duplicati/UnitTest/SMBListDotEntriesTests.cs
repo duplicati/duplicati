@@ -79,7 +79,7 @@ public class SMBListDotEntriesTests
         var store = DispatchProxy.Create<ISMBFileStore, FileStore>();
         var connection = new SMBShareConnection(new SMB2Client(), store,
             new SMBConnectionParameters("server", SMBTransportType.DirectTCPTransport, "share", "folder", null, null, null, null, null, false),
-            new TimeoutOptionsHelper.Timeouts(System.TimeSpan.FromSeconds(30), System.TimeSpan.FromSeconds(30), System.TimeSpan.FromSeconds(30)));
+            new TimeoutOptionsHelper.Timeouts(System.TimeSpan.FromSeconds(30), System.TimeSpan.FromSeconds(30), System.TimeSpan.FromSeconds(30), System.TimeSpan.FromMinutes(10)));
         return new SMBBackend("smb://server/share/folder", new Dictionary<string, string?>())
         {
             ConnectionFactory = _ => Task.FromResult(connection)

@@ -184,7 +184,7 @@ public class SMBShareConnectionTransferTimeoutTests : BasicSetupHelper
 
         var connection = new SMBShareConnection(client, proxy,
             new SMBConnectionParameters("server", SMBTransportType.DirectTCPTransport, "share", "folder", null, null, null, null, null, false),
-            new TimeoutOptionsHelper.Timeouts(Timeout, Timeout, Timeout));
+            new TimeoutOptionsHelper.Timeouts(Timeout, Timeout, Timeout, TimeSpan.FromMinutes(10)));
         return (connection, store);
     }
 

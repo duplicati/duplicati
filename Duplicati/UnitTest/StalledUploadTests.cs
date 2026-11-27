@@ -48,6 +48,11 @@ public class StalledUploadTests
     private static readonly TimeSpan Idle = TimeSpan.FromSeconds(1);
 
     /// <summary>
+    /// The time an upload has to complete after the source has been read, longer than any test waits
+    /// </summary>
+    private static readonly TimeSpan Completion = TimeSpan.FromMinutes(10);
+
+    /// <summary>
     /// The longest a test waits, so that an upload that never ends fails the test instead of hanging it
     /// </summary>
     private static readonly TimeSpan Guard = TimeSpan.FromSeconds(20);
@@ -83,7 +88,7 @@ public class StalledUploadTests
     public async Task AnUploadThatStopsReadingTimesOut(int read)
     {
         using var source = new MemoryStream(new byte[1000]);
-        var ex = await WaitGuardedAsync(Utility.WithUploadTimeout(source, Idle, CancellationToken.None, (s, ct) => StallAfterAsync(s, read, ct)));
+        var ex = await WaitGuardedAsync(Utility.WithUploadTimeout(source, Idle, Completion, CancellationToken.None, (s, ct) => StallAfterAsync(s, read, ct)));
         Assert.That(ex, Is.InstanceOf<TimeoutException>());
         Assert.That(source.CanRead, Is.True, "The source belongs to the caller");
     }
@@ -92,7 +97,7 @@ public class StalledUploadTests
     public async Task AnUploadThatIsReadSlowlyIsNotCutOff()
     {
         using var source = new MemoryStream(new byte[8]);
-        var ex = await WaitGuardedAsync(Utility.WithUploadTimeout(source, Idle, CancellationToken.None, async (s, ct) =>
+        var ex = await WaitGuardedAsync(Utility.WithUploadTimeout(source, Idle, Completion, CancellationToken.None, async (s, ct) =>
         {
             for (var i = 0; i < 8; i++)
             {
@@ -110,7 +115,7 @@ public class StalledUploadTests
     public async Task AnUploadThatIsReadToTheEndHasLongerToFinish()
     {
         using var source = new MemoryStream(new byte[1000]);
-        var ex = await WaitGuardedAsync(Utility.WithUploadTimeout(source, Idle, CancellationToken.None, async (s, ct) =>
+        var ex = await WaitGuardedAsync(Utility.WithUploadTimeout(source, Idle, Completion, CancellationToken.None, async (s, ct) =>
         {
             await s.CopyToAsync(Stream.Null, ct);
             await Task.Delay(Idle * 4, ct);
@@ -123,7 +128,7 @@ public class StalledUploadTests
     {
         using var source = new MemoryStream(new byte[1000]);
         var sw = Stopwatch.StartNew();
-        var ex = await WaitGuardedAsync(Utility.WithUploadTimeout(source, Idle, CancellationToken.None, (s, ct) => StallAfterAsync(s, 1000, ct), answerTimeout: Idle * 3));
+        var ex = await WaitGuardedAsync(Utility.WithUploadTimeout(source, Idle, Idle * 3, CancellationToken.None, (s, ct) => StallAfterAsync(s, 1000, ct)));
         Assert.That(ex, Is.InstanceOf<TimeoutException>());
         Assert.That(sw.Elapsed, Is.GreaterThan(Idle * 2.9));
     }
@@ -133,7 +138,7 @@ public class StalledUploadTests
     {
         using var source = new MemoryStream(new byte[1000]);
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
-        var ex = await WaitGuardedAsync(Utility.WithUploadTimeout(source, Idle, cts.Token, (s, ct) => StallAfterAsync(s, 500, ct)));
+        var ex = await WaitGuardedAsync(Utility.WithUploadTimeout(source, Idle, Completion, cts.Token, (s, ct) => StallAfterAsync(s, 500, ct)));
         Assert.That(ex, Is.InstanceOf<OperationCanceledException>());
     }
 
@@ -141,7 +146,7 @@ public class StalledUploadTests
     public async Task AnUploadThatFailsPassesItsErrorOn()
     {
         using var source = new MemoryStream(new byte[1000]);
-        var ex = await WaitGuardedAsync(Utility.WithUploadTimeout(source, Idle, CancellationToken.None, (_, _) => throw new InvalidOperationException("failed")));
+        var ex = await WaitGuardedAsync(Utility.WithUploadTimeout(source, Idle, Completion, CancellationToken.None, (_, _) => throw new InvalidOperationException("failed")));
         Assert.That(ex, Is.InstanceOf<InvalidOperationException>());
     }
 

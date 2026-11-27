@@ -416,7 +416,7 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                await Utility.Utility.WithUploadTimeout(source, m_timeouts.ReadWriteTimeout, cancelToken, (ts, ct) =>
+                await Utility.Utility.WithUploadTimeout(source, m_timeouts.ReadWriteTimeout, m_timeouts.UploadCompletionTimeout, cancelToken, (ts, ct) =>
                 {
                     objectAddRequest.InputStream = ts;
                     return m_client.PutObjectAsync(objectAddRequest, ct);

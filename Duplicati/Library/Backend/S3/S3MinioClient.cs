@@ -324,7 +324,7 @@ namespace Duplicati.Library.Backend
 
             try
             {
-                await Utility.Utility.WithUploadTimeout(source, m_timeouts.ReadWriteTimeout, cancelToken, (t, ct) => m_client.PutObjectAsync(new PutObjectArgs()
+                await Utility.Utility.WithUploadTimeout(source, m_timeouts.ReadWriteTimeout, m_timeouts.UploadCompletionTimeout, cancelToken, (t, ct) => m_client.PutObjectAsync(new PutObjectArgs()
                     .WithBucket(bucketName)
                     .WithObject(keyName)
                     .WithStreamData(t)
