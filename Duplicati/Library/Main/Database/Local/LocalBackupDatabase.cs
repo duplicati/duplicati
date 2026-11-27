@@ -997,7 +997,7 @@ namespace Duplicati.Library.Main.Database.Local
             }
             catch (Exception ex)
             {
-                Logging.Log.WriteWarningMessage(LOGTAG, "UnfinishedBlocksetNotRemoved", ex, "Failed to remove the blockset {0} that could not be added: {1}", blocksetid, ex.Message);
+                Logging.Log.WriteWarningMessage(LOGTAG, "UnfinishedBlocksetNotRemoved", ex, "Failed to remove the blockset {0} that could not be added, run repair to remove it if the next backup reports blocksets with no associated blocks: {1}", blocksetid, ex.Message);
             }
         }
 

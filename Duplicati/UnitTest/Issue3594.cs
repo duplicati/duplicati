@@ -58,9 +58,39 @@ public class Issue3594 : BasicSetupHelper
         ", 0, CancellationToken.None);
     }
 
+    /// <summary>
+    /// Counts the blocks and blocklist hashes of blocksets that are not in the database.
+    /// </summary>
+    private async Task<long> CountRowsWithoutBlocksetAsync()
+    {
+        await using var con = await SQLiteLoader.LoadConnectionAsync(DBFILE);
+        await using var cmd = con.CreateCommand();
+        return await cmd.ExecuteScalarInt64Async(@"
+            SELECT
+                (
+                    SELECT COUNT(*)
+                    FROM ""BlocksetEntry""
+                    WHERE ""BlocksetID"" NOT IN (
+                        SELECT ""ID""
+                        FROM ""Blockset""
+                    )
+                )
+                + (
+                    SELECT COUNT(*)
+                    FROM ""BlocklistHash""
+                    WHERE ""BlocksetID"" NOT IN (
+                        SELECT ""ID""
+                        FROM ""Blockset""
+                    )
+                )
+        ", 0, CancellationToken.None);
+    }
+
     [Test]
     [Category("Targeted")]
-    public async Task AFileThatCannotBeAddedLeavesNoBlocksetAsync()
+    [TestCase("MISSING", "A", Description = "No block is added before the one that is not found")]
+    [TestCase("A", "MISSING", Description = "A block is added before the one that is not found")]
+    public async Task AFileThatCannotBeAddedLeavesNoBlocksetAsync(string firstHash, string secondHash)
     {
         var options = new Options(new Dictionary<string, string>(TestOptions) { ["blocksize"] = "1kb" });
         await using (var db = await LocalBackupDatabase.CreateAsync(DBFILE, options, CancellationToken.None))
@@ -69,9 +99,9 @@ public class Issue3594 : BasicSetupHelper
             await db.AddBlockAsync("A", 1024, volume, CancellationToken.None);
             await db.AddBlockAsync("B", 10, volume, CancellationToken.None);
 
-            // The first block of the file is not in the database
+            // One block of the file is not in the database, and the blocklist hash is added before it is found missing
             Assert.ThrowsAsync<Exception>(async () =>
-                await db.AddBlocksetAsync("F1", 1034, 1024, ["MISSING", "A"], ["BL"], CancellationToken.None));
+                await db.AddBlocksetAsync("F1", 1034, 1024, [firstHash, secondHash], ["BL"], CancellationToken.None));
 
             // The next file commits the transaction that the files share
             var (added, _) = await db.AddBlocksetAsync("F2", 10, 1024, ["B"], null, CancellationToken.None);
@@ -79,6 +109,7 @@ public class Issue3594 : BasicSetupHelper
         }
 
         Assert.That(await CountBlocksetsWithoutBlocksAsync(), Is.EqualTo(0), "The file that could not be added left its blockset");
+        Assert.That(await CountRowsWithoutBlocksetAsync(), Is.EqualTo(0), "The file that could not be added left blocks or blocklist hashes");
     }
 
     [Test]
