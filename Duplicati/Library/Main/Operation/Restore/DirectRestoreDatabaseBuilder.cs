@@ -97,9 +97,9 @@ namespace Duplicati.Library.Main.Operation.Restore
         private readonly RestoreResults m_result;
 
         /// <summary>
-        /// The blocks needed for the restore, by hash
+        /// The blocks needed for the restore, by hash. The hashes are kept as bytes, as the table has every block the restore needs
         /// </summary>
-        private readonly Dictionary<string, NeededBlock> m_blocks = new(StringComparer.Ordinal);
+        private readonly BlockHashTable<NeededBlock> m_blocks = new();
         /// <summary>
         /// The blocklists that are not yet expanded into blockset entries, by hash
         /// </summary>
@@ -360,7 +360,7 @@ namespace Duplicati.Library.Main.Operation.Restore
 
             m_result.OperationProgressUpdater.UpdateProgress(0.9f);
             using (new Logging.Timer(LOGTAG, "DirectRestoreWriteBlocks", "Write blocks"))
-                foreach (var (hash, block) in m_blocks)
+                foreach (var (hash, block) in m_blocks.Entries())
                     if (block.VolumeID >= 0)
                         await db.InsertBlockAsync(block.ID, hash, block.Size, block.VolumeID, token).ConfigureAwait(false);
 
