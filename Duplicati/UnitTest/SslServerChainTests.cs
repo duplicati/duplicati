@@ -150,6 +150,23 @@ public class SslServerChainTests
     }
 
     [Test]
+    public void AnIntermediateFoundOnlyInTheChainElementsIsUsed()
+    {
+        using var certificates = CreateServerChain();
+        using var chain = BuildTlsChain(certificates, certificates.Root);
+        Assert.That(chain.ChainStatus, Is.Empty, "The TLS stack builds the chain with the certificates the server sent");
+
+        // The TLS stack can find an intermediate elsewhere than in the certificates the server sent,
+        // and then it is only in the elements of the chain, not in the extra store of the policy
+        chain.ChainPolicy.ExtraStore.Clear();
+        using (var policyOnly = new X509Chain { ChainPolicy = chain.ChainPolicy.Clone() })
+            Assert.That(policyOnly.Build(certificates.Leaf), Is.False, "The policy alone does not reach the root");
+
+        var validator = new SslCertificateValidator(false, null, true);
+        Assert.That(validator.ValidateServerCertificate(this, certificates.Leaf, chain, SslPolicyErrors.None), Is.True);
+    }
+
+    [Test]
     public async Task AServerThatSendsItsIntermediateIsAcceptedOverTls()
     {
         using var certificates = CreateServerChain();
@@ -229,5 +246,62 @@ public class SslServerChainTests
 
         Assert.Throws<SslCertificateValidator.InvalidCertificateException>(() => ftp.HandleValidateCertificate(null!, e));
         Assert.That(e.Accept, Is.False);
+    }
+
+    /// <summary>
+    /// The event a custom TLS stream, such as Bouncy Castle, gives: FluentFTP reports any error as a name mismatch
+    /// </summary>
+    private static FtpSslValidationEventArgs CustomStreamEvent(X509Certificate2 certificate, X509Chain chain, string message)
+        => new FtpSslValidationEventArgs
+        {
+            Certificate = certificate,
+            Chain = chain,
+            PolicyErrors = SslPolicyErrors.RemoteCertificateNameMismatch,
+            PolicyErrorMessage = message
+        };
+
+    [Test]
+    public void FtpCustomStreamChainErrorIsReportedAsAChainError()
+    {
+        using var certificates = CreateServerChain();
+        using var otherChain = CreateServerChain();
+        using var chain = BuildTlsChain(certificates, otherChain.Root);
+        Assert.That(chain.ChainStatus, Is.Not.Empty);
+
+        var ftp = new FTP("ftp://localhost/folder", new Dictionary<string, string?>());
+        var e = CustomStreamEvent(certificates.Leaf, chain, "Server certificate chain validation failed: UntrustedRoot");
+
+        var ex = Assert.Throws<SslCertificateValidator.InvalidCertificateException>(() => ftp.HandleValidateCertificate(null!, e));
+        Assert.That(ex!.SslError, Is.EqualTo(SslPolicyErrors.RemoteCertificateChainErrors));
+        Assert.That(e.Accept, Is.False);
+    }
+
+    [Test]
+    public void FtpCustomStreamNameMismatchIsReportedAsANameMismatch()
+    {
+        using var certificates = CreateServerChain();
+        using var chain = BuildTlsChain(certificates, certificates.Root);
+        Assert.That(chain.ChainStatus, Is.Empty);
+
+        var ftp = new FTP("ftp://example.com/folder", new Dictionary<string, string?>());
+        var e = CustomStreamEvent(certificates.Leaf, chain, "Server certificate does not match the TLS target host.");
+
+        var ex = Assert.Throws<SslCertificateValidator.InvalidCertificateException>(() => ftp.HandleValidateCertificate(null!, e));
+        Assert.That(ex!.SslError, Is.EqualTo(SslPolicyErrors.RemoteCertificateNameMismatch));
+        Assert.That(e.Accept, Is.False);
+    }
+
+    [Test]
+    public void FtpCustomStreamReportsBothAChainErrorAndANameMismatch()
+    {
+        using var certificates = CreateServerChain();
+        using var otherChain = CreateServerChain();
+        using var chain = BuildTlsChain(certificates, otherChain.Root);
+
+        var ftp = new FTP("ftp://example.com/folder", new Dictionary<string, string?>());
+        var e = CustomStreamEvent(certificates.Leaf, chain, "Server certificate chain validation failed: UntrustedRoot; Server certificate does not match the TLS target host.");
+
+        var ex = Assert.Throws<SslCertificateValidator.InvalidCertificateException>(() => ftp.HandleValidateCertificate(null!, e));
+        Assert.That(ex!.SslError, Is.EqualTo(SslPolicyErrors.RemoteCertificateChainErrors | SslPolicyErrors.RemoteCertificateNameMismatch));
     }
 }
