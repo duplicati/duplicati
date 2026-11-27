@@ -239,14 +239,24 @@ public static class SecretProviderHelper
             await secretProvider.InitializeAsync(new System.Uri(provider), cancellationToken).ConfigureAwait(false);
         }
 
-        if (string.IsNullOrWhiteSpace(pattern) && secretProvider is SecretProviderCached cached)
+        await ReplaceSecretsAsync(secretProvider, realUriArguments, internalUriArguments, options, GetEffectivePattern(options, secretProvider), cancellationToken).ConfigureAwait(false);
+        return secretProvider;
+    }
+
+    /// <summary>
+    /// Gets the pattern that marks a value as the name of a secret: the one the options
+    /// give, otherwise the one the provider was set up with, otherwise the default.
+    /// </summary>
+    /// <param name="options">The options that may carry the pattern</param>
+    /// <param name="provider">The provider the secrets are resolved with</param>
+    /// <returns>The pattern</returns>
+    public static string GetEffectivePattern(IReadOnlyDictionary<string, string?> options, ISecretProvider provider)
+    {
+        var pattern = options.GetValueOrDefault("secret-provider-pattern");
+        if (string.IsNullOrWhiteSpace(pattern) && provider is SecretProviderCached cached)
             pattern = cached.Pattern;
 
-        if (string.IsNullOrWhiteSpace(pattern))
-            pattern = DEFAULT_PATTERN;
-
-        await ReplaceSecretsAsync(secretProvider, realUriArguments, internalUriArguments, options, pattern, cancellationToken).ConfigureAwait(false);
-        return secretProvider;
+        return string.IsNullOrWhiteSpace(pattern) ? DEFAULT_PATTERN : pattern;
     }
 
     /// <summary>

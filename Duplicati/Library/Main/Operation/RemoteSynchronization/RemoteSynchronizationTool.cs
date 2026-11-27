@@ -55,6 +55,9 @@ namespace Duplicati.Library.Main.Operation.RemoteSynchronization;
 internal sealed record RemoteSynchronizationToolConfig(
     string Src,
     string Dst,
+    string SecretProvider,
+    string SecretProviderPattern,
+    string SecretProviderCache,
     bool AutoCreateFolders = true,
     int BackendRetries = 3,
     int BackendRetryDelay = 1000,
@@ -72,8 +75,8 @@ internal sealed record RemoteSynchronizationToolConfig(
 )
 {
     /// <summary>
-    /// Describes the arguments without the url credentials or the options, which carry
-    /// passphrases and backend credentials.
+    /// Describes the arguments without the url credentials, the options or the secret
+    /// provider, which carry passphrases and credentials.
     /// </summary>
     public override string ToString()
         => $"Src: {Library.Utility.Utility.GetUrlWithoutCredentials(Src)}, Dst: {Library.Utility.Utility.GetUrlWithoutCredentials(Dst)}, AutoCreateFolders: {AutoCreateFolders}, BackendRetries: {BackendRetries}, BackendRetryDelay: {BackendRetryDelay}, BackendRetryWithExponentialBackoff: {BackendRetryWithExponentialBackoff}, Confirm: {Confirm}, DryRun: {DryRun}, Force: {Force}, LogFile: {LogFile}, LogLevel: {LogLevel}, ParseArgumentsOnly: {ParseArgumentsOnly}, Progress: {Progress}";
@@ -121,6 +124,10 @@ looking at what the destination holds, and nothing is deleted.
 
 Unless the confirm option is set, the tool first works out what it would do,
 shows it, and asks before it changes anything.
+
+With --secret-provider the query parameters of the two backend strings, and the
+values of the options, can name a secret instead of holding it, e.g.
+auth-password=$name. The names are replaced with the values from the provider.
 ");
         public static string SourceBackendDescription => LC.L("The source backend string");
         public static string DestinationBackendDescription => LC.L("The destination backend string");
@@ -137,6 +144,9 @@ shows it, and asks before it changes anything.
         public static string LogLevelDescription => LC.L("The log level to use");
         public static string ParseArgumentsOnlyDescription => LC.L("Only parse the arguments and then exit");
         public static string ProgressDescription => LC.L("Print progress to STDOUT");
+        public static string SecretProviderDescription => LC.L("The url of the secret provider to read secrets from, e.g. env:// or wincred://. A query parameter of a backend string, or the value of an option, that is the name of a secret is replaced with the secret [default: \"\"]");
+        public static string SecretProviderPatternDescription => LC.L("The pattern that marks a value as the name of a secret, e.g. $ for $name or ${} for ${name} [default: $]");
+        public static string SecretProviderCacheDescription => LC.L("How the secrets are cached for when the provider cannot be reached: None, InMemory or Persistent [default: None]");
         public static string SrcOptionsDescription => LC.L("Options for the source backend. Each option is a key-value pair separated by an equals sign, e.g. --src-options key1=value1 key2=value2 [default: empty]");
         public static string RemovedOptionError(string option) => LC.L("The option {0} is no longer supported.", option);
     }
@@ -175,6 +185,9 @@ shows it, and asks before it changes anything.
         var opt_log_level = new Option<string>("--log-level") { Description = Strings.LogLevelDescription, DefaultValueFactory = _ => "Information", Arity = ArgumentArity.ExactlyOne };
         var opt_parse_arguments_only = new Option<bool>("--parse-arguments-only") { Description = Strings.ParseArgumentsOnlyDescription, DefaultValueFactory = _ => false };
         var opt_progress = new Option<bool>("--progress") { Description = Strings.ProgressDescription, DefaultValueFactory = _ => false };
+        var opt_secret_provider = new Option<string>("--secret-provider") { Description = Strings.SecretProviderDescription, DefaultValueFactory = _ => "", Arity = ArgumentArity.ExactlyOne };
+        var opt_secret_provider_cache = new Option<string>("--secret-provider-cache") { Description = Strings.SecretProviderCacheDescription, DefaultValueFactory = _ => "", Arity = ArgumentArity.ExactlyOne };
+        var opt_secret_provider_pattern = new Option<string>("--secret-provider-pattern") { Description = Strings.SecretProviderPatternDescription, DefaultValueFactory = _ => "", Arity = ArgumentArity.ExactlyOne };
         var opt_src_options = OptionWithMultipleTokens("--src-options", Strings.SrcOptionsDescription);
 
         var root_cmd = new RootCommand(Strings.RootCommandDescription)
@@ -194,6 +207,9 @@ shows it, and asks before it changes anything.
                 opt_log_level,
                 opt_parse_arguments_only,
                 opt_progress,
+                opt_secret_provider,
+                opt_secret_provider_cache,
+                opt_secret_provider_pattern,
                 opt_src_options,
             };
 
@@ -202,6 +218,9 @@ shows it, and asks before it changes anything.
             var config = new RemoteSynchronizationToolConfig(
                 Src: parseResult.GetValue(arg_src)!,
                 Dst: parseResult.GetValue(arg_dst)!,
+                SecretProvider: parseResult.GetValue(opt_secret_provider) ?? "",
+                SecretProviderPattern: parseResult.GetValue(opt_secret_provider_pattern) ?? "",
+                SecretProviderCache: parseResult.GetValue(opt_secret_provider_cache) ?? "",
                 AutoCreateFolders: parseResult.GetValue(opt_auto_create_folders),
                 BackendRetries: parseResult.GetValue(opt_backend_retries),
                 BackendRetryDelay: parseResult.GetValue(opt_backend_retry_delay),
@@ -288,6 +307,10 @@ shows it, and asks before it changes anything.
             return 0;
         }
 
+        // The urls with the secrets in place are for the backends only; what is shown
+        // is made from the urls as they were given
+        var (src_url, dst_url) = await ApplySecretProviderAsync(config, source_options, target_base_options, dst_options, token).ConfigureAwait(false);
+
         // The tool mirrors the volumes of every backup in the source, unless it is told which one
         var any_prefix = !source_options.ContainsKey("prefix");
         var display_src = Library.Utility.Utility.GetUrlWithoutCredentials(config.Src);
@@ -306,10 +329,10 @@ shows it, and asks before it changes anything.
                 : results.OperationProgressUpdater;
 
             var summaries = await RemoteReplication.RunAsync(
-                config.Src,
+                src_url,
                 source_options,
                 target_base_options,
-                [new RemoteReplicationTarget(config.Dst, dst_options, sync_database, dryRun, config.Force)],
+                [new RemoteReplicationTarget(dst_url, dst_options, sync_database, dryRun, config.Force)],
                 results.BackendWriter,
                 null,
                 results.TaskControl,
@@ -361,6 +384,49 @@ shows it, and asks before it changes anything.
             Log.WriteErrorMessage(LOGTAG, "SynchronizationFailed", null, "Remote synchronization to {0} did not complete: {1} files could not be copied and {2} files could not be deleted.", display_dst, summary.UploadFailures, summary.DeleteFailures);
 
         return ExitCode(summary);
+    }
+
+    /// <summary>
+    /// Replaces the names of secrets in the urls and the options with their values,
+    /// if the tool was given a secret provider. The options are changed in place.
+    /// </summary>
+    /// <param name="config">The arguments of the tool</param>
+    /// <param name="sourceOptions">The options of the source</param>
+    /// <param name="targetBaseOptions">The options the destination starts from</param>
+    /// <param name="dstOptions">The options of the destination</param>
+    /// <param name="token">The cancellation token</param>
+    /// <returns>The urls of the source and the destination, with the secrets in place</returns>
+    private static async Task<(string Src, string Dst)> ApplySecretProviderAsync(RemoteSynchronizationToolConfig config, Dictionary<string, string?> sourceOptions, Dictionary<string, string?> targetBaseOptions, Dictionary<string, string?> dstOptions, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(config.SecretProvider))
+            return (config.Src, config.Dst);
+
+        // The three sets are resolved in one go, so the provider is asked once. The
+        // prefix keeps the sets apart, and keeps an option of a backend from being
+        // read as a setting of the secret provider.
+        var sets = new[] { ("src:", sourceOptions), ("base:", targetBaseOptions), ("dst:", dstOptions) };
+        var combined = new Dictionary<string, string?> { ["secret-provider"] = config.SecretProvider };
+        if (!string.IsNullOrWhiteSpace(config.SecretProviderPattern))
+            combined["secret-provider-pattern"] = config.SecretProviderPattern;
+        if (!string.IsNullOrWhiteSpace(config.SecretProviderCache))
+            combined["secret-provider-cache"] = config.SecretProviderCache;
+
+        foreach (var (prefix, set) in sets)
+            foreach (var (key, value) in set)
+                combined[prefix + key] = value;
+
+        var urls = new[] { new Library.Utility.RelaxedUri(config.Src), new Library.Utility.RelaxedUri(config.Dst) };
+        var unresolved = urls.Select(x => x.ToString()).ToArray();
+        await SecretProviderHelper.ApplySecretProviderAsync([], urls, combined, Library.Utility.TempFolder.SystemTempPath, null, token).ConfigureAwait(false);
+
+        foreach (var (prefix, set) in sets)
+            foreach (var key in set.Keys.ToList())
+                set[key] = combined[prefix + key];
+
+        // A url without a secret is passed on as it was given
+        return (
+            urls[0].ToString() == unresolved[0] ? config.Src : urls[0].ToString(),
+            urls[1].ToString() == unresolved[1] ? config.Dst : urls[1].ToString());
     }
 
     /// <summary>

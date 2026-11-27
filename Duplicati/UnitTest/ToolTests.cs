@@ -695,6 +695,9 @@ namespace Duplicati.UnitTest
             => new Library.Main.Operation.RemoteSynchronization.RemoteSynchronizationToolConfig(
                 Src: src,
                 Dst: dst,
+                SecretProvider: "",
+                SecretProviderPattern: "",
+                SecretProviderCache: "",
                 BackendRetries: 0,
                 BackendRetryDelay: 0,
                 Confirm: true,
@@ -780,6 +783,54 @@ namespace Duplicati.UnitTest
 
             Assert.AreEqual("DuplicateRemoteFiles", error!.HelpID);
             Assert.IsTrue(error.Message.Contains("source"), $"The error did not say which side reported the duplicates: {error.Message}");
+        }
+
+        /// <summary>
+        /// With a secret provider, an option or a query parameter of a backend string can name
+        /// a secret. Here the secret is what makes the source report its names twice, so the run
+        /// only fails if the name was replaced with the value before the backend was loaded.
+        /// </summary>
+        [TestCase("option", true)]
+        [TestCase("url", true)]
+        [TestCase("option", false)]
+        [TestCase("url", false)]
+        [Category("Tools/RemoteSynchronization")]
+        public async Task TestRemoteSynchronizationResolvesSecretsAsync(string where, bool useSecretProvider)
+        {
+            const string secretName = "DUPLICATI_TEST_SYNCTOOL_SECRET";
+            var l1 = Path.Combine(TARGETFOLDER, $"secret_src_{where}_{useSecretProvider}");
+            var l2 = Path.Combine(TARGETFOLDER, $"secret_dst_{where}_{useSecretProvider}");
+
+            Directory.CreateDirectory(l1);
+            Directory.CreateDirectory(l2);
+
+            await GenerateTestVolumesAsync(l1, 3, 1024).ConfigureAwait(false);
+
+            Library.DynamicLoader.BackendLoader.AddBackend(new DuplicateListingBackend());
+
+            var config = (where == "url"
+                ? SyncConfig($"{DuplicateListingBackend.Key}://{l1}?{DuplicateListingBackend.ModeOption}=${secretName}", $"file://{l2}")
+                : SyncConfig($"{DuplicateListingBackend.Key}://{l1}", $"file://{l2}", srcOptions: [$"{DuplicateListingBackend.ModeOption}=${secretName}"]))
+                with
+            { SecretProvider = useSecretProvider ? "env://" : "" };
+
+            Environment.SetEnvironmentVariable(secretName, "exact");
+            try
+            {
+                if (useSecretProvider)
+                {
+                    var error = Assert.ThrowsAsync<RemoteListVerificationException>(async () => await RunSyncAsync(config).ConfigureAwait(false));
+                    Assert.AreEqual("DuplicateRemoteFiles", error!.HelpID);
+                }
+                else
+                {
+                    Assert.AreEqual(0, await RunSyncAsync(config).ConfigureAwait(false), "The name of the secret was replaced without a secret provider.");
+                }
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(secretName, null);
+            }
         }
 
         /// <summary>

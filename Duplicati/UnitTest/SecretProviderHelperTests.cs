@@ -26,9 +26,11 @@ using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Logging;
 using Duplicati.Library.Main;
+using Duplicati.Library.Main.Operation;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using StringAssert = NUnit.Framework.Legacy.StringAssert;
 
 namespace Duplicati.UnitTest;
 
@@ -660,6 +662,87 @@ public class SecretProviderHelperTests : BasicSetupHelper
         Assert.AreEqual("mock", wrapped.Key);
         Assert.AreEqual(SecretProviderHelper.CachingLevel.InMemory, cachingLevel);
         Assert.AreEqual("%", pattern);
+    }
+
+    /// <summary>
+    /// The additional destinations of a job are inside one option, as JSON. A secret named
+    /// in the url or the options of a destination has to be replaced there as well, or the
+    /// name itself is sent to the backend as the credential.
+    /// </summary>
+    [Test]
+    [Category("SecretHelper")]
+    public async Task RemoteSyncConfigSecretsAreReplacedAsync()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret 1&=";
+        secretProvider.Secrets["key2"] = "secret2";
+        secretProvider.Secrets["key3"] = "secret3";
+
+        var config = @"{""sync-on-warnings"": false, ""destinations"": [
+            {""url"": ""test://host/path?auth-password=$key1&other=123"", ""mode"": ""interval"", ""interval"": ""1h"",
+             ""dst-options"": [""--token=$key2"", ""plain=value"", ""partial=$key2x-y z"", ""flag""], ""Global-Options"": [""shared=$key3""]},
+            {""URL"": ""test://second/?auth-username=$key2""},
+            {""url"": ""test://third/?auth-username=user""}
+        ]}";
+
+        var resolved = await RemoteSyncConfig.ResolveSecretsAsync(config, secretProvider, SecretProviderHelper.DEFAULT_PATTERN, CancellationToken.None);
+        Assert.IsNotNull(resolved);
+
+        var parsed = RemoteSyncConfig.Parse(new Options(new Dictionary<string, string?> { ["remote-sync-json-config"] = resolved }), null, true);
+        Assert.IsNotNull(parsed);
+        Assert.IsFalse(parsed!.SyncOnWarnings);
+        Assert.AreEqual(3, parsed.Destinations.Count);
+
+        var first = parsed.Destinations[0];
+        var firstUrl = new Library.Utility.RelaxedUri(first.Target.Url);
+        Assert.AreEqual("secret 1&=", firstUrl.QueryParameters["auth-password"]);
+        Assert.AreEqual("123", firstUrl.QueryParameters["other"]);
+        Assert.AreEqual(RemoteSyncTriggerMode.Interval, first.Mode);
+        Assert.AreEqual("secret2", first.Target.Options["token"]);
+        Assert.AreEqual("value", first.Target.Options["plain"]);
+        Assert.AreEqual("$key2x-y z", first.Target.Options["partial"]);
+        Assert.IsNull(first.Target.Options["flag"]);
+        Assert.AreEqual("secret3", first.Target.Options["shared"]);
+
+        Assert.AreEqual("secret2", new Library.Utility.RelaxedUri(parsed.Destinations[1].Target.Url).QueryParameters["auth-username"]);
+        Assert.AreEqual("test://third/?auth-username=user", parsed.Destinations[2].Target.Url);
+    }
+
+    /// <summary>
+    /// The configuration can be the path of a file. The file is left alone; the option
+    /// gets the content with the secrets in place.
+    /// </summary>
+    [Test]
+    [Category("SecretHelper")]
+    public async Task RemoteSyncConfigSecretsAreReplacedFromFileAsync()
+    {
+        var secretProvider = new MockedSecretProvider();
+        secretProvider.Secrets["key1"] = "secret1";
+
+        var content = @"{""destinations"": [{""url"": ""test://host/?auth-password=${key1}""}]}";
+        var file = System.IO.Path.Combine(BASEFOLDER, "remote-sync-secrets.json");
+        System.IO.File.WriteAllText(file, content);
+
+        var resolved = await RemoteSyncConfig.ResolveSecretsAsync(file, secretProvider, "${}", CancellationToken.None);
+
+        Assert.IsNotNull(resolved);
+        StringAssert.Contains("auth-password=secret1", resolved);
+        Assert.AreEqual(content, System.IO.File.ReadAllText(file));
+    }
+
+    /// <summary>
+    /// A configuration without secrets, or one that cannot be read, is not touched, so a
+    /// file path stays a file path and the problem is reported where it is parsed.
+    /// </summary>
+    [TestCase(@"{""destinations"": [{""url"": ""test://host/?auth-password=plain"", ""dst-options"": [""a=b""]}]}")]
+    [TestCase(@"{""destinations"": [{""url"": ""test://host/path""}]}")]
+    [TestCase(@"{""destinations"": ""none""}")]
+    [TestCase(@"{""destinations"": [")]
+    [TestCase("")]
+    [Category("SecretHelper")]
+    public async Task RemoteSyncConfigWithoutSecretsIsNotChangedAsync(string config)
+    {
+        Assert.IsNull(await RemoteSyncConfig.ResolveSecretsAsync(config, new MockedSecretProvider(), SecretProviderHelper.DEFAULT_PATTERN, CancellationToken.None));
     }
 
 }

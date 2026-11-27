@@ -24,7 +24,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
 using Duplicati.Library.Interface;
 using Duplicati.Library.Main.Operation.RemoteSynchronization;
 
@@ -353,6 +356,149 @@ public sealed record RemoteSyncConfig(bool SyncOnWarnings, IReadOnlyList<RemoteS
             interval_parsed,
             destination.Count,
             sameAsSource);
+    }
+
+    /// <summary>
+    /// The keys of a destination that hold lists of <c>key=value</c> options
+    /// </summary>
+    private static readonly string[] OPTION_LIST_KEYS = ["dst-options", "global-options"];
+
+    /// <summary>
+    /// Replaces the names of secrets in the destinations of a remote synchronization
+    /// configuration with their values. A secret is looked for where one is looked for
+    /// in the job itself: in the query parameters of the url of a destination, and in
+    /// the values of its options.
+    /// </summary>
+    /// <param name="config">The configuration, as JSON or as the path of a file with JSON</param>
+    /// <param name="provider">The provider to resolve the secrets with</param>
+    /// <param name="pattern">The pattern that marks a value as the name of a secret</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The configuration as JSON with the secrets in place, or <c>null</c> if there is nothing to replace</returns>
+    public static async Task<string?> ResolveSecretsAsync(string? config, ISecretProvider provider, string pattern, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(config))
+            return null;
+
+        JsonObject? root;
+        var urls = new List<(JsonObject Destination, string Key)>();
+        var uris = new List<Library.Utility.RelaxedUri>();
+        var entries = new Dictionary<string, (JsonArray List, int Index, string Name)>();
+        var values = new Dictionary<string, string?>();
+
+        try
+        {
+            root = JsonNode.Parse(config.TrimStart().StartsWith('{') ? config : File.ReadAllText(config)) as JsonObject;
+            if (FindProperty(root, "destinations")?.Value is not JsonArray destinations)
+                return null;
+
+            foreach (var destination in destinations.OfType<JsonObject>())
+            {
+                if (FindProperty(destination, "url") is { } url && TryGetString(url.Value, out var urlValue) && !string.IsNullOrWhiteSpace(urlValue))
+                {
+                    try
+                    {
+                        uris.Add(new Library.Utility.RelaxedUri(urlValue));
+                        urls.Add((destination, url.Key));
+                    }
+                    catch
+                    {
+                        // A url that cannot be read has no query parameters to look in
+                    }
+                }
+
+                foreach (var listKey in OPTION_LIST_KEYS)
+                {
+                    if (FindProperty(destination, listKey)?.Value is not JsonArray list)
+                        continue;
+
+                    for (var i = 0; i < list.Count; i++)
+                    {
+                        if (!TryGetString(list[i], out var option))
+                            continue;
+
+                        var ix = option.IndexOf('=');
+                        if (ix < 0)
+                            continue;
+
+                        var id = entries.Count.ToString();
+                        entries[id] = (list, i, option[..(ix + 1)]);
+                        values[id] = option[(ix + 1)..];
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // A configuration that cannot be read is reported when it is parsed for use
+            return null;
+        }
+
+        if (uris.Count == 0 && values.Count == 0)
+            return null;
+
+        var resolvedUris = uris.ToArray();
+        var resolvedValues = new Dictionary<string, string?>(values);
+        await SecretProviderHelper.ReplaceSecretsAsync(provider, [], resolvedUris, resolvedValues, pattern, cancellationToken).ConfigureAwait(false);
+
+        var changed = false;
+        for (var i = 0; i < uris.Count; i++)
+        {
+            var resolved = resolvedUris[i].ToString();
+            if (string.Equals(resolved, uris[i].ToString(), StringComparison.Ordinal))
+                continue;
+
+            urls[i].Destination[urls[i].Key] = resolved;
+            changed = true;
+        }
+
+        foreach (var (id, (list, index, name)) in entries)
+        {
+            if (string.Equals(resolvedValues[id], values[id], StringComparison.Ordinal))
+                continue;
+
+            list[index] = name + resolvedValues[id];
+            changed = true;
+        }
+
+        return changed ? root!.ToJsonString() : null;
+    }
+
+    /// <summary>
+    /// Finds a property by its name without regard to case, which is how the
+    /// configuration is read. As there, the last one wins if the name is repeated.
+    /// </summary>
+    /// <param name="node">The object to look in</param>
+    /// <param name="name">The name of the property</param>
+    /// <returns>The property, or <c>null</c> if the object does not have it</returns>
+    private static KeyValuePair<string, JsonNode?>? FindProperty(JsonObject? node, string name)
+    {
+        KeyValuePair<string, JsonNode?>? result = null;
+        if (node == null)
+            return result;
+
+        foreach (var property in node)
+            if (string.Equals(property.Key, name, StringComparison.OrdinalIgnoreCase))
+                result = property;
+
+        return result;
+    }
+
+    /// <summary>
+    /// Reads a JSON node that holds a string
+    /// </summary>
+    /// <param name="node">The node to read</param>
+    /// <param name="value">The string</param>
+    /// <returns><c>true</c> if the node holds a string</returns>
+    private static bool TryGetString(JsonNode? node, out string value)
+    {
+        value = "";
+        if (node is JsonValue jsonValue && jsonValue.TryGetValue<string>(out var text) && text != null)
+        {
+            value = text;
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>
