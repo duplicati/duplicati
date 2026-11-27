@@ -48,6 +48,25 @@ public class RestoreVolumeManagerShutdownTests
         // Without buffers every handover waits for the other side, so each step below is known to
         // have happened when the write or read returns
         var options = new Options(new Dictionary<string, string?> { ["restore-channel-buffer-size"] = "0" });
+
+        // The second download is only started if the temporary folder has room for it. On a runner
+        // with less free space than that, the manager would keep it waiting and process the first
+        // volume instead, so the steps in `RunAsync` would not happen as written. The free space is set
+        // to unlimited so the test does not depend on the disk it runs on.
+        var original = VolumeManager.GetAvailableFreeSpace;
+        VolumeManager.GetAvailableFreeSpace = _ => long.MaxValue;
+        try
+        {
+            await RunAsync(options);
+        }
+        finally
+        {
+            VolumeManager.GetAvailableFreeSpace = original;
+        }
+    }
+
+    private static async Task RunAsync(Options options)
+    {
         var channels = new Channels(options);
         var manager = VolumeManager.RunAsync(channels, options, new RestoreResults());
 
