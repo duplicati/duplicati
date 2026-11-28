@@ -1228,15 +1228,24 @@ namespace Duplicati.Library.Main.Database.Local
                     WHERE ""A"".""Hash"" = ""Block"".""Hash""
                 ";
 
+            // A blocklist whose own block is in no known volume, as when only a damaged index file listed it,
+            // is not found through the blocks, so the missing blocklists are also counted by themselves
             var countMissingInformation = $@"
-                    SELECT COUNT(*)
-                    FROM (
-                        SELECT DISTINCT ""VolumeID""
-                        FROM (
-                            {missingBlockInfo}
-                            UNION {missingBlocklistVolumes}
+                    SELECT
+                        (
+                            SELECT COUNT(*)
+                            FROM (
+                                SELECT DISTINCT ""VolumeID""
+                                FROM (
+                                    {missingBlockInfo}
+                                    UNION {missingBlocklistVolumes}
+                                )
+                            )
                         )
-                    )
+                        + (
+                            SELECT COUNT(*)
+                            FROM ({missingBlocklistEntries})
+                        )
                 ";
 
             if (passNo == 0)
