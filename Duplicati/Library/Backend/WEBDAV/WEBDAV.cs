@@ -802,15 +802,18 @@ namespace Duplicati.Library.Backend
                 // since the epoch; other servers ignore it
                 if (lastModifiedUtc.HasValue)
                     request.Headers.Add("X-OC-Mtime", Utility.Utility.NormalizeDateTimeToEpochSeconds(lastModifiedUtc.Value).ToString(System.Globalization.CultureInfo.InvariantCulture));
-                using var timeoutStream = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
-                request.Content = new StreamContent(timeoutStream);
-                request.Content.Headers.ContentLength = stream.Length;
-                request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
                 request.Version = HttpVersion.Version11;
 
-                using var response = await GetHttpClient().SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelToken).ConfigureAwait(false);
+                await Utility.Utility.WithUploadTimeout(stream, m_timeouts.ReadWriteTimeout, m_timeouts.UploadCompletionTimeout, cancelToken, async (timeoutStream, ct) =>
+                {
+                    request.Content = new StreamContent(timeoutStream);
+                    request.Content.Headers.ContentLength = stream.Length;
+                    request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
 
-                response.EnsureSuccessStatusCode();
+                    using var response = await GetHttpClient().SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+
+                    response.EnsureSuccessStatusCode();
+                }).ConfigureAwait(false);
             }
             catch (HttpRequestException wex)
             {

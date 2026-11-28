@@ -240,6 +240,27 @@ public class StalledUploadTests
         Assert.That(ex, Is.InstanceOf<TimeoutException>());
     }
 
+    [Test]
+    public async Task AWebDavUploadThatStallsTimesOut()
+    {
+        // The WebDAV upload is a plain PUT, which the stalling server answers the same way
+        using var server = new StallingS3();
+        using var backend = new WEBDAV($"webdav://127.0.0.1:{server.Port}/path", new Dictionary<string, string?>
+        {
+            ["auth-username"] = "user",
+            ["auth-password"] = "password",
+            ["read-write-timeout"] = "2s"
+        });
+
+        // More than the socket buffers hold
+        using var data = new MemoryStream(new byte[64 * 1024 * 1024]);
+        var upload = backend.PutAsync("a.txt", data, CancellationToken.None);
+        var ex = await WaitGuardedAsync(upload);
+
+        Assert.That(server.Uploading.Task.IsCompleted, Is.True, "The upload did not reach the server");
+        Assert.That(ex, Is.InstanceOf<TimeoutException>());
+    }
+
     private static SSHv2 CreateSsh()
         => new("ssh://127.0.0.1/path", new Dictionary<string, string?>
         {
