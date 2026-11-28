@@ -34,6 +34,7 @@ namespace Duplicati.Library.Backend.Strings
         public static string AuthUsernameDescriptionLong { get { return LC.L(@"The username used to connect to the server. This may also be supplied as the environment variable ""AUTH_USERNAME""."); } }
         public static string AuthUsernameDescriptionShort { get { return LC.L(@"Supply the username used to connect to the server"); } }
         public static string NoAMZKeyError { get { return LC.L(@"No S3 secret key given"); } }
+        public static string LeadingSlashInFolderWarning(string prefix) { return LC.L(@"The folder path ""{0}"" starts with ""/"", so the names of the uploaded files start with ""/"" too. Many S3 compatible servers, such as MinIO, do not accept such names: uploads can fail with a signature error, or uploaded files can be missing from the file list. Remove the leading ""/"" from the folder path, unless the server is known to keep such names.", prefix); }
         public static string NoAMZUserIDError { get { return LC.L(@"No S3 userID given"); } }
         public static string S3LocationDescriptionLong(string regions) { return LC.L(@"This option is only used when creating new buckets. Use this option to change what region the data is stored in. Amazon charges slightly more for non-US buckets. Known bucket locations:
 {0}", regions); }
