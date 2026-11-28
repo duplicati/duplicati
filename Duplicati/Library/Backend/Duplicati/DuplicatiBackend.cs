@@ -506,8 +506,9 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
     /// check for renaming or locking requests the credentials.
     /// </remarks>
     /// <typeparam name="T">The optional backend interface</typeparam>
+    /// <param name="cancellationToken">The cancellation token</param>
     /// <returns><c>true</c> if calls through the interface are supported</returns>
-    public bool HasCapability<T>() where T : class, IBackend
+    public async Task<bool> HasCapabilityAsync<T>(CancellationToken cancellationToken) where T : class, IBackend
     {
         if (this is not T)
             return false;
@@ -518,9 +519,9 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
         if (_client == null)
             return true;
 
-        EnsureCredentialsAsync(CancellationToken.None).Await();
+        await EnsureCredentialsAsync(cancellationToken).ConfigureAwait(false);
         var directBackend = _directBackend;
-        return directBackend == null || directBackend.TryGetCapability<T>(out _);
+        return directBackend == null || await directBackend.SupportsAsync<T>(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

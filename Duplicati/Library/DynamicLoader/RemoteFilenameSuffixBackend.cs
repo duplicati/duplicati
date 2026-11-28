@@ -87,12 +87,11 @@ public sealed class RemoteFilenameSuffixBackend :
 
     /// <summary>
     /// Gets the wrapped backend as an optional interface, or throws if it does not support it.
-    /// Callers check with <see cref="BackendCapabilityExtensions.TryGetCapability{T}"/> first.
+    /// Callers check with <see cref="BackendCapabilityExtensions.GetCapabilityAsync{T}"/> first.
     /// </summary>
-    private T Inner<T>() where T : class, IBackend
-        => m_backend.TryGetCapability<T>(out var capability)
-            ? capability
-            : throw new NotSupportedException($"The backend {m_backend.ProtocolKey} does not implement {typeof(T).Name}");
+    private async Task<T> InnerAsync<T>(CancellationToken cancellationToken) where T : class, IBackend
+        => await m_backend.GetCapabilityAsync<T>(cancellationToken).ConfigureAwait(false)
+            ?? throw new NotSupportedException($"The backend {m_backend.ProtocolKey} does not implement {typeof(T).Name}");
 
     /// <summary>
     /// Gets the remote name of a file
@@ -165,46 +164,54 @@ public sealed class RemoteFilenameSuffixBackend :
     public Task CreateFolderAsync(CancellationToken cancellationToken)
         => m_backend.CreateFolderAsync(cancellationToken);
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Gets a value indicating whether the wrapped backend streams.
+    /// The value only says how an <see cref="IStreamingBackend"/> transfers, so callers check with
+    /// <see cref="BackendCapabilityExtensions.GetCapabilityAsync{T}"/> that the interface is supported first.
+    /// </summary>
     public bool SupportsStreaming
-        => m_backend.TryGetCapability<IStreamingBackend>(out var streaming) && streaming.SupportsStreaming;
+        => m_backend is IStreamingBackend streaming && streaming.SupportsStreaming;
 
     /// <inheritdoc/>
-    public Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
-        => Inner<IStreamingBackend>().PutAsync(ToRemote(remotename), stream, cancelToken);
+    public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
+        => await (await InnerAsync<IStreamingBackend>(cancelToken).ConfigureAwait(false)).PutAsync(ToRemote(remotename), stream, cancelToken).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
-        => Inner<IStreamingBackend>().GetAsync(ToRemote(remotename), stream, cancelToken);
+    public async Task GetAsync(string remotename, Stream stream, CancellationToken cancelToken)
+        => await (await InnerAsync<IStreamingBackend>(cancelToken).ConfigureAwait(false)).GetAsync(ToRemote(remotename), stream, cancelToken).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public Task<(Stream Stream, string ETag)> GetResumableStreamAsync(string remotename, long offset, string? etag, CancellationToken cancelToken)
-        => Inner<IResumeEnabledBackend>().GetResumableStreamAsync(ToRemote(remotename), offset, etag, cancelToken);
+    public async Task<(Stream Stream, string ETag)> GetResumableStreamAsync(string remotename, long offset, string? etag, CancellationToken cancelToken)
+        => await (await InnerAsync<IResumeEnabledBackend>(cancelToken).ConfigureAwait(false)).GetResumableStreamAsync(ToRemote(remotename), offset, etag, cancelToken).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken)
-        => Inner<IQuotaEnabledBackend>().GetQuotaInfoAsync(cancelToken);
+    public async Task<IQuotaInfo?> GetQuotaInfoAsync(CancellationToken cancelToken)
+        => await (await InnerAsync<IQuotaEnabledBackend>(cancelToken).ConfigureAwait(false)).GetQuotaInfoAsync(cancelToken).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancellationToken)
-        => Inner<ILockingBackend>().GetObjectLockUntilAsync(ToRemote(remotename), cancellationToken);
+    public async Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancellationToken)
+        => await (await InnerAsync<ILockingBackend>(cancellationToken).ConfigureAwait(false)).GetObjectLockUntilAsync(ToRemote(remotename), cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancellationToken)
-        => Inner<ILockingBackend>().SetObjectLockUntilAsync(ToRemote(remotename), lockUntilUtc, cancellationToken);
+    public async Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancellationToken)
+        => await (await InnerAsync<ILockingBackend>(cancellationToken).ConfigureAwait(false)).SetObjectLockUntilAsync(ToRemote(remotename), lockUntilUtc, cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
-        => Inner<IRenameEnabledBackend>().RenameAsync(ToRemote(oldname), ToRemote(newname), cancellationToken);
+    public async Task RenameAsync(string oldname, string newname, CancellationToken cancellationToken)
+        => await (await InnerAsync<IRenameEnabledBackend>(cancellationToken).ConfigureAwait(false)).RenameAsync(ToRemote(oldname), ToRemote(newname), cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public IAsyncEnumerable<IFileEntry> ListAsync(string? path, CancellationToken cancellationToken)
-        => FromRemote(Inner<IFolderEnabledBackend>().ListAsync(path, cancellationToken), cancellationToken);
+    public async IAsyncEnumerable<IFileEntry> ListAsync(string? path, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var folderBackend = await InnerAsync<IFolderEnabledBackend>(cancellationToken).ConfigureAwait(false);
+        await foreach (var entry in FromRemote(folderBackend.ListAsync(path, cancellationToken), cancellationToken).ConfigureAwait(false))
+            yield return entry;
+    }
 
     /// <inheritdoc/>
     public async Task<IFileEntry?> GetEntryAsync(string path, CancellationToken cancellationToken)
     {
-        var folderBackend = Inner<IFolderEnabledBackend>();
+        var folderBackend = await InnerAsync<IFolderEnabledBackend>(cancellationToken).ConfigureAwait(false);
         var file = await folderBackend.GetEntryAsync(ToRemote(path), cancellationToken).ConfigureAwait(false);
         if (file != null && !file.IsFolder)
             return FromRemote(file);
@@ -214,35 +221,42 @@ public sealed class RemoteFilenameSuffixBackend :
         return folder != null && folder.IsFolder ? folder : null;
     }
 
-    /// <inheritdoc/>
-    public bool HasCaseSensitivePaths => Inner<IFolderEnabledBackend>().HasCaseSensitivePaths;
+    /// <summary>
+    /// Gets a value indicating whether the wrapped backend has case-sensitive paths.
+    /// Callers check with <see cref="BackendCapabilityExtensions.GetCapabilityAsync{T}"/> that
+    /// <see cref="IFolderEnabledBackend"/> is supported first.
+    /// </summary>
+    public bool HasCaseSensitivePaths
+        => m_backend is IFolderEnabledBackend folderBackend
+            ? folderBackend.HasCaseSensitivePaths
+            : throw new NotSupportedException($"The backend {m_backend.ProtocolKey} does not implement {nameof(IFolderEnabledBackend)}");
 
     /// <inheritdoc/>
-    public Task DeleteFolderRecursiveAsync(string path, CancellationToken cancellationToken)
-        => Inner<IFolderDeleteEnabledBackend>().DeleteFolderRecursiveAsync(path, cancellationToken);
+    public async Task DeleteFolderRecursiveAsync(string path, CancellationToken cancellationToken)
+        => await (await InnerAsync<IFolderDeleteEnabledBackend>(cancellationToken).ConfigureAwait(false)).DeleteFolderRecursiveAsync(path, cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc/>
     public async Task<IFileEntry?> GetFileInfoAsync(string remotename, CancellationToken cancelToken)
     {
-        var entry = await Inner<IFileInfoEnabledBackend>().GetFileInfoAsync(ToRemote(remotename), cancelToken).ConfigureAwait(false);
+        var entry = await (await InnerAsync<IFileInfoEnabledBackend>(cancelToken).ConfigureAwait(false)).GetFileInfoAsync(ToRemote(remotename), cancelToken).ConfigureAwait(false);
         return entry == null ? null : FromRemote(entry);
     }
 
     /// <inheritdoc/>
-    public Task PutAsync(string remotename, Stream stream, DateTime lastModifiedUtc, CancellationToken cancelToken)
-        => Inner<IModificationTimeEnabledBackend>().PutAsync(ToRemote(remotename), stream, lastModifiedUtc, cancelToken);
+    public async Task PutAsync(string remotename, Stream stream, DateTime lastModifiedUtc, CancellationToken cancelToken)
+        => await (await InnerAsync<IModificationTimeEnabledBackend>(cancelToken).ConfigureAwait(false)).PutAsync(ToRemote(remotename), stream, lastModifiedUtc, cancelToken).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public Task CreateHardLinkAsync(string existingName, string targetName, CancellationToken cancellationToken)
-        => Inner<ILinkEnabledBackend>().CreateHardLinkAsync(ToRemote(existingName), ToRemote(targetName), cancellationToken);
+    public async Task CreateHardLinkAsync(string existingName, string targetName, CancellationToken cancellationToken)
+        => await (await InnerAsync<ILinkEnabledBackend>(cancellationToken).ConfigureAwait(false)).CreateHardLinkAsync(ToRemote(existingName), ToRemote(targetName), cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public Task<ArchiveRestoreState> GetArchiveRestoreStateAsync(string remotename, CancellationToken cancellationToken)
-        => Inner<IArchiveRestoreEnabledBackend>().GetArchiveRestoreStateAsync(ToRemote(remotename), cancellationToken);
+    public async Task<ArchiveRestoreState> GetArchiveRestoreStateAsync(string remotename, CancellationToken cancellationToken)
+        => await (await InnerAsync<IArchiveRestoreEnabledBackend>(cancellationToken).ConfigureAwait(false)).GetArchiveRestoreStateAsync(ToRemote(remotename), cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc/>
-    public Task RequestArchiveRestoreAsync(string remotename, CancellationToken cancellationToken)
-        => Inner<IArchiveRestoreEnabledBackend>().RequestArchiveRestoreAsync(ToRemote(remotename), cancellationToken);
+    public async Task RequestArchiveRestoreAsync(string remotename, CancellationToken cancellationToken)
+        => await (await InnerAsync<IArchiveRestoreEnabledBackend>(cancellationToken).ConfigureAwait(false)).RequestArchiveRestoreAsync(ToRemote(remotename), cancellationToken).ConfigureAwait(false);
 
     /// <inheritdoc/>
     public void Dispose() => m_backend.Dispose();

@@ -21,7 +21,8 @@
 
 #nullable enable
 
-using System.Diagnostics.CodeAnalysis;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Duplicati.Library.Interface;
 
@@ -29,7 +30,7 @@ namespace Duplicati.Library.Interface;
 /// A backend that wraps another backend, for example to translate the remote names.
 /// A wrapper implements every optional backend interface and passes the calls on,
 /// so a check with <c>is</c> cannot tell what the wrapped backend supports.
-/// Use <see cref="BackendCapabilityExtensions.TryGetCapability{T}"/> instead.
+/// Use <see cref="BackendCapabilityExtensions.GetCapabilityAsync{T}"/> instead.
 /// </summary>
 public interface IWrappingBackend : IBackend
 {
@@ -42,7 +43,7 @@ public interface IWrappingBackend : IBackend
 /// <summary>
 /// A backend that implements optional backend interfaces it cannot always serve, for example
 /// because the storage it ends up using is only known after it has connected.
-/// <see cref="BackendCapabilityExtensions.TryGetCapability{T}"/> asks it before trusting
+/// <see cref="BackendCapabilityExtensions.GetCapabilityAsync{T}"/> asks it before trusting
 /// the interfaces it implements.
 /// </summary>
 public interface IConditionalCapabilityBackend : IBackend
@@ -51,8 +52,9 @@ public interface IConditionalCapabilityBackend : IBackend
     /// Gets a value indicating whether the backend can serve an optional backend interface now
     /// </summary>
     /// <typeparam name="T">The optional backend interface</typeparam>
+    /// <param name="cancellationToken">The cancellation token</param>
     /// <returns><c>true</c> if calls through the interface are supported</returns>
-    bool HasCapability<T>() where T : class, IBackend;
+    Task<bool> HasCapabilityAsync<T>(CancellationToken cancellationToken) where T : class, IBackend;
 }
 
 /// <summary>
@@ -67,23 +69,22 @@ public static class BackendCapabilityExtensions
     /// </summary>
     /// <typeparam name="T">The optional backend interface</typeparam>
     /// <param name="backend">The backend to check</param>
-    /// <param name="capability">The backend as the interface, or null if it does not support it</param>
-    /// <returns><c>true</c> if the backend supports the interface</returns>
-    public static bool TryGetCapability<T>(this IBackend backend, [NotNullWhen(true)] out T? capability)
+    /// <param name="cancellationToken">The cancellation token</param>
+    /// <returns>The backend as the interface, or <c>null</c> if it does not support it</returns>
+    public static async Task<T?> GetCapabilityAsync<T>(this IBackend? backend, CancellationToken cancellationToken)
         where T : class, IBackend
     {
         var inner = backend;
-        var declined = false;
         while (true)
         {
-            declined |= inner is IConditionalCapabilityBackend conditional && !conditional.HasCapability<T>();
+            if (inner is IConditionalCapabilityBackend conditional && !await conditional.HasCapabilityAsync<T>(cancellationToken).ConfigureAwait(false))
+                return null;
             if (inner is not IWrappingBackend wrapping)
                 break;
             inner = wrapping.WrappedBackend;
         }
 
-        capability = inner is T && !declined ? backend as T : null;
-        return capability != null;
+        return inner is T ? backend as T : null;
     }
 
     /// <summary>
@@ -92,8 +93,9 @@ public static class BackendCapabilityExtensions
     /// </summary>
     /// <typeparam name="T">The optional backend interface</typeparam>
     /// <param name="backend">The backend to check</param>
+    /// <param name="cancellationToken">The cancellation token</param>
     /// <returns><c>true</c> if the backend supports the interface</returns>
-    public static bool Supports<T>(this IBackend backend)
+    public static async Task<bool> SupportsAsync<T>(this IBackend? backend, CancellationToken cancellationToken)
         where T : class, IBackend
-        => backend.TryGetCapability<T>(out _);
+        => await backend.GetCapabilityAsync<T>(cancellationToken).ConfigureAwait(false) != null;
 }

@@ -82,7 +82,7 @@ namespace Duplicati.Library.Main.Operation
             using var backend = DynamicLoader.BackendLoader.GetBackend(backendUrl, m_options.RawOptions)
                 ?? throw new UserInformationException(string.Format("Backend not supported: {0}", Library.Utility.Utility.GetUrlWithoutCredentials(backendUrl)), "BackendNotSupported");
 
-            if (!backend.TryGetCapability<IArchiveRestoreEnabledBackend>(out var archiveBackend))
+            if (await backend.GetCapabilityAsync<IArchiveRestoreEnabledBackend>(token).ConfigureAwait(false) is not { } archiveBackend)
                 throw new UserInformationException("This destination cannot be asked to bring files back from archive storage. Use the list-restore-volumes command to list the files a restore reads, and bring them back with the tools of the storage provider.", "ArchiveRestoreNotSupported");
 
             var results = new List<IUnfreezeVolume>(volumes.Count);

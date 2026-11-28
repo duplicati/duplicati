@@ -150,8 +150,9 @@ namespace Duplicati.Library.DynamicLoader
         /// Gets the supported commands for a given SourceProvider
         /// </summary>
         /// <param name="url">The url to find the commands for</param>
+        /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The supported commands or null if the url is not supported</returns>
-        public static IReadOnlyList<ICommandLineArgument> GetSupportedCommands(string url)
+        public static async Task<IReadOnlyList<ICommandLineArgument>> GetSupportedCommandsAsync(string url, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentNullException(nameof(url));
@@ -160,10 +161,9 @@ namespace Duplicati.Library.DynamicLoader
             if (commands != null)
                 return commands;
 
-            var backend = BackendLoader.GetBackend(url, []);
-            if (backend.TryGetCapability<IFolderEnabledBackend>(out var folderBackend))
+            using var backend = BackendLoader.GetBackend(url, []);
+            if (await backend.GetCapabilityAsync<IFolderEnabledBackend>(cancellationToken).ConfigureAwait(false) is { } folderBackend)
                 commands = folderBackend.SupportedCommands.AsReadOnly();
-            backend?.Dispose();
 
             return commands;
         }

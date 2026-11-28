@@ -33,7 +33,7 @@ partial class BackendManager
         public override async Task<IQuotaInfo?> ExecuteAsync(IBackend backend, CancellationToken cancelToken)
         {
             IQuotaInfo? quotaInfo = null;
-            if (backend.TryGetCapability<IQuotaEnabledBackend>(out var quotaEnabledBackend) && !Context.Options.QuotaDisable)
+            if (await backend.GetCapabilityAsync<IQuotaEnabledBackend>(cancelToken).ConfigureAwait(false) is { } quotaEnabledBackend && !Context.Options.QuotaDisable)
             {
                 Context.Statwriter.SendEvent(BackendActionType.QuotaInfo, BackendEventType.Started, null, 0);
                 quotaInfo = await quotaEnabledBackend.GetQuotaInfoAsync(cancelToken).ConfigureAwait(false);

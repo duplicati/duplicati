@@ -60,9 +60,9 @@ namespace Duplicati.UnitTest
 
             public bool WaitedForEmpty { get; private set; }
 
-            public bool SupportsObjectLocking => true;
-            public bool SupportsHardLinks => false;
-            public bool SupportsFolderDelete => false;
+            public Task<bool> SupportsObjectLockingAsync(CancellationToken cancelToken) => Task.FromResult(true);
+            public Task<bool> SupportsHardLinksAsync(CancellationToken cancelToken) => Task.FromResult(false);
+            public Task<bool> SupportsFolderDeleteAsync(CancellationToken cancelToken) => Task.FromResult(false);
             public Task<TempFile> GetFileUnencryptedWithPathAsync(string remotename, CancellationToken cancelToken) => throw new NotSupportedException();
             public Task CreateHardLinkAsync(string existingPath, string targetPath, CancellationToken cancelToken) => throw new NotSupportedException();
             public Task DeleteFolderRecursiveAsync(string path, CancellationToken cancelToken) => throw new NotSupportedException();

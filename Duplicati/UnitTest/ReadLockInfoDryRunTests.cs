@@ -55,9 +55,9 @@ namespace Duplicati.UnitTest
 
             public List<string> Asked { get; } = new();
 
-            public bool SupportsObjectLocking => true;
-            public bool SupportsHardLinks => false;
-            public bool SupportsFolderDelete => false;
+            public Task<bool> SupportsObjectLockingAsync(CancellationToken cancelToken) => Task.FromResult(true);
+            public Task<bool> SupportsHardLinksAsync(CancellationToken cancelToken) => Task.FromResult(false);
+            public Task<bool> SupportsFolderDeleteAsync(CancellationToken cancelToken) => Task.FromResult(false);
 
             public Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancelToken)
             {

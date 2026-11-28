@@ -52,7 +52,7 @@ namespace Duplicati.UnitTest
         {
             public int LockQueries { get; private set; }
 
-            public bool SupportsObjectLocking => true;
+            public Task<bool> SupportsObjectLockingAsync(CancellationToken cancelToken) => Task.FromResult(true);
             public Task<DateTime?> GetObjectLockUntilAsync(string remotename, CancellationToken cancelToken)
             {
                 LockQueries++;
@@ -60,8 +60,8 @@ namespace Duplicati.UnitTest
             }
             public Task SetObjectLockUntilAsync(string remotename, DateTime lockUntilUtc, CancellationToken cancelToken) => throw new NotSupportedException();
 
-            public bool SupportsHardLinks => inner.SupportsHardLinks;
-            public bool SupportsFolderDelete => inner.SupportsFolderDelete;
+            public Task<bool> SupportsHardLinksAsync(CancellationToken cancelToken) => inner.SupportsHardLinksAsync(cancelToken);
+            public Task<bool> SupportsFolderDeleteAsync(CancellationToken cancelToken) => inner.SupportsFolderDeleteAsync(cancelToken);
             public Task<TempFile> GetFileUnencryptedWithPathAsync(string remotename, CancellationToken cancelToken) => inner.GetFileUnencryptedWithPathAsync(remotename, cancelToken);
             public Task CreateHardLinkAsync(string existingPath, string targetPath, CancellationToken cancelToken) => inner.CreateHardLinkAsync(existingPath, targetPath, cancelToken);
             public Task DeleteFolderRecursiveAsync(string path, CancellationToken cancelToken) => inner.DeleteFolderRecursiveAsync(path, cancelToken);

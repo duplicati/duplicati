@@ -687,34 +687,34 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
 
     [Test]
     [Category("ChangeTracking")]
-    public void ConfigHashLeavesOutCredentialsAndKeepsTheOtherOptions()
+    public async Task ConfigHashLeavesOutCredentialsAndKeepsTheOtherOptionsAsync()
     {
         Prepare();
-        string Hash(params string[] sources) => Library.Main.Operation.Backup.ChangeTrackingCoordinator.ComputeConfigHash(null, sources);
+        Task<string> Hash(params string[] sources) => Library.Main.Operation.Backup.ChangeTrackingCoordinator.ComputeConfigHashAsync(null, sources, CancellationToken.None);
         var mount = "@" + Mount.TrimEnd(Path.DirectorySeparatorChar) + "|";
 
-        var reference = Hash(mount + "test-change-tracking://source?opt=1&test-secret=s1&auth-password=p1&authid=a1");
-        Assert.That(Hash(mount + "test-change-tracking://source?opt=1&test-secret=s2&auth-password=p2&authid=a2"), Is.EqualTo(reference), "Rotated secrets do not change the hash");
-        Assert.That(Hash(mount + "test-change-tracking://source?opt=1"), Is.EqualTo(reference), "Secrets are left out entirely");
-        Assert.That(Hash(mount + "test-change-tracking://user:pw@source?opt=1"), Is.EqualTo(reference), "The user info is left out");
-        Assert.That(Hash(mount + "test-change-tracking://source?test-secret=s1&opt=1"), Is.EqualTo(reference), "The order of the options does not matter");
+        var reference = await Hash(mount + "test-change-tracking://source?opt=1&test-secret=s1&auth-password=p1&authid=a1");
+        Assert.That(await Hash(mount + "test-change-tracking://source?opt=1&test-secret=s2&auth-password=p2&authid=a2"), Is.EqualTo(reference), "Rotated secrets do not change the hash");
+        Assert.That(await Hash(mount + "test-change-tracking://source?opt=1"), Is.EqualTo(reference), "Secrets are left out entirely");
+        Assert.That(await Hash(mount + "test-change-tracking://user:pw@source?opt=1"), Is.EqualTo(reference), "The user info is left out");
+        Assert.That(await Hash(mount + "test-change-tracking://source?test-secret=s1&opt=1"), Is.EqualTo(reference), "The order of the options does not matter");
 
-        Assert.That(Hash(mount + "test-change-tracking://source?opt=2"), Is.Not.EqualTo(reference), "A changed option changes the hash");
-        Assert.That(Hash(mount + "test-change-tracking://source?opt=1&other=x"), Is.Not.EqualTo(reference), "An added option changes the hash");
-        Assert.That(Hash(mount + "test-change-tracking://source"), Is.Not.EqualTo(reference), "A removed option changes the hash");
-        Assert.That(Hash(mount + "test-change-tracking://other?opt=1"), Is.Not.EqualTo(reference), "A changed host changes the hash");
-        Assert.That(Hash("@" + Path.Combine(Mount, "elsewhere").TrimEnd(Path.DirectorySeparatorChar) + "|test-change-tracking://source?opt=1"), Is.Not.EqualTo(reference), "A changed mount point changes the hash");
-        Assert.That(Hash(mount + "test-change-tracking://source?opt=1", Path.Combine(BASEFOLDER, "local")), Is.Not.EqualTo(reference), "An added source changes the hash");
+        Assert.That(await Hash(mount + "test-change-tracking://source?opt=2"), Is.Not.EqualTo(reference), "A changed option changes the hash");
+        Assert.That(await Hash(mount + "test-change-tracking://source?opt=1&other=x"), Is.Not.EqualTo(reference), "An added option changes the hash");
+        Assert.That(await Hash(mount + "test-change-tracking://source"), Is.Not.EqualTo(reference), "A removed option changes the hash");
+        Assert.That(await Hash(mount + "test-change-tracking://other?opt=1"), Is.Not.EqualTo(reference), "A changed host changes the hash");
+        Assert.That(await Hash("@" + Path.Combine(Mount, "elsewhere").TrimEnd(Path.DirectorySeparatorChar) + "|test-change-tracking://source?opt=1"), Is.Not.EqualTo(reference), "A changed mount point changes the hash");
+        Assert.That(await Hash(mount + "test-change-tracking://source?opt=1", Path.Combine(BASEFOLDER, "local")), Is.Not.EqualTo(reference), "An added source changes the hash");
 
-        Assert.That(Hash(mount + "test-change-tracking://source?opt=1", Path.Combine(BASEFOLDER, "local")), Is.EqualTo(Hash(Path.Combine(BASEFOLDER, "local"), mount + "test-change-tracking://source?opt=1")), "The order of the sources does not matter");
-        Assert.That(Library.Main.Operation.Backup.ChangeTrackingCoordinator.StripSecrets("test-change-tracking://user:pw@source?opt=1&test-secret=s&auth-password=p"), Does.Not.Contain("pw").And.Not.Contain("=s").And.Not.Contain("=p"), "The hashed form carries no secret");
+        Assert.That(await Hash(mount + "test-change-tracking://source?opt=1", Path.Combine(BASEFOLDER, "local")), Is.EqualTo(await Hash(Path.Combine(BASEFOLDER, "local"), mount + "test-change-tracking://source?opt=1")), "The order of the sources does not matter");
+        Assert.That(await Library.Main.Operation.Backup.ChangeTrackingCoordinator.StripSecretsAsync("test-change-tracking://user:pw@source?opt=1&test-secret=s&auth-password=p", CancellationToken.None), Does.Not.Contain("pw").And.Not.Contain("=s").And.Not.Contain("=p"), "The hashed form carries no secret");
 
         // The hash stored for a scope covers the filter and the scope's own source only
-        string ScopeHash(params string[] sources) => Library.Main.Operation.Backup.ChangeTrackingCoordinator.ComputeConfigHash(null, Mount, sources);
-        Assert.That(ScopeHash(mount + "test-change-tracking://source?opt=1", Path.Combine(BASEFOLDER, "local")), Is.EqualTo(reference), "A source mounted elsewhere is left out of the scope's hash");
-        Assert.That(ScopeHash("@" + Mount + "|test-change-tracking://source?opt=1"), Is.EqualTo(reference), "The mount point is normalized, so a trailing separator does not change the hash");
-        Assert.That(ScopeHash(mount + "test-change-tracking://source?opt=2", Path.Combine(BASEFOLDER, "local")), Is.Not.EqualTo(reference), "A changed option of the scope's own source changes the hash");
-        Assert.That(ScopeHash(Path.Combine(BASEFOLDER, "local")), Is.EqualTo(Hash(Path.Combine(BASEFOLDER, "local"))), "Without a source at the mount point every source is hashed");
+        Task<string> ScopeHash(params string[] sources) => Library.Main.Operation.Backup.ChangeTrackingCoordinator.ComputeConfigHashAsync(null, Mount, sources, CancellationToken.None);
+        Assert.That(await ScopeHash(mount + "test-change-tracking://source?opt=1", Path.Combine(BASEFOLDER, "local")), Is.EqualTo(reference), "A source mounted elsewhere is left out of the scope's hash");
+        Assert.That(await ScopeHash("@" + Mount + "|test-change-tracking://source?opt=1"), Is.EqualTo(reference), "The mount point is normalized, so a trailing separator does not change the hash");
+        Assert.That(await ScopeHash(mount + "test-change-tracking://source?opt=2", Path.Combine(BASEFOLDER, "local")), Is.Not.EqualTo(reference), "A changed option of the scope's own source changes the hash");
+        Assert.That(await ScopeHash(Path.Combine(BASEFOLDER, "local")), Is.EqualTo(await Hash(Path.Combine(BASEFOLDER, "local"))), "Without a source at the mount point every source is hashed");
     }
 
     [Test]
@@ -869,7 +869,7 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
 
     [Test]
     [Category("ChangeTracking")]
-    public void ProviderWithoutMountPathIsNotTracked()
+    public async Task ProviderWithoutMountPathIsNotTrackedAsync()
     {
         Scenario.Current = new Scenario { Enumerated = _ => false };
         var mounted = new TrackingProvider(Mount);
@@ -879,12 +879,12 @@ public class ChangeTrackingSourceProviderTests : BasicSetupHelper
         using (Library.Logging.Log.StartIsolatingScope(true))
         using (Library.Logging.Log.StartScope(messages.Add))
         {
-            var both = Library.Main.Operation.Backup.ChangeTrackingCoordinator.Create(new Library.SourceProvider.Combiner([mounted, unmounted]), null, [Source]);
+            var both = await Library.Main.Operation.Backup.ChangeTrackingCoordinator.CreateAsync(new Library.SourceProvider.Combiner([mounted, unmounted]), null, [Source], CancellationToken.None);
             Assert.That(both, Is.Not.Null);
             Assert.That(both!.WasPathEnumerated(P("a.txt")), Is.False, "A path under the mounted provider is decided by that provider");
             Assert.That(both.WasPathEnumerated(Path.Combine(BASEFOLDER, "elsewhere", "a.txt")), Is.True, "A path no tracked provider owns counts as examined");
 
-            Assert.That(Library.Main.Operation.Backup.ChangeTrackingCoordinator.Create(unmounted, null, [Source]), Is.Null, "A provider without a mount path alone leaves nothing to coordinate");
+            Assert.That(await Library.Main.Operation.Backup.ChangeTrackingCoordinator.CreateAsync(unmounted, null, [Source], CancellationToken.None), Is.Null, "A provider without a mount path alone leaves nothing to coordinate");
         }
 
         Assert.That(messages.Count(x => x.Id == "ChangeTrackingDisabledWithoutMountPath" && x.Level == Library.Logging.LogMessageType.Warning), Is.EqualTo(2));

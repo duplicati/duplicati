@@ -95,7 +95,8 @@ public class RemoteFilenameSuffixTests : BasicSetupHelper
         Assert.That(File.Exists(Path.Combine(TARGETFOLDER, "x" + Suffix)), Is.True);
         Assert.That(await Names(backend), Is.EqualTo(new[] { "x" }), "A file without the suffix is not one of ours");
 
-        Assert.That(backend.TryGetCapability<IRenameEnabledBackend>(out var rename), Is.True);
+        var rename = await backend.GetCapabilityAsync<IRenameEnabledBackend>(CancellationToken.None);
+        Assert.That(rename, Is.Not.Null);
         await rename!.RenameAsync("x", "y", CancellationToken.None);
         Assert.That(await Names(backend), Is.EqualTo(new[] { "y" }));
 
@@ -139,15 +140,15 @@ public class RemoteFilenameSuffixTests : BasicSetupHelper
     }
 
     [Test]
-    public void TheWrapperSupportsWhatTheWrappedBackendSupports()
+    public async Task TheWrapperSupportsWhatTheWrappedBackendSupportsAsync()
     {
-        var supports = typeof(BackendCapabilityExtensions).GetMethod(nameof(BackendCapabilityExtensions.Supports))!;
+        var supports = typeof(BackendCapabilityExtensions).GetMethod(nameof(BackendCapabilityExtensions.SupportsAsync))!;
         using var file = BackendLoader.GetBackend("file://" + TARGETFOLDER, []);
         foreach (var inner in new IBackend[] { new MinimalBackend(), file })
         {
             var wrapper = new RemoteFilenameSuffixBackend(inner, Suffix);
             foreach (var type in OptionalBackendInterfaces())
-                Assert.That(supports.MakeGenericMethod(type).Invoke(null, [wrapper]), Is.EqualTo(type.IsInstanceOfType(inner)), $"{inner.GetType().Name} {type.Name}");
+                Assert.That(await (Task<bool>)supports.MakeGenericMethod(type).Invoke(null, [wrapper, CancellationToken.None])!, Is.EqualTo(type.IsInstanceOfType(inner)), $"{inner.GetType().Name} {type.Name}");
         }
     }
 

@@ -150,8 +150,9 @@ namespace Duplicati.Library.DynamicLoader
         /// Gets the supported commands for a given SourceProvider
         /// </summary>
         /// <param name="url">The url to find the commands for</param>
+        /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The supported commands or null if the url is not supported</returns>
-        public static IReadOnlyList<ICommandLineArgument> GetSupportedCommands(string url)
+        public static async Task<IReadOnlyList<ICommandLineArgument>> GetSupportedCommandsAsync(string url, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(url))
                 throw new ArgumentNullException(nameof(url));
@@ -160,10 +161,9 @@ namespace Duplicati.Library.DynamicLoader
             if (commands != null)
                 return commands;
 
-            var backend = BackendLoader.GetBackend(url, []);
-            if (backend.TryGetCapability<IFolderEnabledBackend>(out var folderBackend))
+            using var backend = BackendLoader.GetBackend(url, []);
+            if (await backend.GetCapabilityAsync<IFolderEnabledBackend>(cancellationToken).ConfigureAwait(false) is { } folderBackend)
                 commands = folderBackend.SupportedCommands.AsReadOnly();
-            backend?.Dispose();
 
             return commands;
         }
@@ -174,8 +174,9 @@ namespace Duplicati.Library.DynamicLoader
         /// <param name="url">The url to create the instance for</param>
         /// <param name="mountPoint">The mount point to use</param>
         /// <param name="options">The options to pass to the instance constructor</param>
+        /// <param name="cancellationToken">The cancellation token</param>
         /// <returns>The created SourceProvider or null if the url is not supported</returns>
-        public static ISourceProviderModule CreateSourceProvider(string url, string mountPoint, Dictionary<string, string> options)
+        public static async Task<ISourceProviderModule> CreateSourceProviderAsync(string url, string mountPoint, Dictionary<string, string> options, CancellationToken cancellationToken)
         {
             // Source providers are preferred over backends
             var provider = _SourceProviderLoader.GetSourceProvider(url, mountPoint, options);
@@ -183,10 +184,16 @@ namespace Duplicati.Library.DynamicLoader
             {
                 // See if there is a backend that can also be a source
                 var backend = BackendLoader.GetBackend(url, options);
-                if (backend.TryGetCapability<IFolderEnabledBackend>(out var folderBackend))
-                    provider = new BackendSourceProvider(folderBackend, mountPoint, url);
-                else
-                    backend?.Dispose();
+                try
+                {
+                    if (await backend.GetCapabilityAsync<IFolderEnabledBackend>(cancellationToken).ConfigureAwait(false) is { } folderBackend)
+                        provider = new BackendSourceProvider(folderBackend, mountPoint, url);
+                }
+                finally
+                {
+                    if (provider == null)
+                        backend?.Dispose();
+                }
             }
 
             return provider;
@@ -202,7 +209,7 @@ namespace Duplicati.Library.DynamicLoader
         /// <returns>The instanciated SourceProvider or null if the url is not supported</returns>
         public static async Task<ISourceProviderModule> GetSourceProvider(string url, string mountPoint, Dictionary<string, string> options, CancellationToken cancellationToken)
         {
-            var provider = CreateSourceProvider(url, mountPoint, options);
+            var provider = await CreateSourceProviderAsync(url, mountPoint, options, cancellationToken).ConfigureAwait(false);
 
             if (provider == null)
                 return null;

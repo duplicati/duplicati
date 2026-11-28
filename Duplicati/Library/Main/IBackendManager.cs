@@ -242,9 +242,11 @@ internal interface IBackendManager : IDisposable
     void UpdateThrottleValues(long maxUploadPrSecond, long maxDownloadPrSecond);
 
     /// <summary>
-    /// Indicates whether the backend supports object locking operations.
+    /// Gets a value indicating whether the backend supports object locking operations.
     /// </summary>
-    bool SupportsObjectLocking { get; }
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns><c>true</c> if object locking is supported</returns>
+    Task<bool> SupportsObjectLockingAsync(CancellationToken cancelToken);
 
     /// <summary>
     /// Downloads a file without decrypting it, treating the remote name as a relative
@@ -257,18 +259,22 @@ internal interface IBackendManager : IDisposable
     Task<TempFile> GetFileUnencryptedWithPathAsync(string remotename, CancellationToken cancelToken);
 
     /// <summary>
-    /// Indicates whether the backend can create hard links between relative paths
+    /// Gets a value indicating whether the backend can create hard links between relative paths
     /// (see <see cref="ILinkEnabledBackend"/>). A destination filesystem may still
     /// refuse, in which case <see cref="CreateHardLinkAsync"/> throws
     /// <see cref="HardLinkNotSupportedException"/>.
     /// </summary>
-    bool SupportsHardLinks { get; }
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns><c>true</c> if hard links are supported</returns>
+    Task<bool> SupportsHardLinksAsync(CancellationToken cancelToken);
 
     /// <summary>
-    /// Indicates whether the backend can delete a folder and everything below it in one
-    /// call (see <see cref="IFolderDeleteEnabledBackend"/>).
+    /// Gets a value indicating whether the backend can delete a folder and everything below it
+    /// in one call (see <see cref="IFolderDeleteEnabledBackend"/>).
     /// </summary>
-    bool SupportsFolderDelete { get; }
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns><c>true</c> if folders can be deleted</returns>
+    Task<bool> SupportsFolderDeleteAsync(CancellationToken cancelToken);
 
     /// <summary>
     /// Creates a hard link at <paramref name="targetPath"/> to the existing remote file
@@ -283,7 +289,7 @@ internal interface IBackendManager : IDisposable
 
     /// <summary>
     /// Deletes a remote folder and everything below it. Only valid when
-    /// <see cref="SupportsFolderDelete"/> is true.
+    /// <see cref="SupportsFolderDeleteAsync"/> returns true.
     /// </summary>
     /// <param name="path">The relative path of the folder; must not be empty</param>
     /// <param name="cancelToken">The cancellation token</param>
