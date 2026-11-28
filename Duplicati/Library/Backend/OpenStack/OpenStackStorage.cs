@@ -348,14 +348,15 @@ public class OpenStackStorage : IStreamingBackend, IRenameEnabledBackend
     public async Task PutAsync(string remotename, Stream stream, CancellationToken cancelToken)
     {
         var url = JoinUrls(await GetSimpleStorageEndPoint(cancelToken).ConfigureAwait(false), m_container, UrlEncoding.UrlPathEncode(m_prefix + remotename));
-        using var req = m_helper.CreateRequest(url, "PUT");
-        await using var ts = stream.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
-
-        req.Content = new StreamContent(ts);
-        req.Content.Headers.Add("Content-Type", "application/octet-stream");
-        req.Content.Headers.Add("Content-Length", stream.Length.ToString());
-        using var response = await m_httpClient.UploadStream(req, cancelToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
+        await Utility.Utility.WithUploadTimeout(stream, _timeouts.ReadWriteTimeout, _timeouts.UploadCompletionTimeout, cancelToken, async (ts, ct) =>
+        {
+            using var req = m_helper.CreateRequest(url, "PUT");
+            req.Content = new StreamContent(ts);
+            req.Content.Headers.Add("Content-Type", "application/octet-stream");
+            req.Content.Headers.Add("Content-Length", stream.Length.ToString());
+            using var response = await m_httpClient.UploadStream(req, ct).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+        }).ConfigureAwait(false);
     }
 
     /// <inheritdoc />

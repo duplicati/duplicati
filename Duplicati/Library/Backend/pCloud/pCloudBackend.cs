@@ -326,20 +326,23 @@ public class pCloudBackend : IStreamingBackend, IRenameEnabledBackend
 
         var encodedPath = Uri.EscapeDataString(remotename);
 
-        using var request =
-            CreateRequest($"/uploadfile?folderid={_CachedFolderID}&filename={encodedPath}&nopartial=1",
-                HttpMethod.Post);
-        using var timeoutStream = input.ObserveReadTimeout(_Timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
-        request.Content = new StreamContent(timeoutStream);
-        request.Content.Headers.ContentLength = timeoutStream.Length;
-        request.Content.Headers.ContentType =
-            new MediaTypeHeaderValue("application/octet-stream");
+        var content = string.Empty;
+        await Utility.Utility.WithUploadTimeout(input, _Timeouts.ReadWriteTimeout, _Timeouts.UploadCompletionTimeout, cancellationToken, async (timeoutStream, ct) =>
+        {
+            using var request =
+                CreateRequest($"/uploadfile?folderid={_CachedFolderID}&filename={encodedPath}&nopartial=1",
+                    HttpMethod.Post);
+            request.Content = new StreamContent(timeoutStream);
+            request.Content.Headers.ContentLength = input.Length;
+            request.Content.Headers.ContentType =
+                new MediaTypeHeaderValue("application/octet-stream");
 
-        using var response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, cancellationToken).ConfigureAwait(false);
+            using var response = await _HttpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
 
-        response.EnsureSuccessStatusCode();
+            response.EnsureSuccessStatusCode();
 
-        var content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            content = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        }).ConfigureAwait(false);
         var uploadResponse = JsonSerializer.Deserialize<pCloudUploadResponse>(content)
             ?? throw new Exception("Failed to deserialize upload response");
 

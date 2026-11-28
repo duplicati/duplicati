@@ -474,7 +474,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             var item = new BucketResourceItem { name = m_prefix + remotename, crc32c = crc32c };
 
             var url = WebApi.GoogleCloudStorage.PutUrl(m_bucket);
-            var res = await GoogleCommon.ChunkedUploadWithResumeAsync<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, content, m_timeouts.ShortTimeout, m_timeouts.ReadWriteTimeout, cancelToken, HttpMethod.Post).ConfigureAwait(false);
+            var res = await GoogleCommon.ChunkedUploadWithResumeAsync<BucketResourceItem, BucketResourceItem>(m_oauth, item, url, content, m_timeouts.ShortTimeout, m_timeouts.ReadWriteTimeout, m_timeouts.UploadCompletionTimeout, cancelToken, HttpMethod.Post).ConfigureAwait(false);
 
             if (res == null)
                 throw new Exception("Upload succeeded, but no data was returned");

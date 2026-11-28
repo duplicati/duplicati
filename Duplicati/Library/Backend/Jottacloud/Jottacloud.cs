@@ -700,13 +700,16 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
         if (resumePos > 0)
             uploadReq.Headers.Range = new RangeHeaderValue(resumePos, fileSize - 1);
 
-        await using var timeoutStream = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
-        uploadReq.Content = new StreamContent(timeoutStream);
-        uploadReq.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-        uploadReq.Content.Headers.ContentLength = fileSize - resumePos;
-
-        // The read-write timeout on the stream guards the upload, so the request itself has no timeout
-        using var uploadResponse = await SendAsync(uploadReq, HttpCompletionOption.ResponseContentRead, Timeout.InfiniteTimeSpan, cancelToken).ConfigureAwait(false);
+        // The upload timeout guards the request, as the server may stop taking the content, so the request itself has no timeout
+        HttpResponseMessage? sent = null;
+        await Utility.Utility.WithUploadTimeout(stream, m_timeouts.ReadWriteTimeout, m_timeouts.UploadCompletionTimeout, cancelToken, async (timeoutStream, ct) =>
+        {
+            uploadReq.Content = new StreamContent(timeoutStream);
+            uploadReq.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+            uploadReq.Content.Headers.ContentLength = fileSize - resumePos;
+            sent = await SendAsync(uploadReq, HttpCompletionOption.ResponseContentRead, Timeout.InfiniteTimeSpan, ct).ConfigureAwait(false);
+        }).ConfigureAwait(false);
+        using var uploadResponse = sent!;
         var result = await ReadJsonAsync<UploadResponse>(uploadResponse, cancelToken).ConfigureAwait(false);
 
         // The server reports what it stored; anything other than our content is a failed upload
@@ -854,14 +857,18 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
         req.Headers.Add("JMd5", md5Hash); // Not required, but it will make the server verify the content and mark the file as corrupt if there is a mismatch.
         req.Headers.Add("JSize", fileSize.ToString()); // Required, and used to mark file as incomplete if we upload something  be the total size of the original file!
 
-        await using var timeoutStream = stream.ObserveReadTimeout(this.m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
-        req.Content = new StreamContent(timeoutStream);
+        // The upload timeout guards the request, as the server may stop taking the content, so the request itself has no timeout
+        HttpResponseMessage? uploadResponse = null;
+        await Utility.Utility.WithUploadTimeout(stream, this.m_timeouts.ReadWriteTimeout, this.m_timeouts.UploadCompletionTimeout, cancelToken, async (timeoutStream, ct) =>
+        {
+            req.Content = new StreamContent(timeoutStream);
 
-        req.Content.Headers.Add("Content-Type", "application/octet-stream");
-        req.Content.Headers.Add("Content-Length", fileSize.ToString());
+            req.Content.Headers.Add("Content-Type", "application/octet-stream");
+            req.Content.Headers.Add("Content-Length", fileSize.ToString());
 
-        // The read-write timeout on the stream guards the upload, so the request itself has no timeout
-        using var response = await SendAsync(req, HttpCompletionOption.ResponseContentRead, Timeout.InfiniteTimeSpan, cancelToken).ConfigureAwait(false);
+            uploadResponse = await SendAsync(req, HttpCompletionOption.ResponseContentRead, Timeout.InfiniteTimeSpan, ct).ConfigureAwait(false);
+        }).ConfigureAwait(false);
+        using var response = uploadResponse!;
 
         if (response.StatusCode != HttpStatusCode.Created)
             throw new HttpRequestException(HttpRequestError.HttpProtocolError, Strings.Jottacloud.FileUploadError, null, response.StatusCode);

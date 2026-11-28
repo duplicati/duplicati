@@ -239,10 +239,11 @@ namespace Duplicati.Library.Backend.GoogleServices
         /// <param name="stream">The stream with content data to upload.</param>
         /// <param name="shortTimeout">The short request timeout.</param>
         /// <param name="readWriteTimeout">The read write timeout.</param>
+        /// <param name="uploadCompletionTimeout">The time an upload has to complete after the last byte has been read.</param>
         /// <param name="method">The HTTP Method.</param>
         /// <typeparam name="TRequest">The type of data to upload as metadata.</typeparam>
         /// <typeparam name="TResponse">The type of data returned from the upload.</typeparam>
-        public static async Task<TResponse> ChunkedUploadWithResumeAsync<TRequest, TResponse>(JsonWebHelperHttpClient oauth, TRequest requestdata, string url, Stream stream, TimeSpan shortTimeout, TimeSpan readWriteTimeout, CancellationToken cancelToken, HttpMethod method)
+        public static async Task<TResponse> ChunkedUploadWithResumeAsync<TRequest, TResponse>(JsonWebHelperHttpClient oauth, TRequest requestdata, string url, Stream stream, TimeSpan shortTimeout, TimeSpan readWriteTimeout, TimeSpan uploadCompletionTimeout, CancellationToken cancelToken, HttpMethod method)
             where TRequest : class
             where TResponse : class
         {
@@ -264,7 +265,7 @@ namespace Duplicati.Library.Backend.GoogleServices
             if (string.IsNullOrWhiteSpace(uploaduri))
                 throw new Exception("Failed to start upload session");
 
-            return await ChunkedUploadAsync<TResponse>(oauth, uploaduri, stream, shortTimeout, readWriteTimeout, cancelToken).ConfigureAwait(false);
+            return await ChunkedUploadAsync<TResponse>(oauth, uploaduri, stream, shortTimeout, readWriteTimeout, uploadCompletionTimeout, cancelToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -276,8 +277,9 @@ namespace Duplicati.Library.Backend.GoogleServices
         /// <param name="stream">The stream with data to upload.</param>
         /// <param name="shortTimeout">The short request timeout.</param>
         /// <param name="readWriteTimeout">The read write timeout.</param>
+        /// <param name="uploadCompletionTimeout">The time an upload has to complete after the last byte has been read.</param>
         /// <typeparam name="T">The type of data in the response.</typeparam>
-        private static async Task<T> ChunkedUploadAsync<T>(JsonWebHelperHttpClient oauth, string uploaduri, Stream stream, TimeSpan shortTimeout, TimeSpan readWriteTimeout, CancellationToken cancelToken)
+        private static async Task<T> ChunkedUploadAsync<T>(JsonWebHelperHttpClient oauth, string uploaduri, Stream stream, TimeSpan shortTimeout, TimeSpan readWriteTimeout, TimeSpan uploadCompletionTimeout, CancellationToken cancelToken)
             where T : class
         {
             var queryRange = false;
@@ -341,16 +343,20 @@ namespace Duplicati.Library.Backend.GoogleServices
                     using var _ls = ls;
                     // The chunk stream is used as the request body and is only read
                     // by the HTTP stack, so the read timeout must be observed here.
-                    using var ts = ls.ObserveReadTimeout(readWriteTimeout, false, TimeoutMode.Gap);
-                    req.Content = new StreamContent(ts);
-                    req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                    // An empty chunk has no valid byte range ("bytes 0--1/0" is malformed),
-                    // which happens when uploading a zero-byte file. The unsatisfied range
-                    // form is what the protocol expects for an empty stream.
-                    req.Content.Headers.Add("Content-Range", chunkSize == 0
-                        ? $"bytes */{stream.Length}"
-                        : $"bytes {offset}-{offset + chunkSize - 1}/{stream.Length}");
-                    using var resp = await oauth.GetResponseUncheckedAsync(req, HttpCompletionOption.ResponseContentRead, cancelToken).ConfigureAwait(false);
+                    HttpResponseMessage? chunkResponse = null;
+                    await Utility.Utility.WithUploadTimeout(ls, readWriteTimeout, uploadCompletionTimeout, cancelToken, async (ts, ct) =>
+                    {
+                        req.Content = new StreamContent(ts);
+                        req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                        // An empty chunk has no valid byte range ("bytes 0--1/0" is malformed),
+                        // which happens when uploading a zero-byte file. The unsatisfied range
+                        // form is what the protocol expects for an empty stream.
+                        req.Content.Headers.Add("Content-Range", chunkSize == 0
+                            ? $"bytes */{stream.Length}"
+                            : $"bytes {offset}-{offset + chunkSize - 1}/{stream.Length}");
+                        chunkResponse = await oauth.GetResponseUncheckedAsync(req, HttpCompletionOption.ResponseContentRead, ct).ConfigureAwait(false);
+                    }).ConfigureAwait(false);
+                    using var resp = chunkResponse!;
 
                     // Check the response
                     var code = (int)resp.StatusCode;

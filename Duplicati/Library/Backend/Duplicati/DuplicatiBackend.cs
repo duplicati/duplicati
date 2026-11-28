@@ -1267,16 +1267,17 @@ public class DuplicatiBackend : IBackend, IStreamingBackend, IQuotaEnabledBacken
             using var _ = tmp;
             var md5 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[0]));
             var sha256 = Convert.ToBase64String(Utility.Utility.HexStringAsByteArray(hashes[1]));
-            using var timeoutStream = source.ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap);
+            await Utility.Utility.WithUploadTimeout(source, _timeouts.ReadWriteTimeout, _timeouts.UploadCompletionTimeout, cancelToken, async (timeoutStream, ct) =>
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Post, $"/put/{remotename}");
+                request.Content = new StreamContent(timeoutStream);
+                request.Content.Headers.ContentLength = source.Length;
+                request.Headers.Add("X-Content-MD5", md5 ?? string.Empty);
+                request.Headers.Add("X-Content-SHA256", sha256 ?? string.Empty);
 
-            using var request = new HttpRequestMessage(HttpMethod.Post, $"/put/{remotename}");
-            request.Content = new StreamContent(timeoutStream);
-            request.Content.Headers.ContentLength = source.Length;
-            request.Headers.Add("X-Content-MD5", md5 ?? string.Empty);
-            request.Headers.Add("X-Content-SHA256", sha256 ?? string.Empty);
-
-            using var response = await _client.SendAsync(request, cancelToken).ConfigureAwait(false);
-            await EnsureSuccessAsync(response, cancelToken).ConfigureAwait(false);
+                using var response = await _client.SendAsync(request, ct).ConfigureAwait(false);
+                await EnsureSuccessAsync(response, ct).ConfigureAwait(false);
+            }).ConfigureAwait(false);
         }
     }
 

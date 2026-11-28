@@ -26,11 +26,16 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Duplicati.Library;
 using Duplicati.Library.Backend;
+using Duplicati.Library.Backend.DrimeCloud;
+using Duplicati.Library.Backend.GoogleDrive;
+using Duplicati.Library.Backend.OpenStack;
 using Duplicati.Library.Utility;
 using NUnit.Framework;
 using Renci.SshNet;
@@ -295,5 +300,316 @@ public class StalledUploadTests
 
         Assert.That(ex, Is.InstanceOf<InvalidOperationException>());
         Assert.That(() => client.IsConnected, Is.False, "The connection should not have been closed");
+    }
+
+    /// <summary>
+    /// Answers the requests a backend makes before an upload, and stops at the upload without reading it, as a server whose connection stalls
+    /// </summary>
+    /// <param name="answer">Answers a request, or returns <c>null</c> for the upload</param>
+    private sealed class StallingUploadHandler(Func<HttpRequestMessage, HttpResponseMessage?> answer) : HttpMessageHandler
+    {
+        /// <summary>
+        /// Set when the upload has reached the handler
+        /// </summary>
+        public TaskCompletionSource Uploading { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        /// <summary>
+        /// Set to read all of the upload before stopping, as a server that takes the data and never answers
+        /// </summary>
+        public bool ReadUpload { get; init; }
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var response = answer(request);
+            if (response != null)
+                return response;
+
+            Uploading.TrySetResult();
+            if (ReadUpload)
+                await request.Content!.CopyToAsync(Stream.Null, cancellationToken).ConfigureAwait(false);
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken).ConfigureAwait(false);
+            throw new UnreachableException();
+        }
+    }
+
+    private static HttpResponseMessage JsonAnswer(string body)
+        => new(HttpStatusCode.OK) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
+
+    /// <summary>
+    /// Uploads through the backend and checks that the stalled upload ends with a timeout
+    /// </summary>
+    private static async Task AssertUploadTimesOutAsync(StallingUploadHandler handler, Func<Stream, Task> upload)
+    {
+        using var data = new MemoryStream(new byte[1024 * 1024]);
+        var ex = await WaitGuardedAsync(upload(data));
+
+        Assert.That(handler.Uploading.Task.IsCompleted, Is.True, $"The upload did not reach the server: {ex}");
+        Assert.That(ex, Is.InstanceOf<TimeoutException>());
+    }
+
+    private static readonly Dictionary<string, string?> ShortReadWriteTimeout = new() { ["read-write-timeout"] = "2s" };
+
+    private static Dictionary<string, string?> WithShortTimeout(Dictionary<string, string?> options)
+    {
+        foreach (var (key, value) in ShortReadWriteTimeout)
+            options[key] = value;
+        return options;
+    }
+
+    [Test]
+    public async Task ATahoeUploadThatStallsTimesOut()
+    {
+        var handler = new StallingUploadHandler(request => request.Method == HttpMethod.Put ? null : new HttpResponseMessage(HttpStatusCode.NotFound));
+        using var backend = new TahoeBackend("tahoe://example.invalid/uri/URI:DIR2:aaa:bbb/", WithShortTimeout([]), handler);
+        await AssertUploadTimesOutAsync(handler, data => backend.PutAsync("a.txt", data, CancellationToken.None));
+    }
+
+    /// <summary>
+    /// The server takes all of the upload and never answers, so only the upload completion timeout can end it
+    /// </summary>
+    [Test]
+    public async Task ATahoeUploadThatIsNeverAnsweredTimesOut()
+    {
+        var handler = new StallingUploadHandler(request => request.Method == HttpMethod.Put ? null : new HttpResponseMessage(HttpStatusCode.NotFound)) { ReadUpload = true };
+        var options = WithShortTimeout([]);
+        options["upload-completion-timeout"] = "2s";
+        using var backend = new TahoeBackend("tahoe://example.invalid/uri/URI:DIR2:aaa:bbb/", options, handler);
+
+        using var data = new MemoryStream(new byte[1024 * 1024]);
+        var ex = await WaitGuardedAsync(backend.PutAsync("a.txt", data, CancellationToken.None));
+
+        Assert.That(data.Position, Is.EqualTo(data.Length), $"The upload was not read to its end: {ex}");
+        Assert.That(ex, Is.InstanceOf<TimeoutException>());
+    }
+
+    [Test]
+    public async Task AnOpenStackUploadThatStallsTimesOut()
+    {
+        const string AuthUri = "https://keystone.invalid/v2.0";
+        var handler = new StallingUploadHandler(request =>
+        {
+            if (request.RequestUri!.ToString().StartsWith(AuthUri, StringComparison.Ordinal))
+                return JsonAnswer("{\"access\":{\"token\":{\"id\":\"test-token\"},\"serviceCatalog\":[{\"type\":\"object-store\",\"endpoints\":[{\"publicURL\":\"https://swift.invalid/v1/AUTH_test\"}]}]}}");
+            return request.Method == HttpMethod.Put ? null : new HttpResponseMessage(HttpStatusCode.NoContent);
+        });
+        using var backend = new OpenStackStorage("openstack://container", WithShortTimeout(new()
+        {
+            ["auth-username"] = "user",
+            ["auth-password"] = "pass",
+            ["openstack-tenant-name"] = "tenant",
+            ["openstack-authuri"] = AuthUri
+        }), handler);
+        await AssertUploadTimesOutAsync(handler, data => backend.PutAsync("a.txt", data, CancellationToken.None));
+    }
+
+    [Test]
+    public async Task APCloudUploadThatStallsTimesOut()
+    {
+        var handler = new StallingUploadHandler(request => request.RequestUri!.AbsolutePath.EndsWith("/uploadfile", StringComparison.Ordinal) ? null : JsonAnswer("{\"result\":0}"));
+        using var backend = new pCloudBackend("pcloud://api.pcloud.com/", WithShortTimeout(new() { ["authid"] = "test-token" }), handler);
+        await AssertUploadTimesOutAsync(handler, data => backend.PutAsync("a.txt", data, CancellationToken.None));
+    }
+
+    [Test]
+    public async Task ADuplicatiUploadThatStallsTimesOut()
+    {
+        var handler = new StallingUploadHandler(request => request.RequestUri!.AbsolutePath.StartsWith("/credentials", StringComparison.Ordinal)
+            ? JsonAnswer(DuplicatiBackendTestServer.GatewayCredentials)
+            : request.RequestUri.AbsolutePath.StartsWith("/put/", StringComparison.Ordinal) ? null : new HttpResponseMessage(HttpStatusCode.NotFound));
+        using var backend = new Duplicati.Library.Backend.Duplicati.DuplicatiBackend("duplicati://storage.example.com", WithShortTimeout(new()
+        {
+            [Duplicati.Library.Backend.Duplicati.DuplicatiBackend.BACKUP_ID_OPTION] = "backup-1",
+            [Duplicati.Library.Backend.Duplicati.DuplicatiBackend.AUTH_API_ID_OPTION] = "org-1",
+            [Duplicati.Library.Backend.Duplicati.DuplicatiBackend.AUTH_API_KEY_OPTION] = "key-1",
+            ["machine-id"] = "machine-1",
+        }), handler);
+        await AssertUploadTimesOutAsync(handler, data => backend.PutAsync("a.txt", data, CancellationToken.None));
+    }
+
+    /// <summary>
+    /// A host that cannot be resolved, so a request that is not stubbed fails instead of reaching a real OAuth service
+    /// </summary>
+    private const string OAuthUrl = "http://oauth.invalid/token";
+
+    private static HttpResponseMessage? OAuthAnswer(HttpRequestMessage request)
+        => request.RequestUri!.ToString().StartsWith(OAuthUrl, StringComparison.Ordinal)
+            ? JsonAnswer("{\"access_token\":\"test-token\",\"expires\":3600}")
+            : null;
+
+    [Test]
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task AJottacloudUploadThatStallsTimesOut(bool legacyUpload)
+    {
+        const string UploadUrl = "https://up-test.jottacloud.com/files/v1/upload/test-upload-id";
+        var handler = new StallingUploadHandler(request =>
+        {
+            var url = request.RequestUri!.ToString();
+            if (OAuthAnswer(request) is { } token)
+                return token;
+            if (url.Contains("/userinfo", StringComparison.Ordinal))
+                return JsonAnswer("{\"username\":\"test-user\"}");
+            if (url == "https://api.jottacloud.com/files/v1/allocate")
+                return JsonAnswer("{\"name\":\"a.txt\",\"path\":\"/test-user/Jotta/Archive/Backup/a.txt\",\"state\":\"INCOMPLETE\",\"upload_id\":\"test-upload-id\",\"upload_url\":\"" + UploadUrl + "\",\"bytes\":1048576,\"resume_pos\":0}");
+            if (url == UploadUrl || url.StartsWith("https://up.jottacloud.com/jfs/", StringComparison.Ordinal))
+                return null;
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+        using var backend = new Jottacloud("jottacloud://Backup", WithShortTimeout(new()
+        {
+            ["authid"] = "test-authid",
+            ["oauth-url"] = OAuthUrl,
+            ["jottacloud-legacy-upload"] = legacyUpload ? "true" : "false"
+        }), new HttpClient(handler));
+        await AssertUploadTimesOutAsync(handler, data => backend.PutAsync("a.txt", data, CancellationToken.None));
+    }
+
+    [Test]
+    public async Task AGoogleDriveUploadThatStallsTimesOut()
+    {
+        const string SessionUrl = "http://upload.invalid/session-1";
+        var handler = new StallingUploadHandler(request =>
+        {
+            var url = request.RequestUri!.ToString();
+            if (OAuthAnswer(request) is { } token)
+                return token;
+            if (url.StartsWith(SessionUrl, StringComparison.Ordinal))
+                return null;
+            if (request.Headers.Contains("X-Upload-Content-Type"))
+            {
+                var session = JsonAnswer("{}");
+                session.Headers.Location = new Uri(SessionUrl);
+                return session;
+            }
+            if (url.Contains("/drive/v2/about", StringComparison.Ordinal))
+                return JsonAnswer("{\"rootFolderId\":\"root\"}");
+            if (url.Contains("/drive/v2/files", StringComparison.Ordinal))
+                return Uri.UnescapeDataString(request.RequestUri.Query).Replace('+', ' ').Contains("title = 'target'", StringComparison.Ordinal)
+                    ? JsonAnswer("{\"items\":[{\"id\":\"folder-1\",\"title\":\"target\",\"mimeType\":\"application/vnd.google-apps.folder\"}]}")
+                    : JsonAnswer("{\"items\":[]}");
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
+        });
+        using var backend = new GoogleDrive("googledrive://target", WithShortTimeout(new()
+        {
+            ["authid"] = "test-authid",
+            ["oauth-url"] = OAuthUrl
+        }), new HttpClient(handler));
+        await AssertUploadTimesOutAsync(handler, data => backend.PutAsync("a.txt", data, CancellationToken.None));
+    }
+
+    /// <summary>
+    /// Answers the Microsoft Graph requests of a SharePoint site, and stalls on the upload
+    /// </summary>
+    private sealed class StallingGraph : OAuthHttpMessageHandler
+    {
+        private const string SiteId = "contoso-my.sharepoint.com,1111,2222";
+        private const string SessionUrl = "https://upload.invalid/session-1";
+
+        public TaskCompletionSource Uploading { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        private readonly HttpClient m_tokenClient;
+
+        public StallingGraph()
+            : this(new HttpClient())
+        {
+        }
+
+        private StallingGraph(HttpClient tokenClient)
+            : base(new OAuthHelperHttpClient("test-authid", "sharepoint", "http://127.0.0.1:1/", tokenClient))
+        {
+            m_tokenClient = tokenClient;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+                m_tokenClient.Dispose();
+            base.Dispose(disposing);
+        }
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var url = request.RequestUri!.ToString();
+            if (url.StartsWith("https://graph.microsoft.com/v1.0/sites/contoso-my.sharepoint.com:", StringComparison.Ordinal))
+                return JsonAnswer($$"""{"id":"{{SiteId}}"}""");
+            if (url == $"https://graph.microsoft.com/v1.0/sites/{SiteId}/drive")
+                return JsonAnswer("""{"id":"drive","webUrl":"https://contoso-my.sharepoint.com/personal/someone_contoso_com/Documents"}""");
+            if (url.EndsWith(":/createUploadSession", StringComparison.Ordinal))
+                return JsonAnswer($$"""{"uploadUrl":"{{SessionUrl}}"}""");
+            if (request.Method == HttpMethod.Delete)
+                return new HttpResponseMessage(HttpStatusCode.NoContent);
+            if (!url.EndsWith(":/content", StringComparison.Ordinal) && !url.StartsWith(SessionUrl, StringComparison.Ordinal))
+                return new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("""{"error":{"code":"itemNotFound","message":"stub"}}""", Encoding.UTF8, "application/json") };
+
+            Uploading.TrySetResult();
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken).ConfigureAwait(false);
+            throw new UnreachableException();
+        }
+    }
+
+    /// <summary>
+    /// A small file is sent in one request, and a large one in the fragments of an upload session
+    /// </summary>
+    [Test]
+    [TestCase(1024 * 1024)]
+    [TestCase(5 * 1000 * 1000)]
+    public async Task AMicrosoftGraphUploadThatStallsTimesOut(int size)
+    {
+        using var graph = new StallingGraph();
+        using var backend = new SharePointV2(
+            "sharepoint://contoso-my.sharepoint.com/personal/someone_contoso_com//Documents/Vhds",
+            WithShortTimeout(new() { ["authid"] = "test-authid" }),
+            graph);
+
+        using var data = new MemoryStream(new byte[size]);
+        var ex = await WaitGuardedAsync(backend.PutAsync("a.txt", data, CancellationToken.None));
+
+        Assert.That(graph.Uploading.Task.IsCompleted, Is.True, $"The upload did not reach the server: {ex}");
+
+        // A failed fragment cancels the upload session, and is reported with the fragment it was
+        if (size >= 4 * 1000 * 1000)
+        {
+            Assert.That(ex, Is.InstanceOf<Duplicati.Library.Backend.MicrosoftGraph.UploadSessionException>());
+            ex = ex!.InnerException;
+        }
+        Assert.That(ex, Is.InstanceOf<TimeoutException>());
+    }
+
+    [Test]
+    public async Task ADrimeUploadThatStallsTimesOut()
+    {
+        var handler = new StallingUploadHandler(request =>
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            if (path.EndsWith("/uploads", StringComparison.Ordinal))
+                return null;
+            if (path.EndsWith("/count", StringComparison.Ordinal))
+                return JsonAnswer("{\"count\":0}");
+            if (path.EndsWith("/drive/file-entries", StringComparison.Ordinal))
+                return JsonAnswer(request.RequestUri.Query.Contains("type=folder", StringComparison.Ordinal)
+                    ? "{\"data\":[{\"id\":7,\"name\":\"backup\",\"type\":\"folder\",\"hash\":\"folder-hash\",\"file_size\":0}],\"current_page\":1,\"last_page\":1,\"per_page\":1,\"total\":1}"
+                    : "{\"data\":[],\"current_page\":1,\"last_page\":1,\"per_page\":50,\"total\":0}");
+            return new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("{\"message\":\"unexpected request\"}", Encoding.UTF8, "application/json") };
+        });
+        using var backend = new DrimeBackend("drimecloud://backup", WithShortTimeout(new() { ["api-token"] = "test-token" }), handler);
+        await AssertUploadTimesOutAsync(handler, data => backend.PutAsync("a.txt", data, CancellationToken.None));
+    }
+
+    [Test]
+    public async Task AFilejumpUploadThatStallsTimesOut()
+    {
+        var handler = new StallingUploadHandler(request =>
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            if (path.EndsWith("/uploads", StringComparison.Ordinal))
+                return null;
+            if (path.EndsWith("/drive/file-entries", StringComparison.Ordinal))
+                return JsonAnswer(request.RequestUri.Query.Contains("type=folder", StringComparison.Ordinal)
+                    ? "{\"data\":[{\"id\":7,\"name\":\"backup\",\"type\":\"folder\"}],\"per_page\":50}"
+                    : "{\"data\":[],\"per_page\":50}");
+            return new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("{}", Encoding.UTF8, "application/json") };
+        });
+        using var backend = new Filejump("filejump://backup", WithShortTimeout(new() { ["api-token"] = "test-token" }), handler);
+        await AssertUploadTimesOutAsync(handler, data => backend.PutAsync("a.txt", data, CancellationToken.None));
     }
 }

@@ -449,16 +449,18 @@ namespace Duplicati.Library.Backend
             {
                 await m_retryAfter.WaitForRetryAfterAsync(cancelToken).ConfigureAwait(false);
                 string putUrl = RootItemUrl(drivePrefix, remotename, "content");
-                using (var timeoutStream = stream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap))
-                using (var streamContent = new StreamContent(timeoutStream))
+                await Utility.Utility.WithUploadTimeout(stream, m_timeouts.ReadWriteTimeout, m_timeouts.UploadCompletionTimeout, cancelToken, async (timeoutStream, ct) =>
                 {
-                    streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                    using (var response = await this.m_client.PutAsync(putUrl, streamContent, cancelToken).ConfigureAwait(false))
+                    using (var streamContent = new StreamContent(timeoutStream))
                     {
-                        // Make sure this response is a valid drive item, though we don't actually use it for anything currently.
-                        await this.ParseResponseAsync<DriveItem>(response, cancelToken).ConfigureAwait(false);
+                        streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                        using (var response = await this.m_client.PutAsync(putUrl, streamContent, ct).ConfigureAwait(false))
+                        {
+                            // Make sure this response is a valid drive item, though we don't actually use it for anything currently.
+                            await this.ParseResponseAsync<DriveItem>(response, ct).ConfigureAwait(false);
+                        }
                     }
-                }
+                }).ConfigureAwait(false);
             }
             else
             {
@@ -507,22 +509,26 @@ namespace Duplicati.Library.Backend
                                     remotename);
 
                                 using (var request = new HttpRequestMessage(HttpMethod.Put, uploadSession.UploadUrl))
-                                using (var timeoutStream = subStream.ObserveReadTimeout(m_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap))
-                                using (var fragmentContent = new StreamContent(timeoutStream))
                                 {
-                                    fragmentContent.Headers.ContentLength = read;
-                                    fragmentContent.Headers.ContentRange = new ContentRangeHeaderValue(offset, offset + read - 1, stream.Length);
-
-                                    request.Content = fragmentContent;
-
                                     try
                                     {
-                                        // The uploaded put requests will error if they are authenticated
-                                        using (var response = await this.m_client.SendAsync(request, false, cancelToken).ConfigureAwait(false))
+                                        var fragmentOffset = offset;
+                                        var fragmentLength = read;
+                                        await Utility.Utility.WithUploadTimeout(subStream, m_timeouts.ReadWriteTimeout, m_timeouts.UploadCompletionTimeout, cancelToken, async (timeoutStream, ct) =>
                                         {
-                                            // Note: On the last request, the json result includes the default properties of the item that was uploaded
-                                            await this.ParseResponseAsync<UploadSession>(response, cancelToken).ConfigureAwait(false);
-                                        }
+                                            // The request disposes its content
+                                            var fragmentContent = new StreamContent(timeoutStream);
+                                            fragmentContent.Headers.ContentLength = fragmentLength;
+                                            fragmentContent.Headers.ContentRange = new ContentRangeHeaderValue(fragmentOffset, fragmentOffset + fragmentLength - 1, stream.Length);
+                                            request.Content = fragmentContent;
+
+                                            // The uploaded put requests will error if they are authenticated
+                                            using (var response = await this.m_client.SendAsync(request, false, ct).ConfigureAwait(false))
+                                            {
+                                                // Note: On the last request, the json result includes the default properties of the item that was uploaded
+                                                await this.ParseResponseAsync<UploadSession>(response, ct).ConfigureAwait(false);
+                                            }
+                                        }).ConfigureAwait(false);
                                     }
                                     catch (MicrosoftGraphException ex)
                                     {
