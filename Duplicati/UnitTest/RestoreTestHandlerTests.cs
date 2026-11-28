@@ -406,6 +406,69 @@ namespace Duplicati.UnitTest
             Assert.IsFalse(ScratchFolders().Any(), "The scratch folder with the restored files and the temporary database should be removed");
         }
 
+        /// <summary>
+        /// The restore puts the read-only attribute back on the restored files, and on Windows
+        /// that stopped the removal of the scratch folder with a warning (#8046)
+        /// </summary>
+        [Test]
+        [Category("RestoreTest")]
+        public async Task ReadOnlyFilesAreRemovedWithTheScratchFolderAsync([Values("RandomFiles", "Full")] string mode)
+        {
+            var files = CreateSourceFiles(6);
+            foreach (var file in files)
+                File.SetAttributes(file, File.GetAttributes(file) | FileAttributes.ReadOnly);
+            try
+            {
+                await RunBackupAsync();
+
+                var options = RestoreTestOptions(mode);
+                options["restore-test-sample-count"] = "100";
+                var results = await RunRestoreTestAsync(options);
+                Assert.AreEqual(ParsedResultType.Success, results.ParsedResult, string.Join(Environment.NewLine, results.Errors.Concat(results.Warnings)));
+                Assert.AreEqual(0, results.Warnings.Count(), string.Join(Environment.NewLine, results.Warnings));
+                Assert.IsFalse(ScratchFolders().Any(), "The scratch folder with the read-only restored files should be removed");
+            }
+            finally
+            {
+                foreach (var file in files)
+                    File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
+                foreach (var file in Directory.Exists(SCRATCHFOLDER) ? Directory.GetFiles(SCRATCHFOLDER, "*", SearchOption.AllDirectories) : [])
+                    File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
+            }
+        }
+
+        /// <summary>
+        /// The full restore test puts the read-only attribute back on the restored folders, and
+        /// outside Windows the files in such a folder cannot be deleted
+        /// </summary>
+        [Test]
+        [Category("RestoreTest")]
+        public async Task ReadOnlyFoldersAreRemovedWithTheScratchFolderAsync([Values("RandomFiles", "Full")] string mode)
+        {
+            CreateSourceFiles(6);
+            var folders = new[] { Path.Combine(DATAFOLDER, "sub", "deeper"), Path.Combine(DATAFOLDER, "sub") };
+            foreach (var folder in folders)
+                File.SetAttributes(folder, File.GetAttributes(folder) | FileAttributes.ReadOnly);
+            try
+            {
+                await RunBackupAsync();
+
+                var options = RestoreTestOptions(mode);
+                options["restore-test-sample-count"] = "100";
+                var results = await RunRestoreTestAsync(options);
+                Assert.AreEqual(ParsedResultType.Success, results.ParsedResult, string.Join(Environment.NewLine, results.Errors.Concat(results.Warnings)));
+                Assert.AreEqual(0, results.Warnings.Count(), string.Join(Environment.NewLine, results.Warnings));
+                Assert.IsFalse(ScratchFolders().Any(), "The scratch folder with the read-only restored folders should be removed");
+            }
+            finally
+            {
+                foreach (var folder in folders.Reverse())
+                    File.SetAttributes(folder, File.GetAttributes(folder) & ~FileAttributes.ReadOnly);
+                foreach (var folder in Directory.Exists(SCRATCHFOLDER) ? Directory.GetDirectories(SCRATCHFOLDER, "*", SearchOption.AllDirectories) : [])
+                    File.SetAttributes(folder, File.GetAttributes(folder) & ~FileAttributes.ReadOnly);
+            }
+        }
+
         [Test]
         [Category("RestoreTest")]
         public async Task DownloadBudgetProducesBudgetExceededResultAsync()

@@ -379,7 +379,10 @@ namespace Duplicati.Library.Main.Operation
                 try
                 {
                     if (Directory.Exists(scratchRoot))
+                    {
+                        ClearReadOnlyAttributes(scratchRoot);
                         Directory.Delete(scratchRoot, true);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -492,6 +495,35 @@ namespace Duplicati.Library.Main.Operation
             EnsureFreeSpace(scratchRoot, m_options.VolumeSize);
             Logging.Log.WriteVerboseMessage(LOGTAG, "ScratchFolder", LC.L("Using scratch folder {0} for the restore test", scratchRoot));
             return scratchRoot;
+        }
+
+        /// <summary>
+        /// Clears the read-only attribute on the files and folders in the scratch folder.
+        /// The restore applies the stored attributes, and a recursive delete stops at the first
+        /// restored entry it cannot remove: on Windows a read-only file, and elsewhere a file in
+        /// a folder without write permission. Links are left as they are, and the folders they
+        /// point to are not entered, so nothing outside the scratch folder is changed.
+        /// </summary>
+        /// <param name="root">The scratch folder</param>
+        private static void ClearReadOnlyAttributes(string root)
+        {
+            var pending = new Stack<DirectoryInfo>();
+            pending.Push(new DirectoryInfo(root));
+            while (pending.Count > 0)
+            {
+                foreach (var entry in pending.Pop().EnumerateFileSystemInfos())
+                {
+                    var attributes = entry.Attributes;
+                    if (attributes.HasFlag(FileAttributes.ReparsePoint))
+                        continue;
+
+                    if (attributes.HasFlag(FileAttributes.ReadOnly))
+                        entry.Attributes = attributes & ~FileAttributes.ReadOnly;
+
+                    if (entry is DirectoryInfo directory)
+                        pending.Push(directory);
+                }
+            }
         }
 
         /// <summary>
