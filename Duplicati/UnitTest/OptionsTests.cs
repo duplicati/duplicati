@@ -60,6 +60,19 @@ namespace Duplicati.UnitTest
             return new Options(new Dictionary<string, string?>(values, StringComparer.OrdinalIgnoreCase));
         }
 
+        /// <summary>
+        /// The option had the description of --repair-only-paths
+        /// </summary>
+        [Test]
+        [Category("Options")]
+        public void RepairForceBlockUseHasItsOwnDescription()
+        {
+            var options = CreateOptions().SupportedCommands.ToDictionary(x => x.Name);
+
+            Assert.That(options["repair-force-block-use"].ShortDescription, Is.Not.EqualTo(options["repair-only-paths"].ShortDescription));
+            Assert.That(options["repair-force-block-use"].LongDescription, Is.Not.EqualTo(options["repair-only-paths"].LongDescription));
+        }
+
         [Test]
         [Category("Options")]
         public void BlocksizeDefaultsToOneMegabyte()
