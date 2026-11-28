@@ -1,3 +1,118 @@
+2026-11-28 - 2.4.1.104_canary_2026-11-28
+==========
+This release is a canary release intended to be used for testing.
+
+# Faster restore without a local database
+
+A restore without a local database, a direct restore, now builds only the part of the database that the chosen files need, instead of the whole version. A test with more than 2 million blocks ran 10 times faster, and the gain is largest when a few files are restored from a large backup. Backups made without full index files gain much less.
+
+The new method is on by default and falls back to the previous one if it fails. It keeps the list of blocks in memory, so for a restore of more than 1 TB on a machine with little memory, turn it off with `--disable-fast-direct-restore` or recreate the database first.
+
+# Restore from archive storage
+
+Files in archive storage, such as Amazon S3 Glacier or the Azure archive tier, have to be brought back before a restore can read them, which can take hours. Two new commands help with this:
+
+- `list-restore-volumes` prints the remote volumes a restore of the selected files reads, with their sizes. It uses only the local database and does not contact the destination.
+- `unfreeze` asks the destination to bring back the volumes of that list that are archived. It returns once it has asked, and ends with a warning while a volume cannot be read yet, so a script can run it again until it succeeds. It works with S3 through the AWS client (`--s3-archive-restore-days`, `--s3-archive-restore-tier`) and with Azure Blob (`--azure-rehydrate-tier`, `--azure-rehydrate-priority`).
+
+Thanks @JamBalaya56562 for both commands.
+
+# Report templates
+
+The reports sent by email, HTTP, XMPP and Telegram can now choose one of the bundled Handlebars templates with `--send-mail-result-template`, and the same option for the other modules. The body option can also be the path of a template file of your own with the `.hbs` extension.
+
+The new UI has a dialog that gathers the options for email reports in one place, with a "Test" button that sends a test email.
+
+# Windows App Control
+
+Duplicati now ships a signed catalog for the libraries it includes that are not signed by their authors, so it can run with App Control enabled on Windows 11. The MSI registers the catalog. For an installation from the zip file, use `Duplicati.WindowsService.exe register-catalog` and `unregister-catalog`.
+
+# Changes to be aware of
+
+- An upload to S3, SSH or WebDAV that stops moving is now cancelled by the read-write timeout, where it could wait forever. After the last byte is read, the upload has 10 minutes to finish, which `--upload-completion-timeout` changes, thanks @JamBalaya56562.
+- `--send-mail-level`, and the same option of the other report modules, was only applied to backups. It is now applied to every operation chosen for reports, so fewer reports may be sent for the other operations.
+- A schema upgrade of a database now deletes the copies that earlier upgrades kept of that database, and keeps only its own. The copies were never deleted and could take a lot of space, thanks @JamBalaya56562.
+- Before a backup, the free space of the temporary folder is compared with the volumes the backup can hold at once. The number of compressors and concurrent uploads is lowered to fit, unless set by the user, and a warning is given if the volumes still do not fit, thanks @JamBalaya56562.
+- The app execution aliases of Windows are left out of a backup. They cannot be opened and gave a warning each, thanks @JamBalaya56562.
+- A valid certificate was rejected when its chain reached a trusted root only through an intermediate certificate that the server sent. The default validation is now used when no certificate hash is set, and FTP uses the result of the TLS stack, thanks @JamBalaya56562.
+- The server releases the memory of a backup, restore, repair, compact or verify when it completes, instead of keeping it until the next operation. A server that held 413 MB after a restore of 100,000 files now holds 43 MB, thanks @JamBalaya56562.
+
+# Backup
+
+- PostgreSQL 19 databases can be backed up and restored, and the size of a PostgreSQL source is included in the examined size of the reports.
+- Windows sources where one volume is on a virtual disk file stored on another failed with a nested volume error. A VSS snapshot is now made for each volume, thanks @JamBalaya56562.
+- A file that could not be added left a blockset without blocks, and every later backup and repair stopped with "Detected non-empty blocksets with no associated blocks!". The rows are now removed, and repair removes those that exist, thanks @JamBalaya56562.
+- The check of the local database has its own phase, so a slow database check is no longer shown as "Verifying backend data", thanks @JamBalaya56562.
+- The log line for an excluded path names only the filter that matched, not the whole list, thanks @JamBalaya56562.
+- A time option with whitespace, such as `--keep-time="1D 12h"`, passed the validation and then stopped the operation, thanks @arpitjain099.
+- A synchronization to a secondary destination failed without a local database, and the result of the backup was stored with the synchronization, thanks @JamBalaya56562.
+- The LVM snapshot scripts exited with 0 after a failed command, and the remove script went on to remove a snapshot that was still mounted, thanks @JamBalaya56562.
+- Google Workspace: documents in Chat were not included in the backup, and files that are too large for the regular export are now read through their export links.
+- The warning about the ZIP fallback to SharpCompress now says what it means and names the file, thanks @JamBalaya56562.
+
+# Restore
+
+- A restore of many files uses less memory. Block volumes are read with a compact ZIP index of about 76 bytes per block instead of 520, and the temporary tables no longer hold the target paths, the unused block list and the path index, thanks @JamBalaya56562.
+- A restore of only symlinks without a version went through every version and restored from the oldest, thanks @JamBalaya56562.
+- A restore, list or compare without a local database failed or counted each version twice when the destination had parity files, thanks @JamBalaya56562.
+- Microsoft 365: a restore of files over 4 MB was rejected.
+- A failed GPG decryption is now reported from the exit code, so it is also seen with a translated GPG, and the error explains that GPG could not ask for the passphrase of a private key, thanks @JamBalaya56562.
+- The recovery tool restored all files when the filter had only include rules, thanks @JamBalaya56562.
+- A full restore test left its scratch folder when it held read-only files, thanks @JamBalaya56562.
+
+# Recreate and repair
+
+- A recreate now continues without the volumes that cannot be decrypted or that have the wrong size or hash. They are reported, and the files lost with a block volume can be purged, thanks @JamBalaya56562.
+- A recreate uses less memory for the list of small files, and no longer reads parity files as filelists, thanks @JamBalaya56562.
+- The experimental recreate took longer for each block volume than for the one before, thanks @JamBalaya56562.
+- A repair that finds an unfinished recreate now says to delete the local database and repair again, thanks @JamBalaya56562.
+- `set-version-label`, `read-lock-info` and `--repair-refresh-lock-info` changed the local database in a dry run, and a dry-run repair with a lock refresh failed when it recreated the database, thanks @JamBalaya56562.
+
+# Storage providers
+
+- S3: a folder path that starts with a slash gives a warning, as many S3 compatible servers do not accept such names. With the Minio client, `--s3-storage-class` is now sent, and an upload that gets an HTML page as answer reports the status instead of a null reference error, thanks @JamBalaya56562.
+- SSH: each address of a server name is tried with its own timeout, so one dead address no longer makes the connection fail, thanks @JamBalaya56562.
+- WebDAV: the missing parent folders of a new destination folder are created, thanks @JamBalaya56562.
+- rclone: `--rclone-config-password` gives the password of an encrypted rclone configuration. Stopping an rclone call also stops the processes rclone started, where the job could hang, thanks @JamBalaya56562.
+- Aliyun OSS: downloads never completed and failed with a timeout, deletes had no timeout, and a successful delete was logged as failed, thanks @JamBalaya56562.
+- Storj: creating an access from an API key failed for every listed satellite with "node id is required", thanks @JamBalaya56562.
+- pCloud: an uploaded file is found by the ID the upload returned, as the listing does not always show it right away, thanks @JamBalaya56562.
+- Jottacloud: the error message of the API is reported, with a suggestion for the known error codes, and a failure in rename is fixed.
+- Backblaze B2: a sync job failed with "Bucket name is already in use", thanks @JamBalaya56562.
+- Filejump: uploads to the root of the drive failed with "Folder not found", thanks @JamBalaya56562.
+- Tahoe-LAFS: deleting a file that was already gone failed, thanks @JamBalaya56562.
+- SMB: a file that could not be opened reported "invalid argument" instead of the real error.
+- The Duplicati backend can get the full destination from the console, so the console can choose the storage provider, and Google Cloud Storage can use short-lived tokens from it.
+
+# Reports
+
+- `--send-http-headers` sends extra headers with an HTTP report, such as an API key, thanks @JamBalaya56562.
+- A bug report stopped by a `run-script-before` script failed the task with a database error, thanks @JamBalaya56562.
+
+# Server, installers and tools
+
+- The MSI could fail with error 1939 when it set the recovery actions of the service, and an upgrade then left nothing installed. The actions are now set with `sc.exe`, thanks @JamBalaya56562.
+- A zip update of a Windows service closes the tray icon first, which kept the old files open, thanks @JamBalaya56562.
+- When the tray icon exits and its server does not stop in 20 seconds, the process now exits, where it could keep running without an icon, thanks @JamBalaya56562.
+- The message about a rejected data folder of the Windows service suggests `secure-datafolder --for-service`, thanks @JamBalaya56562.
+- The SyncTool accepts the `--secret-provider` options, also for secondary destination URLs.
+- Adding a destination from the Destinations page failed with a 500 error, thanks @JamBalaya56562.
+- The macOS uninstall scripts now print the note that a restart may be needed, thanks @JamBalaya56562.
+
+# Current user interface (`ngclient`)
+
+- A backup can be restored from one of its secondary destinations, thanks @JamBalaya56562.
+- Deleting a backup can choose which of its remote destinations to delete, thanks @JamBalaya56562.
+- The backup and restore flows show the same destination picker when there are stored destinations, and the layout for choosing a restore destination is improved.
+- The progress of the current file is shown apart from the uploads, thanks @JamBalaya56562.
+- The backup page showed a backup as encrypted when it was not.
+- The actions of a backup on the home page, the progress and the toolbar stay usable on narrow screens, thanks @JamBalaya56562.
+- Log entries can be expanded with the keyboard, the alert and notification controls have names for screen readers, and warnings and errors have better contrast, thanks @JamBalaya56562.
+
+# Old user interface (`ngax`)
+
+- Creating a missing destination folder for a saved backup with a password in its URL failed with "Unmasked URL contains password placeholder", thanks @JamBalaya56562.
+
 2026-11-20 - 2.4.1.103_canary_2026-11-20
 ==========
 This release is a canary release intended to be used for testing.
