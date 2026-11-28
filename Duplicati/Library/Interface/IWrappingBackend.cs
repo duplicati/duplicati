@@ -40,13 +40,30 @@ public interface IWrappingBackend : IBackend
 }
 
 /// <summary>
+/// A backend that implements optional backend interfaces it cannot always serve, for example
+/// because the storage it ends up using is only known after it has connected.
+/// <see cref="BackendCapabilityExtensions.TryGetCapability{T}"/> asks it before trusting
+/// the interfaces it implements.
+/// </summary>
+public interface IConditionalCapabilityBackend : IBackend
+{
+    /// <summary>
+    /// Gets a value indicating whether the backend can serve an optional backend interface now
+    /// </summary>
+    /// <typeparam name="T">The optional backend interface</typeparam>
+    /// <returns><c>true</c> if calls through the interface are supported</returns>
+    bool HasCapability<T>() where T : class, IBackend;
+}
+
+/// <summary>
 /// Extensions for finding what a backend supports
 /// </summary>
 public static class BackendCapabilityExtensions
 {
     /// <summary>
     /// Gets the backend as an optional backend interface, if it supports it.
-    /// A wrapping backend supports the interface when the backend it wraps does.
+    /// A wrapping backend supports the interface when the backend it wraps does, and a
+    /// <see cref="IConditionalCapabilityBackend"/> anywhere in the chain can decline it.
     /// </summary>
     /// <typeparam name="T">The optional backend interface</typeparam>
     /// <param name="backend">The backend to check</param>
@@ -56,10 +73,16 @@ public static class BackendCapabilityExtensions
         where T : class, IBackend
     {
         var inner = backend;
-        while (inner is IWrappingBackend wrapping)
+        var declined = false;
+        while (true)
+        {
+            declined |= inner is IConditionalCapabilityBackend conditional && !conditional.HasCapability<T>();
+            if (inner is not IWrappingBackend wrapping)
+                break;
             inner = wrapping.WrappedBackend;
+        }
 
-        capability = inner is T ? backend as T : null;
+        capability = inner is T && !declined ? backend as T : null;
         return capability != null;
     }
 

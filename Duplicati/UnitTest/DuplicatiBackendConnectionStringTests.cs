@@ -142,6 +142,76 @@ public class DuplicatiBackendConnectionStringTests
 
     [Test]
     [Category("Backend")]
+    public void APointInTimeIsRefusedByABackendThatCannotReadOlderVersions()
+    {
+        // The server reports object locking, but the backend it names keeps no versions to read
+        var credentials = Credentials(GcsConnectionString + "&gcs-retention-policy-mode=Locked", DateTimeOffset.UtcNow.AddHours(1))
+            .Replace("\"objectLockEnabled\":false", "\"objectLockEnabled\":true");
+        var server = new FakeServer().On("/credentials", HttpStatusCode.OK, credentials, "application/json");
+        using var backend = CreateBackend(server, new Dictionary<string, string?> { ["remote-point-in-time"] = "1D" });
+
+        var ex = NUnit.Framework.Assert.ThrowsAsync<UserInformationException>(() => backend.EnsureCredentialsAsync(CancellationToken.None));
+
+        Assert.AreEqual(DuplicatiBackend.HELP_ID_POINT_IN_TIME_NOT_AVAILABLE, ex!.HelpID);
+        Assert.IsNull(backend.DirectModeBackend);
+    }
+
+    [Test]
+    [Category("Backend")]
+    public async Task TheRetentionModeInTheConnectionStringReachesTheBackend()
+    {
+        // Object locks go to the backend the server names, which locks with the mode the server chose
+        var credentials = Credentials(GcsConnectionString + "&gcs-retention-policy-mode=Locked", DateTimeOffset.UtcNow.AddHours(1))
+            .Replace("\"objectLockEnabled\":false", "\"objectLockEnabled\":true");
+        var server = new FakeServer().On("/credentials", HttpStatusCode.OK, credentials, "application/json");
+        using var backend = CreateBackend(server);
+
+        await backend.EnsureCredentialsAsync(CancellationToken.None);
+
+        Assert.IsInstanceOf<ILockingBackend>(backend.DirectModeBackend);
+    }
+
+    [Test]
+    [Category("Backend")]
+    public void TheCapabilitiesAreThoseOfTheBackendInUse()
+    {
+        // A local folder can rename but not lock, and the check asks the server which backend is used
+        using var folder = new Library.Utility.TempFolder();
+        var fileServer = ServerWith("file://" + (string)folder);
+        using var onFile = CreateBackend(fileServer);
+
+        Assert.IsTrue(onFile.TryGetCapability<IRenameEnabledBackend>(out _));
+        Assert.IsFalse(onFile.TryGetCapability<ILockingBackend>(out _));
+        Assert.AreEqual(1, fileServer.Requests.Count(x => x == "/credentials"));
+
+        // Google Cloud Storage can do both
+        using var onGcs = CreateBackend(ServerWith(GcsConnectionString));
+        Assert.IsTrue(onGcs.TryGetCapability<IRenameEnabledBackend>(out _));
+        Assert.IsTrue(onGcs.TryGetCapability<ILockingBackend>(out var locking));
+        Assert.AreSame(onGcs, locking);
+
+        // The storage server answers for the quota whatever backend holds the data,
+        // and a wrapper around the backend gets the same answers
+        Assert.IsTrue(onFile.TryGetCapability<IQuotaEnabledBackend>(out _));
+        Assert.IsTrue(onFile.TryGetCapability<IStreamingBackend>(out _));
+        Assert.IsFalse(onFile.TryGetCapability<IFolderEnabledBackend>(out _));
+        var wrapped = new RemoteFilenameSuffixBackend(onFile, ".suffix");
+        Assert.IsTrue(wrapped.TryGetCapability<IRenameEnabledBackend>(out _));
+        Assert.IsFalse(wrapped.TryGetCapability<ILockingBackend>(out _));
+    }
+
+    [Test]
+    [Category("Backend")]
+    public void InGatewayModeTheStorageServerRenamesAndLocks()
+    {
+        using var backend = CreateBackend(new FakeServer().On("/credentials", HttpStatusCode.OK, GatewayCredentials, "application/json"));
+
+        Assert.IsTrue(backend.TryGetCapability<IRenameEnabledBackend>(out _));
+        Assert.IsTrue(backend.TryGetCapability<ILockingBackend>(out _));
+    }
+
+    [Test]
+    [Category("Backend")]
     public async Task ValidCredentialsAreNotRequestedAgain()
     {
         var server = ServerWith(GcsConnectionString);
