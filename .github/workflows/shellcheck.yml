@@ -32,8 +32,8 @@ jobs:
           fi
           shellcheck --version
 
-      # Only errors fail the job for now. The existing scripts still have
-      # warnings and style notes, and fixing those can change how scripts
-      # that ship with Duplicati behave, so they are left for later.
+      # Errors and warnings fail the job. Style notes (info) are not checked,
+      # as fixing them in the existing scripts can change how scripts that
+      # ship with Duplicati behave.
       - name: Check shell scripts
-        run: git ls-files -z '*.sh' | xargs -0 shellcheck --severity=error
+        run: git ls-files -z '*.sh' | xargs -0 shellcheck --severity=warning
