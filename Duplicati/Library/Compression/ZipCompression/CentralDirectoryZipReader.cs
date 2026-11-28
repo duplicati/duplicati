@@ -207,70 +207,103 @@ public sealed class CentralDirectoryZipReader : ICompression
 
         // The entry count in the end record is not used, as older versions wrote a wrong one
         // for more than 65535 entries (#6251). The headers are read until the directory ends.
-        var directory = new byte[checked((int)(directoryEnd - directoryOffset))];
+        // A restore opens many volumes at once. Buffers of the size of a directory go to the large
+        // object heap, which is not compacted, so what was dropped after each volume stayed there
+        // as free space for the rest of the restore (#7538). The directory is therefore read from
+        // the stream twice, first to count the entries and their names, and then to fill the
+        // index, which is allocated once at its final size.
+        var directoryLength = directoryEnd - directoryOffset;
+        var header = new byte[CENTRAL_HEADER_SIZE];
+        var count = 0;
+        var namesLength = 0;
+        long pos = 0;
         stream.Position = directoryOffset;
-        stream.ReadExactly(directory);
-
-        var nameBuffer = new MemoryStream();
-        var list = new List<Entry>();
-        var pos = 0;
-        while (pos + CENTRAL_HEADER_SIZE <= directory.Length && BinaryPrimitives.ReadUInt32LittleEndian(directory.AsSpan(pos)) == CENTRAL_HEADER_SIGNATURE)
+        while (pos + CENTRAL_HEADER_SIZE <= directoryLength)
         {
-            var header = directory.AsSpan(pos);
-            var flags = BinaryPrimitives.ReadUInt16LittleEndian(header[8..]);
-            var method = BinaryPrimitives.ReadUInt16LittleEndian(header[10..]);
-            long compressedSize = BinaryPrimitives.ReadUInt32LittleEndian(header[20..]);
-            long size = BinaryPrimitives.ReadUInt32LittleEndian(header[24..]);
-            var nameLength = BinaryPrimitives.ReadUInt16LittleEndian(header[28..]);
-            var extraLength = BinaryPrimitives.ReadUInt16LittleEndian(header[30..]);
-            var commentLength = BinaryPrimitives.ReadUInt16LittleEndian(header[32..]);
-            long headerOffset = BinaryPrimitives.ReadUInt32LittleEndian(header[42..]);
+            stream.ReadExactly(header);
+            if (BinaryPrimitives.ReadUInt32LittleEndian(header) != CENTRAL_HEADER_SIGNATURE)
+                break;
+
+            var nameLength = BinaryPrimitives.ReadUInt16LittleEndian(header.AsSpan(28));
+            var next = pos + CENTRAL_HEADER_SIZE + nameLength + BinaryPrimitives.ReadUInt16LittleEndian(header.AsSpan(30)) + BinaryPrimitives.ReadUInt16LittleEndian(header.AsSpan(32));
+            if (next > directoryLength)
+                return false;
+
+            count++;
+            namesLength = checked(namesLength + nameLength);
+            pos = next;
+            stream.Position = directoryOffset + pos;
+        }
+
+        // An extra field is at most 65535 bytes, which is below the large object heap size
+        var extraBuffer = new byte[ushort.MaxValue];
+        var nameBuffer = new byte[namesLength];
+        var list = new Entry[count];
+        var nameStart = 0;
+        pos = 0;
+        stream.Position = directoryOffset;
+        for (var index = 0; index < count; index++)
+        {
+            stream.ReadExactly(header);
+            var flags = BinaryPrimitives.ReadUInt16LittleEndian(header.AsSpan(8));
+            var method = BinaryPrimitives.ReadUInt16LittleEndian(header.AsSpan(10));
+            long compressedSize = BinaryPrimitives.ReadUInt32LittleEndian(header.AsSpan(20));
+            long size = BinaryPrimitives.ReadUInt32LittleEndian(header.AsSpan(24));
+            var nameLength = BinaryPrimitives.ReadUInt16LittleEndian(header.AsSpan(28));
+            var extraLength = BinaryPrimitives.ReadUInt16LittleEndian(header.AsSpan(30));
+            var commentLength = BinaryPrimitives.ReadUInt16LittleEndian(header.AsSpan(32));
+            long headerOffset = BinaryPrimitives.ReadUInt32LittleEndian(header.AsSpan(42));
 
             var next = pos + CENTRAL_HEADER_SIZE + nameLength + extraLength + commentLength;
-            if (next > directory.Length)
-                return false;
 
             // Encrypted entries and other compression methods are left to the regular reader
             if ((flags & 1) != 0 || (method != METHOD_STORED && method != METHOD_DEFLATE))
                 return false;
 
+            var name = nameBuffer.AsSpan(nameStart, nameLength);
+            stream.ReadExactly(name);
+            name.Replace((byte)'\\', (byte)'/');
+
             if (size == uint.MaxValue || compressedSize == uint.MaxValue || headerOffset == uint.MaxValue)
             {
-                var extra = header.Slice(CENTRAL_HEADER_SIZE + nameLength, extraLength);
+                var extra = extraBuffer.AsSpan(0, extraLength);
+                stream.ReadExactly(extra);
                 if (!TryReadZip64Extra(extra, ref size, ref compressedSize, ref headerOffset))
                     return false;
             }
 
-            var name = header.Slice(CENTRAL_HEADER_SIZE, nameLength).ToArray();
-            for (var i = 0; i < name.Length; i++)
-                if (name[i] == (byte)'\\')
-                    name[i] = (byte)'/';
-
-            list.Add(new Entry(headerOffset, compressedSize, size, checked((int)nameBuffer.Length), nameLength, method));
-            nameBuffer.Write(name);
+            list[index] = new Entry(headerOffset, compressedSize, size, nameStart, nameLength, method);
+            nameStart += nameLength;
             pos = next;
+            stream.Position = directoryOffset + pos;
         }
 
-        names = nameBuffer.ToArray();
-
-        // Sort by name, and keep the last of entries with the same name, as the regular reader does
-        var namesLocal = names;
-        var order = Enumerable.Range(0, list.Count).ToArray();
-        Array.Sort(order, (a, b) =>
+        // Sort by name, and keep the last of entries with the same name, as the regular reader does.
+        // The names are stored in the order of the entries, so the start of the name tells which
+        // entry came later. Only entries with empty names can start at the same place, and those
+        // are ordered by where their data is.
+        Array.Sort(list, (a, b) =>
         {
-            var c = NameOf(namesLocal, list[a]).SequenceCompareTo(NameOf(namesLocal, list[b]));
-            return c != 0 ? c : a.CompareTo(b);
+            var c = NameOf(nameBuffer, a).SequenceCompareTo(NameOf(nameBuffer, b));
+            if (c != 0)
+                return c;
+            c = a.NameStart.CompareTo(b.NameStart);
+            return c != 0 ? c : a.HeaderOffset.CompareTo(b.HeaderOffset);
         });
 
-        var result = new List<Entry>(list.Count);
-        for (var i = 0; i < order.Length; i++)
+        var kept = 0;
+        for (var i = 0; i < list.Length; i++)
         {
-            if (i + 1 < order.Length && NameOf(namesLocal, list[order[i]]).SequenceEqual(NameOf(namesLocal, list[order[i + 1]])))
+            if (i + 1 < list.Length && NameOf(nameBuffer, list[i]).SequenceEqual(NameOf(nameBuffer, list[i + 1])))
                 continue;
-            result.Add(list[order[i]]);
+            list[kept++] = list[i];
         }
 
-        entries = result.ToArray();
+        if (kept != list.Length)
+            Array.Resize(ref list, kept);
+
+        names = nameBuffer;
+        entries = list;
         return true;
     }
 

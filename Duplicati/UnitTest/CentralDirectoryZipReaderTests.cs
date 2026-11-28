@@ -241,5 +241,27 @@ namespace Duplicati.UnitTest
             regular.Dispose();
             fs.Dispose();
         }
+
+        [Test]
+        [Category("Targeted")]
+        public void AllocatesLittleMoreThanTheIndexWhenOpening()
+        {
+            // A restore opens many volumes at once. Temporary buffers of this size go to the large
+            // object heap, which is not compacted, so what each opening dropped stayed as free space
+            // for the rest of the restore (#7538). The index itself is about 75 bytes per entry here.
+            const int count = 20000;
+            var path = WriteVolume(count, new Dictionary<string, string?>(), out _);
+
+            // The first opening fills the buffer pool, as the first volume of a restore does
+            CentralDirectoryZipReader.TryOpen(path, new Dictionary<string, string?>())!.Dispose();
+
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            using var reader = CentralDirectoryZipReader.TryOpen(path, new Dictionary<string, string?>());
+            var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+            Assert.That(reader, Is.Not.Null);
+            TestContext.Progress.WriteLine($"Allocated per entry when opening: {allocated / count} bytes");
+            Assert.That(allocated / count, Is.LessThan(100), "Opening a volume should allocate little more than its index");
+        }
     }
 }
