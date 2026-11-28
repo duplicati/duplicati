@@ -62,16 +62,15 @@ backupApp.service('ServerStatus', function ($rootScope, $timeout, AppService, Ap
             'Restore_Complete': gettextCatalog.getString('Restore complete!'),
             'Recreate_Running': gettextCatalog.getString('Recreating database …'),
             'Vacuum_Running': gettextCatalog.getString('Vacuuming database …'),
-            'Repair_Running': gettextCatalog.getString('Repairing database …'),
             'Verify_Running': gettextCatalog.getString('Verifying files …'),
             'BugReport_Running': gettextCatalog.getString('Creating bug report …'),
             'RunScript_Running': gettextCatalog.getString('Running script …'),
             'Delete_Listing': gettextCatalog.getString('Listing remote files …'),
             'Delete_Deleting': gettextCatalog.getString('Deleting remote files …'),
-            'PurgeFiles_Begin,': gettextCatalog.getString('Listing remote files for purge …'),
-            'PurgeFiles_Process,': gettextCatalog.getString('Purging files …'),
-            'PurgeFiles_Compact,': gettextCatalog.getString('Compacting remote data …'),
-            'PurgeFiles_Complete,': gettextCatalog.getString('Purging files complete!'),
+            'PurgeFiles_Begin': gettextCatalog.getString('Listing remote files for purge …'),
+            'PurgeFiles_Process': gettextCatalog.getString('Purging files …'),
+            'PurgeFiles_Compact': gettextCatalog.getString('Compacting remote data …'),
+            'PurgeFiles_Complete': gettextCatalog.getString('Purging files complete!'),
             'Error': gettextCatalog.getString('Error!')
         };
     };
