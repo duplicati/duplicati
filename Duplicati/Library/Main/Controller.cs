@@ -1482,9 +1482,18 @@ namespace Duplicati.Library.Main
         private async Task ApplySecretProviderAsync(CancellationToken cancellationToken)
         {
             var args = new[] { new Library.Utility.RelaxedUri(m_backendUrl) };
-            await SecretProviderHelper.ApplySecretProviderAsync([], args, m_options.RawOptions, TempFolder.SystemTempPath, SecretProvider, cancellationToken).ConfigureAwait(false);
+            var provider = await SecretProviderHelper.ApplySecretProviderAsync([], args, m_options.RawOptions, TempFolder.SystemTempPath, SecretProvider, cancellationToken).ConfigureAwait(false);
             // Write back the backend argument, if it was modified by the secret provider
             m_backendUrl = args[0].ToString();
+
+            // The additional destinations are inside a single option, where the secrets are
+            // not found by the above. Only the operations that write to them need the secrets.
+            if (provider != null && m_options.MainAction is OperationMode.Backup or OperationMode.Sync)
+            {
+                var resolved = await Operation.RemoteSyncConfig.ResolveSecretsAsync(m_options.RemoteSyncJsonConfig, provider, SecretProviderHelper.GetEffectivePattern(m_options.RawOptions, provider), cancellationToken).ConfigureAwait(false);
+                if (resolved != null)
+                    m_options.RawOptions["remote-sync-json-config"] = resolved;
+            }
         }
 
         /// <summary>

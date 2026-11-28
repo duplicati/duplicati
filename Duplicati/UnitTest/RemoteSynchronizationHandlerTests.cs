@@ -410,6 +410,55 @@ namespace Duplicati.UnitTest
             Assert.AreEqual(1, count);
         }
 
+        /// <summary>
+        /// The secret provider of a job has to reach its additional destinations. Here the
+        /// secret is what makes the additional destination report its names twice, so the
+        /// synchronization only fails if the name was replaced with the value.
+        /// </summary>
+        [TestCase("option", true)]
+        [TestCase("url", true)]
+        [TestCase("option", false)]
+        [Category("RemoteSync")]
+        public async Task TestRunAsync_AdditionalDestination_ResolvesSecretsAsync(string where, bool useSecretProvider)
+        {
+            const string secretName = "DUPLICATI_TEST_REMOTESYNC_SECRET";
+            System.IO.File.WriteAllText(System.IO.Path.Combine(DATAFOLDER, "testfile.txt"), "test content");
+
+            // The destination needs a file of its own, so there is something to report twice
+            var destination = Path.Combine(TARGETFOLDER, "dest1");
+            Directory.CreateDirectory(destination);
+            await ToolTests.GenerateTestVolumesAsync(destination, 1, 1024);
+
+            Duplicati.Library.DynamicLoader.BackendLoader.AddBackend(new ToolTests.DuplicateListingBackend());
+
+            var key = ToolTests.DuplicateListingBackend.Key;
+            var option = $"{ToolTests.DuplicateListingBackend.ModeOption}=${secretName}";
+            var options = TestOptions;
+            options["remote-sync-json-config"] = where == "url"
+                ? $@"{{""destinations"": [{{""url"": ""{key}://{dest1}?{option}""}}]}}"
+                : $@"{{""destinations"": [{{""url"": ""{key}://{dest1}"", ""dst-options"": [""{option}""]}}]}}";
+            options["dbpath"] = DBFILE;
+            if (useSecretProvider)
+                options["secret-provider"] = "env://";
+
+            var sink = new LogSink();
+            Environment.SetEnvironmentVariable(secretName, "exact");
+            try
+            {
+                using (Duplicati.Library.Logging.Log.StartScope(sink, Duplicati.Library.Logging.LogMessageType.Warning))
+                using (var console = new CommandLine.ConsoleOutput(Console.Out, options))
+                using (var controller = new Controller($"file://{TARGETFOLDER}", options, console))
+                    await controller.BackupAsync([DATAFOLDER]);
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(secretName, null);
+            }
+
+            var log = string.Join(Environment.NewLine, sink.Entries.Select(x => $"{x.Id}: {x.FormattedMessage} {x.Exception}"));
+            Assert.AreEqual(useSecretProvider, log.Contains("DuplicateRemoteFiles"), log);
+        }
+
         [Test]
         [Category("RemoteSync")]
         public async Task TestRunAsync_SuccessfulBackup_TriggersSyncAsync()

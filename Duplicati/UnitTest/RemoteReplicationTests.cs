@@ -78,7 +78,7 @@ public class RemoteReplicationTests : BasicSetupHelper
     }
 
     private static RemoteSynchronizationToolConfig Config(string src, string dst, List<string>? srcOptions = null)
-        => new(Src: src, Dst: dst, BackendRetries: 0, BackendRetryDelay: 0, Confirm: true, SrcOptions: srcOptions);
+        => new(Src: src, Dst: dst, SecretProvider: "", SecretProviderPattern: "", SecretProviderCache: "", BackendRetries: 0, BackendRetryDelay: 0, Confirm: true, SrcOptions: srcOptions);
 
     private (string Source, string Destination) CreateFolders()
     {
