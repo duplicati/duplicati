@@ -883,8 +883,6 @@ namespace Duplicati.Library.Main.Database.Local
                 throw;
             }
 
-            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
-
             return (true, blocksetid);
         }
 
@@ -1051,8 +1049,6 @@ namespace Duplicati.Library.Main.Database.Local
                 .ExecuteScalarInt64PerformanceSensitiveAsync(m_logQueries, token)
                 .ConfigureAwait(false);
 
-            await m_rtr.CommitAsync(token: token).ConfigureAwait(false);
-
             return (true, metadataid);
         }
 
@@ -1086,8 +1082,6 @@ namespace Duplicati.Library.Main.Database.Local
                     .SetParameterValue("@MetadataId", metadataID)
                     .ExecuteScalarInt64PerformanceSensitiveAsync(m_logQueries, token)
                     .ConfigureAwait(false);
-
-                await m_rtr.CommitAsync(token).ConfigureAwait(false);
             }
 
             await AddKnownFileAsync(fileidobj, lastmodified, token).ConfigureAwait(false);
