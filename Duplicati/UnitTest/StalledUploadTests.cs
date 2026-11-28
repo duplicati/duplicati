@@ -292,6 +292,11 @@ public class StalledUploadTests
         /// </summary>
         public TaskCompletionSource Uploading { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        /// <summary>
+        /// Set to read all of the upload before stopping, as a server that takes the data and never answers
+        /// </summary>
+        public bool ReadUpload { get; init; }
+
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var response = answer(request);
@@ -299,6 +304,8 @@ public class StalledUploadTests
                 return response;
 
             Uploading.TrySetResult();
+            if (ReadUpload)
+                await request.Content!.CopyToAsync(Stream.Null, cancellationToken).ConfigureAwait(false);
             await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken).ConfigureAwait(false);
             throw new UnreachableException();
         }
@@ -334,6 +341,24 @@ public class StalledUploadTests
         var handler = new StallingUploadHandler(request => request.Method == HttpMethod.Put ? null : new HttpResponseMessage(HttpStatusCode.NotFound));
         using var backend = new TahoeBackend("tahoe://example.invalid/uri/URI:DIR2:aaa:bbb/", WithShortTimeout([]), handler);
         await AssertUploadTimesOutAsync(handler, data => backend.PutAsync("a.txt", data, CancellationToken.None));
+    }
+
+    /// <summary>
+    /// The server takes all of the upload and never answers, so only the upload completion timeout can end it
+    /// </summary>
+    [Test]
+    public async Task ATahoeUploadThatIsNeverAnsweredTimesOut()
+    {
+        var handler = new StallingUploadHandler(request => request.Method == HttpMethod.Put ? null : new HttpResponseMessage(HttpStatusCode.NotFound)) { ReadUpload = true };
+        var options = WithShortTimeout([]);
+        options["upload-completion-timeout"] = "2s";
+        using var backend = new TahoeBackend("tahoe://example.invalid/uri/URI:DIR2:aaa:bbb/", options, handler);
+
+        using var data = new MemoryStream(new byte[1024 * 1024]);
+        var ex = await WaitGuardedAsync(backend.PutAsync("a.txt", data, CancellationToken.None));
+
+        Assert.That(data.Position, Is.EqualTo(data.Length), $"The upload was not read to its end: {ex}");
+        Assert.That(ex, Is.InstanceOf<TimeoutException>());
     }
 
     [Test]
@@ -461,9 +486,24 @@ public class StalledUploadTests
 
         public TaskCompletionSource Uploading { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        private readonly HttpClient m_tokenClient;
+
         public StallingGraph()
-            : base(new OAuthHelperHttpClient("test-authid", "sharepoint", "http://127.0.0.1:1/", new HttpClient()))
+            : this(new HttpClient())
         {
+        }
+
+        private StallingGraph(HttpClient tokenClient)
+            : base(new OAuthHelperHttpClient("test-authid", "sharepoint", "http://127.0.0.1:1/", tokenClient))
+        {
+            m_tokenClient = tokenClient;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+                m_tokenClient.Dispose();
+            base.Dispose(disposing);
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -494,7 +534,7 @@ public class StalledUploadTests
     [TestCase(5 * 1000 * 1000)]
     public async Task AMicrosoftGraphUploadThatStallsTimesOut(int size)
     {
-        var graph = new StallingGraph();
+        using var graph = new StallingGraph();
         using var backend = new SharePointV2(
             "sharepoint://contoso-my.sharepoint.com/personal/someone_contoso_com//Documents/Vhds",
             WithShortTimeout(new() { ["authid"] = "test-authid" }),

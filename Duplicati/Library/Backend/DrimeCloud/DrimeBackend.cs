@@ -1233,14 +1233,7 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
             {
                 var bytesToRead = Math.Min(PART_SIZE, fileSize - stream.Position);
 
-                using var partContent = new StreamContent(new ReadLimitLengthStream(stream, stream.Position, bytesToRead)
-                    .ObserveReadTimeout(_timeouts.ReadWriteTimeout, false, TimeoutMode.Gap));
-
-                // The presigned URL already contains all required signature parameters.
-                // We must NOT add any extra headers (including Content-Type) as they would
-                // conflict with the presigned URL signature.
-                partContent.Headers.ContentType = null;
-                partContent.Headers.ContentLength = bytesToRead;
+                using var partStream = new ReadLimitLengthStream(stream, stream.Position, bytesToRead);
 
                 // Use a dedicated HttpClient for S3 uploads to avoid the Authorization header
                 // from the Drime Cloud API interfering with S3 signature verification
@@ -1250,8 +1243,21 @@ public class DrimeBackend : IBackend, IStreamingBackend //, IRenameEnabledBacken
                     _s3HttpClient.Timeout = Timeout.InfiniteTimeSpan;
                 }
 
-                // The part is handled by a timeout observing stream, so we don't need to use the WithTimeout method
-                var partResponse = await _s3HttpClient.PutAsync(partUrl.Url, partContent, cancelToken).ConfigureAwait(false);
+                // The upload timeout guards the request, as the server may stop taking the content
+                HttpResponseMessage? sentPart = null;
+                await Utility.Utility.WithUploadTimeout(partStream, _timeouts.ReadWriteTimeout, _timeouts.UploadCompletionTimeout, cancelToken, async (timeoutStream, ct) =>
+                {
+                    using var partContent = new StreamContent(timeoutStream);
+
+                    // The presigned URL already contains all required signature parameters.
+                    // We must NOT add any extra headers (including Content-Type) as they would
+                    // conflict with the presigned URL signature.
+                    partContent.Headers.ContentType = null;
+                    partContent.Headers.ContentLength = bytesToRead;
+
+                    sentPart = await _s3HttpClient.PutAsync(partUrl.Url, partContent, ct).ConfigureAwait(false);
+                }).ConfigureAwait(false);
+                using var partResponse = sentPart!;
 
                 if (!partResponse.IsSuccessStatusCode)
                 {

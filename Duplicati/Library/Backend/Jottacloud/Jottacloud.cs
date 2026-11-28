@@ -700,7 +700,7 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
         if (resumePos > 0)
             uploadReq.Headers.Range = new RangeHeaderValue(resumePos, fileSize - 1);
 
-        // The read-write timeout on the stream guards the upload, so the request itself has no timeout
+        // The upload timeout guards the request, as the server may stop taking the content, so the request itself has no timeout
         HttpResponseMessage? sent = null;
         await Utility.Utility.WithUploadTimeout(stream, m_timeouts.ReadWriteTimeout, m_timeouts.UploadCompletionTimeout, cancelToken, async (timeoutStream, ct) =>
         {
@@ -857,7 +857,7 @@ public class Jottacloud : IStreamingBackend, IRenameEnabledBackend
         req.Headers.Add("JMd5", md5Hash); // Not required, but it will make the server verify the content and mark the file as corrupt if there is a mismatch.
         req.Headers.Add("JSize", fileSize.ToString()); // Required, and used to mark file as incomplete if we upload something  be the total size of the original file!
 
-        // The read-write timeout on the stream guards the upload, so the request itself has no timeout
+        // The upload timeout guards the request, as the server may stop taking the content, so the request itself has no timeout
         HttpResponseMessage? uploadResponse = null;
         await Utility.Utility.WithUploadTimeout(stream, this.m_timeouts.ReadWriteTimeout, this.m_timeouts.UploadCompletionTimeout, cancelToken, async (timeoutStream, ct) =>
         {
