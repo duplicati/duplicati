@@ -31,6 +31,38 @@ namespace Duplicati.UnitTest
     [Category("Compression")]
     public class CompressionTests : BasicSetupHelper
     {
+        /// <summary>
+        /// Some of the methods that could be chosen cannot be written to a zip archive, and the backup failed
+        /// </summary>
+        [Test]
+        public void EveryZipCompressionMethodCanBeWrittenAndRead()
+        {
+            var data = new byte[200_000];
+            new Random(1).NextBytes(data.AsSpan(0, 100_000));
+
+            var methods = Library.DynamicLoader.CompressionLoader.GetSupportedCommands("zip").Single(x => x.Name == "zip-compression-method").ValidValues;
+            Assert.That(methods, Does.Contain("Deflate"));
+            Assert.Multiple(() =>
+            {
+                foreach (var method in methods)
+                    Assert.That(() =>
+                    {
+                        var opts = new Dictionary<string, string> { ["zip-compression-method"] = method };
+                        using var stream = new MemoryStream();
+                        using (var zip = Library.DynamicLoader.CompressionLoader.GetModule("zip", stream, Library.Interface.ArchiveMode.Write, opts))
+                        using (var entry = zip.CreateFile("sample", Library.Interface.CompressionHint.Compressible, DateTime.Now))
+                            entry.Write(data, 0, data.Length);
+
+                        using var written = new MemoryStream(stream.ToArray());
+                        using var reader = Library.DynamicLoader.CompressionLoader.GetModule("zip", written, Library.Interface.ArchiveMode.Read, []);
+                        using var contents = new MemoryStream();
+                        using (var entry = reader.OpenRead("sample"))
+                            entry.CopyTo(contents);
+                        return contents.ToArray();
+                    }, Is.EqualTo(data), method);
+            });
+        }
+
         [TestCase("zip-io")]
         [TestCase("zip-sc")]
         public void TestCompressionHints(string module)
