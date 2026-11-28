@@ -886,6 +886,7 @@ namespace Duplicati.UnitTest
             Directory.CreateDirectory(src);
             CreateAppBundle(src, "Duplicati.app", marker, packageTypeId);
 
+            var created = Path.Combine(root, "created.dmg");
             var dmg = Path.Combine(root, "update.dmg");
 
             // Creating an image fails now and then on a busy machine ("Resource busy"), so it is
@@ -894,7 +895,7 @@ namespace Duplicati.UnitTest
             for (var attempt = 1; ; attempt++)
             {
                 var psi = new System.Diagnostics.ProcessStartInfo("/usr/bin/hdiutil") { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true };
-                foreach (var a in new[] { "create", "-srcfolder", src, "-volname", "Duplicati Test", "-format", "UDZO", dmg })
+                foreach (var a in new[] { "create", "-srcfolder", src, "-volname", "Duplicati Test", "-format", "UDZO", created })
                     psi.ArgumentList.Add(a);
                 using var p = System.Diagnostics.Process.Start(psi)!;
                 var stdout = p.StandardOutput.ReadToEndAsync();
@@ -906,35 +907,25 @@ namespace Duplicati.UnitTest
                 var message = $"hdiutil create failed with exit code {p.ExitCode}: {err} {stdout.Result}";
                 Assert.Less(attempt, attempts, message);
                 TestContext.Progress.WriteLine($"Attempt {attempt}: {message}");
-                File.Delete(dmg);
+                File.Delete(created);
                 Thread.Sleep(TimeSpan.FromSeconds(2 * attempt));
             }
 
-            // The image can still be locked for a moment after hdiutil has exited, and opening it
-            // then fails with "being used by another process", as .NET takes a shared lock to read
-            WaitUntilReadable(dmg, TimeSpan.FromSeconds(60));
-            return dmg;
-        }
-
-        /// <summary>
-        /// Waits until a file can be opened for reading
-        /// </summary>
-        private static void WaitUntilReadable(string path, TimeSpan timeout)
-        {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            while (true)
+            // The diskimages-helper that hdiutil starts can keep the image open with a lock for
+            // minutes after hdiutil has exited. .NET takes a shared lock to read a file, so opening
+            // the image then fails with "being used by another process". A copy is a new file
+            // without the lock, and cp reads the image without taking a lock
+            var cp = new System.Diagnostics.ProcessStartInfo("/bin/cp") { UseShellExecute = false, RedirectStandardError = true };
+            cp.ArgumentList.Add(created);
+            cp.ArgumentList.Add(dmg);
+            using (var p = System.Diagnostics.Process.Start(cp)!)
             {
-                try
-                {
-                    using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-                    return;
-                }
-                catch (IOException ex) when (sw.Elapsed < timeout)
-                {
-                    TestContext.Progress.WriteLine($"Waiting for {path} to be readable: {ex.Message}");
-                    Thread.Sleep(250);
-                }
+                var err = p.StandardError.ReadToEnd();
+                p.WaitForExit();
+                Assert.AreEqual(0, p.ExitCode, "cp failed: " + err);
             }
+
+            return dmg;
         }
 
         [Test]
