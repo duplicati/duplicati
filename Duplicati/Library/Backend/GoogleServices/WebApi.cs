@@ -49,6 +49,8 @@ namespace Duplicati.Library.Backend.WebApi
             new KeyValuePair<string, string?>("Standard", "STANDARD"),
             new KeyValuePair<string, string?>("Durable Reduced Availability (DRA)", "DURABLE_REDUCED_AVAILABILITY"),
             new KeyValuePair<string, string?>("Nearline", "NEARLINE"),
+            new KeyValuePair<string, string?>("Coldline", "COLDLINE"),
+            new KeyValuePair<string, string?>("Archive", "ARCHIVE"),
         };
 
         public static string[] Hosts() =>
