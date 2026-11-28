@@ -115,6 +115,61 @@ namespace Duplicati.UnitTest
         }
 
         /// <summary>
+        /// The blocklist of a file can be in a block volume that no other index file points to, when the
+        /// index file of that volume is damaged or missing. The recreate must still read that volume.
+        /// Which volume a blocklist ends up in depends on the timing of the backup, so this made the test
+        /// above fail now and then. Here the order is fixed, and the index file of each volume is tried.
+        /// </summary>
+        [Test]
+        [TestCase("garbage")]
+        [TestCase("missing")]
+        public async Task ARecreateReadsABlockVolumeThatOnlyItsIndexFilePointedTo(string how)
+        {
+            var options = UserOptions;
+            options["dblock-size"] = "200kb";
+            // One compressor, so the blocks are written in order and the blocklist ends in the last volume
+            options["concurrency-compressors"] = "1";
+
+            // One file with more blocks than fit in a blocklist block, so its blocks are listed in a blocklist
+            var data = new byte[300_000];
+            new Random(42).NextBytes(data);
+            File.WriteAllBytes(Path.Combine(DATAFOLDER, "file-0.bin"), data);
+
+            using (var c = new Controller(Target, options, null))
+                TestUtils.AssertResults(await c.BackupAsync([DATAFOLDER]));
+            Assert.That(Remote("dblock"), Has.Length.EqualTo(2));
+            File.Delete(DBFILE);
+
+            var original = Path.Combine(BASEFOLDER, "original-backup");
+            Directory.CreateDirectory(original);
+            foreach (var file in Directory.GetFiles(TARGETFOLDER))
+                File.Copy(file, Path.Combine(original, Path.GetFileName(file)));
+
+            for (var i = 0; i < 2; i++)
+            {
+                foreach (var file in Directory.GetFiles(TARGETFOLDER))
+                    File.Delete(file);
+                foreach (var file in Directory.GetFiles(original))
+                    File.Copy(file, Path.Combine(TARGETFOLDER, Path.GetFileName(file)));
+                if (File.Exists(DBFILE))
+                    File.Delete(DBFILE);
+                if (Directory.Exists(RESTOREFOLDER))
+                    Directory.Delete(RESTOREFOLDER, true);
+
+                var index = Remote("dindex")[i];
+                if (how == "missing")
+                    File.Delete(index);
+                else
+                    Damage(index, how);
+
+                using (var c = new Controller(Target, options, null))
+                    await c.RepairAsync();
+
+                await AssertRestoresAsync(1);
+            }
+        }
+
+        /// <summary>
         /// Files are lost with a damaged block volume, and purging them gives a backup that works
         /// </summary>
         [Test]
