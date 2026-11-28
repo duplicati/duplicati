@@ -80,6 +80,12 @@ namespace Duplicati.CommandLine.RecoveryTool
                             continue;
                         }
 
+                        if (p.IsParity)
+                        {
+                            Console.WriteLine(" - Parity file, skipping");
+                            continue;
+                        }
+
                         // The remote name comes from the backend listing, so reject anything
                         // that is not a plain filename before using it to build a local path
                         if (file.Name != Path.GetFileName(file.Name) || file.Name.IndexOf('/') >= 0 || file.Name.IndexOf('\\') >= 0 || Path.IsPathRooted(file.Name))

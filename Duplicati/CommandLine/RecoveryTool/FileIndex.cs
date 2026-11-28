@@ -85,6 +85,12 @@ namespace Duplicati.CommandLine.RecoveryTool
                         continue;
                     }
 
+                    if (p.IsParity)
+                    {
+                        Console.WriteLine(" - Parity file, skipping");
+                        continue;
+                    }
+
                     if (p.FileType != Duplicati.Library.Main.RemoteVolumeType.Blocks)
                     {
                         Console.WriteLine(" - Filetype {0}, skipping", p.FileType);
