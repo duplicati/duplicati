@@ -91,6 +91,12 @@ namespace Duplicati.Library.ResultSerialization
         }
 
         /// <summary>
+        /// Whether the template renders HTML, which is the case when it starts with a tag,
+        /// such as a doctype. Values written with <c>{{value}}</c> are HTML encoded by the template.
+        /// </summary>
+        public bool IsHtml => _templateSource.TrimStart().StartsWith("<", StringComparison.Ordinal);
+
+        /// <summary>
         /// Creates a serializer from a template file path
         /// </summary>
         /// <param name="filePath">Path to the template file</param>
@@ -185,6 +191,68 @@ namespace Duplicati.Library.ResultSerialization
                 output.Write(arguments[0].ToString());
             });
 
+            // Helper to format dates in local time with English month and day names
+            _handlebars.RegisterHelper("formatLocalDate", (output, context, arguments) =>
+            {
+                if (arguments.Length == 0 || arguments[0] == null)
+                    return;
+
+                var format = arguments.Length > 1 ? arguments[1].ToString() : "yyyy-MM-dd HH:mm:ss";
+
+                DateTime date;
+                if (arguments[0] is DateTime dt)
+                    date = dt;
+                else if (!DateTime.TryParse(arguments[0].ToString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out date))
+                    return;
+
+                // A time that was never set is left out
+                if (date.Ticks == 0)
+                    return;
+
+                output.Write(date.ToLocalTime().ToString(format, CultureInfo.InvariantCulture));
+            });
+
+            // Helper to format whole numbers with thousands separators
+            _handlebars.RegisterHelper("formatNumber", (output, context, arguments) =>
+            {
+                output.Write(FormatNumber(arguments.Length == 0 ? 0 : ParseNumber(arguments[0])));
+            });
+
+            // Helper to write a count with the singular or plural word that goes with it
+            _handlebars.RegisterHelper("plural", (output, context, arguments) =>
+            {
+                var count = arguments.Length == 0 ? 0 : ParseNumber(arguments[0]);
+                output.Write(FormatNumber(count));
+                if (arguments.Length > 2)
+                    output.Write($" {(count == 1 ? arguments[1] : arguments[2])}");
+            });
+
+            // Helper to add numbers, for use as a subexpression, e.g. {{formatSize (sum a b)}}
+            _handlebars.RegisterHelper("sum", (context, arguments) =>
+            {
+                long total = 0;
+                foreach (var argument in arguments)
+                    total += ParseNumber(argument);
+                return total;
+            });
+
+            // Helper to format durations in words, e.g. "26 minutes 30 seconds"
+            _handlebars.RegisterHelper("formatDurationLong", (output, context, arguments) =>
+            {
+                var duration = TimeSpan.Zero;
+                if (arguments.Length > 0 && arguments[0] != null)
+                {
+                    if (arguments[0] is TimeSpan ts)
+                        duration = ts;
+                    else if (TimeSpan.TryParse(arguments[0].ToString(), CultureInfo.InvariantCulture, out var parsed))
+                        duration = parsed;
+                    else if (double.TryParse(arguments[0].ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds))
+                        duration = TimeSpan.FromSeconds(seconds);
+                }
+
+                output.Write(FormatTimeSpanLong(duration));
+            });
+
             // Helper for conditional equality
             _handlebars.RegisterHelper("eq", (output, options, context, arguments) =>
             {
@@ -273,6 +341,53 @@ namespace Duplicati.Library.ResultSerialization
             if (ts.TotalMinutes >= 1)
                 return $"{(int)ts.TotalMinutes}m {ts.Seconds}s";
             return $"{ts.TotalSeconds.ToString("0.#", CultureInfo.InvariantCulture)}s";
+        }
+
+        /// <summary>
+        /// Reads a whole number from a template value; a missing or non-numeric value counts as zero
+        /// </summary>
+        /// <param name="value">The template value</param>
+        /// <returns>The number</returns>
+        private static long ParseNumber(object value)
+        {
+            if (value == null)
+                return 0;
+            if (long.TryParse(value.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var number))
+                return number;
+            if (double.TryParse(value.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var fraction))
+                return (long)fraction;
+            return 0;
+        }
+
+        /// <summary>
+        /// Formats a whole number with thousands separators
+        /// </summary>
+        /// <param name="number">The number</param>
+        /// <returns>The formatted number</returns>
+        private static string FormatNumber(long number)
+            => number.ToString("N0", CultureInfo.InvariantCulture);
+
+        /// <summary>
+        /// Formats a duration in words, leaving out the units that are zero
+        /// </summary>
+        /// <param name="ts">The duration</param>
+        /// <returns>The formatted duration</returns>
+        private static string FormatTimeSpanLong(TimeSpan ts)
+        {
+            static string Unit(long count, string singular, string plural)
+                => $"{FormatNumber(count)} {(count == 1 ? singular : plural)}";
+
+            var parts = new List<string>();
+            if (ts.Days > 0)
+                parts.Add(Unit(ts.Days, "day", "days"));
+            if (ts.Hours > 0)
+                parts.Add(Unit(ts.Hours, "hour", "hours"));
+            if (ts.Minutes > 0)
+                parts.Add(Unit(ts.Minutes, "minute", "minutes"));
+            if (ts.Seconds > 0 || parts.Count == 0)
+                parts.Add(Unit(Math.Max(0, ts.Seconds), "second", "seconds"));
+
+            return string.Join(" ", parts);
         }
 
         /// <summary>

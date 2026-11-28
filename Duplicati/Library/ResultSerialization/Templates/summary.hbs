@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{OperationName}} summary{{#if BackupName}} - {{BackupName}}{{/if}}</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.5; color: #1f2328; background: #ffffff; margin: 0; padding: 24px; }
+        .report { max-width: 720px; }
+        h1 { font-size: 22px; margin: 0 0 16px 0; }
+        h2 { font-size: 20px; font-weight: 500; margin: 24px 0 12px 0; }
+        p { margin: 0 0 12px 0; }
+        .muted { color: #59636e; }
+        table { border-collapse: collapse; margin: 0 0 8px 0; }
+        th { text-align: left; padding: 4px 24px 4px 0; }
+        td { padding: 4px 24px 4px 0; }
+        th.value, td.value { text-align: right; padding-right: 0; font-weight: 600; }
+        ul { margin: 0 0 12px 0; padding-left: 24px; }
+        li { margin: 2px 0; }
+        pre { background: #f6f8fa; border: 1px solid #d1d9e0; border-radius: 4px; padding: 12px; font-size: 12px; white-space: pre-wrap; word-break: break-word; margin: 0 0 12px 0; }
+        .footer { margin-top: 24px; font-size: 12px; color: #59636e; }
+    </style>
+</head>
+<body>
+    <div class="report">
+        <h1>{{OperationName}} summary{{#if BackupName}} &mdash; {{BackupName}}{{/if}}</h1>
+
+        <p class="muted"><strong>Status: {{#eq ParsedResult "Success"}}Successful{{else}}{{ParsedResult}}{{/eq}}</strong>{{#eq ParsedResult "Fatal"}} &mdash; the operation did not complete.{{else}}{{#if Data.EndTime}} &mdash; completed on {{formatLocalDate Data.EndTime "MMMM d, yyyy"}}{{#eq ParsedResult "Success"}}, with no reported errors or warnings{{/eq}}{{#eq ParsedResult "Warning"}}, with warnings{{/eq}}{{#eq ParsedResult "Error"}}, with errors{{/eq}}.{{/if}}{{/eq}}</p>
+
+        {{#if Data}}
+        {{#eq OperationName "Backup"}}
+        <table>
+            <tr><th>Metric</th><th class="value">Result</th></tr>
+            <tr><td>Data added or changed</td><td class="value">{{formatSize (sum Data.SizeOfAddedFiles Data.SizeOfModifiedFiles)}}</td></tr>
+            <tr><td>Files added / modified</td><td class="value">{{formatNumber Data.AddedFiles}} / {{formatNumber Data.ModifiedFiles}}</td></tr>
+            <tr><td>Files deleted</td><td class="value">{{formatNumber Data.DeletedFiles}}</td></tr>
+            <tr><td>Files examined</td><td class="value">{{formatNumber Data.ExaminedFiles}}</td></tr>
+            <tr><td>Total run time</td><td class="value">{{formatDurationLong Data.Duration}}</td></tr>
+            <tr><td>Data uploaded to destination</td><td class="value">{{formatSize Data.BackendStatistics.BytesUploaded}}</td></tr>
+        </table>
+        <p class="muted">The backup also added {{plural Data.AddedFolders "folder" "folders"}}, modified {{formatNumber Data.ModifiedFolders}}, and deleted {{formatNumber Data.DeletedFolders}}. The difference between the changed data size and the amount uploaded comes from deduplication and compression.</p>
+        {{#if Data.PartialBackup}}<p><strong>The backup was interrupted, so this version is partial.</strong></p>{{/if}}
+        {{#if Data.Dryrun}}<p><strong>This was a dry run, and nothing was uploaded.</strong></p>{{/if}}
+
+        <h2>Checks and issues</h2>
+        <ul>
+            <li>{{plural Data.FilesWithError "file" "files"}} with errors and {{plural Data.NotProcessedFiles "file" "files"}} skipped.</li>
+            {{#if Data.TestResults.VerificationsActualLength}}
+            <li>Verification {{#eq ParsedResult "Success"}}completed successfully for{{else}}ran for{{/eq}} {{plural Data.TestResults.VerificationsActualLength "backup file" "backup files"}}.</li>
+            <li>The verification step took about {{formatDurationLong Data.TestResults.Duration}}.</li>
+            {{else}}
+            <li>No backup files were verified.</li>
+            {{/if}}
+            {{#if Data.BackendStatistics.RetryAttempts}}
+            <li>{{plural Data.BackendStatistics.RetryAttempts "transfer to or from the destination was" "transfers to or from the destination were"}} retried.</li>
+            {{else}}
+            <li>No transfers to or from the destination were retried.</li>
+            {{/if}}
+        </ul>
+        {{else}}
+        <table>
+            <tr><th>Metric</th><th class="value">Result</th></tr>
+            <tr><td>Total run time</td><td class="value">{{formatDurationLong Data.Duration}}</td></tr>
+        </table>
+        {{/eq}}
+        {{/if}}
+
+        <p class="muted"><strong>What this means:</strong> {{#eq ParsedResult "Success"}}The operation completed normally. No action is needed based on this report.{{/eq}}{{#eq ParsedResult "Warning"}}The operation completed, but reported warnings. Review the log messages below to see what was affected.{{/eq}}{{#eq ParsedResult "Error"}}The operation completed, but some items failed. Review the log messages below and correct the cause before the next run.{{/eq}}{{#eq ParsedResult "Fatal"}}The operation did not complete. Review the error details below, and run it again once the cause is corrected.{{/eq}}</p>
+
+        {{#if LogLines}}
+        <h2>Log messages</h2>
+        <pre>{{#each LogLines}}{{this}}
+{{/each}}</pre>
+        {{/if}}
+
+        {{#if Exception}}
+        <h2>Error details</h2>
+        <pre>{{Exception}}</pre>
+        {{/if}}
+
+        <div class="footer">Generated by Duplicati</div>
+    </div>
+</body>
+</html>

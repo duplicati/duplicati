@@ -91,7 +91,7 @@ In the message body, certain tokens are replaced:
 
 All command line options are also reported within %value%, e.g. %volsize%. Any unknown/unset value is removed."); } }
         public static string OptionBodyShort { get { return LC.L(@"The message body"); } }
-        public static string OptionBodyHtmlLong(string optionname) { return LC.L(@"Use this option to send the message body given with --{0} as HTML instead of plain text. The values put into the body, such as %RESULT%, are escaped as HTML. The result keeps its line breaks only inside an element such as <pre>, for example: <pre>%RESULT%</pre>", optionname); }
+        public static string OptionBodyHtmlLong(string optionname) { return LC.L(@"Use this option to send the message body given with --{0} as HTML instead of plain text. The values put into the body, such as %RESULT%, are escaped as HTML. The result keeps its line breaks only inside an element such as <pre>, for example: <pre>%RESULT%</pre>. A template that renders HTML is sent as HTML without this option.", optionname); }
         public static string OptionBodyHtmlShort { get { return LC.L(@"Send the message body as HTML"); } }
         public static string OptionPasswordLong { get { return LC.L(@"Use this option to set the password used to authenticate with the SMTP server if required."); } }
         public static string OptionPasswordShort { get { return LC.L(@"SMTP Password"); } }
@@ -264,6 +264,9 @@ You can supply multiple options with a comma separator, e.g. ""{0},{1}"". The sp
         public static string OptionOperationsShort { get { return LC.L(@"Send messages for the listed operations"); } }
         public static string ResultFormatLong(IEnumerable<string> options) { return LC.L(@"Use this option to select the output format for results. Available formats: {0}", string.Join(", ", options)); }
         public static string ResultFormatShort { get { return LC.L(@"Select the output format for results"); } }
+        public static string TemplateBodyLong(string formatoption, string templateformat, string extension, string templateoption) { return LC.L(@"If --{0} is set to {1}, this value can instead be the path to a Handlebars template file with the {2} extension. The rendered template is then the whole message. Any other value gets the bundled template picked with --{3} for %RESULT%.", formatoption, templateformat, extension, templateoption); }
+        public static string ResultTemplateShort { get { return LC.L(@"Select the template for results"); } }
+        public static string ResultTemplateLong(string formatoption, string templateformat, string bodyoption, string extension) { return LC.L(@"Use this option to select the bundled template that renders the result, when --{0} is set to {1}. A template that renders HTML makes the message HTML. To use a template of your own, set --{2} to the path of a Handlebars template file with the {3} extension, which is used instead of this option.", formatoption, templateformat, bodyoption, extension); }
     }
 
     internal static class HttpReportStatus

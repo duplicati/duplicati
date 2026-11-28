@@ -103,6 +103,10 @@ namespace Duplicati.Library.Modules.Builtin
         /// </summary>
         private const string OPTION_RESULT_FORMAT = "send-http-result-output-format";
         /// <summary>
+        /// Option used to pick the bundled template that renders the result
+        /// </summary>
+        private const string OPTION_RESULT_TEMPLATE = "send-http-result-template";
+        /// <summary>
         /// Option used to set the log level
         /// </summary>
         private const string OPTION_LOG_LEVEL = "send-http-log-level";
@@ -237,7 +241,7 @@ namespace Duplicati.Library.Modules.Builtin
         public override IList<ICommandLineArgument> SupportedCommands =>
         [
             new CommandLineArgument(OPTION_URL, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpurlShort, Strings.SendHttpMessage.SendhttpurlLong),
-            new CommandLineArgument(OPTION_MESSAGE, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpmessageShort, Strings.SendHttpMessage.SendhttpmessageLong, DEFAULT_BODY),
+            new CommandLineArgument(OPTION_MESSAGE, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpmessageShort, WithTemplateDescription(Strings.SendHttpMessage.SendhttpmessageLong), DEFAULT_BODY),
             new CommandLineArgument(OPTION_MESSAGE_PARAMETER_NAME, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpmessageparameternameShort, Strings.SendHttpMessage.SendhttpmessageparameternameLong, DEFAULT_MESSAGE_PARAMETER_NAME),
             new CommandLineArgument(OPTION_EXTRA_PARAMETERS, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpextraparametersShort, Strings.SendHttpMessage.SendhttpextraparametersLong),
             new CommandLineArgument(OPTION_HEADERS, CommandLineArgument.ArgumentType.Password, Strings.SendHttpMessage.SendhttpheadersShort, Strings.SendHttpMessage.SendhttpheadersLong),
@@ -251,6 +255,7 @@ namespace Duplicati.Library.Modules.Builtin
             new CommandLineArgument(OPTION_MAX_LOG_LINES, CommandLineArgument.ArgumentType.Integer, Strings.ReportHelper.OptionmaxloglinesShort, Strings.ReportHelper.OptionmaxloglinesLong, DEFAULT_LOGLINES.ToString()),
 
             new CommandLineArgument(OPTION_RESULT_FORMAT, CommandLineArgument.ArgumentType.Enumeration, Strings.ReportHelper.ResultFormatShort, Strings.ReportHelper.ResultFormatLong(Enum.GetNames(typeof(ResultExportFormat))), DEFAULT_EXPORT_FORMAT.ToString(), null, Enum.GetNames(typeof(ResultExportFormat))),
+            ResultTemplateArgument,
 
             new CommandLineArgument(OPTION_URL_FORM, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpurlsformShort, Strings.SendHttpMessage.SendhttpurlsformLong),
             new CommandLineArgument(OPTION_URL_JSON, CommandLineArgument.ArgumentType.String, Strings.SendHttpMessage.SendhttpurlsjsonShort, Strings.SendHttpMessage.SendhttpurlsjsonLong),
@@ -272,6 +277,7 @@ namespace Duplicati.Library.Modules.Builtin
         protected override string LogFilterOptionName => OPTION_LOG_FILTER;
         protected override string LogLinesOptionName => OPTION_MAX_LOG_LINES;
         protected override string ResultFormatOptionName => OPTION_RESULT_FORMAT;
+        protected override string ResultTemplateOptionName => OPTION_RESULT_TEMPLATE;
         protected override string ExtraDataOptionName => OPTION_EXTRA_PARAMETERS;
 
         /// <summary>
