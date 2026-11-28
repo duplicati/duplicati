@@ -69,7 +69,7 @@ namespace Duplicati.Library.Main.Operation
         /// <returns>A task that completes when the operation is finished.</returns>
         internal async Task RunAsync(IBackendManager backendManager, LocalLockDatabase? databaseOverride)
         {
-            if (!backendManager.SupportsObjectLocking)
+            if (!await backendManager.SupportsObjectLockingAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 throw new ObjectLockNotSupportedException();
 
             var ownsDatabase = databaseOverride is null;

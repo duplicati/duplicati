@@ -202,11 +202,12 @@ public class BackendSourceFileEntry(BackendSourceProvider parent, string path, b
         if (isFolder)
             throw new InvalidOperationException("OpenRead can only be called on files");
 
-        if (parent.WrappedBackend.TryGetCapability<IStreamingBackend>(out var streamingBackend) && streamingBackend.SupportsStreaming)
+        if (await parent.WrappedBackend.GetCapabilityAsync<IStreamingBackend>(cancellationToken).ConfigureAwait(false) is { } streamingBackend && streamingBackend.SupportsStreaming)
         {
             // The download starts on the first read, and is started again from the current
             // position if the connection is lost while the caller is busy elsewhere
-            return new ResumingBackendReadStream(streamingBackend, NormalizePathTo(path, '/'), this.Path, size, parent.ResumeAttempts, parent.ResumeDelay, cancellationToken);
+            var resumeEnabledBackend = await parent.WrappedBackend.GetCapabilityAsync<IResumeEnabledBackend>(cancellationToken).ConfigureAwait(false);
+            return new ResumingBackendReadStream(streamingBackend, resumeEnabledBackend, NormalizePathTo(path, '/'), this.Path, size, parent.ResumeAttempts, parent.ResumeDelay, cancellationToken);
         }
         else
         {

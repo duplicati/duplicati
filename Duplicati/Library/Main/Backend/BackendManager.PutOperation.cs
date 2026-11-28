@@ -307,14 +307,14 @@ partial class BackendManager
             try
             {
                 Context.ProgressHandler.BeginTransfer(BackendActionType.Put, size, RemoteFilename);
-                if (LastModifiedUtc.HasValue && backend.TryGetCapability<IModificationTimeEnabledBackend>(out var timeBackend))
+                if (LastModifiedUtc.HasValue && await backend.GetCapabilityAsync<IModificationTimeEnabledBackend>(cancelToken).ConfigureAwait(false) is { } timeBackend)
                 {
                     using var fs = System.IO.File.OpenRead(LocalFilename);
                     using var ts = new ThrottleEnabledStream(fs, Context.UploadThrottleManager, Context.DownloadThrottleManager);
                     using var pgs = new ProgressReportingStream(ts, pg => Context.ProgressHandler.HandleProgress(pg, RemoteFilename));
                     await timeBackend.PutAsync(effectiveName, pgs, LastModifiedUtc.Value, cancelToken).ConfigureAwait(false);
                 }
-                else if (backend.TryGetCapability<IStreamingBackend>(out var streamingBackend) && streamingBackend.SupportsStreaming && !Context.Options.DisableStreamingTransfers)
+                else if (await backend.GetCapabilityAsync<IStreamingBackend>(cancelToken).ConfigureAwait(false) is { } streamingBackend && streamingBackend.SupportsStreaming && !Context.Options.DisableStreamingTransfers)
                 {
                     using var fs = System.IO.File.OpenRead(LocalFilename);
                     using var ts = new ThrottleEnabledStream(fs, Context.UploadThrottleManager, Context.DownloadThrottleManager);
@@ -346,7 +346,7 @@ partial class BackendManager
                 // the root (for folder-enabled backends using a flat verify), so the
                 // listing returns names comparable to the effective remote name.
                 // A backend that can look up a single file does so instead of listing the folder.
-                var f = backend.TryGetCapability<IFileInfoEnabledBackend>(out var fileInfoBackend)
+                var f = (await backend.GetCapabilityAsync<IFileInfoEnabledBackend>(cancelToken).ConfigureAwait(false)) is { } fileInfoBackend
                     ? await fileInfoBackend.GetFileInfoAsync(effectiveName, cancelToken).ConfigureAwait(false)
                     : await backend.ListAsync(cancelToken).FirstOrDefaultAsync(n => n.Name.Equals(effectiveName, StringComparison.OrdinalIgnoreCase)).ConfigureAwait(false);
                 if (f == null)

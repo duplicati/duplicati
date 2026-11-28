@@ -1235,7 +1235,7 @@ internal class SyncHandler
         var isDryRun = bs.DryRun;
         var planSummary = bs.Summary;
 
-        if (!isDryRun && bs.BackendManager.SupportsFolderDelete)
+        if (!isDryRun && await bs.BackendManager.SupportsFolderDeleteAsync(ct).ConfigureAwait(false))
             Logging.Log.WriteInformationMessage(LOGTAG, logId, "Now deleting {0} {1}", description, relPath);
 
         var result = await deleteTree(bs.BackendManager, relPath, isDryRun, ct).ConfigureAwait(false);
@@ -1463,8 +1463,9 @@ internal class SyncHandler
                 }
             }
 
-            if (unchanged && backendManager.SupportsHardLinks && !snapshot.LinksUnavailable
-                && TryBuildSafeRelativePath(SyncSnapshotLayout.Combine(snapshot.Previous!, folderRelPath), previous!.Name, out var previousPath))
+            if (unchanged && !snapshot.LinksUnavailable
+                && TryBuildSafeRelativePath(SyncSnapshotLayout.Combine(snapshot.Previous!, folderRelPath), previous!.Name, out var previousPath)
+                && await backendManager.SupportsHardLinksAsync(ct).ConfigureAwait(false))
             {
                 if (isDryRun)
                 {

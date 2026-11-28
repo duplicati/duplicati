@@ -1723,7 +1723,7 @@ namespace Duplicati.Library.Main.Operation
         /// <returns>A task that completes when the operation is finished.</returns>
         private async Task RunRefreshLockInfoAsync(IBackendManager backendManager)
         {
-            if (!backendManager.SupportsObjectLocking)
+            if (!await backendManager.SupportsObjectLockingAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
             {
                 Logging.Log.WriteWarningMessage(LOGTAG, "RefreshLockInfoUnsupported", null, "Backend does not support object locking; lock information was not refreshed");
                 return;

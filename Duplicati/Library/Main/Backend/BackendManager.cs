@@ -57,7 +57,7 @@ internal partial class BackendManager : IBackendManager
     /// <summary>
     /// Indicates whether the backend supports object locking
     /// </summary>
-    private readonly Lazy<bool> supportsObjectLocking;
+    private readonly Lazy<Task<bool>> supportsObjectLocking;
 
     /// <summary>
     /// Indicates whether the backend supports folder operations. Kept internal:
@@ -65,19 +65,19 @@ internal partial class BackendManager : IBackendManager
     /// backend manager still needs it to decide how to translate relative paths
     /// for backends that only understand a single flat namespace per URL.
     /// </summary>
-    private readonly Lazy<bool> supportsFolderOperations;
+    private readonly Lazy<Task<bool>> supportsFolderOperations;
 
     /// <summary>
     /// Indicates whether the backend can create hard links between relative paths.
     /// Requires folder support as well, so both names are full relative paths.
     /// </summary>
-    private readonly Lazy<bool> supportsHardLinks;
+    private readonly Lazy<Task<bool>> supportsHardLinks;
 
     /// <summary>
     /// Indicates whether the backend can delete a folder and its contents in one call.
     /// Requires folder support as well, so the folder is a relative path.
     /// </summary>
-    private readonly Lazy<bool> supportsFolderDelete;
+    private readonly Lazy<Task<bool>> supportsFolderDelete;
 
     /// <summary>
     /// Flag keeping track of whether the object has been disposed
@@ -114,38 +114,11 @@ internal partial class BackendManager : IBackendManager
             new SharedParityProvider(options)
         );
 
-        supportsObjectLocking = new Lazy<bool>(() =>
-        {
-            var backend = DynamicLoader.BackendLoader.GetBackend(backendUrl, context.Options.RawOptions);
-            if (backend == null)
-                return false;
-            try
-            {
-                return backend.Supports<ILockingBackend>();
-            }
-            finally
-            {
-                (backend as IDisposable)?.Dispose();
-            }
-        }, isThreadSafe: true);
-
-        supportsFolderOperations = new Lazy<bool>(() =>
-        {
-            var backend = DynamicLoader.BackendLoader.GetBackend(backendUrl, context.Options.RawOptions);
-            if (backend == null)
-                return false;
-            try
-            {
-                return backend.Supports<IFolderEnabledBackend>();
-            }
-            finally
-            {
-                (backend as IDisposable)?.Dispose();
-            }
-        }, isThreadSafe: true);
-
-        supportsHardLinks = new Lazy<bool>(() => BackendIs<ILinkEnabledBackend>() && supportsFolderOperations.Value, isThreadSafe: true);
-        supportsFolderDelete = new Lazy<bool>(() => BackendIs<IFolderDeleteEnabledBackend>() && supportsFolderOperations.Value, isThreadSafe: true);
+        // The checks are shared by all callers, so they are not bound to the token of the first one
+        supportsObjectLocking = new Lazy<Task<bool>>(() => BackendIsAsync<ILockingBackend>(CancellationToken.None), isThreadSafe: true);
+        supportsFolderOperations = new Lazy<Task<bool>>(() => BackendIsAsync<IFolderEnabledBackend>(CancellationToken.None), isThreadSafe: true);
+        supportsHardLinks = new Lazy<Task<bool>>(async () => await BackendIsAsync<ILinkEnabledBackend>(CancellationToken.None).ConfigureAwait(false) && await supportsFolderOperations.Value.ConfigureAwait(false), isThreadSafe: true);
+        supportsFolderDelete = new Lazy<Task<bool>>(async () => await BackendIsAsync<IFolderDeleteEnabledBackend>(CancellationToken.None).ConfigureAwait(false) && await supportsFolderOperations.Value.ConfigureAwait(false), isThreadSafe: true);
 
         // The BackendManager class is a wrapper that essentially sends
         // requests into a queue and processes them in order.
@@ -156,31 +129,33 @@ internal partial class BackendManager : IBackendManager
             context);
     }
 
-    /// <summary>
-    /// Gets a value indicating whether the configured backend supports object locking
-    /// </summary>
-    public bool SupportsObjectLocking => supportsObjectLocking.Value;
+    /// <inheritdoc/>
+    public Task<bool> SupportsObjectLockingAsync(CancellationToken cancelToken)
+        => supportsObjectLocking.Value.WaitAsync(cancelToken);
 
     /// <inheritdoc/>
-    public bool SupportsHardLinks => supportsHardLinks.Value;
+    public Task<bool> SupportsHardLinksAsync(CancellationToken cancelToken)
+        => supportsHardLinks.Value.WaitAsync(cancelToken);
 
     /// <inheritdoc/>
-    public bool SupportsFolderDelete => supportsFolderDelete.Value;
+    public Task<bool> SupportsFolderDeleteAsync(CancellationToken cancelToken)
+        => supportsFolderDelete.Value.WaitAsync(cancelToken);
 
     /// <summary>
     /// Checks whether the configured backend type implements a capability interface,
     /// by creating and disposing a backend instance.
     /// </summary>
     /// <typeparam name="T">The capability interface</typeparam>
+    /// <param name="cancelToken">The cancellation token</param>
     /// <returns><c>true</c> if the backend implements the interface</returns>
-    private bool BackendIs<T>() where T : class, IBackend
+    private async Task<bool> BackendIsAsync<T>(CancellationToken cancelToken) where T : class, IBackend
     {
         var backend = DynamicLoader.BackendLoader.GetBackend(backendUrl, context.Options.RawOptions);
         if (backend == null)
             return false;
         try
         {
-            return backend.Supports<T>();
+            return await backend.SupportsAsync<T>(cancelToken).ConfigureAwait(false);
         }
         finally
         {
@@ -191,7 +166,7 @@ internal partial class BackendManager : IBackendManager
     /// <inheritdoc/>
     public async Task CreateHardLinkAsync(string existingPath, string targetPath, CancellationToken cancelToken)
     {
-        if (!supportsHardLinks.Value)
+        if (!await SupportsHardLinksAsync(cancelToken).ConfigureAwait(false))
             throw new HardLinkNotSupportedException();
 
         var op = new CreateHardLinkOperation(existingPath, targetPath, context, cancelToken);
@@ -202,7 +177,7 @@ internal partial class BackendManager : IBackendManager
     /// <inheritdoc/>
     public async Task DeleteFolderRecursiveAsync(string path, CancellationToken cancelToken)
     {
-        if (!supportsFolderDelete.Value)
+        if (!await SupportsFolderDeleteAsync(cancelToken).ConfigureAwait(false))
             throw new NotSupportedException("The backend cannot delete folders");
         if (string.IsNullOrWhiteSpace(path))
             throw new ArgumentException("Refusing to delete the backend root folder", nameof(path));
@@ -309,9 +284,11 @@ internal partial class BackendManager : IBackendManager
     /// using the full relative path for all bookkeeping (database, progress, logging).
     /// </summary>
     /// <param name="op">The operation to translate. Its <see cref="PendingOperationBase.RemoteFilename"/> must be set.</param>
-    private void ApplyPathTranslation(PendingOperationBase op)
+    /// <param name="cancelToken">The cancellation token</param>
+    /// <returns>An awaitable task</returns>
+    private async Task ApplyPathTranslationAsync(PendingOperationBase op, CancellationToken cancelToken)
     {
-        if (supportsFolderOperations.Value)
+        if (await supportsFolderOperations.Value.WaitAsync(cancelToken).ConfigureAwait(false))
             return; // Folder-enabled backends take the full relative path directly.
 
         // Non-folder backend: split the relative path into (subPath, filename).
@@ -367,7 +344,7 @@ internal partial class BackendManager : IBackendManager
     public async Task DeleteWithPathAsync(string remotename, long size, bool waitForComplete, CancellationToken cancelToken)
     {
         var op = new DeleteOperation(remotename, size, context, waitForComplete, cancelToken);
-        ApplyPathTranslation(op);
+        await ApplyPathTranslationAsync(op, cancelToken).ConfigureAwait(false);
         await QueueTaskAsync(op).ConfigureAwait(false);
         await op.GetResultAsync().ConfigureAwait(false);
     }
@@ -452,7 +429,7 @@ internal partial class BackendManager : IBackendManager
             Decrypt = false,
             AllowParityRepair = false
         };
-        ApplyPathTranslation(op);
+        await ApplyPathTranslationAsync(op, cancelToken).ConfigureAwait(false);
         await QueueTaskAsync(op).ConfigureAwait(false);
         (var file, var _, var _) = await op.GetResultAsync().ConfigureAwait(false);
         return file;
@@ -507,7 +484,7 @@ internal partial class BackendManager : IBackendManager
         // ask for a flat listing of that folder instead (UseRootList = true,
         // listPath = null). When listing the root (path == null) both kinds behave
         // the same: flat listing of the base backend URL.
-        var useRootList = !supportsFolderOperations.Value;
+        var useRootList = !await supportsFolderOperations.Value.WaitAsync(cancelToken).ConfigureAwait(false);
         string? listPath = useRootList ? null : path;
         string? urlOverride = useRootList && !string.IsNullOrEmpty(path) ? MergeBackendPath(path) : null;
 
@@ -608,7 +585,7 @@ internal partial class BackendManager : IBackendManager
     {
         var op = CreateUnencryptedPutOperation(remotename, tempFile, cancelToken);
         op.LastModifiedUtc = lastModifiedUtc;
-        ApplyPathTranslation(op);
+        await ApplyPathTranslationAsync(op, cancelToken).ConfigureAwait(false);
         await QueueTaskAsync(op).ConfigureAwait(false);
         await op.GetResultAsync().ConfigureAwait(false);
     }

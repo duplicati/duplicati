@@ -75,8 +75,8 @@ public class CombinerMountedEntryTests : BasicSetupHelper
 
         // The second mountpoint extends the name of the first one
         using var combined = new Combiner([
-            SourceProviderLoader.CreateSourceProvider(FileUrl(music), Mountpoint("music"), options),
-            SourceProviderLoader.CreateSourceProvider(FileUrl(music2), Mountpoint("music2"), options),
+            await SourceProviderLoader.CreateSourceProviderAsync(FileUrl(music), Mountpoint("music"), options, CancellationToken.None),
+            await SourceProviderLoader.CreateSourceProviderAsync(FileUrl(music2), Mountpoint("music2"), options, CancellationToken.None),
         ]);
 
         var first = await combined.GetEntryAsync(Path.Combine(Mountpoint("music"), "a.txt"), false, CancellationToken.None);

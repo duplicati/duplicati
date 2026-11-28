@@ -152,16 +152,17 @@ internal sealed class ResumingBackendReadStream : Stream
     /// Creates a new stream over a file on a streaming backend
     /// </summary>
     /// <param name="backend">The backend the file is read from</param>
+    /// <param name="resumeEnabledBackend">The backend as a resumable backend, or <c>null</c> if it cannot resume a download</param>
     /// <param name="remotename">The name of the file on the backend</param>
     /// <param name="displayPath">The path of the file as shown to the user</param>
     /// <param name="length">The size of the file as reported by the backend listing</param>
     /// <param name="maxResumeAttempts">The number of times the download may be started again</param>
     /// <param name="resumeDelay">The time to wait before the download is started again</param>
     /// <param name="cancellationToken">A token that cancels the download</param>
-    public ResumingBackendReadStream(IStreamingBackend backend, string remotename, string displayPath, long length, int maxResumeAttempts, TimeSpan resumeDelay, CancellationToken cancellationToken)
+    public ResumingBackendReadStream(IStreamingBackend backend, IResumeEnabledBackend? resumeEnabledBackend, string remotename, string displayPath, long length, int maxResumeAttempts, TimeSpan resumeDelay, CancellationToken cancellationToken)
     {
         this.backend = backend;
-        backend.TryGetCapability(out resumeEnabledBackend);
+        this.resumeEnabledBackend = resumeEnabledBackend;
         this.remotename = remotename;
         this.displayPath = displayPath;
         this.length = length;

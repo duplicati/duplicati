@@ -60,7 +60,7 @@ internal static class SyncRemoteFolders
             throw new ArgumentException("A folder is required", nameof(folder));
 
         var oneCallFailed = false;
-        if (backendManager.SupportsFolderDelete && inScope == null)
+        if (inScope == null && await backendManager.SupportsFolderDeleteAsync(cancellationToken).ConfigureAwait(false))
         {
             if (dryRun || await TryDeleteInOneCallAsync(backendManager, folder, cancellationToken).ConfigureAwait(false))
                 return new DeleteTreeResult(true, 0, 0, 0, 0, []);
@@ -119,7 +119,7 @@ internal static class SyncRemoteFolders
             }
         }
 
-        if (entriesKept == 0 && backendManager.SupportsFolderDelete && !oneCallFailed)
+        if (entriesKept == 0 && !oneCallFailed && await backendManager.SupportsFolderDeleteAsync(cancellationToken).ConfigureAwait(false))
         {
             if (dryRun || await TryDeleteInOneCallAsync(backendManager, folder, cancellationToken).ConfigureAwait(false))
                 return new DeleteTreeResult(true, 0, 0, 0, 0, []);
@@ -165,7 +165,7 @@ internal static class SyncRemoteFolders
 
         if (entriesKept > 0)
             Logging.Log.WriteVerboseMessage(LOGTAG, "EntriesKept", "{0} entries below {1} are outside the scope of the delete, so they and the folders holding them are kept", entriesKept, folder);
-        else if (!backendManager.SupportsFolderDelete)
+        else if (!await backendManager.SupportsFolderDeleteAsync(cancellationToken).ConfigureAwait(false))
             Logging.Log.WriteVerboseMessage(LOGTAG, "EmptyFoldersLeft", "The destination cannot delete folders, so the empty folders of {0} are left behind", folder);
         return new DeleteTreeResult(folderRemoved, deletedFiles.Count, sizeOfDeletedFiles, filesFailed, entriesKept, deletedFiles);
     }

@@ -108,8 +108,9 @@ internal sealed class ChangeTrackingCoordinator
     /// <param name="source">The source provider, possibly a combination of providers</param>
     /// <param name="filter">The filter in use</param>
     /// <param name="sources">The source strings the backup was started with</param>
+    /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The coordinator, or <c>null</c> if no provider tracks changes</returns>
-    public static ChangeTrackingCoordinator? Create(ISourceProvider source, IFilter? filter, IEnumerable<string> sources)
+    public static async Task<ChangeTrackingCoordinator?> CreateAsync(ISourceProvider source, IFilter? filter, IEnumerable<string> sources, CancellationToken cancellationToken)
     {
         var candidates = FileEnumerationProcess.GetProviders(source)
             .OfType<IChangeTrackingSourceProvider>()
@@ -121,9 +122,11 @@ internal sealed class ChangeTrackingCoordinator
         foreach (var p in candidates.Where(x => string.IsNullOrWhiteSpace(x.MountedPath)))
             Log.WriteWarningMessage(LOGTAG, "ChangeTrackingDisabledWithoutMountPath", null, "The source provider with scope \"{0}\" tracks changes but has no mount path, so change tracking is disabled for it and it lists everything on every run", p.ChangeTrackingScope);
 
-        var providers = candidates
-            .Where(x => !string.IsNullOrWhiteSpace(x.MountedPath))
-            .Select(x => new TrackedProvider(x, x.MountedPath, ComputeConfigHash(filter, x.MountedPath, sources)))
+        var tracked = new List<TrackedProvider>();
+        foreach (var x in candidates.Where(x => !string.IsNullOrWhiteSpace(x.MountedPath)))
+            tracked.Add(new TrackedProvider(x, x.MountedPath, await ComputeConfigHashAsync(filter, x.MountedPath, sources, cancellationToken).ConfigureAwait(false)));
+
+        var providers = tracked
             .OrderByDescending(x => x.MountedPath.Length)
             .ToList();
 
@@ -151,15 +154,16 @@ internal sealed class ChangeTrackingCoordinator
     /// <param name="filter">The filter in use</param>
     /// <param name="mountedPath">The path the provider is mounted at</param>
     /// <param name="sources">The source strings the backup was started with</param>
+    /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The hash as a hex string</returns>
-    internal static string ComputeConfigHash(IFilter? filter, string mountedPath, IEnumerable<string> sources)
+    internal static async Task<string> ComputeConfigHashAsync(IFilter? filter, string mountedPath, IEnumerable<string> sources, CancellationToken cancellationToken)
     {
         var own = SourcesMountedAt(mountedPath, sources);
         if (own.Count > 0)
-            return ComputeConfigHash(filter, own);
+            return await ComputeConfigHashAsync(filter, own, cancellationToken).ConfigureAwait(false);
 
         Log.WriteVerboseMessage(LOGTAG, "ChangeTrackingSourceNotFound", "No source is mounted at \"{0}\", so its configuration hash covers every source", mountedPath);
-        return ComputeConfigHash(filter, sources);
+        return await ComputeConfigHashAsync(filter, sources, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -183,17 +187,18 @@ internal sealed class ChangeTrackingCoordinator
     /// </summary>
     /// <param name="filter">The filter in use</param>
     /// <param name="sources">The source strings to hash</param>
+    /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The hash as a hex string</returns>
-    internal static string ComputeConfigHash(IFilter? filter, IEnumerable<string> sources)
+    internal static async Task<string> ComputeConfigHashAsync(IFilter? filter, IEnumerable<string> sources, CancellationToken cancellationToken)
     {
-        var sanitizedSources = sources
-            .Select(x => SourceProviderFactory.ParseRemoteSource(x) is { } remote
-                ? $"@{TryNormalizeMountpoint(remote.Mountpoint) ?? remote.Mountpoint}|{StripSecrets(remote.Url)}"
-                : x)
-            .OrderBy(x => x, StringComparer.Ordinal);
+        var sanitizedSources = new List<string>();
+        foreach (var x in sources)
+            sanitizedSources.Add(SourceProviderFactory.ParseRemoteSource(x) is { } remote
+                ? $"@{TryNormalizeMountpoint(remote.Mountpoint) ?? remote.Mountpoint}|{await StripSecretsAsync(remote.Url, cancellationToken).ConfigureAwait(false)}"
+                : x);
 
         return Library.Utility.Utility.ByteArrayAsHexString(MD5HashHelper.GetHash(
-            new[] { filter?.ToString() ?? string.Empty }.Concat(sanitizedSources)));
+            new[] { filter?.ToString() ?? string.Empty }.Concat(sanitizedSources.OrderBy(x => x, StringComparer.Ordinal))));
     }
 
     /// <summary>
@@ -222,8 +227,9 @@ internal sealed class ChangeTrackingCoordinator
     /// form, which carries no credentials either.
     /// </summary>
     /// <param name="url">The source url</param>
+    /// <param name="cancellationToken">The cancellation token</param>
     /// <returns>The url without credentials</returns>
-    internal static string StripSecrets(string url)
+    internal static async Task<string> StripSecretsAsync(string url, CancellationToken cancellationToken)
     {
         RelaxedUri uri;
         try
@@ -239,7 +245,7 @@ internal sealed class ChangeTrackingCoordinator
         var secrets = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { AuthOptionsHelper.AuthPasswordOption, AuthIdOptionsHelper.AuthIdOption };
         try
         {
-            foreach (var command in SourceProviderLoader.GetSupportedCommands(url) ?? [])
+            foreach (var command in await SourceProviderLoader.GetSupportedCommandsAsync(url, cancellationToken).ConfigureAwait(false) ?? [])
             {
                 if (command.Type != CommandLineArgument.ArgumentType.Password)
                     continue;
@@ -249,7 +255,7 @@ internal sealed class ChangeTrackingCoordinator
                     secrets.Add(alias);
             }
         }
-        catch
+        catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             // An unsupported url is reported when the provider is loaded
         }

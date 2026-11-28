@@ -422,7 +422,7 @@ namespace Duplicati.Library.Main.Operation
         /// <returns>The coordinator, or <c>null</c> if no provider tracks changes</returns>
         private async Task<Backup.ChangeTrackingCoordinator> GetChangeTrackingAsync(ISourceProvider provider, IFilter filter, string[] sources, long lastfilesetid, bool usesJournal)
         {
-            var coordinator = Backup.ChangeTrackingCoordinator.Create(provider, filter, sources);
+            var coordinator = await Backup.ChangeTrackingCoordinator.CreateAsync(provider, filter, sources, m_taskReader.ProgressToken).ConfigureAwait(false);
             if (coordinator == null)
                 return null;
 
@@ -1035,7 +1035,7 @@ namespace Duplicati.Library.Main.Operation
                 return;
             }
 
-            if (!backendManager.SupportsObjectLocking)
+            if (!await backendManager.SupportsObjectLockingAsync(m_taskReader.StopToken).ConfigureAwait(false))
             {
                 Log.WriteWarningMessage(LOGTAG, "BackendDoesNotSupportLocking", null, "Backend does not support object locking; skipping lock operation.");
                 return;

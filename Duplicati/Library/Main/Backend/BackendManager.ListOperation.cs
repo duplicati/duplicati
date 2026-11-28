@@ -54,7 +54,7 @@ partial class BackendManager
             List<IFileEntry> r;
             if (!UseRootList && path != null)
             {
-                if (!backend.TryGetCapability<IFolderEnabledBackend>(out var folderBackend))
+                if (await backend.GetCapabilityAsync<IFolderEnabledBackend>(cancelToken).ConfigureAwait(false) is not { } folderBackend)
                     throw new NotSupportedException("The backend does not support folder operations");
                 r = await folderBackend.ListAsync(path, cancelToken).ToListAsync(cancelToken).ConfigureAwait(false);
             }

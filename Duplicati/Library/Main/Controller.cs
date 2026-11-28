@@ -872,6 +872,7 @@ namespace Duplicati.Library.Main
                     try
                     {
                         (paths, filter) = SetupCommonOptions(result, paths, filter, logTarget);
+                        await ValidateOptionsAsync(paths, CancellationToken.None).ConfigureAwait(false);
                     }
                     catch
                     {
@@ -1389,8 +1390,6 @@ namespace Duplicati.Library.Main
                 }
             }
 
-            ValidateOptions(paths);
-
             return (paths, filter);
         }
 
@@ -1514,7 +1513,9 @@ namespace Duplicati.Library.Main
         /// Any errors will be logged into the statistics module.
         /// </summary>
         /// <param name="paths">The source paths, used to determine the options supported by source providers; null for operations without sources.</param>
-        private void ValidateOptions(string[] paths)
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>An awaitable task</returns>
+        private async Task ValidateOptionsAsync(string[] paths, CancellationToken cancellationToken)
         {
             // The ids are passed around by the console and in reports, where some characters break the handling
             WarnOnProblematicIdentifier("backup-id", "BackupIdSpecialCharacters");
@@ -1623,7 +1624,7 @@ namespace Duplicati.Library.Main
                     if (!sourceProviderSchemes.Add(sourceUri.Scheme))
                         continue;
 
-                    var sourcecommands = DynamicLoader.SourceProviderLoader.GetSupportedCommands(remoteSource.Url);
+                    var sourcecommands = await DynamicLoader.SourceProviderLoader.GetSupportedCommandsAsync(remoteSource.Url, cancellationToken).ConfigureAwait(false);
                     if (sourcecommands != null)
                         sourceProviderOptions.AddRange(sourcecommands);
                 }
@@ -1653,7 +1654,7 @@ namespace Duplicati.Library.Main
                     foreach (var k in restoreUri.QueryParameters.AllKeys)
                         ropts[k] = restoreUri.QueryParameters[k];
 
-                    var restorecommands = DynamicLoader.RestoreDestinationProviderLoader.GetSupportedCommands(restorepath.Substring(1));
+                    var restorecommands = await DynamicLoader.RestoreDestinationProviderLoader.GetSupportedCommandsAsync(restorepath.Substring(1), cancellationToken).ConfigureAwait(false);
                     if (restorecommands != null)
                         restoreDestinationOptions.AddRange(restorecommands);
                 }

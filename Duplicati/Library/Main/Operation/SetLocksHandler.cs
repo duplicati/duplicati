@@ -58,7 +58,7 @@ namespace Duplicati.Library.Main.Operation
             if (m_options.RemoteFileLockDuration.Value.TotalSeconds < 5)
                 throw new UserInformationException("Lock duration must be at least 5 seconds", "LockDurationTooShort");
 
-            if (!backendManager.SupportsObjectLocking)
+            if (!await backendManager.SupportsObjectLockingAsync(m_result.TaskControl.ProgressToken).ConfigureAwait(false))
                 throw new ObjectLockNotSupportedException();
 
             var ownsDatabase = databaseOverride is null;

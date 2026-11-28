@@ -238,7 +238,7 @@ partial class BackendManager
                 // path); for non-folder backends the backend is pointed at the file's
                 // sub-folder (via BackendUrlOverride) and this is just the filename.
                 var effectiveName = GetEffectiveRemoteName();
-                if (backend.TryGetCapability<IStreamingBackend>(out var streamingBackend) && streamingBackend.SupportsStreaming && !Context.Options.DisableStreamingTransfers)
+                if (await backend.GetCapabilityAsync<IStreamingBackend>(cancelToken).ConfigureAwait(false) is { } streamingBackend && streamingBackend.SupportsStreaming && !Context.Options.DisableStreamingTransfers)
                 {
                     // extended to use stacked streams
                     using (var fs = System.IO.File.OpenWrite(dlTarget))

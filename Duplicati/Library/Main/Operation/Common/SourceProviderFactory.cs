@@ -447,10 +447,10 @@ namespace Duplicati.Library.Main.Operation.Common
                                 ISourceProviderModule provider;
                                 try
                                 {
-                                    provider = SourceProviderLoader.CreateSourceProvider(backendurl, normalizedMountpoint, options.RawOptions)
+                                    provider = await SourceProviderLoader.CreateSourceProviderAsync(backendurl, normalizedMountpoint, options.RawOptions, cancellationToken).ConfigureAwait(false)
                                         ?? throw new UserInformationException($"The source \"{sanitizedUrl}\" is not supported", "SourceNotSupported");
                                 }
-                                catch (Exception ex)
+                                catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
                                 {
                                     if (options.AbortIfSourceMissing)
                                         throw new UserInformationException($"Failed to load source provider for \"{sanitizedUrl}\": {ex.Message}", "SourceProviderFailed", ex);
