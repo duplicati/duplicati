@@ -48,9 +48,21 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         /// The option that supplies an OAuth access token obtained elsewhere
         /// </summary>
         internal const string ACCESS_TOKEN_OPTION = "gcs-access-token";
+        /// <summary>
+        /// The option that names the storage classes whose objects are reported as archived
+        /// </summary>
+        private const string ARCHIVE_CLASSES_OPTION = "gcs-archive-classes";
         private const string RETENTION_POLICY_MODE_OPTION = "gcs-retention-policy-mode";
 
         private const RetentionPolicyMode DEFAULT_RETENTION_POLICY_MODE = RetentionPolicyMode.Unlocked;
+
+        /// <summary>
+        /// The storage classes that are considered archive classes unless the option says otherwise.
+        /// Objects in them can be read at once, but each read has a retrieval fee and moves them
+        /// out of the cold class under Autoclass, so they are left out of verification like
+        /// archived objects elsewhere.
+        /// </summary>
+        private static readonly IReadOnlySet<string> DEFAULT_ARCHIVE_CLASSES = new HashSet<string>(["COLDLINE", "ARCHIVE"], StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// The scope used to request access to Google Cloud Storage.
@@ -78,6 +90,10 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
         private readonly string? m_location;
         private readonly string? m_storage_class;
         private readonly RetentionPolicyMode m_retention_policy_mode;
+        /// <summary>
+        /// The storage classes whose objects are reported as archived
+        /// </summary>
+        private readonly IReadOnlySet<string> m_archive_classes;
         private readonly TimeoutOptionsHelper.Timeouts m_timeouts;
 
         public GoogleCloudStorage()
@@ -88,6 +104,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             m_timeouts = null!;
             m_create_oauth_fullcontrol = null!;
             m_retention_policy_mode = RetentionPolicyMode.Locked;
+            m_archive_classes = DEFAULT_ARCHIVE_CLASSES;
         }
 
         public GoogleCloudStorage(string url, Dictionary<string, string?> options)
@@ -121,6 +138,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             m_project = options.GetValueOrDefault(PROJECT_OPTION);
             m_location = options.GetValueOrDefault(LOCATION_OPTION);
             m_storage_class = options.GetValueOrDefault(STORAGECLASS_OPTION);
+            m_archive_classes = ParseArchiveClasses(options.GetValueOrDefault(ARCHIVE_CLASSES_OPTION));
 
             m_retention_policy_mode = Utility.Utility.ParseEnumOption(options, RETENTION_POLICY_MODE_OPTION, DEFAULT_RETENTION_POLICY_MODE);
             // Read as a service account and nothing else. Both options are documented as taking
@@ -170,6 +188,19 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             }
         }
 
+        /// <summary>
+        /// Parses the archive storage classes from the option value
+        /// </summary>
+        /// <param name="storageClasses">The comma separated storage classes, or empty for the defaults</param>
+        /// <returns>The storage classes, compared without case</returns>
+        private static IReadOnlySet<string> ParseArchiveClasses(string? storageClasses)
+        {
+            if (string.IsNullOrWhiteSpace(storageClasses))
+                return DEFAULT_ARCHIVE_CLASSES;
+
+            return new HashSet<string>(storageClasses.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), StringComparer.OrdinalIgnoreCase);
+        }
+
         private class ListBucketResponse
         {
             public string? nextPageToken { get; set; }
@@ -186,6 +217,10 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
             /// When supplied on upload, the server validates the received data against it and rejects the upload on mismatch.
             /// </summary>
             public string? crc32c { get; set; }
+            /// <summary>
+            /// The storage class the object is currently stored in
+            /// </summary>
+            public string? storageClass { get; set; }
         }
 
         private class CreateBucketRequest
@@ -260,12 +295,13 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                         var name = f.name ?? "";
                         if (name.StartsWith(m_prefix, StringComparison.OrdinalIgnoreCase))
                             name = name.Substring(m_prefix.Length);
-                        if (f.size == null)
-                            yield return new FileEntry(name);
-                        else if (f.updated == null)
-                            yield return new FileEntry(name, f.size.Value);
-                        else
-                            yield return new FileEntry(name, f.size.Value, f.updated.Value, f.updated.Value);
+                        var entry = f.size == null
+                            ? new FileEntry(name)
+                            : f.updated == null
+                                ? new FileEntry(name, f.size.Value)
+                                : new FileEntry(name, f.size.Value, f.updated.Value, f.updated.Value);
+                        entry.IsArchived = f.storageClass != null && m_archive_classes.Contains(f.storageClass);
+                        yield return entry;
                     }
 
                 var token = resp.nextPageToken;
@@ -439,6 +475,7 @@ namespace Duplicati.Library.Backend.GoogleCloudStorage
                 return [
                     new CommandLineArgument(LOCATION_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.LocationDescriptionShort, Strings.GoogleCloudStorage.LocationDescriptionLong(locations.ToString())),
                     new CommandLineArgument(STORAGECLASS_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.StorageclassDescriptionShort, Strings.GoogleCloudStorage.StorageclassDescriptionLong(storageClasses.ToString())),
+                    new CommandLineArgument(ARCHIVE_CLASSES_OPTION, CommandLineArgument.ArgumentType.Flags, Strings.GoogleCloudStorage.ArchiveClassesDescriptionShort, Strings.GoogleCloudStorage.ArchiveClassesDescriptionLong, string.Join(",", DEFAULT_ARCHIVE_CLASSES), null, WebApi.GoogleCloudStorage.KNOWN_GCS_STORAGE_CLASSES.Select(x => x.Value).OfType<string>().ToArray()),
                     .. AuthIdOptionsHelper.GetOptions(TOKEN_URL),
                     new CommandLineArgument(SERVICE_ACCOUNT_JSON_OPTION, CommandLineArgument.ArgumentType.Password, Strings.GoogleCloudStorage.ServiceAccountJsonDescriptionShort, Strings.GoogleCloudStorage.ServiceAccountJsonDescriptionLong),
                     new CommandLineArgument(SERVICE_ACCOUNT_FILE_OPTION, CommandLineArgument.ArgumentType.String, Strings.GoogleCloudStorage.ServiceAccountFileDescriptionShort, Strings.GoogleCloudStorage.ServiceAccountFileDescriptionLong),

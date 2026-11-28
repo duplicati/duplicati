@@ -35,6 +35,8 @@ namespace Duplicati.Library.Backend.Strings
         public static string StorageclassDescriptionLong(string classes) { return LC.L(@"This option is only used when creating new buckets. Use this option to change what storage type the bucket has. Charges and functionality vary with bucket storage class. Known storage classes:
 {0}", classes); }
         public static string StorageclassDescriptionShort { get { return LC.L(@"Specify storage class for creating a bucket"); } }
+        public static string ArchiveClassesDescriptionShort { get { return LC.L(@"The storage classes that are considered archive classes"); } }
+        public static string ArchiveClassesDescriptionLong { get { return LC.L(@"Use this option to specify what storage classes are considered archive storage classes. Objects in these classes are not picked for verification, so lifecycle rules or Autoclass can move data to colder storage classes without Duplicati reading it back and paying retrieval fees. Restores still read them, as Cloud Storage serves every storage class directly."); } }
         public static string ProjectDescriptionLong { get { return LC.L(@"This option is only used when creating new buckets. Use this option to supply the project ID that the bucket is attached to. The project determines where usage charges are applied."); } }
         public static string ProjectDescriptionShort { get { return LC.L(@"Specify project for creating a bucket"); } }
         public static string ServiceAccountJsonDescriptionShort { get { return LC.L(@"Service account JSON"); } }
